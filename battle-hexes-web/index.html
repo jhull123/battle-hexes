@@ -3,11 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Battle</title>
+  <title>Battle Hexes</title>
+  <style>
+    body {
+      background-color: #5A5A5A;
+      margin: 0;
+      display: flex;
+      flex-direction: row-reverse;
+      height: 100vh;
+    }
+
+    #menu {
+      width: 280px;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    #menu button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+    }
+
+    #canvas-container {
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    canvas {
+      display: block;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h3>Menu</h3>
+    <button>Button 1</button>
+    <button>Button 2</button>
+  </div>
+  <div id="canvas-container"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <script src="battle-classes.js"></script>
   <script src="battle-draw.js"></script>
-</head>
-<body>
 </body>
 </html>

@@ -3,18 +3,30 @@ const hexHeight = Math.sqrt(3) * hexRadius;
 const hexDiameter = hexRadius * 2;
 const counterSide = hexRadius + hexRadius * 0.3;
 const counterSideThird = counterSide / 3;
+const menuWidth = 300;
+const hexRows = 10;
+const canvasMargin = 20;
 
 var board = new Board(10, 10);
 myHex = board.getHex(5, 5);
 myHex.addUnit(new Unit());
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  let canvas = createCanvas(getCanvasWidth(), getCanvasHeight());
+  canvas.parent('canvas-container'); 
   noLoop(); // So that it draws only once
 }
 
+function getCanvasWidth() {
+  return windowWidth - menuWidth - canvasMargin;
+}
+
+function getCanvasHeight() {
+  return hexRows * hexHeight + hexRadius;
+}
+
 function draw() {
-  console.log("I'm starting to draw!")
+  console.log("I'm starting to draw!");
   background(90);
 
   for (let currentHex of board.getAllHexes()) {
@@ -26,6 +38,10 @@ function draw() {
       drawCounterRc(currentHex.row, currentHex.column);
     }
   }
+}
+
+function windowResized() {
+  resizeCanvas(getCanvasWidth(), getCanvasHeight());
 }
 
 function drawHexFull(theHex) {
@@ -126,10 +142,6 @@ function drawUnitSize(x, y) {
   textSize(9);
   textAlign(CENTER, CENTER);
   text('XX', x, y - counterSideThird + counterSideThird * 0.2);
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
 }
 
 function mousePressed() {
