@@ -18,6 +18,30 @@ class Hex {
   isEmpty() {
   	return this.units.length == 0;
   }
+
+  coordsHumanString() {
+    return `${this.row}, ${this.column}`
+  }
+
+  isAdjacent(anotherHex) {
+    if (anotherHex === undefined || anotherHex === this) return false;
+   
+    let rowDiff = anotherHex.row - this.row;
+    if (rowDiff > 1 || rowDiff < -1) return false;
+    
+    let colDiff = anotherHex.column - this.column;
+
+    switch (rowDiff) {
+    case 1:
+      return Math.abs(colDiff) < 2;
+    case 0: 
+      return Math.abs(colDiff) === 1;
+    case -1:
+      return colDiff === 0;
+    }
+
+    return false;
+  }
 }
 
 class Unit {
@@ -59,5 +83,9 @@ class Board {
 
   isSelected(aHex) {
   	return aHex !== undefined && this.selectedHex === aHex;
+  }
+
+  hasSelection() {
+    return this.selectedHex !== undefined;
   }
 }

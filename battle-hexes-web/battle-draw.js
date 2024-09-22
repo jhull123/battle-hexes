@@ -154,9 +154,21 @@ function mousePressed() {
   }
 
   let clickedHex = board.getHex(clickedHexPos.row, clickedHexPos.col);
+  let selHexCoordDiv = document.getElementById('selHexCoord');
+  let selHexContentsDiv = document.getElementById('selHexContents');
+
   if (clickedHex) {
     board.select(clickedHex);
     drawHexFull(clickedHex);
+    if (clickedHex.isEmpty()) {
+      selHexContentsDiv.innerHTML = 'Empty Hex';
+    } else {
+      selHexContentsDiv.innerHTML = 'Hex contains a unit.';
+    }
+    selHexCoordDiv.innerHTML = `Hex Coord: (${clickedHexPos.row}, ${clickedHexPos.col})`;
+  } else {
+    selHexContentsDiv.innerHTML = '';
+    selHexCoordDiv.innerHTML = '';
   }
 }
 
@@ -171,6 +183,21 @@ function pixelToHex(x, y) {
   }
 
   return { row: row, col: col }; 
+}
+
+function mouseMoved() {
+  let mouseHexPos = pixelToHex(mouseX, mouseY);
+  if (board.hasSelection() && !board.selectedHex.isEmpty()) {
+    hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
+    if (board.selectedHex.isAdjacent(hoverHex)) {
+      console.log(`Adjacent hover hex is ${hoverHex.coordsHumanString()}`);
+      cursor(ARROW);
+    } else {
+      cursor(CROSS);
+    }
+  } else {
+    cursor(CROSS);
+  }
 }
 
 function pixelToHex2(x, y) {
