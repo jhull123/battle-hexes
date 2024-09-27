@@ -1,10 +1,30 @@
 class Hex {
   #units;
+  #adjacentHexCoords;
 
   constructor(row, column) {
   	this.row = row;
   	this.column = column;
   	this.units = [];
+    if (column % 2 === 0) {
+      this.adjacentHexCoords = new Set([
+        `${row - 1},${column    }`,
+        `${row - 1},${column + 1}`,
+        `${row    },${column + 1}`,
+        `${row + 1},${column    }`,
+        `${row    },${column - 1}`,
+        `${row - 1},${column - 1}`
+      ]);
+    } else {
+      this.adjacentHexCoords = new Set([
+        `${row - 1},${column    }`,
+        `${row    },${column + 1}`,
+        `${row + 1},${column + 1}`,
+        `${row + 1},${column    }`,
+        `${row + 1},${column - 1}`,
+        `${row    },${column - 1}`
+      ]);
+    }
   }
 
   addUnit(unit) {
@@ -25,6 +45,11 @@ class Hex {
 
   isAdjacent(anotherHex) {
     if (anotherHex === undefined || anotherHex === this) return false;
+    return this.adjacentHexCoords.has(`${anotherHex.row},${anotherHex.column}`);
+  }
+
+  isAdjacent_old(anotherHex) {
+    if (anotherHex === undefined || anotherHex === this) return false;
    
     let rowDiff = anotherHex.row - this.row;
     if (rowDiff > 1 || rowDiff < -1) return false;
@@ -42,6 +67,10 @@ class Hex {
 
     return false;
   }
+
+  getAdjacentHexCoords() {
+    return this.adjacentHexCoords;
+  }
 }
 
 class Unit {
@@ -52,6 +81,7 @@ class Unit {
 class Board {
   #hexMap;
   #selectedHex;
+  #moveHoverHex;
 
   constructor(rows, columns) {
     this.hexMap = new Map();
@@ -65,6 +95,10 @@ class Board {
 
   getHex(row, column) {
     return this.hexMap.get(`${row},${column}`);
+  }
+
+  getHexStrCoord(strCoord) {
+    return this.hexMap.get(strCoord);
   }
 
   getAllHexes() {
@@ -82,10 +116,24 @@ class Board {
   }
 
   isSelected(aHex) {
-  	return aHex !== undefined && this.selectedHex === aHex;
+    return aHex !== undefined && this.selectedHex === aHex;
   }
 
   hasSelection() {
     return this.selectedHex !== undefined;
+  }
+
+  setMoveHoverHex(hoverHex) {
+    this.moveHoverHex = hoverHex;
+  }
+
+  dehover() {
+    let oldHover = this.moveHoverHex;
+    this.moveHoverHex = undefined;
+    return oldHover;
+  }
+
+  isHovered(aHex) {
+    return aHex !== undefined && this.moveHoverHex === aHex;
   }
 }

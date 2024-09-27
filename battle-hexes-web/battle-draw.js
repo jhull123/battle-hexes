@@ -44,13 +44,6 @@ function windowResized() {
   resizeCanvas(getCanvasWidth(), getCanvasHeight());
 }
 
-function drawHexFull(theHex) {
-  drawHex(theHex);
-  if (theHex.units.length) {
-    drawCounterRc(theHex.row, theHex.column);
-  }
-}
-
 function hexCenterRc(row, column) {
   oddColumnOffsetX = column * hexRadius / 2;
   oddColumnOffsetY = column % 2 == 0 ? 0 : hexHeight / 2;
@@ -62,24 +55,34 @@ function hexCenterRc(row, column) {
 }
 
 function drawHex(theHex) {
+  // console.log(`Drawing ${theHex.row},${theHex.column}`)
   hexCenter = hexCenterRc(theHex.row, theHex.column);
-  drawHexagon(hexCenter.x, hexCenter.y, hexRadius, board.isSelected(theHex));
+  drawHexagon(hexCenter.x, hexCenter.y, hexRadius, 
+              board.isSelected(theHex), board.isHovered(theHex));
 
   fill(0);  // Set the text color to black
   noStroke();  // No outline for the text
   textSize(16);  // Set text size
   textAlign(CENTER, CENTER);  // Center align text horizontally and vertically    
   text(`${theHex.row}, ${theHex.column}`, hexCenter.x, hexCenter.y);
+
+  if (theHex.units.length) {
+    drawCounterRc(theHex.row, theHex.column);
+  }
 }
 
-function drawHexagon(x, y, radius, selected) {
+function drawHexagon(x, y, radius, selected, hovered) {
   if (selected) {
-    stroke(16, 256, 16);
+    stroke(16, 192, 16);
+    strokeWeight(6);
+  } else if (hovered) {
+    stroke(16, 240, 16);
+    strokeWeight(6);
   } else {
     stroke(32);
+    strokeWeight(2);
   }
 
-  strokeWeight(2);
   fill(255, 253, 208);  // Set the fill color to cream
 
   beginShape();
@@ -150,7 +153,8 @@ function mousePressed() {
 
   let prevSelectedHex = board.deselect(); 
   if (prevSelectedHex) {
-    drawHexFull(prevSelectedHex);
+    drawAdjacent(prevSelectedHex);
+    drawHex(prevSelectedHex);
   }
 
   let clickedHex = board.getHex(clickedHexPos.row, clickedHexPos.col);
@@ -159,7 +163,7 @@ function mousePressed() {
 
   if (clickedHex) {
     board.select(clickedHex);
-    drawHexFull(clickedHex);
+    drawHex(clickedHex);
     if (clickedHex.isEmpty()) {
       selHexContentsDiv.innerHTML = 'Empty Hex';
     } else {
@@ -170,6 +174,8 @@ function mousePressed() {
     selHexContentsDiv.innerHTML = '';
     selHexCoordDiv.innerHTML = '';
   }
+
+  mouseMoved();
 }
 
 function pixelToHex(x, y) {
@@ -187,17 +193,43 @@ function pixelToHex(x, y) {
 
 function mouseMoved() {
   let mouseHexPos = pixelToHex(mouseX, mouseY);
+  let hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
+
+  let oldHover = board.dehover();
+  if (oldHover && oldHover !== hoverHex) {
+    drawAdjacent(oldHover);
+    drawHex(oldHover);
+  }
+
   if (board.hasSelection() && !board.selectedHex.isEmpty()) {
-    hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
     if (board.selectedHex.isAdjacent(hoverHex)) {
       console.log(`Adjacent hover hex is ${hoverHex.coordsHumanString()}`);
-      cursor(ARROW);
-    } else {
-      cursor(CROSS);
+      board.setMoveHoverHex(hoverHex);
+      hoverHightlight = true;
     }
-  } else {
-    cursor(CROSS);
   }
+
+  if (hoverHex === undefined) {
+    return;
+  }
+
+  drawAdjacent(hoverHex);
+  drawHex(hoverHex);
+
+  if (board.hasSelection()) {
+    drawHex(board.selectedHex);
+  }
+}
+
+function drawAdjacent(aHex) {
+  for (let strCoords of aHex.getAdjacentHexCoords()) {
+    let someHex = board.getHexStrCoord(strCoords);
+    if (someHex) {
+      if (someHex) {
+        drawHex(someHex);
+      }
+    }
+  }  
 }
 
 function pixelToHex2(x, y) {
