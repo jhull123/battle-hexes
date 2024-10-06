@@ -3,9 +3,9 @@ class Hex {
   #adjacentHexCoords;
 
   constructor(row, column) {
-  	this.row = row;
-  	this.column = column;
-  	this.units = [];
+    this.row = row;
+    this.column = column;
+    this.units = [];
     if (column % 2 === 0) {
       this.adjacentHexCoords = new Set([
         `${row - 1},${column    }`,
@@ -28,15 +28,15 @@ class Hex {
   }
 
   addUnit(unit) {
-  	this.units.push(unit);
+    this.units.push(unit);
   }
 
   getUnits() {
-  	return units;
+    return units;
   }
 
   isEmpty() {
-  	return this.units.length == 0;
+    return this.units.length == 0;
   }
 
   coordsHumanString() {

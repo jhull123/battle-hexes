@@ -38,6 +38,8 @@ function draw() {
       drawCounterRc(currentHex.row, currentHex.column);
     }
   }
+
+  drawMoveArrow(board.getHex(2, 3), board.getHex(3, 3));
 }
 
 function windowResized() {
@@ -60,9 +62,9 @@ function drawHex(theHex) {
   drawHexagon(hexCenter.x, hexCenter.y, hexRadius, 
               board.isSelected(theHex), board.isHovered(theHex));
 
-  fill(0);  // Set the text color to black
+  fill(0);
   noStroke();  // No outline for the text
-  textSize(16);  // Set text size
+  textSize(16);
   textAlign(CENTER, CENTER);  // Center align text horizontally and vertically    
   text(`${theHex.row}, ${theHex.column}`, hexCenter.x, hexCenter.y);
 
@@ -244,4 +246,38 @@ function pixelToHex2(x, y) {
   }
 
   return { row: row, col: col };
+}
+
+function drawMoveArrow(fromHex, toHex) {
+  stroke(0, 208, 0);
+  strokeWeight(2);
+  fill(16, 240, 16);
+
+  let toCenter = hexCenterRc(toHex.row, toHex.column);
+  let fromCenter = hexCenterRc(fromHex.row, fromHex.column);
+
+  let angle = atan2(toCenter.y - fromCenter.y, toCenter.x - fromCenter.x) + 0.5 * PI;
+  console.log(fromCenter);
+  console.log(toCenter);
+  console.log(angle);
+
+  let arrowLength = hexRadius;
+  let arrowWidth = hexRadius / 2;
+  let arrowTop = -0.75 * hexDiameter;
+
+  push();
+  translate(fromCenter.x, fromCenter.y);
+  rotate(angle);
+
+  beginShape();
+  vertex(0, arrowTop); // top of the arrow
+  vertex(-arrowWidth / 2, arrowTop + arrowLength / 3);  // Left side 1
+  vertex(-arrowWidth / 4, arrowTop + arrowLength / 3);  // Left side 2
+  vertex(-arrowWidth / 4, arrowTop + arrowLength);      // Left side 3
+  vertex(arrowWidth / 4, arrowTop + arrowLength);       // Right side 3
+  vertex(arrowWidth / 4, arrowTop + arrowLength / 3);   // Right side 2
+  vertex(arrowWidth / 2, arrowTop + arrowLength / 3);   // Right side 1
+  endShape(CLOSE);
+
+  pop();
 }
