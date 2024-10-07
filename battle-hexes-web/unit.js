@@ -1,0 +1,4 @@
+class Unit {
+  constructor() {
+  }
+}

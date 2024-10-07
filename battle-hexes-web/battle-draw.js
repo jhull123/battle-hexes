@@ -38,8 +38,6 @@ function draw() {
       drawCounterRc(currentHex.row, currentHex.column);
     }
   }
-
-  drawMoveArrow(board.getHex(2, 3), board.getHex(3, 3));
 }
 
 function windowResized() {
@@ -221,6 +219,10 @@ function mouseMoved() {
   if (board.hasSelection()) {
     drawHex(board.selectedHex);
   }
+
+  if (board.hasSelection() && hoverHex !== undefined && board.selectedHex !== hoverHex && !board.selectedHex.isEmpty()) {
+    drawMoveArrow(board.selectedHex, hoverHex);
+  }
 }
 
 function drawAdjacent(aHex) {
@@ -257,9 +259,6 @@ function drawMoveArrow(fromHex, toHex) {
   let fromCenter = hexCenterRc(fromHex.row, fromHex.column);
 
   let angle = atan2(toCenter.y - fromCenter.y, toCenter.x - fromCenter.x) + 0.5 * PI;
-  console.log(fromCenter);
-  console.log(toCenter);
-  console.log(angle);
 
   let arrowLength = hexRadius;
   let arrowWidth = hexRadius / 2;
