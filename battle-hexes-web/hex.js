@@ -1,13 +1,18 @@
 class Hex {
   #units;
   #adjacentHexCoords;
+  #selected;
+  #moveTarget;
 
   constructor(row, column) {
     this.row = row;
     this.column = column;
-    this.units = [];
+    this.#units = [];
+    this.#selected = false;
+    this.#moveTarget = false;
+
     if (column % 2 === 0) {
-      this.adjacentHexCoords = new Set([
+      this.#adjacentHexCoords = new Set([
         `${row - 1},${column}`,
         `${row - 1},${column + 1}`,
         `${row},${column + 1}`,
@@ -16,7 +21,7 @@ class Hex {
         `${row - 1},${column - 1}`
       ]);
     } else {
-      this.adjacentHexCoords = new Set([
+      this.#adjacentHexCoords = new Set([
         `${row - 1},${column}`,
         `${row},${column + 1}`,
         `${row + 1},${column + 1}`,
@@ -28,15 +33,15 @@ class Hex {
   }
 
   addUnit(unit) {
-    this.units.push(unit);
+    this.#units.push(unit);
   }
 
   getUnits() {
-    return units;
+    return this.#units;
   }
 
   isEmpty() {
-    return this.units.length == 0;
+    return this.#units.length == 0;
   }
 
   coordsHumanString() {
@@ -69,6 +74,22 @@ class Hex {
   }
 
   getAdjacentHexCoords() {
-    return this.adjacentHexCoords;
+    return this.#adjacentHexCoords;
+  }
+
+  isSelected() {
+    return this.#selected;
+  }
+
+  setSelected(select) {
+    this.#selected = select;
+  }
+
+  isMoveTarget() {
+    return this.#moveTarget;
+  }
+
+  setMoveTarget(moveTarget) {
+    this.#moveTarget = moveTarget;
   }
 }

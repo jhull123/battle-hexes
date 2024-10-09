@@ -8,7 +8,13 @@ const hexRows = 10;
 const canvasMargin = 20;
 
 var board = new Board(10, 10);
-myHex = board.getHex(5, 5);
+var hexDraw = new HexDrawer(50);
+hexDraw.setShowHexCoords(true);
+
+var unitDraw = new UnitDrawer(hexDraw);
+var selectionDraw = new SelectionDrawer(hexDraw);
+
+let myHex = board.getHex(5, 5);
 myHex.addUnit(new Unit());
 
 function setup() {
@@ -30,13 +36,11 @@ function draw() {
   background(90);
 
   for (let currentHex of board.getAllHexes()) {
-    drawHex(currentHex);
+    hexDraw.draw(currentHex);
   }
 
   for (let currentHex of board.getAllHexes()) {
-    if (currentHex.units.length) {
-      drawCounterRc(currentHex.row, currentHex.column);
-    }
+    unitDraw.drawHexCounters(currentHex);
   }
 }
 
@@ -100,54 +104,39 @@ function drawCounterRc(row, column) {
   drawCounter(counterCenter.x, counterCenter.y);
 }
 
-/* x and y are the center of the square. side is the square side length.
- */
-function drawCounter(x, y) {
-  stroke(96, 32, 32);
-  strokeWeight(3);
-  fill(200, 16, 16);
-
-  rectMode(CENTER);
-  rect(x, y, counterSide, counterSide, 3);
-
-  drawInfantrySymbol(x, y, counterSide / 2, counterSideThird);
-  drawUnitStats(x, y);
-  drawUnitSize(x, y);
-}
-
-function drawInfantrySymbol(x, y, width, height) {
-  stroke(255)
-  strokeWeight(2);
-  rect(x, y, width, height);
-
-  let halfWidth = width / 2;
-  let halfHeight = height / 2;
-
-  stroke(255);
-  strokeWeight(2);
-
-  // Draw "X" by connecting the corners of the smaller rectangle
-  line(x - halfWidth, y - halfHeight, x + halfWidth, y + halfHeight);
-  line(x + halfWidth, y - halfHeight, x - halfWidth, y + halfHeight);
-}
-
-function drawUnitStats(x, y) {
-  fill(255);
-  noStroke();
-  textSize(14);
-  textAlign(CENTER, CENTER);    
-  text('4-4-4', x, y + counterSideThird);
-}
-
-function drawUnitSize(x, y) {
-  fill(255);
-  noStroke();
-  textSize(9);
-  textAlign(CENTER, CENTER);
-  text('XX', x, y - counterSideThird + counterSideThird * 0.2);
-}
-
 function mousePressed() {
+  let clickedHexPos = pixelToHex(mouseX, mouseY);
+  console.log("Clicked on hex:", clickedHexPos.row, clickedHexPos.col);
+
+  let prevSelectedHex = board.deselect();
+  let clickedHex = board.getHex(clickedHexPos.row, clickedHexPos.col);
+
+  if (prevSelectedHex) {
+    prevSelectedHex.setSelected(false);
+    drawHexNeighborhood(prevSelectedHex);
+  }
+
+  if (clickedHex) {
+    board.select(clickedHex);
+    clickedHex.setSelected(true);
+    drawHexNeighborhood(clickedHex);
+  }
+}
+
+function drawHexNeighborhood(aHex) {
+  for (let adjHexCoords of aHex.getAdjacentHexCoords()) {
+    let neighborHex = board.getHexStrCoord(adjHexCoords);
+    hexDraw.draw(neighborHex);
+    selectionDraw.drawHexSelection(neighborHex);
+    unitDraw.drawHexCounters(neighborHex);
+  }
+
+  hexDraw.draw(aHex);
+  selectionDraw.drawHexSelection(aHex);
+  unitDraw.drawHexCounters(aHex);
+}
+
+function __mousePressed() {
   let clickedHexPos = pixelToHex(mouseX, mouseY);
   console.log("Clicked on hex:", clickedHexPos.row, clickedHexPos.col);
 
@@ -191,7 +180,7 @@ function pixelToHex(x, y) {
   return { row: row, col: col }; 
 }
 
-function mouseMoved() {
+function __mouseMoved() {
   let mouseHexPos = pixelToHex(mouseX, mouseY);
   let hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
 
