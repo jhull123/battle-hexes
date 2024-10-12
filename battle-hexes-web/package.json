@@ -1,0 +1,15 @@
+{
+  "name": "battle-hexes-web",
+  "version": "1.0.0",
+  "main": "battle-draw.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

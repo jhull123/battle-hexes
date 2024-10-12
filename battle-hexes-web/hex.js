@@ -2,14 +2,14 @@ class Hex {
   #units;
   #adjacentHexCoords;
   #selected;
-  #moveTarget;
+  #moveHover;
 
   constructor(row, column) {
     this.row = row;
     this.column = column;
     this.#units = [];
     this.#selected = false;
-    this.#moveTarget = false;
+    this.#moveHover = false;
 
     if (column % 2 === 0) {
       this.#adjacentHexCoords = new Set([
@@ -50,27 +50,7 @@ class Hex {
 
   isAdjacent(anotherHex) {
     if (anotherHex === undefined || anotherHex === this) return false;
-    return this.adjacentHexCoords.has(`${anotherHex.row},${anotherHex.column}`);
-  }
-
-  isAdjacent_old(anotherHex) {
-    if (anotherHex === undefined || anotherHex === this) return false;
-
-    let rowDiff = anotherHex.row - this.row;
-    if (rowDiff > 1 || rowDiff < -1) return false;
-
-    let colDiff = anotherHex.column - this.column;
-
-    switch (rowDiff) {
-      case 1:
-        return Math.abs(colDiff) < 2;
-      case 0:
-        return Math.abs(colDiff) === 1;
-      case -1:
-        return colDiff === 0;
-    }
-
-    return false;
+    return this.#adjacentHexCoords.has(`${anotherHex.row},${anotherHex.column}`);
   }
 
   getAdjacentHexCoords() {
@@ -85,11 +65,11 @@ class Hex {
     this.#selected = select;
   }
 
-  isMoveTarget() {
-    return this.#moveTarget;
+  setMoveHover(moveHover) {
+    this.#moveHover = moveHover;
   }
 
-  setMoveTarget(moveTarget) {
-    this.#moveTarget = moveTarget;
+  isMoveHover() {
+    return this.#moveHover;
   }
 }

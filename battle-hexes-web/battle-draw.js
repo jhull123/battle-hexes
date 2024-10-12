@@ -13,6 +13,7 @@ hexDraw.setShowHexCoords(true);
 
 var unitDraw = new UnitDrawer(hexDraw);
 var selectionDraw = new SelectionDrawer(hexDraw);
+const drawers = [hexDraw, selectionDraw, unitDraw];
 
 let myHex = board.getHex(5, 5);
 myHex.addUnit(new Unit());
@@ -40,7 +41,7 @@ function draw() {
   }
 
   for (let currentHex of board.getAllHexes()) {
-    unitDraw.drawHexCounters(currentHex);
+    unitDraw.draw(currentHex);
   }
 }
 
@@ -48,123 +49,36 @@ function windowResized() {
   resizeCanvas(getCanvasWidth(), getCanvasHeight());
 }
 
-function hexCenterRc(row, column) {
-  oddColumnOffsetX = column * hexRadius / 2;
-  oddColumnOffsetY = column % 2 == 0 ? 0 : hexHeight / 2;
-
-  x = hexRadius + column * hexDiameter - oddColumnOffsetX;
-  y = hexHeight / 2 + row * hexHeight + oddColumnOffsetY;
-
-  return {x, y};
-}
-
-function drawHex(theHex) {
-  // console.log(`Drawing ${theHex.row},${theHex.column}`)
-  hexCenter = hexCenterRc(theHex.row, theHex.column);
-  drawHexagon(hexCenter.x, hexCenter.y, hexRadius, 
-              board.isSelected(theHex), board.isHovered(theHex));
-
-  fill(0);
-  noStroke();  // No outline for the text
-  textSize(16);
-  textAlign(CENTER, CENTER);  // Center align text horizontally and vertically    
-  text(`${theHex.row}, ${theHex.column}`, hexCenter.x, hexCenter.y);
-
-  if (theHex.units.length) {
-    drawCounterRc(theHex.row, theHex.column);
-  }
-}
-
-function drawHexagon(x, y, radius, selected, hovered) {
-  if (selected) {
-    stroke(16, 192, 16);
-    strokeWeight(6);
-  } else if (hovered) {
-    stroke(16, 240, 16);
-    strokeWeight(6);
-  } else {
-    stroke(32);
-    strokeWeight(2);
-  }
-
-  fill(255, 253, 208);  // Set the fill color to cream
-
-  beginShape();
-  for (let i = 0; i < 6; i++) {
-    let angle = TWO_PI / 6 * i;
-    let vx = x + cos(angle) * radius;
-    let vy = y + sin(angle) * radius;
-    vertex(vx, vy);
-  }
-  endShape(CLOSE);
-}
-
-function drawCounterRc(row, column) {
-  counterCenter = hexCenterRc(row, column)
-  drawCounter(counterCenter.x, counterCenter.y);
-}
-
 function mousePressed() {
   let clickedHexPos = pixelToHex(mouseX, mouseY);
   console.log("Clicked on hex:", clickedHexPos.row, clickedHexPos.col);
 
-  let prevSelectedHex = board.deselect();
   let clickedHex = board.getHex(clickedHexPos.row, clickedHexPos.col);
+  let prevSelectedHex = board.selectHex(clickedHex);
 
-  if (prevSelectedHex) {
-    prevSelectedHex.setSelected(false);
-    drawHexNeighborhood(prevSelectedHex);
-  }
+  drawHexNeighborhood([prevSelectedHex, clickedHex]);
 
-  if (clickedHex) {
-    board.select(clickedHex);
-    clickedHex.setSelected(true);
-    drawHexNeighborhood(clickedHex);
-  }
-}
+  const selHexContentsDiv = document.getElementById('selHexContents');
+  const selHexCoordDiv = document.getElementById('selHexCoord');
 
-function drawHexNeighborhood(aHex) {
-  for (let adjHexCoords of aHex.getAdjacentHexCoords()) {
-    let neighborHex = board.getHexStrCoord(adjHexCoords);
-    hexDraw.draw(neighborHex);
-    selectionDraw.drawHexSelection(neighborHex);
-    unitDraw.drawHexCounters(neighborHex);
-  }
-
-  hexDraw.draw(aHex);
-  selectionDraw.drawHexSelection(aHex);
-  unitDraw.drawHexCounters(aHex);
-}
-
-function __mousePressed() {
-  let clickedHexPos = pixelToHex(mouseX, mouseY);
-  console.log("Clicked on hex:", clickedHexPos.row, clickedHexPos.col);
-
-  let prevSelectedHex = board.deselect(); 
-  if (prevSelectedHex) {
-    drawAdjacent(prevSelectedHex);
-    drawHex(prevSelectedHex);
-  }
-
-  let clickedHex = board.getHex(clickedHexPos.row, clickedHexPos.col);
-  let selHexCoordDiv = document.getElementById('selHexCoord');
-  let selHexContentsDiv = document.getElementById('selHexContents');
-
-  if (clickedHex) {
-    board.select(clickedHex);
-    drawHex(clickedHex);
-    if (clickedHex.isEmpty()) {
-      selHexContentsDiv.innerHTML = 'Empty Hex';
-    } else {
-      selHexContentsDiv.innerHTML = 'Hex contains a unit.';
-    }
+  if (clickedHex === undefined) {
+    // nothing here!
+  } else if (clickedHex.isEmpty()) {
+    selHexContentsDiv.innerHTML = 'Empty Hex';
     selHexCoordDiv.innerHTML = `Hex Coord: (${clickedHexPos.row}, ${clickedHexPos.col})`;
   } else {
-    selHexContentsDiv.innerHTML = '';
-    selHexCoordDiv.innerHTML = '';
+    selHexContentsDiv.innerHTML = 'Hex contains a unit.';
+    selHexCoordDiv.innerHTML = `Hex Coord: (${clickedHexPos.row}, ${clickedHexPos.col})`;
   }
+}
 
-  mouseMoved();
+function drawHexNeighborhood(someHexes) {
+  let hexesToDraw = board.getHexNeighborhoods(someHexes);
+  for (let drawer of drawers) {
+    for (let hexToDraw of hexesToDraw) {
+      drawer.draw(hexToDraw);
+    }
+  }
 }
 
 function pixelToHex(x, y) {
@@ -178,6 +92,18 @@ function pixelToHex(x, y) {
   }
 
   return { row: row, col: col }; 
+}
+
+function mouseMoved() {
+  let mouseHexPos = pixelToHex(mouseX, mouseY);
+  let hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
+  let oldHover = board.setHoverHex(hoverHex);
+
+  if (oldHover === hoverHex) {
+    return;
+  }
+
+  drawHexNeighborhood([oldHover, hoverHex]);
 }
 
 function __mouseMoved() {

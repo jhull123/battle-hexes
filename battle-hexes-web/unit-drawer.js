@@ -9,7 +9,7 @@ class UnitDrawer {
     this.#counterSideThird = counterSide / 3;
   }
 
-  drawHexCounters(aHex) {
+  draw(aHex) {
     let hexCenter = this.#hexDrawer.hexCenter(aHex);
     for (let aUnit of aHex.getUnits()) {
       this.drawCounter(hexCenter.x, hexCenter.y);
