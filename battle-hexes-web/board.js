@@ -42,15 +42,16 @@ class Board {
   }
 
   setHoverHex(hoverHex) {
-    let oldHover = this.#hoverHex;
+    const oldHover = this.#hoverHex;
     this.#hoverHex = hoverHex;
 
     if (oldHover === this.#hoverHex) {
       return oldHover;
     }
 
-    if (this.#hoverHex && this.hasSelection() && !this.#hoverHex.isEmpty() 
+    if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)) {
+      // console.log(`We have a move hover hex! ${this.#hoverHex}`);
       this.#hoverHex.setMoveHover(true);
     }
 
@@ -88,5 +89,9 @@ class Board {
     }
 
     return allTheHexes;
-  }  
+  }
+
+  getSelectedHex() {
+    return this.#selectedHex;
+  }
 }

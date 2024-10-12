@@ -13,7 +13,8 @@ hexDraw.setShowHexCoords(true);
 
 var unitDraw = new UnitDrawer(hexDraw);
 var selectionDraw = new SelectionDrawer(hexDraw);
-const drawers = [hexDraw, selectionDraw, unitDraw];
+const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
+const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw];
 
 let myHex = board.getHex(5, 5);
 myHex.addUnit(new Unit());
@@ -103,7 +104,7 @@ function mouseMoved() {
     return;
   }
 
-  drawHexNeighborhood([oldHover, hoverHex]);
+  drawHexNeighborhood([oldHover, hoverHex, board.getSelectedHex()]);
 }
 
 function __mouseMoved() {
