@@ -26,26 +26,34 @@ class Board {
   }
 
   selectHex(hexToSelect) {
-      if (hexToSelect === this.#selectedHex) return;
-      
-      const oldSelection = this.#selectedHex;
+    if (hexToSelect === this.#selectedHex) return;
+    
+    const oldSelection = this.#selectedHex;
 
-      if (!oldSelection) {
-        // nothing
-      } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)) {
-        console.log('Move did done.');
-        const units = oldSelection.getUnits();
-        units[0].addToMovePath(oldSelection);
-        units[0].addToMovePath(hexToSelect);
-        return oldSelection;
-      } else {
-        oldSelection.setSelected(false);
-      }
+    if (!oldSelection) {
+      // nothing
+    } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)) {
+      const units = oldSelection.getUnits();
+      console.log(`Moving unit ${units[0]}.`);
+      this.moveUnit(units[0], oldSelection, hexToSelect);
+      // units[0].addToMovePath(oldSelection);
+      // units[0].addToMovePath(hexToSelect);
+      oldSelection.setSelected(false);
+      hexToSelect.setSelected(true);
+      this.setHoverHex(undefined);
+    } else {
+      oldSelection.setSelected(false);
+    }
 
-      this.#selectedHex = hexToSelect;
-      if (hexToSelect) this.#selectedHex.setSelected(true);
-      
-      return oldSelection;
+    this.#selectedHex = hexToSelect;
+    if (hexToSelect) this.#selectedHex.setSelected(true);
+    
+    return oldSelection;
+  }
+
+  moveUnit(unit, oldHex, newHex) {
+    oldHex.removeUnit(unit);
+    newHex.addUnit(unit);
   }
 
   hasSelection() {

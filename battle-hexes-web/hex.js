@@ -36,6 +36,15 @@ class Hex {
     this.#units.push(unit);
   }
 
+  removeUnit(unit) {
+    let unitIndex = this.#units.indexOf(unit);
+    if (unitIndex != -1) {
+      this.#units.splice(unitIndex, 1);
+    } else {
+      console.warn(`Did not find unit ${unit} to remove!`);
+    }
+  }
+
   getUnits() {
     return this.#units;
   }
