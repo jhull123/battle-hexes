@@ -14,6 +14,14 @@ class Unit {
   }
 
   addToMovePath(hexToMoveTo) {
-    this.#movePath.add(hexToMoveTo);
+    this.#movePath.push(hexToMoveTo);
+  }
+
+  getMovePath() {
+    return this.#movePath;
+  }
+
+  hasMovePath() {
+    return this.#movePath.length > 0;
   }
 }

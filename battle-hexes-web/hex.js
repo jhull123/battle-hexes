@@ -2,14 +2,14 @@ class Hex {
   #units;
   #adjacentHexCoords;
   #selected;
-  #moveHover;
+  #moveHoverFromHex;
 
   constructor(row, column) {
     this.row = row;
     this.column = column;
     this.#units = [];
     this.#selected = false;
-    this.#moveHover = false;
+    this.#moveHoverFromHex = undefined;
 
     if (column % 2 === 0) {
       this.#adjacentHexCoords = new Set([
@@ -65,11 +65,20 @@ class Hex {
     this.#selected = select;
   }
 
-  setMoveHover(moveHover) {
-    this.#moveHover = moveHover;
+  setMoveHoverFromHex(moveHoverFromHex) {
+    this.#moveHoverFromHex = moveHoverFromHex;
   }
 
-  isMoveHover() {
-    return this.#moveHover;
+  getMoveHoverFromHex() {
+    return this.#moveHoverFromHex;
+  }
+
+  hasUnitMoves() {
+    for (let unit of this.#units) {
+      if (unit.hasMovePath()) {
+        return true;
+      }
+    }
+    return false;
   }
 }

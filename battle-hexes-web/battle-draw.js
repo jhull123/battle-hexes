@@ -7,14 +7,15 @@ const menuWidth = 300;
 const hexRows = 10;
 const canvasMargin = 20;
 
-var board = new Board(10, 10);
-var hexDraw = new HexDrawer(50);
+const board = new Board(10, 10);
+const hexDraw = new HexDrawer(50);
 hexDraw.setShowHexCoords(true);
 
-var unitDraw = new UnitDrawer(hexDraw);
-var selectionDraw = new SelectionDrawer(hexDraw);
+const unitDraw = new UnitDrawer(hexDraw);
+const selectionDraw = new SelectionDrawer(hexDraw);
 const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
-const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw];
+const moveArrowDraw = new MoveArrowDrawer(hexDraw);
+const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
 
 let myHex = board.getHex(5, 5);
 myHex.addUnit(new Unit());
@@ -107,51 +108,6 @@ function mouseMoved() {
   drawHexNeighborhood([oldHover, hoverHex, board.getSelectedHex()]);
 }
 
-function __mouseMoved() {
-  let mouseHexPos = pixelToHex(mouseX, mouseY);
-  let hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
-
-  let oldHover = board.dehover();
-  if (oldHover && oldHover !== hoverHex) {
-    drawAdjacent(oldHover);
-    drawHex(oldHover);
-  }
-
-  if (board.hasSelection() && !board.selectedHex.isEmpty()) {
-    if (board.selectedHex.isAdjacent(hoverHex)) {
-      console.log(`Adjacent hover hex is ${hoverHex.coordsHumanString()}`);
-      board.setMoveHoverHex(hoverHex);
-      hoverHightlight = true;
-    }
-  }
-
-  if (hoverHex === undefined) {
-    return;
-  }
-
-  drawAdjacent(hoverHex);
-  drawHex(hoverHex);
-
-  if (board.hasSelection()) {
-    drawHex(board.selectedHex);
-  }
-
-  if (board.hasSelection() && hoverHex !== undefined && board.selectedHex !== hoverHex && !board.selectedHex.isEmpty()) {
-    drawMoveArrow(board.selectedHex, hoverHex);
-  }
-}
-
-function drawAdjacent(aHex) {
-  for (let strCoords of aHex.getAdjacentHexCoords()) {
-    let someHex = board.getHexStrCoord(strCoords);
-    if (someHex) {
-      if (someHex) {
-        drawHex(someHex);
-      }
-    }
-  }  
-}
-
 function pixelToHex2(x, y) {
   let col = Math.floor(x / hexHeight);
   let row;
@@ -164,35 +120,4 @@ function pixelToHex2(x, y) {
   }
 
   return { row: row, col: col };
-}
-
-function drawMoveArrow(fromHex, toHex) {
-  stroke(0, 208, 0);
-  strokeWeight(2);
-  fill(16, 240, 16);
-
-  let toCenter = hexCenterRc(toHex.row, toHex.column);
-  let fromCenter = hexCenterRc(fromHex.row, fromHex.column);
-
-  let angle = atan2(toCenter.y - fromCenter.y, toCenter.x - fromCenter.x) + 0.5 * PI;
-
-  let arrowLength = hexRadius;
-  let arrowWidth = hexRadius / 2;
-  let arrowTop = -0.75 * hexDiameter;
-
-  push();
-  translate(fromCenter.x, fromCenter.y);
-  rotate(angle);
-
-  beginShape();
-  vertex(0, arrowTop); // top of the arrow
-  vertex(-arrowWidth / 2, arrowTop + arrowLength / 3);  // Left side 1
-  vertex(-arrowWidth / 4, arrowTop + arrowLength / 3);  // Left side 2
-  vertex(-arrowWidth / 4, arrowTop + arrowLength);      // Left side 3
-  vertex(arrowWidth / 4, arrowTop + arrowLength);       // Right side 3
-  vertex(arrowWidth / 4, arrowTop + arrowLength / 3);   // Right side 2
-  vertex(arrowWidth / 2, arrowTop + arrowLength / 3);   // Right side 1
-  endShape(CLOSE);
-
-  pop();
 }

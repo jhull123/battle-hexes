@@ -28,8 +28,19 @@ class Board {
   selectHex(hexToSelect) {
       if (hexToSelect === this.#selectedHex) return;
       
-      let oldSelection = this.#selectedHex;
-      if (oldSelection) oldSelection.setSelected(false);
+      const oldSelection = this.#selectedHex;
+
+      if (!oldSelection) {
+        // nothing
+      } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)) {
+        console.log('Move did done.');
+        const units = oldSelection.getUnits();
+        units[0].addToMovePath(oldSelection);
+        units[0].addToMovePath(hexToSelect);
+        return oldSelection;
+      } else {
+        oldSelection.setSelected(false);
+      }
 
       this.#selectedHex = hexToSelect;
       if (hexToSelect) this.#selectedHex.setSelected(true);
@@ -49,14 +60,15 @@ class Board {
       return oldHover;
     }
 
-    if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty() 
+    if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
+        && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)) {
       // console.log(`We have a move hover hex! ${this.#hoverHex}`);
-      this.#hoverHex.setMoveHover(true);
+      this.#hoverHex.setMoveHoverFromHex(board.getSelectedHex());
     }
 
     if (oldHover) {
-      oldHover.setMoveHover(false);
+      oldHover.setMoveHoverFromHex(undefined);
     }
 
     return oldHover;
