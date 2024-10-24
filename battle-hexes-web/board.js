@@ -52,6 +52,7 @@ class Board {
   }
 
   moveUnit(unit, oldHex, newHex) {
+    unit.move(newHex);
     oldHex.removeUnit(unit);
     newHex.addUnit(unit);
   }

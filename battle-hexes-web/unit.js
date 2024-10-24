@@ -1,8 +1,16 @@
 class Unit {
   #movePath = [];
   #containingHex = undefined;
+  #attack;
+  #defense;
+  #move;
+  #movesRemaining;
 
-  constructor() {
+  constructor(attack, defense, move) {
+    this.#attack = attack;
+    this.#defense = defense;
+    this.#move = move;
+    this.#movesRemaining = move;
   }
 
   getContainingHex() {
@@ -23,5 +31,14 @@ class Unit {
 
   hasMovePath() {
     return this.#movePath.length > 0;
+  }
+
+  move(destinationHex) {
+    if (this.#movesRemaining <= 0) {
+      throw new Error('No movement points remaining!');
+    }
+
+    this.setContainingHex(destinationHex);
+    this.#movesRemaining--;
   }
 }
