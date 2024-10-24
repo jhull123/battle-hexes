@@ -1,0 +1,3 @@
+const UnitTypes = {
+  INFANTRY: 'Infantry'
+}

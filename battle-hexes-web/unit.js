@@ -1,12 +1,16 @@
 class Unit {
   #movePath = [];
   #containingHex = undefined;
+  #name;
+  #type;
   #attack;
   #defense;
   #move;
   #movesRemaining;
 
-  constructor(attack, defense, move) {
+  constructor(name, type, attack, defense, move) {
+    this.name = name;
+    this.type = type;
     this.#attack = attack;
     this.#defense = defense;
     this.#move = move;
@@ -40,5 +44,17 @@ class Unit {
 
     this.setContainingHex(destinationHex);
     this.#movesRemaining--;
+  }
+
+  getMovement() {
+    return this.#move;
+  }
+
+  getDefense() {
+    return this.#defense;
+  }
+
+  getAttack() {
+    return this.#attack;
   }
 }

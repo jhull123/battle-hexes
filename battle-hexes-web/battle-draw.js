@@ -18,7 +18,7 @@ const moveArrowDraw = new MoveArrowDrawer(hexDraw);
 const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
 
 let myHex = board.getHex(5, 5);
-myHex.addUnit(new Unit(attack=5, defense=4, move=4));
+myHex.addUnit(new Unit('Assault Infantry', UnitTypes.INFANTRY, attack=5, defense=4, move=4));
 
 function setup() {
   let canvas = createCanvas(getCanvasWidth(), getCanvasHeight());

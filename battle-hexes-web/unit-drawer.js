@@ -12,12 +12,12 @@ class UnitDrawer {
   draw(aHex) {
     let hexCenter = this.#hexDrawer.hexCenter(aHex);
     for (let aUnit of aHex.getUnits()) {
-      this.drawCounter(hexCenter.x, hexCenter.y);
+      this.drawCounter(aUnit, hexCenter.x, hexCenter.y);
     }
   }
 
   /* x and y are the center of the square. side is the square side length. */
-  drawCounter(x, y) {
+  drawCounter(aUnit, x, y) {
     stroke(96, 32, 32);
     strokeWeight(3);
     fill(200, 16, 16);
@@ -26,7 +26,7 @@ class UnitDrawer {
     rect(x, y, this.#counterSide, this.#counterSide, 3);
 
     this.#drawInfantrySymbol(x, y, this.#counterSide / 2, this.#counterSideThird);
-    this.#drawUnitStats(x, y);
+    this.#drawUnitStats(aUnit, x, y);
     this.#drawUnitSize(x, y);
   }
 
@@ -46,12 +46,12 @@ class UnitDrawer {
     line(x + halfWidth, y - halfHeight, x - halfWidth, y + halfHeight);
   }
   
-  #drawUnitStats(x, y) {
+  #drawUnitStats(aUnit, x, y) {
     fill(255);
     noStroke();
     textSize(14);
     textAlign(CENTER, CENTER);    
-    text('4-4-4', x, y + this.#counterSideThird);
+    text(`${aUnit.getAttack()}-${aUnit.getDefense()}-${aUnit.getMovement()}`, x, y + this.#counterSideThird);
   }
   
   #drawUnitSize(x, y) {
