@@ -16,6 +16,7 @@ const selectionDraw = new SelectionDrawer(hexDraw);
 const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
 const moveArrowDraw = new MoveArrowDrawer(hexDraw);
 const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
+const menu = new Menu(board);
 
 let myHex = board.getHex(5, 5);
 myHex.addUnit(new Unit('Assault Infantry', UnitTypes.INFANTRY, attack=5, defense=4, move=4));
@@ -63,15 +64,7 @@ function mousePressed() {
   const selHexContentsDiv = document.getElementById('selHexContents');
   const selHexCoordDiv = document.getElementById('selHexCoord');
 
-  if (clickedHex === undefined) {
-    // nothing here!
-  } else if (clickedHex.isEmpty()) {
-    selHexContentsDiv.innerHTML = 'Empty Hex';
-    selHexCoordDiv.innerHTML = `Hex Coord: (${clickedHexPos.row}, ${clickedHexPos.col})`;
-  } else {
-    selHexContentsDiv.innerHTML = 'Hex contains a unit.';
-    selHexCoordDiv.innerHTML = `Hex Coord: (${clickedHexPos.row}, ${clickedHexPos.col})`;
-  }
+  menu.updateMenu();
 }
 
 function drawHexNeighborhood(someHexes) {
