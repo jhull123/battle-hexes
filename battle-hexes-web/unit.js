@@ -46,6 +46,10 @@ class Unit {
     this.#movesRemaining--;
   }
 
+  getMovesRemaining() {
+    return this.#movesRemaining;
+  }
+
   getMovement() {
     return this.#move;
   }

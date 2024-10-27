@@ -32,7 +32,8 @@ class Board {
 
     if (!oldSelection) {
       // nothing
-    } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)) {
+    } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
+        && oldSelection.getUnits()[0].getMovesRemaining() > 0) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       this.moveUnit(units[0], oldSelection, hexToSelect);
