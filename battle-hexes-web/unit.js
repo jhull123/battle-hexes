@@ -50,6 +50,10 @@ class Unit {
     return this.#movesRemaining;
   }
 
+  resetMovesRemaining() {
+    this.#movesRemaining = this.getMovement();
+  }
+
   getMovement() {
     return this.#move;
   }

@@ -2,14 +2,23 @@ class Board {
   #hexMap;
   #selectedHex;
   #hoverHex;
+  #units;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
+    this.#units = new Set();
 
     for (let row = 0; row < rows; row++) {
       for (let column = 0; column < columns; column++) {
         this.#hexMap.set(`${row},${column}`, new Hex(row, column));
       }
+    }
+  }
+
+  addUnit(unit, row, column) {
+    this.#units.add(unit);
+    if (row && column) {
+      this.getHex(row, column).addUnit(unit);
     }
   }
 
@@ -115,5 +124,11 @@ class Board {
 
   getSelectedHex() {
     return this.#selectedHex;
+  }
+
+  resetMovesRemaining() {
+    for (let unit of this.#units) {
+      unit.resetMovesRemaining();
+    }
   }
 }

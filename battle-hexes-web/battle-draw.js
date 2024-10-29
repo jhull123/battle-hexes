@@ -18,11 +18,13 @@ const moveArrowDraw = new MoveArrowDrawer(hexDraw);
 const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
 const menu = new Menu(board);
 
-let myHex = board.getHex(5, 5);
-myHex.addUnit(new Unit('Assault Infantry', UnitTypes.INFANTRY, attack=5, defense=4, move=4));
+const sampleUnit = new Unit('Assault Infantry', UnitTypes.INFANTRY, attack=5, defense=4, move=4); 
+board.addUnit(sampleUnit, 5, 5);
+
+let canvas;
 
 function setup() {
-  let canvas = createCanvas(getCanvasWidth(), getCanvasHeight());
+  canvas = createCanvas(getCanvasWidth(), getCanvasHeight());
   canvas.parent('canvas-container'); 
   noLoop(); // So that it draws only once
 }
@@ -53,6 +55,12 @@ function windowResized() {
 }
 
 function mousePressed() {
+  const canvasBounds = canvas.elt.getBoundingClientRect();
+  if (mouseX > canvasBounds.right - 10) {
+    // non-canvas click
+    return;
+  }
+  
   let clickedHexPos = pixelToHex(mouseX, mouseY);
   console.log("Clicked on hex:", clickedHexPos.row, clickedHexPos.col);
 

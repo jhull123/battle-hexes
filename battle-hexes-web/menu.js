@@ -26,4 +26,9 @@ class Menu {
       this.#unitMovesLeftDiv.innerHTML = `Moves Left: ${selectedHex.getUnits()[0].getMovesRemaining()}`;
     }
   }
+
+  doEndTurn() {
+    this.#board.resetMovesRemaining();
+    this.updateMenu();
+  }
 }
