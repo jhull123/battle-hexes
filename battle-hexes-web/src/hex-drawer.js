@@ -1,10 +1,12 @@
-class HexDrawer {
+export class HexDrawer {
+  #p;
   #hexRadius;
   #hexHeight;
   #hexDiameter;
   #showHexCoords;
   
-  constructor(hexRadius) {
+  constructor(p, hexRadius) {
+    this.#p = p;
     this.#hexRadius = hexRadius;
     this.#hexHeight = Math.sqrt(3) * hexRadius;
     this.#hexDiameter = hexRadius * 2;
@@ -18,23 +20,23 @@ class HexDrawer {
 
   drawHex(hexToDraw, strokeColor, strokeSize, fillColor) {
     let hexCenter = this.hexCenter(hexToDraw);
-    stroke(strokeColor);
-    strokeWeight(strokeSize);
+    this.#p.stroke(strokeColor);
+    this.#p.strokeWeight(strokeSize);
 
     if (fillColor) {
-      fill(fillColor);
+      this.#p.fill(fillColor);
     } else {
-      noFill();
+      this.#p.noFill();
     }
 
-    beginShape();
+    this.#p.beginShape();
     for (let i = 0; i < 6; i++) {
-      let angle = TWO_PI / 6 * i;
-      let vx = hexCenter.x + cos(angle) * this.#hexRadius;
-      let vy = hexCenter.y + sin(angle) * this.#hexRadius;
-      vertex(vx, vy);
+      let angle = this.#p.TWO_PI / 6 * i;
+      let vx = hexCenter.x + this.#p.cos(angle) * this.#hexRadius;
+      let vy = hexCenter.y + this.#p.sin(angle) * this.#hexRadius;
+      this.#p.vertex(vx, vy);
     }
-    endShape(CLOSE);
+    this.#p.endShape(this.#p.CLOSE);
 
     if (this.#showHexCoords) {
       this.#drawHexCoords(hexToDraw, hexCenter);
@@ -42,11 +44,11 @@ class HexDrawer {
   }
 
   #drawHexCoords(hexToDraw, hexPosition) {
-    fill(0);
-    noStroke();  // No outline for the text
-    textSize(16);
-    textAlign(CENTER, CENTER);  // Center align text horizontally and vertically    
-    text(`${hexToDraw.row}, ${hexToDraw.column}`, hexPosition.x, hexPosition.y);  
+    this.#p.fill(0);
+    this.#p.noStroke();  // No outline for the text
+    this.#p.textSize(16);
+    this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);  // Center align text horizontally and vertically    
+    this.#p.text(`${hexToDraw.row}, ${hexToDraw.column}`, hexPosition.x, hexPosition.y);  
   }
 
   hexCenter(hexToDraw) {

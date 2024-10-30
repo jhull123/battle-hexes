@@ -1,4 +1,4 @@
-class SelectionDrawer {
+export class SelectionDrawer {
   #hexDrawer;
 
   constructor(hexDrawer) {
@@ -12,7 +12,7 @@ class SelectionDrawer {
   }
 }
 
-class MoveSelectionDrawer {
+export class MoveSelectionDrawer {
   #hexDrawer;
 
   constructor(hexDrawer) {

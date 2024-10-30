@@ -1,3 +1,22 @@
+import { Board } from '../src/board.js';
+import { Unit } from '../src/unit.js';
+
+describe('addUnit', () => {
+  let board, unit;
+
+  beforeEach(() => {
+    board = new Board();
+    unit = new Unit();
+  });
+
+  test('adds unit to #units without row and column', () => {
+    board.addUnit(unit);
+
+    expect(board.getUnits().has(unit)).toBe(true); // Check unit added to units set
+  });
+});
+
+/*
 const { Hex } = require('../battle'); // Assuming you are exporting Hex from battle.js
 
 describe('Hex class', () => {
@@ -7,3 +26,4 @@ describe('Hex class', () => {
     expect(hex.y).toBe(5);
   });
 });
+*/

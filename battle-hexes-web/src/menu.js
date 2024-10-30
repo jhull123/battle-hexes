@@ -1,4 +1,4 @@
-class Menu {
+export class Menu {
   #board;
   #selHexContentsDiv;
   #selHexCoordDiv;

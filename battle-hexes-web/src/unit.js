@@ -1,4 +1,4 @@
-class Unit {
+export class Unit {
   #movePath = [];
   #containingHex = undefined;
   #name;

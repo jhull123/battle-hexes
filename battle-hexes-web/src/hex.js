@@ -1,4 +1,4 @@
-class Hex {
+export class Hex {
   #units;
   #adjacentHexCoords;
   #selected;

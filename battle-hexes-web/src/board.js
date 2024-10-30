@@ -1,4 +1,6 @@
-class Board {
+import { Hex } from './hex.js';
+
+export class Board {
   #hexMap;
   #selectedHex;
   #hoverHex;
@@ -17,9 +19,13 @@ class Board {
 
   addUnit(unit, row, column) {
     this.#units.add(unit);
-    if (row && column) {
+    if (row !== undefined && column !== undefined) {
       this.getHex(row, column).addUnit(unit);
     }
+  }
+
+  getUnits() {
+    return this.#units;
   }
 
   getHex(row, column) {
@@ -83,7 +89,7 @@ class Board {
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)) {
       // console.log(`We have a move hover hex! ${this.#hoverHex}`);
-      this.#hoverHex.setMoveHoverFromHex(board.getSelectedHex());
+      this.#hoverHex.setMoveHoverFromHex(this.getSelectedHex());
     }
 
     if (oldHover) {
@@ -103,7 +109,7 @@ class Board {
     hexSet.add(aHex);
 
     for (let hexCoords of aHex.getAdjacentHexCoords()) {
-      let aHex = board.getHexStrCoord(hexCoords);
+      let aHex = this.getHexStrCoord(hexCoords);
       if (aHex) {
         hexSet.add(aHex);
       }
@@ -116,7 +122,7 @@ class Board {
     let allTheHexes = new Set();
   
     for (let targetHex of someHexes) {
-      board.getHexAndAdjacent(targetHex).forEach(neighborHex => allTheHexes.add(neighborHex));
+      this.getHexAndAdjacent(targetHex).forEach(neighborHex => allTheHexes.add(neighborHex));
     }
 
     return allTheHexes;
