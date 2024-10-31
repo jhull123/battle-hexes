@@ -2,19 +2,33 @@ export class Unit {
   #movePath = [];
   #containingHex = undefined;
   #name;
+  #faction;
   #type;
   #attack;
   #defense;
   #move;
   #movesRemaining;
 
-  constructor(name, type, attack, defense, move) {
-    this.name = name;
-    this.type = type;
+  constructor(name, faction, type, attack, defense, move) {
+    this.#name = name;
+    this.#faction = faction;
+    this.#type = type;
     this.#attack = attack;
     this.#defense = defense;
     this.#move = move;
     this.#movesRemaining = move;
+  }
+
+  getName() {
+    return this.#name;
+  }
+
+  getFaction() {
+    return this.#faction;
+  }
+
+  getType() {
+    return this.#type;
   }
 
   getContainingHex() {

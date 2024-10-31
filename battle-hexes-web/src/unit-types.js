@@ -1,3 +1,4 @@
 export const UnitTypes = {
-  INFANTRY: 'Infantry'
+  INFANTRY: 'Infantry',
+  RECON: 'Reconnaissance'
 }

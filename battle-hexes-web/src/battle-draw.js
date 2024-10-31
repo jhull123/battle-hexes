@@ -8,6 +8,12 @@ import { MoveArrowDrawer } from './move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import { Unit } from './unit.js';
 import { UnitTypes } from './unit-types.js';
+import { Faction } from './faction.js'
+
+const factions = {
+  RED: new Faction ('Red Faction', '#C81010' /* red */),
+  BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */)
+}
 
 new p5((p) => {
   const hexRadius = 50;
@@ -28,9 +34,12 @@ new p5((p) => {
   const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
   const menu = new Menu(board);
   
-  const sampleUnit = new Unit('Assault Infantry', UnitTypes.INFANTRY, 5, 4, 4); 
-  board.addUnit(sampleUnit, 9, 0);
+  const blueUnit = new Unit('Assault Infantry', factions.BLUE, UnitTypes.INFANTRY, 5, 4, 4); 
+  board.addUnit(blueUnit, 0, 6);
   
+  const redUnit = new Unit('Scout Recon', factions.RED, UnitTypes.RECON, 2, 2, 7);
+  board.addUnit(redUnit, 9, 2);
+
   let canvas;
 
   p.setup = function() {
