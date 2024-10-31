@@ -1,12 +1,17 @@
 import { Hex } from './hex.js';
 
 export class Board {
+  #factions;
   #hexMap;
   #selectedHex;
   #hoverHex;
   #units;
+  #factionTurn; // the faction whose turn it is
 
-  constructor(rows, columns) {
+  constructor(rows, columns, factions) {
+    this.#factions = factions;
+    this.#factionTurn = factions[0];
+
     this.#hexMap = new Map();
     this.#units = new Set();
 
@@ -15,6 +20,13 @@ export class Board {
         this.#hexMap.set(`${row},${column}`, new Hex(row, column));
       }
     }
+  }
+
+  endTurn() {
+    this.resetMovesRemaining();
+    let nextFactionIdx = this.#factions.indexOf(this.#factionTurn) + 1
+    nextFactionIdx = nextFactionIdx < this.#factions.length ? nextFactionIdx : 0;
+    return this.#factionTurn = this.#factions[nextFactionIdx];
   }
 
   addUnit(unit, row, column) {

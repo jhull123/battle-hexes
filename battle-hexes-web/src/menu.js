@@ -28,7 +28,12 @@ export class Menu {
   }
 
   doEndTurn() {
-    this.#board.resetMovesRemaining();
+    const currentFaction = this.#board.endTurn();
+    this.setCurrentTurn(currentFaction);
     this.updateMenu();
+  }
+
+  setCurrentTurn(faction) {
+    document.getElementById('currentTurnLabel').innerHTML = faction.getName()
   }
 }

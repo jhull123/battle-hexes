@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "test": "jest",
-    "build": "webpack"
+    "build": "webpack",
+    "test-and-build": "npm test && npm run build"
   },
   "keywords": [],
   "author": "",

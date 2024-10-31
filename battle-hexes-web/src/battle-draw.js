@@ -8,11 +8,11 @@ import { MoveArrowDrawer } from './move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import { Unit } from './unit.js';
 import { UnitTypes } from './unit-types.js';
-import { Faction } from './faction.js'
+import { Faction, playerTypes } from './faction.js'
 
 const factions = {
-  RED: new Faction ('Red Faction', '#C81010' /* red */),
-  BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */)
+  RED: new Faction ('Red Faction', '#C81010' /* red */, playerTypes.CPU),
+  BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */, playerTypes.HUMAN)
 }
 
 new p5((p) => {
@@ -23,7 +23,7 @@ new p5((p) => {
   const hexRows = 10;
   const canvasMargin = 20;
   
-  const board = new Board(10, 10);
+  const board = new Board(10, 10, [factions.RED, factions.BLUE]);
   const hexDraw = new HexDrawer(p, 50);
   hexDraw.setShowHexCoords(true);
   
@@ -46,7 +46,8 @@ new p5((p) => {
     console.log("Let's set it up! ");
     document.getElementById('endTurnBtn').addEventListener('click', menu.doEndTurn.bind(menu));
     canvas = p.createCanvas(getCanvasWidth(), getCanvasHeight());
-    canvas.parent('canvas-container'); 
+    canvas.parent('canvas-container');
+    menu.setCurrentTurn(factions.RED);
     p.noLoop(); // So that it draws only once  
   };
 
