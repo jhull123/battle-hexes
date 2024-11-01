@@ -149,4 +149,9 @@ export class Board {
       unit.resetMovesRemaining();
     }
   }
+
+  ownHexSelected() {
+    const selectedUnits = this.#selectedHex.getUnits();
+    return selectedUnits && selectedUnits.length > 0 && selectedUnits[0].getFaction() === this.#factionTurn;
+  }
 }

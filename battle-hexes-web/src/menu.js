@@ -19,11 +19,17 @@ export class Menu {
     } else if (selectedHex.isEmpty()) {
       this.#selHexContentsDiv.innerHTML = 'Empty Hex';
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
-      this.#unitMovesLeftDiv.innerHTML = '';
     } else {
       this.#selHexContentsDiv.innerHTML = 'Hex contains a unit.';
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
+    }
+
+    if (this.#board.ownHexSelected()) {
+      // friendly hex selected
       this.#unitMovesLeftDiv.innerHTML = `Moves Left: ${selectedHex.getUnits()[0].getMovesRemaining()}`;
+    } else {
+      // opposing hex selected
+      this.#unitMovesLeftDiv.innerHTML = '';
     }
   }
 
