@@ -11,8 +11,8 @@ import { UnitTypes } from './unit-types.js';
 import { Faction, playerTypes } from './faction.js'
 
 const factions = {
-  RED: new Faction ('Red Faction', '#C81010' /* red */, playerTypes.CPU),
-  BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */, playerTypes.HUMAN)
+  RED: new Faction ('Red Faction', '#C81010' /* red */, playerTypes.HUMAN),
+  BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */, playerTypes.CPU)
 }
 
 new p5((p) => {

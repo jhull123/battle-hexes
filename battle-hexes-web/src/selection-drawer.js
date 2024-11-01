@@ -20,7 +20,7 @@ export class MoveSelectionDrawer {
   }
 
   draw(aHex) {
-    if (aHex.getMoveHoverFromHex() && aHex.getMoveHoverFromHex().getUnits()[0].getMovesRemaining() > 0) {
+    if (aHex.getMoveHoverFromHex() && aHex.getMoveHoverFromHex().getUnits()[0].isMovable()) {
       // console.log('drawing move hover selection ' + aHex);
       this.#hexDrawer.drawHex(aHex, '#10F010', 6);
     }

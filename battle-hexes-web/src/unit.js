@@ -1,3 +1,5 @@
+import { playerTypes } from "./faction";
+
 export class Unit {
   #movePath = [];
   #containingHex = undefined;
@@ -78,5 +80,9 @@ export class Unit {
 
   getAttack() {
     return this.#attack;
+  }
+
+  isMovable() {
+    return this.#faction.getPlayerType() === playerTypes.HUMAN && this.getMovesRemaining() > 0; 
   }
 }
