@@ -62,7 +62,7 @@ export class Board {
     } else if (this.isOppositionHex(oldSelection)) {
       oldSelection.setSelected(false);
     } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
-        && oldSelection.getUnits()[0].isMovable()) {
+        && oldSelection.getUnits()[0].isMovable() && !this.isOppositionHex(hexToSelect)) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       this.moveUnit(units[0], oldSelection, hexToSelect);
