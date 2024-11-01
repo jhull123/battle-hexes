@@ -59,6 +59,8 @@ export class Board {
 
     if (!oldSelection) {
       // nothing
+    } else if (this.isOppositionHex(oldSelection)) {
+      oldSelection.setSelected(false);
     } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
         && oldSelection.getUnits()[0].getMovesRemaining() > 0) {
       const units = oldSelection.getUnits();
@@ -99,7 +101,9 @@ export class Board {
 
     if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
         && !this.#selectedHex.hasUnitMoves() 
-        && this.#hoverHex.isAdjacent(this.#selectedHex)) {
+        && this.#hoverHex.isAdjacent(this.#selectedHex)
+        && this.isOwnHexSelected()
+        && !this.isOppositionHex(hoverHex)) {
       // console.log(`We have a move hover hex! ${this.#hoverHex}`);
       this.#hoverHex.setMoveHoverFromHex(this.getSelectedHex());
     }
@@ -150,8 +154,22 @@ export class Board {
     }
   }
 
-  ownHexSelected() {
+  isOwnHexSelected() {
     const selectedUnits = this.#selectedHex.getUnits();
     return selectedUnits && selectedUnits.length > 0 && selectedUnits[0].getFaction() === this.#factionTurn;
+  }
+
+  isOwnHex(aHex) {
+    if (aHex.getUnits().length == 0) {
+      return false;
+    }
+    return aHex.getUnits[0].getFaction() === this.#factionTurn;
+  }
+
+  isOppositionHex(aHex) {
+    if (aHex.getUnits().length == 0) {
+      return false;
+    }
+    return aHex.getUnits()[0].getFaction() !== this.#factionTurn;
   }
 }

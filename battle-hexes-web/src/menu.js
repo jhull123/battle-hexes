@@ -24,7 +24,7 @@ export class Menu {
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
     }
 
-    if (this.#board.ownHexSelected()) {
+    if (this.#board.isOwnHexSelected()) {
       // friendly hex selected
       this.#unitMovesLeftDiv.innerHTML = `Moves Left: ${selectedHex.getUnits()[0].getMovesRemaining()}`;
     } else {
