@@ -1,4 +1,6 @@
 import { Hex } from './hex.js';
+import { gamePhases } from './game-phases.js';
+import { Combat } from './combat.js';
 
 export class Board {
   #factions;
@@ -7,10 +9,12 @@ export class Board {
   #hoverHex;
   #units;
   #factionTurn; // the faction whose turn it is
+  #gamePhase; // movement, combat, etc.
 
   constructor(rows, columns, factions) {
     this.#factions = factions;
     this.#factionTurn = factions[0];
+    this.#gamePhase = gamePhases.MOVE;
 
     this.#hexMap = new Map();
     this.#units = new Set();
@@ -171,5 +175,9 @@ export class Board {
       return false;
     }
     return aHex.getUnits()[0].getFaction() !== this.#factionTurn;
+  }
+
+  getCombat() {
+    return new Combat(this.getUnits());
   }
 }

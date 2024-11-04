@@ -35,10 +35,10 @@ new p5((p) => {
   const menu = new Menu(board);
   
   const blueUnit = new Unit('Assault Infantry', factions.BLUE, UnitTypes.INFANTRY, 5, 4, 4); 
-  board.addUnit(blueUnit, 0, 6);
+  board.addUnit(blueUnit, 3, 5);
   
   const redUnit = new Unit('Scout Recon', factions.RED, UnitTypes.RECON, 2, 2, 7);
-  board.addUnit(redUnit, 9, 2);
+  board.addUnit(redUnit, 6, 4);
 
   let canvas;
 
