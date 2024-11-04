@@ -21,6 +21,10 @@ export class Unit {
     this.#movesRemaining = move;
   }
 
+  toString() {
+    return `${this.#name} (${this.#faction.getName()})`
+  }
+
   getName() {
     return this.#name;
   }
@@ -53,13 +57,24 @@ export class Unit {
     return this.#movePath.length > 0;
   }
 
-  move(destinationHex) {
+  move(destinationHex, adjacentHexes) {
     if (this.#movesRemaining <= 0) {
       throw new Error('No movement points remaining!');
     }
 
     this.setContainingHex(destinationHex);
-    this.#movesRemaining--;
+
+    for (let adjacentHex of adjacentHexes) {
+      let occupier = adjacentHex.getOccupier();
+      if (occupier !== null && occupier !== this.#faction) {
+        this.#movesRemaining = 0;
+        break;
+      }
+    }
+
+    if (this.#movesRemaining > 0) {
+      this.#movesRemaining--;
+    }
   }
 
   getMovesRemaining() {

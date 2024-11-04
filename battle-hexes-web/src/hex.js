@@ -90,4 +90,8 @@ export class Hex {
     }
     return false;
   }
+
+  getOccupier() {
+    return this.#units.length > 0 ? this.#units[0].getFaction() : null;
+  }
 }

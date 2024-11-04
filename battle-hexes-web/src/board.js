@@ -86,7 +86,7 @@ export class Board {
   }
 
   moveUnit(unit, oldHex, newHex) {
-    unit.move(newHex);
+    unit.move(newHex, this.getAdjacentHexes(newHex));
     oldHex.removeUnit(unit);
     newHex.addUnit(unit);
   }
@@ -120,13 +120,17 @@ export class Board {
   }
 
   getHexAndAdjacent(aHex) {
-    const hexSet = new Set();
-
     if (aHex === undefined) {
-      return hexSet;
+      return new Set();
     }
 
+    const hexSet = this.getAdjacentHexes(aHex);
     hexSet.add(aHex);
+    return hexSet;
+  }
+
+  getAdjacentHexes(aHex) {
+    const hexSet = new Set();
 
     for (let hexCoords of aHex.getAdjacentHexCoords()) {
       let aHex = this.getHexStrCoord(hexCoords);

@@ -37,14 +37,38 @@ describe('endTurn', () => {
   });
 });
 
-/*
-const { Hex } = require('../battle'); // Assuming you are exporting Hex from battle.js
+describe('getAdjacentHexes', () => {
+  let board;
 
-describe('Hex class', () => {
-  test('should create a Hex with the given coordinates', () => {
-    const hex = new Hex(3, 5);
-    expect(hex.x).toBe(3);
-    expect(hex.y).toBe(5);
+  beforeEach(() => {
+    board = new Board(10, 10, [new Faction(), new Faction()]);
+  });
+
+  test('getAdjacentHexesReturnsNeighboringHexes', () => {
+    const aHex = board.getHex(5, 5);
+    const adjacentHexes = board.getAdjacentHexes(aHex);
+    expect(adjacentHexes.size).toBe(6);
+    expect(adjacentHexes.has(board.getHex(4, 5))).toBe(true);
+    expect(adjacentHexes.has(board.getHex(5, 4))).toBe(true);
+    expect(adjacentHexes.has(board.getHex(6, 4))).toBe(true);
+    expect(adjacentHexes.has(board.getHex(6, 5))).toBe(true);
+    expect(adjacentHexes.has(board.getHex(6, 6))).toBe(true);
+    expect(adjacentHexes.has(board.getHex(5, 6))).toBe(true);
   });
 });
-*/
+
+describe('getHexAndAdjacent', () => {
+  let board;
+
+  beforeEach(() => {
+    board = new Board(10, 10, [new Faction(), new Faction()]);
+  });
+
+  test('getHexAndAdjacentReturnsHexAndNeighborings', () => {
+    const aHex = board.getHex(5, 5);
+    const adjacentHexes = board.getHexAndAdjacent(aHex);
+    expect(adjacentHexes.size).toBe(7);
+    expect(adjacentHexes.has(board.getHex(4, 5))).toBe(true);
+    expect(adjacentHexes.has(board.getHex(5, 5))).toBe(true);
+  });
+});
