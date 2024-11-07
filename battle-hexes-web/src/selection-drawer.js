@@ -7,7 +7,7 @@ export class SelectionDrawer {
 
   draw(aHex) {
     if (aHex.isSelected()) {
-      this.#hexDrawer.drawHex(aHex, '#10C010', 6);
+      this.#hexDrawer.drawHex(aHex, '#10C010', 5);
     }
   }
 }
@@ -22,7 +22,7 @@ export class MoveSelectionDrawer {
   draw(aHex) {
     if (aHex.getMoveHoverFromHex() && aHex.getMoveHoverFromHex().getUnits()[0].isMovable()) {
       // console.log('drawing move hover selection ' + aHex);
-      this.#hexDrawer.drawHex(aHex, '#10F010', 6);
+      this.#hexDrawer.drawHex(aHex, '#10F010', 5);
     }
   }
 }
@@ -36,7 +36,8 @@ export class CombatSelectionDrawer {
 
   draw(aHex) {
     if (aHex.hasCombat()) {
-      this.#hexDrawer.drawHex(aHex, '#FF1010', 2);
+      // console.log(`drawing combat selection for ${aHex.getRow()}, ${aHex.getColumn()}`);
+      this.#hexDrawer.drawHex(aHex, '#FF1010', 7);
     }
   }
 }

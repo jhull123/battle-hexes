@@ -35,7 +35,6 @@ new p5((p) => {
   const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
   const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
-  const overlayDrawers = [new CombatSelectionDrawer(hexDraw), selectionDraw];
   const menu = new Menu(board);
   
   const blueUnit = new Unit('Assault Infantry', factions.BLUE, UnitTypes.INFANTRY, 5, 4, 4); 
@@ -47,7 +46,7 @@ new p5((p) => {
   let canvas;
 
   p.setup = function() {
-    console.log("Let's set it up! ");
+    console.log("Let's set it up!");
     document.getElementById('endTurnBtn').addEventListener('click', menu.doEndTurn.bind(menu));
     canvas = p.createCanvas(getCanvasWidth(), getCanvasHeight());
     canvas.parent('canvas-container');
@@ -86,10 +85,6 @@ new p5((p) => {
     let prevSelectedHex = board.selectHex(clickedHex);
 
     drawHexNeighborhood([prevSelectedHex, clickedHex]);
-    drawHexOverlays();
-
-    const selHexContentsDiv = document.getElementById('selHexContents');
-    const selHexCoordDiv = document.getElementById('selHexCoord');
 
     menu.updateMenu();
   }
@@ -104,17 +99,6 @@ new p5((p) => {
     }
 
     drawHexNeighborhood([oldHover, hoverHex, board.getSelectedHex()]);
-    drawHexOverlays();
-  }
-
-  function drawHexOverlays() {
-    /*
-    for (let drawer of drawers) {
-      for (let occupiedHex of board.getOccupiedHexes()) {
-        drawer.draw(occupiedHex);
-      }
-    }
-    */
   }
 
   function getCanvasWidth() {
@@ -126,7 +110,9 @@ new p5((p) => {
   }
 
   function drawHexNeighborhood(someHexes) {
-    let hexesToDraw = board.getHexNeighborhoods(someHexes);
+    const hexesToDraw = board.getHexNeighborhoods(someHexes);
+    board.getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
+
     for (let drawer of drawers) {
       for (let hexToDraw of hexesToDraw) {
         drawer.draw(hexToDraw);
