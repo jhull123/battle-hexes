@@ -1,4 +1,4 @@
-import { playerTypes } from "./faction";
+import { playerTypes } from "./faction.js";
 
 export class Unit {
   #movePath = [];
@@ -64,17 +64,22 @@ export class Unit {
 
     this.setContainingHex(destinationHex);
 
+    if (this.hasOpponentInAdjacentHex(adjacentHexes)) {
+      this.#movesRemaining = 0; 
+    } else if (this.#movesRemaining > 0) {
+      this.#movesRemaining--;
+    }
+  }
+
+  hasOpponentInAdjacentHex(adjacentHexes) {
     for (let adjacentHex of adjacentHexes) {
       let occupier = adjacentHex.getOccupier();
       if (occupier !== null && occupier !== this.#faction) {
-        this.#movesRemaining = 0;
-        break;
+        return true;
       }
     }
 
-    if (this.#movesRemaining > 0) {
-      this.#movesRemaining--;
-    }
+    return false;
   }
 
   getMovesRemaining() {
