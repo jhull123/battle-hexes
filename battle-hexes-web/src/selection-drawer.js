@@ -26,3 +26,17 @@ export class MoveSelectionDrawer {
     }
   }
 }
+
+export class CombatSelectionDrawer {
+  #hexDrawer;
+
+  constructor(hexDrawer) {
+    this.#hexDrawer = hexDrawer;
+  }
+
+  draw(aHex) {
+    if (aHex.hasCombat()) {
+      this.#hexDrawer.drawHex(aHex, '#FF1010', 2);
+    }
+  }
+}

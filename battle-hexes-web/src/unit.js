@@ -10,6 +10,7 @@ export class Unit {
   #defense;
   #move;
   #movesRemaining;
+  #combatOpponents;
 
   constructor(name, faction, type, attack, defense, move) {
     this.#name = name;
@@ -19,6 +20,7 @@ export class Unit {
     this.#defense = defense;
     this.#move = move;
     this.#movesRemaining = move;
+    this.#combatOpponents = [];
   }
 
   toString() {
@@ -63,23 +65,25 @@ export class Unit {
     }
 
     this.setContainingHex(destinationHex);
+    this.updateCombatOpponents(adjacentHexes);
 
-    if (this.hasOpponentInAdjacentHex(adjacentHexes)) {
+    if (this.#combatOpponents.length > 0) {
       this.#movesRemaining = 0; 
     } else if (this.#movesRemaining > 0) {
       this.#movesRemaining--;
     }
   }
 
-  hasOpponentInAdjacentHex(adjacentHexes) {
+  updateCombatOpponents(adjacentHexes) {
     for (let adjacentHex of adjacentHexes) {
-      let occupier = adjacentHex.getOccupier();
-      if (occupier !== null && occupier !== this.#faction) {
-        return true;
+      let occupiers = adjacentHex.getOccupiers();
+      if (occupiers.length > 0 && occupiers[0].getFaction() !== this.#faction) {
+        this.#combatOpponents.push(occupiers);
+        for (let occupier of occupiers) {
+          occupier.#combatOpponents.push(this.#containingHex.getUnits());
+        }
       }
     }
-
-    return false;
   }
 
   getMovesRemaining() {
@@ -88,6 +92,10 @@ export class Unit {
 
   resetMovesRemaining() {
     this.#movesRemaining = this.getMovement();
+  }
+
+  resetCombat() {
+    this.#combatOpponents = [];
   }
 
   getMovement() {
@@ -104,5 +112,9 @@ export class Unit {
 
   isMovable() {
     return this.#faction.getPlayerType() === playerTypes.HUMAN && this.getMovesRemaining() > 0; 
+  }
+
+  getCombatOpponents() {
+    return this.#combatOpponents;
   }
 }

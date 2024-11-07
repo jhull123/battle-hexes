@@ -36,4 +36,27 @@ describe('move', () => {
     unit.move(new Hex(5, 5), [new Hex(4, 5), new Hex(5, 6)]);
     expect(unit.getMovesRemaining()).toBe(3);
   });
+
+  test('adds combat opponent when opponent is adjacent', () => {
+    const unit = new Unit('Test Unit', friendlyFaction, null, 4, 4, 4);
+    const oppHex = new Hex(5, 6);
+    oppHex.addUnit(oppUnit);
+
+    unit.move(new Hex(5, 5), [new Hex(4, 5), oppHex]);
+
+    expect(unit.getCombatOpponents()).toStrictEqual([[oppUnit]]);
+  });
+});
+
+describe('resetCombat', () => {
+  test('combat opponents is empty after reset', () => {
+    const unit = new Unit('Test Unit', friendlyFaction, null, 4, 4, 4);
+    const oppHex = new Hex(5, 6);
+    oppHex.addUnit(oppUnit);
+
+    unit.move(new Hex(5, 5), [new Hex(4, 5), oppHex]);
+    unit.resetCombat();
+
+    expect(unit.getCombatOpponents()).toHaveLength(0);
+  });
 });

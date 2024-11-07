@@ -36,7 +36,9 @@ export class Board {
   addUnit(unit, row, column) {
     this.#units.add(unit);
     if (row !== undefined && column !== undefined) {
-      this.getHex(row, column).addUnit(unit);
+      const targetHex = this.getHex(row, column);
+      targetHex.addUnit(unit);
+      unit.setContainingHex(targetHex);
     }
   }
 
@@ -163,6 +165,9 @@ export class Board {
   }
 
   isOwnHexSelected() {
+    if (!this.#selectedHex) {
+      return false;
+    }
     const selectedUnits = this.#selectedHex.getUnits();
     return selectedUnits && selectedUnits.length > 0 && selectedUnits[0].getFaction() === this.#factionTurn;
   }
@@ -183,5 +188,13 @@ export class Board {
 
   getCombat() {
     return new Combat(this.getUnits());
+  }
+
+  getOccupiedHexes() {
+    const occupiedHexes = new Set();
+    for (let unit of this.getUnits()) {
+      occupiedHexes.add(unit.getContainingHex());
+    }
+    return occupiedHexes;
   }
 }

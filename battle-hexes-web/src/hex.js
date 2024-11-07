@@ -32,6 +32,14 @@ export class Hex {
     }
   }
 
+  getRow() {
+    return this.row;
+  }
+
+  getColumn() {
+    return this.column;
+  }
+  
   addUnit(unit) {
     this.#units.push(unit);
   }
@@ -91,7 +99,11 @@ export class Hex {
     return false;
   }
 
-  getOccupier() {
-    return this.#units.length > 0 ? this.#units[0].getFaction() : null;
+  getOccupiers() {
+    return this.getUnits();
+  }
+
+  hasCombat() {
+    return this.#units.length == 0 ? false : this.#units[0].getCombatOpponents().length > 0;
   }
 }

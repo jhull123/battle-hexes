@@ -4,6 +4,7 @@ import { HexDrawer } from './hex-drawer.js';
 import { UnitDrawer } from './unit-drawer.js';
 import { SelectionDrawer } from './selection-drawer.js';
 import { MoveSelectionDrawer } from './selection-drawer.js';
+import { CombatSelectionDrawer } from './selection-drawer.js';
 import { MoveArrowDrawer } from './move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import { Unit } from './unit.js';
@@ -24,14 +25,17 @@ new p5((p) => {
   const canvasMargin = 20;
   
   const board = new Board(10, 10, [factions.RED, factions.BLUE]);
-  const hexDraw = new HexDrawer(p, 50);
-  hexDraw.setShowHexCoords(true);
+  const hexDrawWithCoords = new HexDrawer(p, hexRadius);
+  hexDrawWithCoords.setShowHexCoords(true);
+  const hexDraw = new HexDrawer(p, hexRadius);
   
   const unitDraw = new UnitDrawer(p, hexDraw);
+  const combatSelectionDraw = new CombatSelectionDrawer(new HexDrawer(p, hexRadius));
   const selectionDraw = new SelectionDrawer(hexDraw);
   const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
-  const drawers = [hexDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
+  const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
+  const overlayDrawers = [new CombatSelectionDrawer(hexDraw), selectionDraw];
   const menu = new Menu(board);
   
   const blueUnit = new Unit('Assault Infantry', factions.BLUE, UnitTypes.INFANTRY, 5, 4, 4); 
@@ -56,7 +60,7 @@ new p5((p) => {
     p.background(90);
   
     for (let currentHex of board.getAllHexes()) {
-      hexDraw.draw(currentHex);
+      hexDrawWithCoords.draw(currentHex);
     }
   
     for (let currentHex of board.getAllHexes()) {
@@ -82,6 +86,7 @@ new p5((p) => {
     let prevSelectedHex = board.selectHex(clickedHex);
 
     drawHexNeighborhood([prevSelectedHex, clickedHex]);
+    drawHexOverlays();
 
     const selHexContentsDiv = document.getElementById('selHexContents');
     const selHexCoordDiv = document.getElementById('selHexCoord');
@@ -99,6 +104,17 @@ new p5((p) => {
     }
 
     drawHexNeighborhood([oldHover, hoverHex, board.getSelectedHex()]);
+    drawHexOverlays();
+  }
+
+  function drawHexOverlays() {
+    /*
+    for (let drawer of drawers) {
+      for (let occupiedHex of board.getOccupiedHexes()) {
+        drawer.draw(occupiedHex);
+      }
+    }
+    */
   }
 
   function getCanvasWidth() {
