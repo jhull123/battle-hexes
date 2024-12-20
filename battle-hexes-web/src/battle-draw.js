@@ -9,7 +9,8 @@ import { MoveArrowDrawer } from './move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import { Unit } from './unit.js';
 import { UnitTypes } from './unit-types.js';
-import { Faction, playerTypes } from './faction.js'
+import { Faction, playerTypes } from './faction.js';
+import './styles/menu.css';
 
 const factions = {
   RED: new Faction ('Red Faction', '#C81010' /* red */, playerTypes.HUMAN),

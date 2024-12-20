@@ -43,9 +43,16 @@
     <div id="selHexContents"></div>
     <div id="selHexCoord"></div>
     <div id="unitMovesLeftDiv"></div>
-    <h3>Game Stages</h3>
-    <div>Current phase: <span id="currentPhaseLabel">Movement</span></div>
-    <div>Current turn: <span id="currentTurnLabel"></span></div>
+    <div id="gameStagesMenu">
+      <h3>Game Stages</h3>
+      <div id="phasesList">
+        <span id="phasesListMove">Movement</span> →
+        <span id="phasesListCombat">Combat</span> →
+        <span id="phasesListEndTurn">End Turn</span>
+      </div>
+      <div>Current phase: <span id="currentPhaseLabel">Movement</span></div>
+      <div>Current turn: <span id="currentTurnLabel"></span></div>
+    </div>
     <br/>
     <button id="endTurnBtn">End Turn</button>
   </div>
