@@ -1,3 +1,18 @@
 #gameStagesMenu div {
   margin-bottom: 0.5rem;
 }
+
+#phasesList span {
+  font-style: italic;
+}
+
+.current-phase {
+  font-weight: bold;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.disabled-phase {
+  color: #999;
+  opacity: 0.75;
+}
