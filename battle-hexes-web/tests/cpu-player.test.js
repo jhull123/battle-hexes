@@ -4,6 +4,7 @@ import { Faction } from "../src/faction";
 import { Unit } from "../src/unit";
 
 let humanFaction, cpuFaction, board, humanUnit, cpuUnit, cpuPlayer;
+const callbackDelay = 1;
 
 beforeEach(() => {
   humanFaction = new Faction('Human');
@@ -19,6 +20,13 @@ beforeEach(() => {
 
 describe('movement', () => {
   test('CPU movement moves CPU controlled units', () => {
-    cpuPlayer.movement();
+    jest.useFakeTimers();
+    const drawingCallbackSpy = jest.fn();
+
+    cpuPlayer.movement(drawingCallbackSpy, callbackDelay);
+
+    jest.advanceTimersByTime(callbackDelay * 4);
+    expect(drawingCallbackSpy).toHaveBeenCalledTimes(4);
+    jest.useRealTimers();
   });
 });
