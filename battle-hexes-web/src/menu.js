@@ -31,6 +31,18 @@ export class Menu {
       // opposing hex selected
       this.#unitMovesLeftDiv.innerHTML = '';
     }
+
+    this.updateCombatIndicator();
+  }
+
+  updateCombatIndicator() {
+    const combatElem = document.getElementById("phasesListCombat");
+
+    if (this.#board.hasCombat()) {
+      combatElem.classList.remove("disabled-phase");
+    } else {
+      combatElem.classList.add("disabled-phase");
+    }
   }
 
   doEndTurn() {

@@ -186,6 +186,10 @@ export class Board {
     return aHex.getUnits()[0].getFaction() !== this.#factionTurn;
   }
 
+  hasCombat() {
+    return new Combat(this.getUnits()).hasCombat();
+  }
+
   getCombat() {
     return new Combat(this.getUnits());
   }
