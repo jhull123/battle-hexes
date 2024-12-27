@@ -1,11 +1,16 @@
 export class Combat {
+  #units;
   
-  constructor(hexes, currentFaction) {
-    // TODO!!!
+  constructor(units) {
+    this.#units = units;
   }
 
   hasCombat() {
-    // TODO!!!
-    return true;
+    for (let unit of this.#units) {
+      if (unit.getContainingHex().hasCombat()) {
+        return true;
+      }
+    }
+    return false;
   }
 }
