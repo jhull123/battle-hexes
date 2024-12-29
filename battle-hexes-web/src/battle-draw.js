@@ -52,7 +52,7 @@ new p5((p) => {
     canvas = p.createCanvas(getCanvasWidth(), getCanvasHeight());
     canvas.parent('canvas-container');
     menu.setCurrentTurn(factions.RED);
-    p.noLoop(); // So that it draws only once  
+    p.noLoop();
   };
 
   p.draw = function() {
