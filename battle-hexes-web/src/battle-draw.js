@@ -1,5 +1,6 @@
 import p5 from 'p5';
 import { Board } from './board.js';
+import { Game } from './model/game.js';
 import { HexDrawer } from './hex-drawer.js';
 import { UnitDrawer } from './unit-drawer.js';
 import { SelectionDrawer } from './selection-drawer.js';
@@ -26,6 +27,9 @@ new p5((p) => {
   const canvasMargin = 20;
   
   const board = new Board(10, 10, [factions.RED, factions.BLUE]);
+  const game = new Game(['Movement', 'Combat'], [factions.RED, factions.BLUE]);
+  const menu = new Menu(game, board);
+
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
   hexDrawWithCoords.setShowHexCoords(true);
   const hexDraw = new HexDrawer(p, hexRadius);
@@ -36,7 +40,6 @@ new p5((p) => {
   const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
   const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
-  const menu = new Menu(board);
   
   const blueUnit = new Unit('Assault Infantry', factions.BLUE, UnitTypes.INFANTRY, 5, 4, 4); 
   board.addUnit(blueUnit, 3, 5);

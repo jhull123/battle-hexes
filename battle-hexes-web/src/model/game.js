@@ -39,4 +39,8 @@ export class Game {
   getCurrentPlayer() {
     return this.#currentPlayer;
   }
+
+  getPhases() {
+    return this.#phases;
+  }
 }
