@@ -18,13 +18,15 @@ export class Game {
     if (newPhaseIdx >= this.#phases.length) {
       this.#currentPhase = this.#phases[0];
       this.#nextPlayer();
+      return true;
     } else {
-      this.#currentPhase = this.#phases[newPhaseIdx]; 
+      this.#currentPhase = this.#phases[newPhaseIdx];
+      return false;
     }
   }
 
   #nextPlayer() {
-    const newPlayerIdx = this.#players.indexOf(this.#players) + 1;
+    const newPlayerIdx = this.#players.indexOf(this.#currentPlayer) + 1;
     if (newPlayerIdx >= this.#players.length) {
       this.#currentPlayer = this.#players[0];
     } else {

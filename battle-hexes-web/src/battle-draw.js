@@ -51,10 +51,9 @@ new p5((p) => {
 
   p.setup = function() {
     console.log("Let's set it up!");
-    document.getElementById('endTurnBtn').addEventListener('click', menu.doEndTurn.bind(menu));
+    document.getElementById('endPhaseBtn').addEventListener('click', menu.doEndPhase.bind(menu));
     canvas = p.createCanvas(getCanvasWidth(), getCanvasHeight());
     canvas.parent('canvas-container');
-    menu.setCurrentTurn(factions.RED);
     p.noLoop();
   };
 

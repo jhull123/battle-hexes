@@ -11,7 +11,9 @@ export class Menu {
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
-    this.#initPhasesInMenu();    
+
+    this.#initPhasesInMenu();
+    this.#initPhaseEndButton();
   }
 
   #initPhasesInMenu() {
@@ -32,6 +34,10 @@ export class Menu {
     const endTurnPhase = document.createElement('span');
     endTurnPhase.textContent = 'End Turn';
     phasesElem.appendChild(endTurnPhase);
+  }
+
+  #initPhaseEndButton() {
+    document.getElementById('endPhaseBtn').textContent = 'End ' + this.#game.getPhases()[0];
   }
 
   updateMenu() {
@@ -55,10 +61,12 @@ export class Menu {
       this.#unitMovesLeftDiv.innerHTML = '';
     }
 
-    this.updateCombatIndicator();
+    this.#updateCombatIndicator();
+    this.#setCurrentTurn();
+    this.#updatePhasesStyling();
   }
 
-  updateCombatIndicator() {
+  #updateCombatIndicator() {
     const combatElem = document.getElementById("phasesListCombat");
 
     if (this.#board.hasCombat()) {
@@ -68,13 +76,25 @@ export class Menu {
     }
   }
 
-  doEndTurn() {
-    const currentFaction = this.#board.endTurn();
-    this.setCurrentTurn(currentFaction);
+  doEndPhase() {
+    console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+    this.#game.endPhase() && this.#board.endTurn();
     this.updateMenu();
   }
 
-  setCurrentTurn(faction) {
-    document.getElementById('currentTurnLabel').innerHTML = faction.getName()
+  #setCurrentTurn() {
+    document.getElementById('currentTurnLabel').innerHTML = this.#game.getCurrentPlayer().getName();
+    document.getElementById('endPhaseBtn').textContent = 'End ' + this.#game.getCurrentPhase();
+  }
+
+  #updatePhasesStyling() {
+    for (let phase of this.#game.getPhases()) {
+      const phaseElem = document.getElementById('phasesList' + phase);
+      if (phase === this.#game.getCurrentPhase()) {
+        phaseElem.className = 'current-phase';
+      } else {
+        phaseElem.className = '';
+      }
+    }
   }
 }
