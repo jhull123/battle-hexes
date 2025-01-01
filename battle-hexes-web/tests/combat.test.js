@@ -25,3 +25,27 @@ describe('hasCombat', () => {
     expect(board.getCombat().hasCombat()).toBe(false);
   });
 });
+
+describe('getBattles', () => {
+  test('getBattles() returns empty array when no battles', () => {
+    board.addUnit(redUnit, 2, 3);
+    board.addUnit(blueUnit, 8, 8);
+    expect(board.getCombat().getBattles()).toEqual([]);
+  });
+
+  test('getBattles() returns one battle', () => {
+    board.addUnit(redUnit, 2, 5);
+    board.addUnit(blueUnit, 3, 4);
+    expect(board.getCombat().getBattles().length).toBe(1);
+  });
+
+  test('getBattles() returns two battles', () => {
+    board.addUnit(redUnit, 2, 5);
+    board.addUnit(blueUnit, 3, 4);
+
+    board.addUnit(new Unit('Red Unit', redFaction), 7, 8);
+    board.addUnit(new Unit('Blue Unit', blueFaction), 8, 8);
+
+    expect(board.getCombat().getBattles().length).toBe(2);
+  });
+});

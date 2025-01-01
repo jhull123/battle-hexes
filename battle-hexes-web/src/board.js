@@ -184,11 +184,11 @@ export class Board {
   }
 
   hasCombat() {
-    return new Combat(this.getUnits()).hasCombat();
+    return new Combat(this.getUnits(), this.#factionTurn).hasCombat();
   }
 
   getCombat() {
-    return new Combat(this.getUnits());
+    return new Combat(this.getUnits(), this.#factionTurn);
   }
 
   getOccupiedHexes() {

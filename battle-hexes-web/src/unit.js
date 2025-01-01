@@ -75,6 +75,7 @@ export class Unit {
   }
 
   updateCombatOpponents(adjacentHexes) {
+    this.#combatOpponents = [];
     for (let adjacentHex of adjacentHexes) {
       let occupiers = adjacentHex.getOccupiers();
       if (occupiers.length > 0 && occupiers[0].getFaction() !== this.#faction) {
@@ -116,5 +117,9 @@ export class Unit {
 
   getCombatOpponents() {
     return this.#combatOpponents;
+  }
+
+  hasFaction(faction) {
+    return faction == this.#faction;
   }
 }
