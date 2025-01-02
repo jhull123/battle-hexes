@@ -1,3 +1,6 @@
+import { API_URL } from './battle-api';
+import axios from 'axios';
+
 export class Game {
   #phases
   #currentPhase
@@ -44,5 +47,15 @@ export class Game {
 
   getPhases() {
     return this.#phases;
+  }
+
+  static newGameFromServer() {
+    axios.post(API_URL + '/games', {})
+    .then(response => {
+      console.log('New game created:', response.data);
+    })
+    .catch(error => {
+      console.error('Error posting data:', error);
+    });
   }
 }

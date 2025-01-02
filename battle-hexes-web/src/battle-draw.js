@@ -19,6 +19,8 @@ const factions = {
 }
 
 new p5((p) => {
+  Game.newGameFromServer();
+
   const hexRadius = 50;
   const hexHeight = Math.sqrt(3) * hexRadius;
   const hexDiameter = hexRadius * 2;
