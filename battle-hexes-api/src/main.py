@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src.game.board import Board
 from src.game.game import Game
 
 app = FastAPI()
@@ -14,4 +15,4 @@ app.add_middleware(
 
 @app.post('/games')
 def create_game():
-  return Game()
+  return Game(Board(10, 10))

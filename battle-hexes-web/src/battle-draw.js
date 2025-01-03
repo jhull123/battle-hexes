@@ -13,14 +13,15 @@ import { UnitTypes } from './unit-types.js';
 import { Faction, playerTypes } from './faction.js';
 import './styles/menu.css';
 
+const gameData = await Game.newGameFromServer();
+console.log('game data: ' + JSON.stringify(gameData));
+
 const factions = {
   RED: new Faction ('Red Faction', '#C81010' /* red */, playerTypes.HUMAN),
   BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */, playerTypes.CPU)
 }
 
 new p5((p) => {
-  Game.newGameFromServer();
-
   const hexRadius = 50;
   const hexHeight = Math.sqrt(3) * hexRadius;
   const hexDiameter = hexRadius * 2;
@@ -28,8 +29,8 @@ new p5((p) => {
   const hexRows = 10;
   const canvasMargin = 20;
   
-  const board = new Board(10, 10, [factions.RED, factions.BLUE]);
-  const game = new Game(['Movement', 'Combat'], [factions.RED, factions.BLUE]);
+  const board = new Board(gameData.board.rows, gameData.board.columns, [factions.RED, factions.BLUE]);
+  const game = new Game(gameData.id, ['Movement', 'Combat'], [factions.RED, factions.BLUE]);
   const menu = new Menu(game, board);
 
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);

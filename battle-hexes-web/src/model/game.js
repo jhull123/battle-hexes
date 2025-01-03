@@ -2,13 +2,15 @@ import { API_URL } from './battle-api';
 import axios from 'axios';
 
 export class Game {
+  #id
   #phases
   #currentPhase
 
   #players
   #currentPlayer
 
-  constructor(phases, players) {
+  constructor(id, phases, players) {
+    this.#id = id;
     this.#phases = phases;
     this.#currentPhase = phases[0];
 
@@ -37,6 +39,10 @@ export class Game {
     }
   }
 
+  getId() {
+    return this.#id;
+  }
+
   getCurrentPhase() {
     return this.#currentPhase;
   }
@@ -49,13 +55,8 @@ export class Game {
     return this.#phases;
   }
 
-  static newGameFromServer() {
-    axios.post(API_URL + '/games', {})
-    .then(response => {
-      console.log('New game created:', response.data);
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-    });
+  static async newGameFromServer() {
+    const response = await axios.post(`${API_URL}/games`, {});
+    return response.data;
   }
 }

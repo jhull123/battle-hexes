@@ -6,7 +6,7 @@ const phases = ['Movement', 'Combat'];
 const players = [new Faction('Red Faction'), new Faction('Blue Faction')];
 
 beforeEach(() => {
-  game = new Game(phases, players);
+  game = new Game('game-id', phases, players);
 });
 
 describe('constructor', () => {
