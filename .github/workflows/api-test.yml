@@ -4,9 +4,7 @@ on:
   push:
     paths:
       - 'battle-hexes-api/**'
-  pull_request:
-    paths:
-      - 'battle-hexes-api/**'
+  workflow_dispatch:
 
 jobs:
   test:
