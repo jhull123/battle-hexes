@@ -1,3 +1,4 @@
+from src.game.board import Board
 import uuid
 
 class Game:
@@ -10,3 +11,7 @@ class Game:
 
   def get_board(self):
     return self.board
+
+  @staticmethod
+  def create_sample_game():
+    return Game(Board(10, 10))
