@@ -32,3 +32,9 @@ Use the following command to run the unit tests:
 
     pytest
 
+## Running Linters
+
+To run the `flake8` linter:
+
+    flake8 src/ tests/
+
