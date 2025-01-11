@@ -6,10 +6,10 @@ class Board:
 
     def get_rows(self):
         return self.rows
-  
+
     def get_columns(self):
         return self.columns
-  
+
     def add_unit(self, unit, row, column):
         if row >= self.rows or column >= self.columns:
             raise Exception("Unit is out of bounds")

@@ -2,6 +2,7 @@ from src.game.board import Board
 from src.unit.unit import Unit
 import uuid
 
+
 class Game:
     def __init__(self, board):
         self.id = str(uuid.uuid4())

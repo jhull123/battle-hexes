@@ -14,18 +14,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.post('/games')
 def create_game():
-  new_game = Game.create_sample_game()
-  game_repo.update_game(new_game)
-  return new_game
+    new_game = Game.create_sample_game()
+    game_repo.update_game(new_game)
+    return new_game
+
 
 @app.put('/games/{game_id}')
 def update_game(game):
-  # TODO pick up here!
-  game_repo.update_game(game)
-  return None
+    # TODO pick up here!
+    game_repo.update_game(game)
+    return None
+
 
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
-  return game_repo.get_game(game_id)
+    return game_repo.get_game(game_id)

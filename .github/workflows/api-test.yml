@@ -30,3 +30,7 @@ jobs:
         working-directory: battle-hexes-api
         run: pytest
 
+      - name: Run linter (Flake8)
+        working-directory: battle-hexes-api
+        run: flake8 src/ tests/ 
+
