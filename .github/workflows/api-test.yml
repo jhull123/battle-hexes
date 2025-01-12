@@ -33,4 +33,3 @@ jobs:
       - name: Run linter (Flake8)
         working-directory: battle-hexes-api
         run: flake8 src/ tests/ 
-        continue-on-error: true

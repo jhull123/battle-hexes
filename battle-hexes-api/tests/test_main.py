@@ -2,6 +2,7 @@ import unittest
 from fastapi.testclient import TestClient
 from main import app
 
+
 class TestFastAPI(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
@@ -12,6 +13,3 @@ class TestFastAPI(unittest.TestCase):
 
         get_response = self.client.get(f'/games/{new_game_id}')
         self.assertEqual(new_game_id, get_response.json().get('id'))
-
-if __name__ == '__main__':
-    unittest.main()
