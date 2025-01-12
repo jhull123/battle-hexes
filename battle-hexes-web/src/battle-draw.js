@@ -2,6 +2,7 @@ import p5 from 'p5';
 import { Board } from './board.js';
 import { Game } from './model/game.js';
 import { HexDrawer } from './hex-drawer.js';
+import { Player, playerTypes } from './model/player.js';
 import { UnitDrawer } from './unit-drawer.js';
 import { SelectionDrawer } from './selection-drawer.js';
 import { MoveSelectionDrawer } from './selection-drawer.js';
@@ -10,7 +11,7 @@ import { MoveArrowDrawer } from './move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import { Unit } from './unit.js';
 import { UnitTypes } from './unit-types.js';
-import { Faction, playerTypes } from './faction.js';
+import { Faction } from './faction.js';
 import './styles/menu.css';
 
 const gameData = await Game.newGameFromServer();
