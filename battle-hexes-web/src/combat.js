@@ -2,11 +2,11 @@ import { Battle } from "./model/battle";
 
 export class Combat {
   #units;
-  #attackingFaction;
+  #attackingPlayer;
   
-  constructor(units, attackingFaction) {
+  constructor(units, attackingPlayer) {
     this.#units = units;
-    this.#attackingFaction = attackingFaction;
+    this.#attackingPlayer = attackingPlayer;
   }
 
   hasCombat() {
@@ -22,7 +22,7 @@ export class Combat {
     const battles = [];
     
     for (let unit of this.#units) {
-      if (unit.hasFaction(this.#attackingFaction)) {
+      if (unit.isOwnedBy(this.#attackingPlayer)) {
         continue;
       }
 
@@ -49,7 +49,7 @@ export class Combat {
     const opponents = new Set();
 
     for (let unit of this.#units) {
-      if (unit.hasFaction(defendingUnit.getFaction())) {
+      if (unit.isOwnedBy(defendingUnit.getOwningPlayer())) {
         continue;
       }
 

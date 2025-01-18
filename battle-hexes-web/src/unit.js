@@ -1,3 +1,5 @@
+import { playerTypes } from "./model/player";
+
 export class Unit {
   #movePath = [];
   #containingHex = undefined;
@@ -31,6 +33,10 @@ export class Unit {
 
   getFaction() {
     return this.#faction;
+  }
+  
+  getOwningPlayer() {
+    return this.#faction.getOwningPlayer();
   }
 
   getType() {
@@ -76,7 +82,7 @@ export class Unit {
     this.#combatOpponents = [];
     for (let adjacentHex of adjacentHexes) {
       let occupiers = adjacentHex.getOccupiers();
-      if (occupiers.length > 0 && occupiers[0].getFaction() !== this.#faction) {
+      if (occupiers.length > 0 && occupiers[0].getOwningPlayer() !== this.getOwningPlayer()) {
         this.#combatOpponents.push(occupiers);
         for (let occupier of occupiers) {
           occupier.#combatOpponents.push(this.#containingHex.getUnits());
@@ -110,14 +116,15 @@ export class Unit {
   }
 
   isMovable() {
-    return this.getMovesRemaining() > 0; 
+    return this.getMovesRemaining() > 0
+      && this.getOwningPlayer().getType() === playerTypes.HUMAN;
   }
 
   getCombatOpponents() {
     return this.#combatOpponents;
   }
 
-  hasFaction(faction) {
-    return faction == this.#faction;
+  isOwnedBy(player) {
+    return this.getOwningPlayer() == player;
   }
 }

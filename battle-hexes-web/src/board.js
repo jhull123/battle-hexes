@@ -1,18 +1,13 @@
 import { Hex } from './hex.js';
-import { Combat } from './combat.js';
 
 export class Board {
-  #factions;
   #hexMap;
   #selectedHex;
   #hoverHex;
   #units;
-  #factionTurn; // the faction whose turn it is
+  #players;
 
-  constructor(rows, columns, factions) {
-    this.#factions = factions;
-    this.#factionTurn = factions[0];
-
+  constructor(rows, columns) {
     this.#hexMap = new Map();
     this.#units = new Set();
 
@@ -23,11 +18,8 @@ export class Board {
     }
   }
 
-  endTurn() {
-    this.resetMovesRemaining();
-    let nextFactionIdx = this.#factions.indexOf(this.#factionTurn) + 1
-    nextFactionIdx = nextFactionIdx < this.#factions.length ? nextFactionIdx : 0;
-    return this.#factionTurn = this.#factions[nextFactionIdx];
+  setPlayers(players) {
+    this.#players = players;
   }
 
   addUnit(unit, row, column) {
@@ -107,7 +99,7 @@ export class Board {
         && this.#hoverHex.isAdjacent(this.#selectedHex)
         && this.isOwnHexSelected()
         && !this.isOppositionHex(hoverHex)) {
-      // console.log(`We have a move hover hex! ${this.#hoverHex}`);
+      console.log(`We have a move hover hex! ${this.#hoverHex}`);
       this.#hoverHex.setMoveHoverFromHex(this.getSelectedHex());
     }
 
@@ -166,29 +158,18 @@ export class Board {
       return false;
     }
     const selectedUnits = this.#selectedHex.getUnits();
-    return selectedUnits && selectedUnits.length > 0 && selectedUnits[0].getFaction() === this.#factionTurn;
-  }
-
-  isOwnHex(aHex) {
-    if (aHex.getUnits().length == 0) {
-      return false;
-    }
-    return aHex.getUnits[0].getFaction() === this.#factionTurn;
+    return selectedUnits && selectedUnits.length > 0 && selectedUnits[0].getOwningPlayer() === this.#players.getCurrentPlayer();
   }
 
   isOppositionHex(aHex) {
     if (aHex.getUnits().length == 0) {
       return false;
     }
-    return aHex.getUnits()[0].getFaction() !== this.#factionTurn;
+    return aHex.getUnits()[0].getOwningPlayer() !== this.#players.getCurrentPlayer();
   }
 
   hasCombat() {
-    return new Combat(this.getUnits(), this.#factionTurn).hasCombat();
-  }
-
-  getCombat() {
-    return new Combat(this.getUnits(), this.#factionTurn);
+    return false; // TODO!
   }
 
   getOccupiedHexes() {

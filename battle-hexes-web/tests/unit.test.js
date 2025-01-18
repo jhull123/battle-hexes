@@ -1,14 +1,21 @@
 import { Faction } from '../src/faction.js';
-import { Unit } from '../src/unit.js';
 import { Hex } from '../src/hex.js';
+import { Player } from '../src/model/player.js';
+import { Unit } from '../src/unit.js';
+
+const friendlyPlayer = new Player('Friendly Player', 'Human');
+const opposingPlayer = new Player('Opposing Player', 'Computer');
 
 let friendlyFaction;
 let opposingFaction;
 let oppUnit;
 
 beforeEach(() => {
-  friendlyFaction = new Faction('Friendlies');
-  opposingFaction = new Faction('Opp Force');
+  friendlyFaction = new Faction('Friendlies', "#FF0000", friendlyPlayer);
+  friendlyFaction.setOwningPlayer(friendlyPlayer);
+
+  opposingFaction = new Faction('Opp Force', "#0000FF", opposingPlayer);
+  opposingFaction.setOwningPlayer(opposingPlayer);
   oppUnit = new Unit('Opp Unit', opposingFaction, null, 4, 4, 4);
 });
 

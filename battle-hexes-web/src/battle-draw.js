@@ -2,7 +2,7 @@ import p5 from 'p5';
 import { Board } from './board.js';
 import { Game } from './model/game.js';
 import { HexDrawer } from './hex-drawer.js';
-import { Player, playerTypes } from './model/player.js';
+import { Player, Players, playerTypes } from './model/player.js';
 import { UnitDrawer } from './unit-drawer.js';
 import { SelectionDrawer } from './selection-drawer.js';
 import { MoveSelectionDrawer } from './selection-drawer.js';
@@ -17,10 +17,13 @@ import './styles/menu.css';
 const gameData = await Game.newGameFromServer();
 console.log('game data: ' + JSON.stringify(gameData));
 
-const factions = {
-  RED: new Faction ('Red Faction', '#C81010' /* red */, playerTypes.HUMAN),
-  BLUE: new Faction('Blue Faction', '#4682B4' /* steel blue */, playerTypes.CPU)
-}
+const redFaction = new Faction ('Red Faction', '#C81010');
+const blueFaction = new Faction ('Blue Faction', '#4682B4');
+
+const players = new Players([
+  new Player('Player 1', playerTypes.HUMAN, [redFaction]),
+  new Player('Player 2', playerTypes.CPU, [blueFaction])
+]);
 
 new p5((p) => {
   const hexRadius = 50;
@@ -30,8 +33,8 @@ new p5((p) => {
   const hexRows = 10;
   const canvasMargin = 20;
   
-  const board = new Board(gameData.board.rows, gameData.board.columns, [factions.RED, factions.BLUE]);
-  const game = new Game(gameData.id, ['Movement', 'Combat'], [factions.RED, factions.BLUE]);
+  const board = new Board(gameData.board.rows, gameData.board.columns);
+  const game = new Game(gameData.id, ['Movement', 'Combat'], players, board);
   const menu = new Menu(game, board);
 
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
@@ -45,10 +48,10 @@ new p5((p) => {
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
   const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
   
-  const blueUnit = new Unit('Assault Infantry', factions.BLUE, UnitTypes.INFANTRY, 5, 4, 4); 
+  const blueUnit = new Unit('Assault Infantry', blueFaction, UnitTypes.INFANTRY, 5, 4, 4); 
   board.addUnit(blueUnit, 3, 5);
   
-  const redUnit = new Unit('Scout Recon', factions.RED, UnitTypes.RECON, 2, 2, 7);
+  const redUnit = new Unit('Scout Recon', redFaction, UnitTypes.RECON, 2, 2, 7);
   board.addUnit(redUnit, 6, 4);
 
   let canvas;

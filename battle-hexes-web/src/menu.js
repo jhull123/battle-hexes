@@ -1,13 +1,11 @@
 export class Menu {
   #game;
-  #board;
   #selHexContentsDiv;
   #selHexCoordDiv;
   #unitMovesLeftDiv;
 
-  constructor(game, board) {
+  constructor(game) {
     this.#game = game;
-    this.#board = board;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
@@ -41,7 +39,7 @@ export class Menu {
   }
 
   updateMenu() {
-    const selectedHex = this.#board.getSelectedHex();
+    const selectedHex = this.#game.getBoard().getSelectedHex();
 
     if (!selectedHex) {
       // nothing here!
@@ -53,7 +51,7 @@ export class Menu {
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
     }
 
-    if (this.#board.isOwnHexSelected()) {
+    if (this.#game.getBoard().isOwnHexSelected()) {
       // friendly hex selected
       this.#unitMovesLeftDiv.innerHTML = `Moves Left: ${selectedHex.getUnits()[0].getMovesRemaining()}`;
     } else {
@@ -69,7 +67,7 @@ export class Menu {
   #updateCombatIndicator() {
     const combatElem = document.getElementById("phasesListCombat");
 
-    if (this.#board.hasCombat()) {
+    if (this.#game.getBoard().hasCombat()) {
       combatElem.classList.remove("disabled-phase");
     } else {
       combatElem.classList.add("disabled-phase");
@@ -78,7 +76,7 @@ export class Menu {
 
   doEndPhase() {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
-    this.#game.endPhase() && this.#board.endTurn();
+    this.#game.endPhase();
     this.updateMenu();
   }
 

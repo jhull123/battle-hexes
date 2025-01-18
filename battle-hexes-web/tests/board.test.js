@@ -17,26 +17,6 @@ describe('addUnit', () => {
   });
 });
 
-describe('endTurn', () => {
-  let factions, board;
-
-  beforeEach(() => {
-    factions = [new Faction('Faction One'), new Faction('Faction Two')];
-    board = new Board(0, 0, factions);
-  });
-
-  test('end turn switches turn to second faction when its the first factions turn', () => {
-    const currentFaction = board.endTurn();
-    expect(currentFaction).toBe(factions[1]);
-  });
-
-  test('end turn switches turn to first faction when its the last factions turn', () => {
-    board.endTurn();
-    const currentFaction = board.endTurn();
-    expect(currentFaction).toBe(factions[0]);
-  });
-});
-
 describe('getAdjacentHexes', () => {
   let board;
 

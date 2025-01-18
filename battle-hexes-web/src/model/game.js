@@ -9,33 +9,27 @@ export class Game {
   #players
   #currentPlayer
 
-  constructor(id, phases, players) {
+  #board
+
+  constructor(id, phases, players, board) {
     this.#id = id;
     this.#phases = phases;
     this.#currentPhase = phases[0];
-
     this.#players = players;
-    this.#currentPlayer = players[0];
+
+    this.#board = board;
+    this.#board.setPlayers(players);
   }
 
   endPhase() {
     const newPhaseIdx = this.#phases.indexOf(this.#currentPhase) + 1;
     if (newPhaseIdx >= this.#phases.length) {
       this.#currentPhase = this.#phases[0];
-      this.#nextPlayer();
+      this.#players.nextPlayer();
       return true;
     } else {
       this.#currentPhase = this.#phases[newPhaseIdx];
       return false;
-    }
-  }
-
-  #nextPlayer() {
-    const newPlayerIdx = this.#players.indexOf(this.#currentPlayer) + 1;
-    if (newPlayerIdx >= this.#players.length) {
-      this.#currentPlayer = this.#players[0];
-    } else {
-      this.#currentPlayer = this.#players[newPlayerIdx];
     }
   }
 
@@ -48,13 +42,21 @@ export class Game {
   }
 
   getCurrentPlayer() {
-    return this.#currentPlayer;
+    return this.#players.getCurrentPlayer();
   }
 
   getPhases() {
     return this.#phases;
   }
 
+  getPlayers() {
+    return this.#players;
+  }
+
+  getBoard() {
+    return this.#board;
+  }
+  
   static async newGameFromServer() {
     const response = await axios.post(`${API_URL}/games`, {});
     return response.data;
