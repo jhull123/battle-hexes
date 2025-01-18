@@ -5,10 +5,7 @@ export class Game {
   #id
   #phases
   #currentPhase
-
   #players
-  #currentPlayer
-
   #board
 
   constructor(id, phases, players, board) {

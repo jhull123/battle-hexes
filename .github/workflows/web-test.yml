@@ -1,0 +1,36 @@
+name: Web Test
+
+on:
+  push:
+    paths:
+      - 'battle-hexes-web/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: battle-hexes-web
+        run: npm install
+
+      - name: Run linter
+        working-directory: battle-hexes-web
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: battle-hexes-web
+        run: npm run test
+
+      - name: Build project
+        working-directory: battle-hexes-web
+        run: npm run build

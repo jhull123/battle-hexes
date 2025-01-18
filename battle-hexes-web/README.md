@@ -4,6 +4,10 @@ Web based UI for the Battle Hexes game.
 
 ## Commands
 
+### Linting
+
+    npm run lint
+
 ### Running Tests
 
     npm test
@@ -12,7 +16,7 @@ Web based UI for the Battle Hexes game.
 
     npm run build
 
-### Testing and Building
+### Lint, Test, and Build
 
     npm run test-and-build
 

@@ -1,6 +1,7 @@
-import { Board } from "../board";
+// import { Board } from "../board";
 
 export class CombatResolver {
+  /*
   #board;
   #apiHost = 'http://localhost:8080';
 
@@ -15,4 +16,5 @@ export class CombatResolver {
   setApiHost(apiHost) {
     this.#apiHost = apiHost;
   }
+    */
 }
