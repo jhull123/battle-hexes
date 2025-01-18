@@ -1,4 +1,4 @@
-name: Web Test
+name: Test Web Project
 
 on:
   push:
