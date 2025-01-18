@@ -1,6 +1,6 @@
-import { Board } from '../src/board.js';
-import { Faction } from '../src/faction.js';
-import { Unit } from '../src/unit.js';
+import { Board } from '../../src/model/board.js';
+import { Faction } from '../../src/model/faction.js';
+import { Unit } from '../../src/model/unit.js';
 
 describe('addUnit', () => {
   let factions, board, unit;

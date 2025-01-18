@@ -1,4 +1,4 @@
-import { Board } from "../../src/board";
+import { Board } from "../../src/model/board";
 import { Game } from "../../src/model/game";
 import { Player, Players } from "../../src/model/player";
 

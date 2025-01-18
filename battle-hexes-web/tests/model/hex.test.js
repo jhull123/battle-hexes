@@ -1,5 +1,5 @@
-import { Hex } from '../src/hex.js';
-import { Unit } from '../src/unit.js';
+import { Hex } from '../../src/model/hex.js';
+import { Unit } from '../../src/model/unit.js';
 
 let hex;
 

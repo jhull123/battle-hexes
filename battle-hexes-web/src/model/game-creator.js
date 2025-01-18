@@ -1,5 +1,5 @@
-import { Board } from "../board";
-import { Faction } from "../faction";
+import { Board } from "./board";
+import { Faction } from "./faction";
 import { Game } from "./game";
 import { Player, Players } from "./player";
 

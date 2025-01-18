@@ -1,17 +1,17 @@
 import p5 from 'p5';
-import { Board } from './board.js';
+import { Board } from './model/board.js';
 import { Game } from './model/game.js';
-import { HexDrawer } from './hex-drawer.js';
+import { HexDrawer } from './drawer/hex-drawer.js';
 import { Player, Players, playerTypes } from './model/player.js';
-import { UnitDrawer } from './unit-drawer.js';
-import { SelectionDrawer } from './selection-drawer.js';
-import { MoveSelectionDrawer } from './selection-drawer.js';
-import { CombatSelectionDrawer } from './selection-drawer.js';
-import { MoveArrowDrawer } from './move-arrow-drawer.js';
+import { UnitDrawer } from './drawer/unit-drawer.js';
+import { SelectionDrawer } from './drawer/selection-drawer.js';
+import { MoveSelectionDrawer } from './drawer/selection-drawer.js';
+import { CombatSelectionDrawer } from './drawer/selection-drawer.js';
+import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
 import { Menu } from './menu.js';
-import { Unit } from './unit.js';
-import { UnitTypes } from './unit-types.js';
-import { Faction } from './faction.js';
+import { Unit } from './model/unit.js';
+import { UnitTypes } from './drawer/unit-types.js';
+import { Faction } from './model/faction.js';
 import './styles/menu.css';
 
 const gameData = await Game.newGameFromServer();

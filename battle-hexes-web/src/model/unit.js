@@ -1,4 +1,4 @@
-import { playerTypes } from "./model/player";
+import { playerTypes } from "./player";
 
 export class Unit {
   #movePath = [];

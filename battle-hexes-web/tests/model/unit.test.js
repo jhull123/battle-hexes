@@ -1,7 +1,7 @@
-import { Faction } from '../src/faction.js';
-import { Hex } from '../src/hex.js';
-import { Player } from '../src/model/player.js';
-import { Unit } from '../src/unit.js';
+import { Faction } from '../../src/model/faction.js';
+import { Hex } from '../../src/model/hex.js';
+import { Player } from '../../src/model/player.js';
+import { Unit } from '../../src/model/unit.js';
 
 const friendlyPlayer = new Player('Friendly Player', 'Human');
 const opposingPlayer = new Player('Opposing Player', 'Computer');

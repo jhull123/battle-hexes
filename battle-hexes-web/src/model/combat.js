@@ -1,4 +1,4 @@
-import { Battle } from "./model/battle";
+import { Battle } from "./battle";
 
 export class Combat {
   #units;
