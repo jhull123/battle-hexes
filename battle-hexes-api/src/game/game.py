@@ -26,6 +26,11 @@ class Game:
         player2 = Player("Player 2", PlayerType.CPU, [blue_faction])
 
         game = Game([player1, player2], Board(10, 10))
-        game.board.add_unit(Unit(red_faction), 6, 4)
-        game.board.add_unit(Unit(blue_faction), 3, 5)
+
+        red_unit = Unit("Red Unit", red_faction, "Infantry", 2, 2, 6)
+        game.board.add_unit(red_unit, 6, 4)
+
+        blue_unit = Unit("Blue Unit", blue_faction, "Infantry", 4, 4, 4)
+        game.board.add_unit(blue_unit, 3, 5)
+
         return game

@@ -7,7 +7,8 @@ from unit.unit import Unit
 class TestBoard(unittest.TestCase):
     def setUp(self):
         self.board = Board(5, 5)
-        self.unit = Unit(Faction("Test Faction", "#00FF00"))
+        self.unit = Unit("Test Unit", Faction("Test Faction", "#00FF00"),
+                         "Infantry", 1, 2, 3)
 
     def test_add_one_unit(self):
         self.board.add_unit(self.unit, 0, 0)

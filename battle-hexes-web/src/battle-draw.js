@@ -1,29 +1,17 @@
 import p5 from 'p5';
-import { Board } from './model/board.js';
 import { Game } from './model/game.js';
 import { HexDrawer } from './drawer/hex-drawer.js';
-import { Player, Players, playerTypes } from './model/player.js';
 import { UnitDrawer } from './drawer/unit-drawer.js';
 import { SelectionDrawer } from './drawer/selection-drawer.js';
 import { MoveSelectionDrawer } from './drawer/selection-drawer.js';
 import { CombatSelectionDrawer } from './drawer/selection-drawer.js';
 import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
 import { Menu } from './menu.js';
-import { Unit } from './model/unit.js';
-import { UnitTypes } from './drawer/unit-types.js';
-import { Faction } from './model/faction.js';
 import './styles/menu.css';
+import { GameCreator } from './model/game-creator.js';
 
 const gameData = await Game.newGameFromServer();
 console.log('game data: ' + JSON.stringify(gameData));
-
-const redFaction = new Faction ('Red Faction', '#C81010');
-const blueFaction = new Faction ('Blue Faction', '#4682B4');
-
-const players = new Players([
-  new Player('Player 1', playerTypes.HUMAN, [redFaction]),
-  new Player('Player 2', playerTypes.CPU, [blueFaction])
-]);
 
 new p5((p) => {
   const hexRadius = 50;
@@ -33,9 +21,8 @@ new p5((p) => {
   const hexRows = 10;
   const canvasMargin = 20;
   
-  const board = new Board(gameData.board.rows, gameData.board.columns);
-  const game = new Game(gameData.id, ['Movement', 'Combat'], players, board);
-  const menu = new Menu(game, board);
+  const game = new GameCreator().createGame(gameData);
+  const menu = new Menu(game);
 
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
   hexDrawWithCoords.setShowHexCoords(true);
@@ -48,12 +35,6 @@ new p5((p) => {
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
   const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
   
-  const blueUnit = new Unit('Assault Infantry', blueFaction, UnitTypes.INFANTRY, 5, 4, 4); 
-  board.addUnit(blueUnit, 3, 5);
-  
-  const redUnit = new Unit('Scout Recon', redFaction, UnitTypes.RECON, 2, 2, 7);
-  board.addUnit(redUnit, 6, 4);
-
   let canvas;
 
   p.setup = function() {
@@ -68,11 +49,11 @@ new p5((p) => {
     console.log("I'm starting to draw!");
     p.background(90);
   
-    for (let currentHex of board.getAllHexes()) {
+    for (let currentHex of game.getBoard().getAllHexes()) {
       hexDrawWithCoords.draw(currentHex);
     }
   
-    for (let currentHex of board.getAllHexes()) {
+    for (let currentHex of game.getBoard().getAllHexes()) {
       unitDraw.draw(currentHex);
     }  
   };
@@ -91,8 +72,8 @@ new p5((p) => {
     let clickedHexPos = pixelToHex(p.mouseX, p.mouseY);
     console.log("Clicked on hex:", clickedHexPos.row, clickedHexPos.col);
 
-    let clickedHex = board.getHex(clickedHexPos.row, clickedHexPos.col);
-    let prevSelectedHex = board.selectHex(clickedHex);
+    let clickedHex = game.getBoard().getHex(clickedHexPos.row, clickedHexPos.col);
+    let prevSelectedHex = game.getBoard().selectHex(clickedHex);
 
     drawHexNeighborhood([prevSelectedHex, clickedHex]);
 
@@ -101,14 +82,14 @@ new p5((p) => {
 
   p.mouseMoved = function() {
     let mouseHexPos = pixelToHex(p.mouseX, p.mouseY);
-    let hoverHex = board.getHex(mouseHexPos.row, mouseHexPos.col);
-    let oldHover = board.setHoverHex(hoverHex);
+    let hoverHex = game.getBoard().getHex(mouseHexPos.row, mouseHexPos.col);
+    let oldHover = game.getBoard().setHoverHex(hoverHex);
 
     if (oldHover === hoverHex) {
       return;
     }
 
-    drawHexNeighborhood([oldHover, hoverHex, board.getSelectedHex()]);
+    drawHexNeighborhood([oldHover, hoverHex, game.getBoard().getSelectedHex()]);
   }
 
   function getCanvasWidth() {
@@ -120,8 +101,8 @@ new p5((p) => {
   }
 
   function drawHexNeighborhood(someHexes) {
-    const hexesToDraw = board.getHexNeighborhoods(someHexes);
-    board.getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
+    const hexesToDraw = game.getBoard().getHexNeighborhoods(someHexes);
+    game.getBoard().getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
 
     for (let drawer of drawers) {
       for (let hexToDraw of hexesToDraw) {
