@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.game.game import Game
 from src.game.gamerepo import GameRepository
+from src.game.sparseboard import SparseBoard
 
 app = FastAPI()
 game_repo = GameRepository()
@@ -22,13 +23,14 @@ def create_game():
     return new_game
 
 
-@app.put('/games/{game_id}')
-def update_game(game):
-    # TODO pick up here!
-    game_repo.update_game(game)
-    return None
-
-
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
     return game_repo.get_game(game_id)
+
+
+@app.post('/combat/{game_id}')
+def resolve_combat(game_id: str, sparse_board: SparseBoard) -> SparseBoard:
+    game = game_repo.get_game(game_id)
+    game.update(sparse_board)
+    game.resolve_combat()
+    return game.get_sparse_board()

@@ -1,5 +1,6 @@
 from src.game.board import Board
 from src.game.player import Player, PlayerType
+from src.game.sparseboard import SparseBoard
 from src.unit.faction import Faction
 from src.unit.unit import Unit
 import uuid
@@ -16,6 +17,18 @@ class Game:
 
     def get_board(self):
         return self.board
+
+    def update(self, sparse_board: SparseBoard) -> None:
+        # TODO
+        print(f"update: {sparse_board}")
+
+    def resolve_combat(self):
+        # TODO
+        pass
+
+    def get_sparse_board(self):
+        # TODO
+        pass
 
     @staticmethod
     def create_sample_game():
