@@ -6,10 +6,12 @@ let game;
 beforeEach(() => {
   const gameCreator = new GameCreator();
   const gameData = JSON.parse(
-    '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b","players":[{"name":"Player 1","type":"Human","factions":[{"name":"Red Faction","color":"#C81010"}]},{"name":"Player 2","type":"Computer","factions":[{"name":"Blue Faction","color":"#4682B4"}]}],' +
+    '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b",' +
+    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010"}]},' +
+    '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
     '"board":{"rows":10,"columns":10,"units":[' +
-    '{"name":"Red Unit","row":6,"column":4,"type":"infantry","attack":6,"defense":5,"move":4,"faction":{"name":"Red Faction","color":"#C81010"}},' +
-    '{"name":"Blue Unit","row":3,"column":5,"type":"recon","attack":2,"defense":2,"move":6,"faction":{"name":"Blue Faction","color":"#4682B4"}}]}}'
+    '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","faction_id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","attack":2,"defense":2,"move":6,"row":6,"column":4},' +
+    '{"id":"c9a440d2-2b0a-4730-b4c6-da394b642c61","name":"Blue Unit","faction_id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","type":"Infantry","attack":4,"defense":4,"move":4,"row":3,"column":5}]}}'
   );
   game = gameCreator.createGame(gameData);
 });
@@ -64,14 +66,14 @@ describe("createGame", () => {
     const unit1 = game.getBoard().getHex(6, 4).getUnits().values().next().value;
     const unit2 = game.getBoard().getHex(3, 5).getUnits().values().next().value;
 
-    expect(unit1.getType()).toBe("infantry");
-    expect(unit1.getAttack()).toBe(6);
-    expect(unit1.getDefense()).toBe(5);
-    expect(unit1.getMovement()).toBe(4);
+    expect(unit1.getType()).toBe("Infantry");
+    expect(unit1.getAttack()).toBe(2);
+    expect(unit1.getDefense()).toBe(2);
+    expect(unit1.getMovement()).toBe(6);
 
-    expect(unit2.getType()).toBe("recon");
-    expect(unit2.getAttack()).toBe(2);
-    expect(unit2.getDefense()).toBe(2);
-    expect(unit2.getMovement()).toBe(6);
+    expect(unit2.getType()).toBe("Infantry");
+    expect(unit2.getAttack()).toBe(4);
+    expect(unit2.getDefense()).toBe(4);
+    expect(unit2.getMovement()).toBe(4);
   });
 });

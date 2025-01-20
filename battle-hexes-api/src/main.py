@@ -20,12 +20,12 @@ app.add_middleware(
 def create_game():
     new_game = Game.create_sample_game()
     game_repo.update_game(new_game)
-    return new_game
+    return new_game.to_game_model()
 
 
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
-    return game_repo.get_game(game_id)
+    return game_repo.get_game(game_id).to_game_model()
 
 
 @app.post('/combat/{game_id}')

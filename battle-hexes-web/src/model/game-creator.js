@@ -24,7 +24,7 @@ export class GameCreator {
   #getFactions(playerData) {
     const factions = new Array();
     for (let faction of playerData.factions) {
-      factions.push(new Faction(faction.name, faction.color));
+      factions.push(new Faction(faction.id, faction.name, faction.color));
     }
     return factions;
   }
@@ -32,7 +32,7 @@ export class GameCreator {
   #addUnits(board, players, boardData) {
     const factionMap = this.#getFactionMap(players);
     for (let unitData of boardData.units) {
-      const faction = factionMap.get(unitData.faction.name);
+      const faction = factionMap.get(unitData.faction_id);
       const unit = new Unit(
         unitData.name, faction, unitData.type, unitData.attack, unitData.defense, unitData.move);
       board.addUnit(unit, unitData.row, unitData.column);
@@ -43,7 +43,7 @@ export class GameCreator {
     const factionMap = new Map();
     for (let player of players.getAllPlayers()) {
       for (let faction of player.getFactions()) {
-        factionMap.set(faction.getName(), faction);
+        factionMap.set(faction.getId(), faction);
       }
     }
     return factionMap;

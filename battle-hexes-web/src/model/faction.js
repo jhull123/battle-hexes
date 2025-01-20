@@ -1,15 +1,21 @@
 export class Faction {
+  #id;
   #name;
   #counterColor;
   #owningPlayer;
 
-  constructor(name, counterColor) {
+  constructor(id, name, counterColor) {
+    this.#id = id;
     this.#name = name;
     this.#counterColor = counterColor;
   }
 
   setOwningPlayer(player) {
     this.#owningPlayer = player;
+  }
+
+  getId() {
+    return this.#id;
   }
 
   getName() {
