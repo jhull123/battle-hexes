@@ -19,7 +19,7 @@ export class Game {
     this.#board = board;
     this.#board.setPlayers(players);
 
-    this.#combatResolver = new CombatResolver(board);
+    this.#combatResolver = new CombatResolver(id, board);
   }
 
   endPhase() {

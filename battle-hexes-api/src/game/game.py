@@ -34,10 +34,6 @@ class Game:
         # TODO
         pass
 
-    def get_sparse_board(self):
-        # TODO
-        pass
-
     def to_game_model(self) -> GameModel:
         return GameModel(
             id=self.id,

@@ -18,13 +18,16 @@ class TestFastAPI(unittest.TestCase):
 
     @patch('main.game_repo')
     def test_resolve_combat_placeholder(self, mock_game_repo):
+        mock_board = MagicMock()
+        sparse_board_data = {
+            "units": []
+        }
+
         game_id = "game-123"
         mock_game = MagicMock()
         mock_game.id = game_id
         mock_game_repo.get_game.return_value = mock_game
-        sparse_board_data = {
-            "units": []
-        }
+        mock_game.get_board.return_value = mock_board
 
         self.client.post(
             f"/combat/{game_id}", json=sparse_board_data)
@@ -32,4 +35,4 @@ class TestFastAPI(unittest.TestCase):
         mock_game.update.assert_called_once_with(
             SparseBoard(**sparse_board_data))
         mock_game.resolve_combat.assert_called_once()
-        mock_game.get_sparse_board.assert_called_once()
+        mock_board.to_sparse_board.assert_called_once()

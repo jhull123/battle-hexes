@@ -30,7 +30,8 @@ def get_game(game_id: str):
 
 @app.post('/combat/{game_id}')
 def resolve_combat(game_id: str, sparse_board: SparseBoard) -> SparseBoard:
+    print(f'we got game: {game_id}')
     game = game_repo.get_game(game_id)
     game.update(sparse_board)
     game.resolve_combat()
-    return game.get_sparse_board()
+    return game.get_board().to_sparse_board()

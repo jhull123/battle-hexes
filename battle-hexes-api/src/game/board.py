@@ -52,3 +52,7 @@ class Board:
     def to_board_model(self) -> BoardModel:
         units = [unit.to_unit_model() for unit in self.get_units()]
         return BoardModel(rows=self.rows, columns=self.columns, units=units)
+
+    def to_sparse_board(self) -> SparseBoard:
+        units = [unit.to_sparse_unit() for unit in self.get_units()]
+        return SparseBoard(units=units)

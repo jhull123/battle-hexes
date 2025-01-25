@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 import uuid
 from src.unit.faction import Faction
+from src.unit.sparseunit import SparseUnit
 
 
 class UnitModel(BaseModel):
@@ -67,6 +68,9 @@ class Unit:
                          move=self.move,
                          row=self.row,
                          column=self.column)
+
+    def to_sparse_unit(self) -> SparseUnit:
+        return SparseUnit(id=str(self.id), row=self.row, column=self.column)
 
     def __str__(self):
         return f"{self.name} ({self.faction.get_name()})", \
