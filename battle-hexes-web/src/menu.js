@@ -75,9 +75,18 @@ export class Menu {
   }
 
   doEndPhase() {
-    console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
-    this.#game.endPhase();
-    this.updateMenu();
+    if (this.#game.getCurrentPhase().toLowerCase() === 'combat') {
+      console.log('Resolving combat.');
+      this.#game.resolveCombat(this.#postCombat);
+    } else {
+      console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+      this.#game.endPhase();
+      this.updateMenu();
+    }
+  }
+
+  #postCombat() {
+    console.log('Combat phase is over.')
   }
 
   #setCurrentTurn() {

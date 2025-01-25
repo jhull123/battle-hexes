@@ -1,5 +1,6 @@
 import { API_URL } from './battle-api';
 import axios from 'axios';
+import { CombatResolver } from './combat-resolver';
 
 export class Game {
   #id
@@ -7,6 +8,7 @@ export class Game {
   #currentPhase
   #players
   #board
+  #combatResolver;
 
   constructor(id, phases, players, board) {
     this.#id = id;
@@ -16,6 +18,8 @@ export class Game {
 
     this.#board = board;
     this.#board.setPlayers(players);
+
+    this.#combatResolver = new CombatResolver(board);
   }
 
   endPhase() {
@@ -52,6 +56,11 @@ export class Game {
 
   getBoard() {
     return this.#board;
+  }
+
+  resolveCombat(finishedCb) {
+    this.#combatResolver.resolveCombat();
+    finishedCb();
   }
   
   static async newGameFromServer() {

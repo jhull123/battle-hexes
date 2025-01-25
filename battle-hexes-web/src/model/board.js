@@ -179,4 +179,15 @@ export class Board {
     }
     return occupiedHexes;
   }
+
+  sparseBoard() {
+    const sparseUnits = [];
+    for (let unit of this.getUnits()) {
+      let unitHex = unit.getContainingHex();
+      sparseUnits.push({id: unit.getId(), row: unitHex.getRow(), column: unitHex.getColumn()})
+    }
+    return {
+      units: sparseUnits
+    };
+  }
 }

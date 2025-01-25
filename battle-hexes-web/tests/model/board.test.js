@@ -52,3 +52,33 @@ describe('getHexAndAdjacent', () => {
     expect(adjacentHexes.has(board.getHex(5, 5))).toBe(true);
   });
 });
+
+describe('sparseBoard', () => {
+  let board, redUnit, blueUnit;
+
+  beforeEach(() => {
+    redUnit = new Unit('unit-001');
+    blueUnit = new Unit('unit-002');
+    
+    board = new Board(10, 10, []);
+    board.addUnit(redUnit, 2, 3);
+    board.addUnit(blueUnit, 2, 4);
+  });
+
+  test('sparse board returns data as json object', () => {
+    const sparseBoard = board.sparseBoard();
+    const sparseUnits = sparseBoard.units;
+
+    expect(sparseUnits.length).toBe(2);
+
+    const unitMap = new Map();
+    for (let unit of sparseUnits) {
+      unitMap[unit.id] = unit;
+    }
+
+    expect(unitMap['unit-001'].row).toBe(2);
+    expect(unitMap['unit-001'].column).toBe(3);
+
+    expect(unitMap['unit-002'].row).toBe(2);
+    expect(unitMap['unit-002'].column).toBe(4)  });
+});

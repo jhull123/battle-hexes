@@ -1,20 +1,14 @@
-// import { Board } from "../board";
+// import { API_URL } from './battle-api';
+// import axios from 'axios';
 
 export class CombatResolver {
-  /*
   #board;
-  #apiHost = 'http://localhost:8080';
 
   constructor(board) {
     this.#board = board;
   }
 
-  resolve() {
-    
+  resolveCombat() {
+    console.log(this.#board);
   }
-
-  setApiHost(apiHost) {
-    this.#apiHost = apiHost;
-  }
-    */
 }

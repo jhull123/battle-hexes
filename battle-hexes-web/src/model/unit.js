@@ -3,6 +3,7 @@ import { playerTypes } from "./player";
 export class Unit {
   #movePath = [];
   #containingHex = undefined;
+  #id;
   #name;
   #faction;
   #type;
@@ -12,7 +13,8 @@ export class Unit {
   #movesRemaining;
   #combatOpponents;
 
-  constructor(name, faction, type, attack, defense, move) {
+  constructor(id, name, faction, type, attack, defense, move) {
+    this.#id = id;
     this.#name = name;
     this.#faction = faction;
     this.#type = type;
@@ -25,6 +27,10 @@ export class Unit {
 
   toString() {
     return `${this.#name} (${this.#faction.getName()})`
+  }
+
+  getId() {
+    return this.#id;
   }
 
   getName() {
