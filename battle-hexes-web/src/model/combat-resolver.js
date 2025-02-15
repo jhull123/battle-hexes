@@ -15,7 +15,7 @@ export class CombatResolver {
     console.log(`${this.#gameId} - ${sparseBoard}`);
 
     const combatResult = await axios.post(
-      `${API_URL}/combat/${this.#gameId}`, 
+      `${API_URL}/games/${this.#gameId}/combat`, 
       sparseBoard);
     console.log('combat result: ' + combatResult);
   }
