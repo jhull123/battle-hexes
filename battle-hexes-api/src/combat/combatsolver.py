@@ -127,7 +127,11 @@ class CombatSolver:
         )[0]
         return CombatSolver.STANDARD_ODDS[closest_ratio_index]
 
-    def solve_combat(self, attack_factor, defense_factor) -> CombatResultData:
+    def solve_combat(
+            self,
+            attack_factor: int,
+            defense_factor: int
+    ) -> CombatResultData:
         odds = self.get_odds(attack_factor, defense_factor)
         odds_label = f'{odds[0]}:{odds[1]}'
 
