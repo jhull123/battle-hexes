@@ -19,6 +19,8 @@ class Game:
     def __init__(self, players: list, board: Board):
         self.id = uuid.uuid4()
         self.players = players
+        if players:
+            self.current_player = players[0]
         self.board = board
 
     def get_id(self):
@@ -29,6 +31,9 @@ class Game:
 
     def update(self, sparse_board: SparseBoard) -> None:
         self.board.update(sparse_board)
+
+    def get_current_player(self) -> Player:
+        return self.current_player
 
     def resolve_combat(self):
         # TODO

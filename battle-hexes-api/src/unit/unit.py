@@ -58,6 +58,20 @@ class Unit:
     def get_coords(self):
         return (self.row, self.column)
 
+    def is_adjacent(self, other_unit) -> bool:
+        # Even-Q Offset rules
+        even_q_offsets = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
+        odd_q_offsets = [(1, 0), (1, 1), (0, 1), (-1, 0), (0, -1), (1, -1)]
+
+        offsets = even_q_offsets if self.column % 2 == 0 else odd_q_offsets
+        return any(
+            (
+                self.row + dr == other_unit.row and
+                self.column + dc == other_unit.column
+            )
+            for dr, dc in offsets
+        )
+
     def to_unit_model(self) -> UnitModel:
         return UnitModel(id=self.id,
                          name=self.name,
