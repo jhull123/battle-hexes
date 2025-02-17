@@ -73,6 +73,7 @@ class TestCombat(unittest.TestCase):
         self.combat.resolve_combat()
 
         self.assertEqual(1, len(self.board.get_units()))
+        self.assertEqual(self.blue_unit, self.board.get_units()[0])
 
     def test_board_attacker_elim_has_correct_combat_data(self):
         self.board.add_unit(self.red_unit, 6, 4)
@@ -87,3 +88,22 @@ class TestCombat(unittest.TestCase):
             CombatResult.ATTACKER_ELIMINATED,
             combat_result.get_combat_result()
         )
+
+    def test_board_defender_elim_leaves_one_unit_on_the_board(self):
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 5, 5)
+        self.combat.set_static_die_roll(1)
+
+        self.combat.resolve_combat()
+
+        self.assertEqual(1, len(self.board.get_units()))
+        self.assertEqual(self.red_unit, self.board.get_units()[0])
+
+    def test_exchange_leaves_board_empty(self):
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 5, 3)
+        self.combat.set_static_die_roll(2)
+
+        self.combat.resolve_combat()
+
+        self.assertEqual(0, len(self.board.get_units()))

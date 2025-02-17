@@ -11,3 +11,11 @@ class CombatResults:
 
     def get_battles(self):
         return self.battles
+
+    def __str__(self):
+        s = f'{len(self.battles)} Battles\n'
+        for battle in self.battles:
+            s += f'Result: {battle.get_combat_result()}, '
+            s += f'Odds: {battle.get_odds()[0]}:{battle.get_odds()[0]}, '
+            s += f'Roll: {battle.get_die_roll()}'
+        return s

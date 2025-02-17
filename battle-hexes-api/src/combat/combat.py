@@ -35,6 +35,10 @@ class Combat:
         match combat_result.get_combat_result():
             case CombatResult.ATTACKER_ELIMINATED:
                 self.board.remove_units(battle_participants[0])
+            case CombatResult.DEFENDER_ELIMINATED:
+                self.board.remove_units(battle_participants[1])
+            case CombatResult.EXCHANGE:
+                self.board.remove_units(battle_participants)
             case _:
                 raise Exception(
                     'Unhandled combat result:',
