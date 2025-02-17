@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from uuid import UUID
 from typing import List
+from collections.abc import Iterable
 from src.game.sparseboard import SparseBoard
 from src.unit.unit import Unit, UnitModel
 
@@ -29,6 +30,17 @@ class Board:
 
         unit.set_coords(row, column)
         self.units[unit.get_id()] = unit
+
+    def remove_units(self, units) -> None:
+        if isinstance(units, Iterable):
+            for unit in units:
+                self._remove_single_unit(unit)
+        else:
+            self._remove_single_unit(units)
+
+    def _remove_single_unit(self, unit: Unit):
+        del self.units[unit.get_id()]
+        unit.set_coords(None, None)
 
     def get_units(self) -> List[Unit]:
         return list(self.units.values())

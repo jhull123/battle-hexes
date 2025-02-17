@@ -35,10 +35,6 @@ class Game:
     def get_current_player(self) -> Player:
         return self.current_player
 
-    def resolve_combat(self):
-        # TODO
-        pass
-
     def to_game_model(self) -> GameModel:
         return GameModel(
             id=self.id,

@@ -34,6 +34,5 @@ class TestFastAPI(unittest.TestCase):
 
         mock_game.update.assert_called_once_with(
             SparseBoard(**sparse_board_data))
-        mock_game.resolve_combat.assert_called_once()
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_board.to_sparse_board.assert_called_once()

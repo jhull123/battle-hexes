@@ -51,15 +51,18 @@ class Unit:
     def get_move(self):
         return self.move
 
-    def set_coords(self, row, column):
+    def set_coords(self, row: int, column: int):
         self.row = row
         self.column = column
 
-    def get_coords(self):
+    def get_coords(self) -> tuple:
+        if not (self.row and self.column):
+            return None
         return (self.row, self.column)
 
     def is_adjacent(self, other_unit) -> bool:
         # Even-Q Offset rules
+        # https://www.redblobgames.com/grids/hexagons/
         even_q_offsets = [(-1, 0), (-1, 1), (0, 1), (1, 0), (0, -1), (-1, -1)]
         odd_q_offsets = [(1, 0), (1, 1), (0, 1), (-1, 0), (0, -1), (1, -1)]
 

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi import Body
 from fastapi.middleware.cors import CORSMiddleware
+from src.combat.combat import Combat
 from src.game.game import Game
 from src.game.gamerepo import GameRepository
 from src.game.sparseboard import SparseBoard
@@ -37,6 +38,9 @@ def resolve_combat(
     print(f'we got game: {game_id}')
     game = game_repo.get_game(game_id)
     game.update(sparse_board)
-    game.resolve_combat()
+
+    results = Combat(game).resolve_combat()
+    print('combat results:', results)
+
     game_repo.update_game(game)
     return game.get_board().to_sparse_board()
