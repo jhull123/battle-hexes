@@ -35,8 +35,18 @@ class Combat:
         match combat_result.get_combat_result():
             case CombatResult.ATTACKER_ELIMINATED:
                 self.board.remove_units(battle_participants[0])
+            case CombatResult.ATTACKER_RETREAT_2:
+                battle_participants[0].forced_move(
+                    battle_participants[1].get_coords(),
+                    2
+                )
             case CombatResult.DEFENDER_ELIMINATED:
                 self.board.remove_units(battle_participants[1])
+            case CombatResult.DEFENDER_RETREAT_2:
+                battle_participants[1].forced_move(
+                    battle_participants[0].get_coords(),
+                    2
+                )
             case CombatResult.EXCHANGE:
                 self.board.remove_units(battle_participants)
             case _:

@@ -107,3 +107,33 @@ class TestCombat(unittest.TestCase):
         self.combat.resolve_combat()
 
         self.assertEqual(0, len(self.board.get_units()))
+
+    def test_a_back_2_from_lower_left_moves_attacker(self):
+        self.board.add_unit(self.red_unit, 4, 4)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.combat.set_static_die_roll(4)
+
+        self.combat.resolve_combat()
+
+        self.assertEqual(2, len(self.board.get_units()))
+        self.assertEqual((5, 2), self.red_unit.get_coords())
+
+    def test_a_back_2_from_upper_right_moves_attacker(self):
+        self.board.add_unit(self.red_unit, 3, 6)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.combat.set_static_die_roll(4)
+
+        self.combat.resolve_combat()
+
+        self.assertEqual(2, len(self.board.get_units()))
+        self.assertEqual((2, 8), self.red_unit.get_coords())
+
+    def test_d_back_2_from_above_moves_defender(self):
+        self.board.add_unit(self.red_unit, 2, 5)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.combat.set_static_die_roll(3)
+
+        self.combat.resolve_combat()
+
+        self.assertEqual(2, len(self.board.get_units()))
+        self.assertEqual((5, 5), self.blue_unit.get_coords())

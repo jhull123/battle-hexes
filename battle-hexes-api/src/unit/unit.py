@@ -56,7 +56,7 @@ class Unit:
         self.column = column
 
     def get_coords(self) -> tuple:
-        if not (self.row and self.column):
+        if self.row is None and self.column is None:
             return None
         return (self.row, self.column)
 
@@ -74,6 +74,34 @@ class Unit:
             )
             for dr, dc in offsets
         )
+
+    def forced_move(
+            self,
+            from_hex: tuple[int, int],
+            distance: int
+    ) -> None:
+        """Moves the unit away from the given hex in Even-r Offset."""
+        from_row, from_col = from_hex
+
+        if self.column == from_col:
+            self.row += (self.row - from_row) * distance
+            return
+
+        delta_col = self.column - from_col
+
+        for i in range(0, distance):
+            # same row = change
+            # not same row, stay the same!
+            if self.row == from_row:
+                delta_row = - delta_col
+            else:
+                delta_row = 0
+
+            from_row = self.row
+            from_col = self.column
+
+            self.row += delta_row
+            self.column += delta_col
 
     def to_unit_model(self) -> UnitModel:
         return UnitModel(id=self.id,
