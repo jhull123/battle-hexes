@@ -15,6 +15,10 @@ class TestCombatSolver(unittest.TestCase):
         odds = self.combat_solver.get_odds(11, 16)
         assert odds == (1, 2), f"Expected (1, 2), but got {odds}"
 
+    def test_2_vs_4_is_1_to_2_odds(self):
+        odds = self.combat_solver.get_odds(2, 4)
+        self.assertEqual((1, 2), odds, f'Expected (1, 2) but got {odds}')
+
     def test_12_vs_5_combat(self):
         self.combat_solver.set_static_die_roll(5)
         combat_result = self.combat_solver.solve_combat(12, 5)

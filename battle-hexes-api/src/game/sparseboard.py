@@ -1,10 +1,12 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+from src.combat.combatresult import CombatResultSchema
 from src.unit.sparseunit import SparseUnit
 
 
 class SparseBoard(BaseModel):
     units: List[SparseUnit] = []
+    last_combat_results: Optional[List[CombatResultSchema]] = None
 
     def add_unit(self, unit: SparseUnit):
         self.units.append(unit)

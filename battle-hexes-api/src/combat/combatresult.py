@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Tuple
+from pydantic import BaseModel
 
 
 class CombatResult(Enum):
@@ -27,3 +29,18 @@ class CombatResultData:
 
     def get_combat_result(self) -> CombatResult:
         return self.combat_result
+
+    def to_schema(self):
+        return CombatResultSchema(
+            combat_result_code=self.combat_result.name,
+            combat_result_text=self.combat_result.value,
+            odds=self.odds,
+            die_roll=self.die_roll
+        )
+
+
+class CombatResultSchema(BaseModel):
+    combat_result_code: str
+    combat_result_text: str
+    odds: Tuple[int, int]
+    die_roll: int

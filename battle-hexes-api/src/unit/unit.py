@@ -118,5 +118,5 @@ class Unit:
         return SparseUnit(id=str(self.id), row=self.row, column=self.column)
 
     def __str__(self):
-        return f"{self.name} ({self.faction.get_name()})", \
+        return f"{self.name} ({self.faction.name}) " + \
                f"{self.attack}-{self.defense}-{self.move}"
