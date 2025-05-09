@@ -17,6 +17,7 @@ export class CombatResolver {
     const combatResult = await axios.post(
       `${API_URL}/games/${this.#gameId}/combat`, 
       sparseBoard);
-    console.log('combat result: ' + combatResult);
+    console.log('combat result: ', combatResult.data.last_combat_results);
+    console.log('new board state: ', combatResult.data.units);
   }
 }
