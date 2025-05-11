@@ -80,5 +80,6 @@ describe('sparseBoard', () => {
     expect(unitMap['unit-001'].column).toBe(3);
 
     expect(unitMap['unit-002'].row).toBe(2);
-    expect(unitMap['unit-002'].column).toBe(4)  });
+    expect(unitMap['unit-002'].column).toBe(4)
+  });
 });

@@ -48,6 +48,7 @@ export class Hex {
     let unitIndex = this.#units.indexOf(unit);
     if (unitIndex != -1) {
       this.#units.splice(unitIndex, 1);
+      unit.setContainingHex(null);
     } else {
       console.warn(`Did not find unit ${unit} to remove!`);
     }
