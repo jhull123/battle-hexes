@@ -42,6 +42,7 @@ export class Hex {
   
   addUnit(unit) {
     this.#units.push(unit);
+    unit.setContainingHex(this);
   }
 
   removeUnit(unit) {

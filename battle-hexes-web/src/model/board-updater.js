@@ -1,3 +1,5 @@
+import { eventBus } from '../event-bus.js';
+
 export class BoardUpdater {
   constructor() {
   }
@@ -10,17 +12,13 @@ export class BoardUpdater {
       if (unit === null) {
         // unit was eliminated
         containingHex.removeUnit(boardUnit);
-        continue;
-      }
-
-      const destinationHex = board.getHex(unit.row, unit.column);
-      if (containingHex !== destinationHex) {
-        // unit moved
-        containingHex.removeUnit(boardUnit);
-        destinationHex.addUnit(boardUnit);
-        boardUnit.setContainingHex(destinationHex);
+      } else {
+        const destinationHex = board.getHex(unit.row, unit.column);
+        board.updateUnitPosition(boardUnit, containingHex, destinationHex);
       }
     }
+
+    eventBus.emit('redraw');
   }
 
   #findUnit(id, units) {

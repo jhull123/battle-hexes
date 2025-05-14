@@ -1,4 +1,5 @@
 import p5 from 'p5';
+import { eventBus } from './event-bus.js';
 import { Game } from './model/game.js';
 import { HexDrawer } from './drawer/hex-drawer.js';
 import { UnitDrawer } from './drawer/unit-drawer.js';
@@ -43,6 +44,11 @@ new p5((p) => {
     canvas = p.createCanvas(getCanvasWidth(), getCanvasHeight());
     canvas.parent('canvas-container');
     p.noLoop();
+
+    eventBus.on('redraw', () => {
+      console.log('Redrawing board.');
+      p.draw();
+    });
   };
 
   p.draw = function() {

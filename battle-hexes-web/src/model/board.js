@@ -82,6 +82,19 @@ export class Board {
     newHex.addUnit(unit);
   }
 
+  updateUnitPosition(unit, oldHex, newHex) {
+    if (oldHex === newHex) {
+      return;
+    }
+    if (oldHex !== undefined && oldHex !== null) {
+      oldHex.removeUnit(unit);
+    }
+    if (newHex !== undefined && newHex !== null) {
+      newHex.addUnit(unit);
+    }
+    unit.setContainingHex(newHex);
+  }
+
   hasSelection() {
     return this.#selectedHex !== undefined;
   }
@@ -111,7 +124,7 @@ export class Board {
   }
 
   getHexAndAdjacent(aHex) {
-    if (aHex === undefined) {
+    if (aHex === undefined || aHex === null) {
       return new Set();
     }
 
@@ -130,6 +143,12 @@ export class Board {
       }
     }
 
+    if (null in hexSet) {
+      throw new Error(`Null in hexSet! ${hexSet}`);
+    } else {
+      // console.log('HexSet: ', hexSet);
+    }
+
     return hexSet;
   }
 
@@ -140,6 +159,9 @@ export class Board {
       this.getHexAndAdjacent(targetHex).forEach(neighborHex => allTheHexes.add(neighborHex));
     }
 
+    if (null in allTheHexes) {
+      throw new Error(`Null in allTheHexes! ${allTheHexes}`);
+    }
     return allTheHexes;
   }
 

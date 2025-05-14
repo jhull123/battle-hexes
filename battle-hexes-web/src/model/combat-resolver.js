@@ -1,5 +1,6 @@
 import { API_URL } from './battle-api';
 import axios from 'axios';
+import { BoardUpdater } from './board-updater';
 
 export class CombatResolver {
   #gameId;
@@ -19,5 +20,8 @@ export class CombatResolver {
       sparseBoard);
     console.log('combat result: ', combatResult.data.last_combat_results);
     console.log('new board state: ', combatResult.data.units);
+
+    const boardUpdater = new BoardUpdater();
+    boardUpdater.updateBoard(this.#board, combatResult.data.units);
   }
 }
