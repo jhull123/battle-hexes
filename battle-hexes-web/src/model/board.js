@@ -191,7 +191,12 @@ export class Board {
   }
 
   hasCombat() {
-    return false; // TODO!
+    for (let hex of this.getAllHexes()) {
+      if (hex.hasCombat()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   getOccupiedHexes() {

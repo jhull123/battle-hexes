@@ -41,9 +41,10 @@ describe("createGame", () => {
   });
 
   test("create game sets phases", () => {
-    expect(game.getPhases().length).toBe(2);
+    expect(game.getPhases().length).toBe(3);
     expect(game.getPhases()[0]).toBe("Movement");
     expect(game.getPhases()[1]).toBe("Combat");
+    expect(game.getPhases()[2]).toBe("End Turn");
   });
 
   test("board size is set", () => {

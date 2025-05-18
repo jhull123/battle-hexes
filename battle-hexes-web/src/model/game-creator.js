@@ -7,7 +7,9 @@ import { Unit } from "./unit";
 export class GameCreator {
   createGame(gameData) {
     const board = new Board(gameData.board.rows, gameData.board.columns);
-    const game = new Game(gameData.id, ['Movement', 'Combat'], this.#getPlayers(gameData), board);
+    const game = new Game(
+      gameData.id, ['Movement', 'Combat', 'End Turn'], 
+      this.#getPlayers(gameData), board);
     this.#addUnits(board, game.getPlayers(), gameData.board);
     return game;
   }

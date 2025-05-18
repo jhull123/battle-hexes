@@ -12,6 +12,8 @@ export class Menu {
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
+    this.#setCurrentTurn();
+    this.#updateCombatIndicator();
   }
 
   #initPhasesInMenu() {
@@ -20,18 +22,20 @@ export class Menu {
     for (let i = 0; i < this.#game.getPhases().length; i++) {
       const phaseElem = document.createElement('span');
       phaseElem.id = 'phasesList' + this.#game.getPhases()[i];
-      phaseElem.className = i === 0 ? 'current-phase' : 'disabled-phase';
+      
+      if (i === 0) {
+        phaseElem.classList.add('current-phase');
+      }
+
       phaseElem.textContent = this.#game.getPhases()[i];
 
       phasesElem.appendChild(phaseElem);
 
-      const arrow = document.createTextNode(' → ');
-      phasesElem.appendChild(arrow);
+      if (i < this.#game.getPhases().length - 1) {
+        const arrow = document.createTextNode(' → ');
+        phasesElem.appendChild(arrow);
+      }
     }
-
-    const endTurnPhase = document.createElement('span');
-    endTurnPhase.textContent = 'End Turn';
-    phasesElem.appendChild(endTurnPhase);
   }
 
   #initPhaseEndButton() {
@@ -78,11 +82,11 @@ export class Menu {
     if (this.#game.getCurrentPhase().toLowerCase() === 'combat') {
       console.log('Resolving combat.');
       this.#game.resolveCombat(this.#postCombat);
-    } else {
-      console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
-      this.#game.endPhase();
-      this.updateMenu();
     }
+
+    console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+    this.#game.endPhase();
+    this.updateMenu();
   }
 
   #postCombat() {
@@ -91,16 +95,18 @@ export class Menu {
 
   #setCurrentTurn() {
     document.getElementById('currentTurnLabel').innerHTML = this.#game.getCurrentPlayer().getName();
-    document.getElementById('endPhaseBtn').textContent = 'End ' + this.#game.getCurrentPhase();
+    document.getElementById('endPhaseBtn').textContent = 
+        (this.#game.getCurrentPhase().startsWith('End ')? '' : 'End ') + 
+            this.#game.getCurrentPhase();
   }
 
   #updatePhasesStyling() {
     for (let phase of this.#game.getPhases()) {
       const phaseElem = document.getElementById('phasesList' + phase);
       if (phase === this.#game.getCurrentPhase()) {
-        phaseElem.className = 'current-phase';
+        phaseElem.classList.add('current-phase');
       } else {
-        phaseElem.className = '';
+        phaseElem.classList.remove('current-phase');
       }
     }
   }
