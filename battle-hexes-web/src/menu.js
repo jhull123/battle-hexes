@@ -66,6 +66,7 @@ export class Menu {
     this.#updateCombatIndicator();
     this.#setCurrentTurn();
     this.#updatePhasesStyling();
+    this.#disableOrEnableActionButton();
   }
 
   #updateCombatIndicator() {
@@ -87,6 +88,12 @@ export class Menu {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
     this.#game.endPhase();
     this.updateMenu();
+    this.#disableOrEnableActionButton();
+  }
+
+  #disableOrEnableActionButton() {
+    const endPhaseBtn = document.getElementById('endPhaseBtn');
+    endPhaseBtn.disabled = !this.#game.getCurrentPlayer().isHuman();
   }
 
   #postCombat() {

@@ -20,6 +20,10 @@ export class Player {
     return this.#type;
   }
 
+  isHuman() {
+    return this.#type === playerTypes.HUMAN;
+  }
+
   getFactions() {
     return this.#factions;
   }
