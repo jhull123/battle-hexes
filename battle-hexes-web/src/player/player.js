@@ -27,16 +27,9 @@ export class Player {
   getFactions() {
     return this.#factions;
   }
-}
 
-export class CpuPlayer extends Player {
-  constructor(name, factions) {
-    super(name, playerTypes.CPU, factions);
-  }
-
-  makeMove() {
-    // TODO Implement CPU logic to make a move based on the game state
-    console.log(`${this.getName()} is making a move.`);
+  async play(game) {
+    console.log(`${this.#name} is playing ${game.getId()}.`);
   }
 }
 

@@ -1,7 +1,8 @@
 import { Board } from "./board";
 import { Faction } from "./faction";
 import { Game } from "./game";
-import { Player, Players } from "../player/player";
+import { Players } from "../player/player";
+import { PlayerFactory } from "../player/player-factory";
 import { Unit } from "./unit";
 
 export class GameCreator {
@@ -16,10 +17,14 @@ export class GameCreator {
 
   #getPlayers(gameData) {
     const players = new Array();
+    const playerFactory = new PlayerFactory();
+
     for (let playerData of gameData.players) {
-      const player = new Player(playerData.name, playerData.type, this.#getFactions(playerData));
-      players.push(player);
+      players.push(
+        playerFactory.createPlayer(
+          playerData.name, playerData.type, this.#getFactions(playerData)));
     }
+
     return new Players(players);
   }
 

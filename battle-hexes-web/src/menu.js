@@ -86,9 +86,13 @@ export class Menu {
     }
 
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
-    this.#game.endPhase();
+    const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
     this.#disableOrEnableActionButton();
+    
+    if (switchedPlayers) {
+      this.#game.getCurrentPlayer().play(this.#game);
+    }
   }
 
   #disableOrEnableActionButton() {
