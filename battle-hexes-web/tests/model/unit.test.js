@@ -1,6 +1,6 @@
 import { Faction } from '../../src/model/faction.js';
 import { Hex } from '../../src/model/hex.js';
-import { Player } from '../../src/model/player.js';
+import { Player } from '../../src/player/player.js';
 import { Unit } from '../../src/model/unit.js';
 
 const friendlyPlayer = new Player('Friendly Player', 'Human');

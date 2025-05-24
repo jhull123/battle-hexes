@@ -98,6 +98,7 @@ export class Menu {
 
   #postCombat() {
     console.log('Combat phase is over.')
+    // TODO: update the UI to show the results of the combat
   }
 
   #setCurrentTurn() {

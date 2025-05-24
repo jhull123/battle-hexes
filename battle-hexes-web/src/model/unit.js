@@ -1,5 +1,3 @@
-import { playerTypes } from "./player";
-
 export class Unit {
   #movePath = [];
   #containingHex = undefined;
@@ -123,7 +121,7 @@ export class Unit {
 
   isMovable() {
     return this.getMovesRemaining() > 0
-      && this.getOwningPlayer().getType() === playerTypes.HUMAN;
+      && this.getOwningPlayer().isHuman();
   }
 
   getCombatOpponents() {

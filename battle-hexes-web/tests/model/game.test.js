@@ -1,6 +1,6 @@
 import { Board } from "../../src/model/board";
 import { Game } from "../../src/model/game";
-import { Player, Players } from "../../src/model/player";
+import { Player, Players } from "../../src/player/player";
 
 let game;
 const phases = ['Movement', 'Combat'];

@@ -1,7 +1,7 @@
 import { Board } from "./board";
 import { Faction } from "./faction";
 import { Game } from "./game";
-import { Player, Players } from "./player";
+import { Player, Players } from "../player/player";
 import { Unit } from "./unit";
 
 export class GameCreator {

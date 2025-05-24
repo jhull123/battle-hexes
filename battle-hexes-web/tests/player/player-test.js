@@ -1,5 +1,5 @@
-import { Player } from "../../src/model/player";
-import { Players } from "../../src/model/player";
+import { Player } from "../../src/player/player";
+import { Players } from "../../src/player/player";
 
 let player1;
 let player2;
