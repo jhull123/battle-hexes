@@ -1,0 +1,41 @@
+import unittest
+import uuid
+from src.cpu.randomplayer import RandomPlayer
+from src.game.board import Board
+from src.game.game import Game
+from src.game.player import PlayerType
+from src.unit.faction import Faction
+from src.unit.unit import Unit
+
+
+class TestRandomPlayer(unittest.TestCase):
+    def setUp(self):
+        self.blue_faction = Faction(id=uuid.uuid4(), name='Blue', color='blue')
+        self.blue_player = RandomPlayer(
+            name='Blue Player',
+            type=PlayerType.CPU,
+            factions=[self.blue_faction]
+        )
+        self.board = Board(10, 10)
+        self.game = Game(players=[self.blue_player], board=self.board)
+        self.blue1 = Unit(
+            uuid.uuid4(),
+            'Blue Unit 1',
+            self.blue_faction,
+            'Infantry',
+            2, 1, 3
+        )
+
+    def test_empty_test(self):
+        # This test is intentionally left empty to ensure the setup works
+        pass
+
+    # def test_no_moves_for_empty_board(self):
+    #     moves = self.blue_player.movement(self.game)
+    #     self.assertEqual(moves, [], "Expected no moves for an empty board")
+
+    # def test_move_one_unit(self):
+    #     self.board.add_unit(self.blue1, 5, 5)
+    #     moves = self.blue_player.movement(self.game)
+    #     self.assertGreater(
+    # len(moves), 0, "Expected at least one move for the unit")
