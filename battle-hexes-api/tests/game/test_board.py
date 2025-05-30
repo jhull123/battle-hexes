@@ -91,6 +91,25 @@ class TestBoard(unittest.TestCase):
 
         expected_coords = [(0, 3), (1, 4), (2, 4), (2, 3), (2, 2), (1, 2)]
         actual_coords = [(hex.row, hex.column) for hex in neighbors]
+        print(f"Actual neighboring hexes: {actual_coords}")
+        self.assertCountEqual(
+            actual_coords, expected_coords,
+            "Neighboring hexes should match expected coordinates"
+        )
+
+    def test_get_neighboring_hexes_center_hex_odd_3_2(self):
+        self.board.add_unit(self.red_unit, 3, 2)
+
+        center_hex = self.board.get_hex(3, 2)
+        neighbors = self.board.get_neighboring_hexes(center_hex)
+
+        self.assertEqual(
+            len(neighbors), 6,
+            "Center hex should have 6 neighbors"
+        )
+
+        expected_coords = [(2, 2), (2, 3), (3, 3), (4, 2), (3, 1), (2, 1)]
+        actual_coords = [(hex.row, hex.column) for hex in neighbors]
         self.assertCountEqual(
             actual_coords, expected_coords,
             "Neighboring hexes should match expected coordinates"
@@ -126,3 +145,80 @@ class TestBoard(unittest.TestCase):
             actual_coords, expected_coords,
             "Neighboring hexes should match expected coordinates"
         )
+
+    def test_get_reachable_hexes_within_move_points(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        start_hex = self.board.get_hex(2, 2)
+
+        reachable_hexes = self.board.get_reachable_hexes(
+            self.red_unit, start_hex, move_points=2
+        )
+
+        actual_coords = {(hex.row, hex.column) for hex in reachable_hexes}
+
+        # This is the full hex range for radius 2 around (2, 2)
+        expected_coords = {
+            (2, 2),
+            (1, 2), (1, 3), (2, 3), (3, 2), (2, 1), (1, 1),
+            (0, 2), (0, 3), (1, 4), (2, 4), (3, 4), (3, 3),
+            (4, 2), (3, 1), (3, 0), (2, 0), (1, 0), (0, 1)
+        }
+
+        # Optional: filter expected_coords to fit your board bounds
+        expected_coords = {
+            (r, c) for r, c in expected_coords
+            if 0 <= r < self.board.rows and 0 <= c < self.board.columns
+        }
+
+        self.assertEqual(
+            len(actual_coords), len(expected_coords),
+            f"Expected {len(expected_coords)} reachable hexes"
+        )
+        print(f"Actual reachable hexes: {actual_coords}")
+        self.assertSetEqual(
+            actual_coords, expected_coords,
+            "Reachable hexes should match expected coordinates"
+        )
+
+    def test_get_reachable_hexes_with_no_move_points(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        start_hex = self.board.get_hex(2, 2)
+
+        reachable_hexes = self.board.get_reachable_hexes(
+            self.red_unit, start_hex, move_points=0
+        )
+
+        self.assertEqual(
+            len(reachable_hexes), 1,
+            "Unit with 0 move points should only reach its starting hex"
+        )
+
+        expected_coords = [(2, 2)]
+        actual_coords = [(hex.row, hex.column) for hex in reachable_hexes]
+        self.assertCountEqual(
+            actual_coords, expected_coords,
+            "Reachable hexes should only include the starting hex"
+        )
+
+    # def test_get_reachable_hexes_with_obstacles(self):
+    #     self.board.add_unit(self.red_unit, 2, 2)
+    #     self.board.add_unit(self.blue_unit, 3, 2)  # Obstacle
+    #     start_hex = self.board.get_hex(2, 2)
+
+    #     reachable_hexes = self.board.get_reachable_hexes(
+    #         self.red_unit, start_hex, move_points=2
+    #     )
+
+    #     self.assertEqual(
+    #         len(reachable_hexes), 6,
+    #         "Unit with 2 move points should reach 6 hexes excl obstacles"
+    #     )
+
+    #     expected_coords = [
+    #         (2, 2), (1, 2), (1, 3), (2, 3), (3, 3), (2, 1)
+    #     ]
+    #     actual_coords = [(hex.row, hex.column) for hex in reachable_hexes]
+    #     self.assertCountEqual(
+    #         actual_coords, expected_coords,
+    #         "Reachable hexes should exclude hexes with obstacles"
+    #     )

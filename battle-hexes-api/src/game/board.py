@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from uuid import UUID
-from typing import List
 from collections.abc import Iterable
+from collections import deque
+from pydantic import BaseModel
+from typing import List, Set
+from uuid import UUID
 from src.game.hex import Hex
 from src.game.sparseboard import SparseBoard
 from src.unit.unit import Unit, UnitModel
@@ -107,7 +108,7 @@ class Board:
         neighbors = []
         directions = (
             self.EVEN_R_DIRECTIONS
-            if hex.row % 2 == 0
+            if hex.column % 2 == 0
             else self.ODD_R_DIRECTIONS
         )
 
@@ -119,6 +120,34 @@ class Board:
                 neighbors.append(neighbor)
 
         return neighbors
+
+    def get_reachable_hexes(
+            self, unit: Unit, start: Hex, move_points: int = None
+    ) -> Set[Hex]:
+        if move_points is None:
+            move_points = unit.get_move_points()
+
+        visited = set()
+        queue = deque()
+        reachable_hexes = set()
+
+        queue.append((start, 0))
+        visited.add((start.row, start.column))
+        reachable_hexes.add(start)
+
+        while queue:
+            current_hex, cost = queue.popleft()
+
+            if cost >= move_points:
+                continue
+
+            for neighbor in self.get_neighboring_hexes(current_hex):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    reachable_hexes.add(neighbor)
+                    queue.append((neighbor, cost + 1))  # TODO static cost of 1
+
+        return reachable_hexes
 
     def to_board_model(self) -> BoardModel:
         units = [unit.to_unit_model() for unit in self.get_units()]
