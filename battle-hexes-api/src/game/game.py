@@ -42,6 +42,20 @@ class Game:
             board=self.board.to_board_model()
         )
 
+    def get_opposing_factions(self, faction: Faction) -> List[Faction]:
+        owning_player = self.get_player_for_faction(faction)
+        opposing_factions = []
+        for player in self.players:
+            if player != owning_player:
+                opposing_factions.extend(player.factions)
+        return opposing_factions
+
+    def get_player_for_faction(self, faction: Faction) -> Player:
+        for player in self.players:
+            if faction in player.factions:
+                return player
+        raise ValueError(f"No player found for faction {faction.name}")
+
     @staticmethod
     def create_sample_game():
         red_faction = Faction(
@@ -62,12 +76,14 @@ class Game:
 
         red_unit = Unit(
              UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
-             "Red Unit", red_faction, "Infantry", 2, 2, 6)
+             "Red Unit", red_faction, player1,
+             "Infantry", 2, 2, 6)
         game.board.add_unit(red_unit, 6, 4)
 
         blue_unit = Unit(
              UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
-             "Blue Unit", blue_faction, "Infantry", 4, 4, 4)
+             "Blue Unit", blue_faction, player2,
+             "Infantry", 4, 4, 4)
         game.board.add_unit(blue_unit, 3, 5)
 
         return game

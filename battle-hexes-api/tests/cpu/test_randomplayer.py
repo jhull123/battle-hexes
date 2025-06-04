@@ -22,6 +22,7 @@ class TestRandomPlayer(unittest.TestCase):
             uuid.uuid4(),
             'Blue Unit 1',
             self.blue_faction,
+            self.blue_player,
             'Infantry',
             2, 1, 3
         )

@@ -30,10 +30,14 @@ class TestCombat(unittest.TestCase):
         self.combat = Combat(self.game)
 
         self.red_unit = Unit(id=uuid.uuid4(), name='Red Unit',
-                             faction=self.red_faction, type='Infantry',
+                             faction=self.red_faction,
+                             player=self.red_player,
+                             type='Infantry',
                              attack=4, defense=4, move=4)
         self.blue_unit = Unit(id=uuid.uuid4(), name='Blue Unit',
-                              faction=self.blue_faction, type='Recon',
+                              faction=self.blue_faction,
+                              player=self.blue_player,
+                              type='Recon',
                               attack=2, defense=2, move=6)
 
     def test_results_empty_when_empty_board(self):

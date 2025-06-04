@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 import uuid
+from src.game.player import Player
 from src.unit.faction import Faction
 from src.unit.sparseunit import SparseUnit
 
@@ -17,18 +18,32 @@ class UnitModel(BaseModel):
 
 
 class Unit:
-    def __init__(self, id: uuid.UUID, name: str, faction: Faction, type: str,
-                 attack: int, defense: int, move: int,
-                 row: int = None, column: int = None):
+    def __init__(
+            self,
+            id: uuid.UUID,
+            name: str,
+            faction: Faction,
+            player: Player,
+            type: str,
+            attack: int,
+            defense: int,
+            move: int,
+            row: int = None,
+            column: int = None):
         self.id = id
         self.name = name
         self.faction = faction
+        self._player = player
         self.type = type
         self.attack = attack
         self.defense = defense
         self.move = move
         self.row = row
         self.column = column
+
+    @property
+    def player(self) -> Player:
+        return self._player
 
     def get_id(self):
         return self.id
@@ -59,6 +74,10 @@ class Unit:
         if self.row is None and self.column is None:
             return None
         return (self.row, self.column)
+
+    def is_friendly(self, other_unit) -> bool:
+        """Check if the other unit's faction is owned by the player."""
+        return self.player == other_unit.player
 
     def is_adjacent(self, other_unit) -> bool:
         # Even-Q Offset rules
