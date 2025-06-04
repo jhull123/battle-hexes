@@ -10,13 +10,13 @@ class TestUnit(unittest.TestCase):
         self.faction1 = Faction(id=uuid.uuid4(), name="Faction1", color="Red")
         self.faction2 = Faction(id=uuid.uuid4(), name="Faction2", color="Blue")
         self.player1 = Player(
-            name="Player1", 
-            type=PlayerType.CPU, 
+            name="Player1",
+            type=PlayerType.CPU,
             factions=[self.faction1]
         )
         self.player2 = Player(
-            name="Player2", 
-            type=PlayerType.CPU, 
+            name="Player2",
+            type=PlayerType.CPU,
             factions=[self.faction2]
         )
 
