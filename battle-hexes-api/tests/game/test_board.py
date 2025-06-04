@@ -4,6 +4,7 @@ from game.board import Board
 from game.sparseboard import SparseBoard
 from unit.faction import Faction
 from unit.unit import Unit
+from game.player import Player, PlayerType
 
 
 class TestBoard(unittest.TestCase):
@@ -199,6 +200,37 @@ class TestBoard(unittest.TestCase):
             actual_coords, expected_coords,
             "Reachable hexes should only include the starting hex"
         )
+
+    def test_enemy_adjacent_detection(self):
+        red_player = Player(name="Red", type=PlayerType.HUMAN,
+                            factions=[self.red_faction])
+        blue_player = Player(name="Blue", type=PlayerType.CPU,
+                             factions=[self.blue_faction])
+        self.red_unit.player = red_player
+        self.blue_unit.player = blue_player
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 2, 3)
+
+        target_hex = self.board.get_hex(2, 2)
+        self.assertTrue(self.board.enemy_adjacent(self.red_unit, target_hex))
+
+    def test_get_reachable_hexes_avoids_enemy_adjacent(self):
+        red_player = Player(name="Red", type=PlayerType.HUMAN,
+                            factions=[self.red_faction])
+        blue_player = Player(name="Blue", type=PlayerType.CPU,
+                             factions=[self.blue_faction])
+        self.red_unit.player = red_player
+        self.blue_unit.player = blue_player
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 2, 3)
+
+        start_hex = self.board.get_hex(2, 2)
+        reachable_hexes = self.board.get_reachable_hexes(
+            self.red_unit, start_hex, move_points=1
+        )
+
+        coords = {(h.row, h.column) for h in reachable_hexes}
+        self.assertNotIn((2, 3), coords)
 
     # def test_get_reachable_hexes_with_obstacles(self):
     #     self.board.add_unit(self.red_unit, 2, 2)

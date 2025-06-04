@@ -85,6 +85,12 @@ class Board:
             raise KeyError(f"No unit found with ID {unit_id}")
         return unit
 
+    def get_unit_at(self, row: int, column: int) -> Unit | None:
+        for unit in self.units.values():
+            if unit.get_coords() == (row, column):
+                return unit
+        return None
+
     def update(self, sparse_board: SparseBoard) -> None:
         for unit_data in sparse_board.units:
             unit_id = unit_data.id
@@ -121,6 +127,16 @@ class Board:
 
         return neighbors
 
+    def enemy_adjacent(self, unit: Unit, hex: Hex) -> bool:
+        occupant = self.get_unit_at(hex.row, hex.column)
+        if occupant and unit.is_enemy(occupant):
+            return True
+        for neighbor in self.get_neighboring_hexes(hex):
+            other = self.get_unit_at(neighbor.row, neighbor.column)
+            if other and unit.is_enemy(other):
+                return True
+        return False
+
     def get_reachable_hexes(
             self, unit: Unit, start: Hex, move_points: int = None
     ) -> Set[Hex]:
@@ -144,8 +160,9 @@ class Board:
             for neighbor in self.get_neighboring_hexes(current_hex):
                 if neighbor not in visited:
                     visited.add(neighbor)
-                    reachable_hexes.add(neighbor)
-                    queue.append((neighbor, cost + 1))  # TODO static cost of 1
+                    if not self.enemy_adjacent(unit, neighbor):
+                        reachable_hexes.add(neighbor)
+                        queue.append((neighbor, cost + 1))  # TODO static cost of 1
 
         return reachable_hexes
 

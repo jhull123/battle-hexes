@@ -2,6 +2,7 @@ from pydantic import BaseModel
 import uuid
 from src.unit.faction import Faction
 from src.unit.sparseunit import SparseUnit
+from src.game.player import Player
 
 
 class UnitModel(BaseModel):
@@ -17,9 +18,19 @@ class UnitModel(BaseModel):
 
 
 class Unit:
-    def __init__(self, id: uuid.UUID, name: str, faction: Faction, type: str,
-                 attack: int, defense: int, move: int,
-                 row: int = None, column: int = None):
+    def __init__(
+            self,
+            id: uuid.UUID,
+            name: str,
+            faction: Faction,
+            type: str,
+            attack: int,
+            defense: int,
+            move: int,
+            player: Player | None = None,
+            row: int | None = None,
+            column: int | None = None,
+    ):
         self.id = id
         self.name = name
         self.faction = faction
@@ -27,6 +38,7 @@ class Unit:
         self.attack = attack
         self.defense = defense
         self.move = move
+        self.player = player
         self.row = row
         self.column = column
 
@@ -50,6 +62,21 @@ class Unit:
 
     def get_move(self):
         return self.move
+
+    def get_move_points(self):
+        """Compatibility alias for move value."""
+        return self.move
+
+    def get_player(self) -> Player | None:
+        return self.player
+
+    def is_friendly(self, other: "Unit") -> bool:
+        if self.player is not None and other.player is not None:
+            return self.player == other.player
+        return self.faction == other.faction
+
+    def is_enemy(self, other: "Unit") -> bool:
+        return not self.is_friendly(other)
 
     def set_coords(self, row: int, column: int):
         self.row = row
