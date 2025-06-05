@@ -75,7 +75,7 @@ class Unit:
             return None
         return (self.row, self.column)
 
-    def is_friendly(self, other_unit) -> bool:
+    def is_friendly(self, other_unit: 'Unit') -> bool:
         """Check if the other unit's faction is owned by the player."""
         return self.player == other_unit.player
 

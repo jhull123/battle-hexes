@@ -145,19 +145,29 @@ class Board:
                 if neighbor not in visited:
                     visited.add(neighbor)
                     reachable_hexes.add(neighbor)
-                    # if not self.enemy_adjacent(unit, neighbor):
-                    # TODO Only add to queue if not adjacent to an enemy
-                    # TODO static cost of 1
-                    queue.append((neighbor, cost + 1))
+                    if not self.enemy_adjacent(unit, neighbor):
+                        # TODO static cost of 1
+                        queue.append((neighbor, cost + 1))
 
         return reachable_hexes
 
     def enemy_adjacent(self, unit: Unit, hex: Hex) -> bool:
-        # TODO
-        # for neighbor in self.get_neighboring_hexes(hex):
-        #    if
+        """Check if there are any enemy units adjacent to the given hex."""
+        neighbor_hexes = self.get_neighboring_hexes(hex)
+        neighbor_units = self.get_units_for_hexes(neighbor_hexes)
+
+        for neighbor_unit in neighbor_units:
+            if not neighbor_unit.is_friendly(unit):
+                return True
 
         return False
+
+    def get_units_for_hexes(self, hexes: List[Hex]) -> List[Unit]:
+        units = []
+        for unit in self.units.values():
+            if unit.get_coords() in hexes:
+                units.append(unit)
+        return units
 
     def to_board_model(self) -> BoardModel:
         units = [unit.to_unit_model() for unit in self.get_units()]

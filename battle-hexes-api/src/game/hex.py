@@ -12,9 +12,11 @@ class Hex:
         return self._column
 
     def __eq__(self, other):
-        if not isinstance(other, Hex):
-            return False
-        return self.row == other.row and self.column == other.column
+        if isinstance(other, tuple):
+            return self.row == other[0] and self.column == other[1]
+        if isinstance(other, Hex):
+            return self.row == other.row and self.column == other.column
+        return False
 
     def __hash__(self):
         return hash((self.row, self.column))

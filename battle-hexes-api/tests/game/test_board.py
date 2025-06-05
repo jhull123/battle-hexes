@@ -214,25 +214,67 @@ class TestBoard(unittest.TestCase):
             "Reachable hexes should only include the starting hex"
         )
 
-    # def test_get_reachable_hexes_with_obstacles(self):
-    #     self.board.add_unit(self.red_unit, 2, 2)
-    #     self.board.add_unit(self.blue_unit, 3, 2)  # Obstacle
-    #     start_hex = self.board.get_hex(2, 2)
+    def test_enemy_adjacent_no_enemies(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.red_unit, 1, 2)  # Friendly unit
 
-    #     reachable_hexes = self.board.get_reachable_hexes(
-    #         self.red_unit, start_hex, move_points=2
-    #     )
+        target_hex = self.board.get_hex(2, 2)
+        self.assertFalse(
+            self.board.enemy_adjacent(self.red_unit, target_hex),
+            "Hex should not be adjacent to any enemy units"
+        )
 
-    #     self.assertEqual(
-    #         len(reachable_hexes), 6,
-    #         "Unit with 2 move points should reach 6 hexes excl obstacles"
-    #     )
+    def test_enemy_adjacent_one_enemy(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 1, 2)  # Enemy unit
 
-    #     expected_coords = [
-    #         (2, 2), (1, 2), (1, 3), (2, 3), (3, 3), (2, 1)
-    #     ]
-    #     actual_coords = [(hex.row, hex.column) for hex in reachable_hexes]
-    #     self.assertCountEqual(
-    #         actual_coords, expected_coords,
-    #         "Reachable hexes should exclude hexes with obstacles"
-    #     )
+        target_hex = self.board.get_hex(2, 2)
+        self.assertTrue(
+            self.board.enemy_adjacent(self.red_unit, target_hex),
+            "Hex should be adjacent to an enemy unit"
+        )
+
+    def test_enemy_adjacent_multiple_enemies(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 1, 2)  # Enemy unit
+        self.board.add_unit(self.blue_unit, 2, 3)  # Another enemy unit
+
+        target_hex = self.board.get_hex(2, 2)
+        self.assertTrue(
+            self.board.enemy_adjacent(self.red_unit, target_hex),
+            "Hex should be adjacent to multiple enemy units"
+        )
+
+    def test_enemy_adjacent_all_friendly(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.red_unit, 1, 2)  # Friendly unit
+        self.board.add_unit(self.red_unit, 2, 3)  # Another friendly unit
+
+        target_hex = self.board.get_hex(2, 2)
+        self.assertFalse(
+            self.board.enemy_adjacent(self.red_unit, target_hex),
+            "Hex should not be adjacent to any enemy units"
+        )
+
+    def test_enemy_adjacent_no_neighbors(self):
+        self.board.add_unit(self.red_unit, 0, 0)  # Corner hex
+
+        target_hex = self.board.get_hex(0, 0)
+        self.assertFalse(
+            self.board.enemy_adjacent(self.red_unit, target_hex),
+            "Hex with no neighbors should not be adjacent to any enemy units"
+        )
+
+    def test_get_reachable_hexes_with_obstacles(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 3, 3)  # Obstacle
+        start_hex = self.board.get_hex(2, 2)
+
+        reachable_hexes = self.board.get_reachable_hexes(
+            self.red_unit, start_hex, move_points=2
+        )
+
+        self.assertEqual(
+            len(reachable_hexes), 16,
+            "Unit with 2 move points should reach 16 hexes excl obstacles"
+        )
