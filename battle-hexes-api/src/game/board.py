@@ -124,6 +124,7 @@ class Board:
     def get_reachable_hexes(
             self, unit: Unit, start: Hex, move_points: int = None
     ) -> Set[Hex]:
+        """Get all hexes reachable by the unit from the start hex."""
         if move_points is None:
             move_points = unit.get_move_points()
 
