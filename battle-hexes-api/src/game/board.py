@@ -126,7 +126,7 @@ class Board:
     ) -> Set[Hex]:
         """Get all hexes reachable by the unit from the start hex."""
         if move_points is None:
-            move_points = unit.get_move_points()
+            move_points = unit.get_move()
 
         visited = set()
         queue = deque()
@@ -151,6 +151,37 @@ class Board:
                         queue.append((neighbor, cost + 1))
 
         return reachable_hexes
+
+    def shortest_path(
+            self, unit: Unit, start: Hex, end: Hex
+    ) -> List[Hex]:
+        """Find the shortest path from start to end hex for the unit."""
+        move_points = unit.get_move()
+        reachable_hexes = self.get_reachable_hexes(unit, start, move_points)
+
+        if end not in reachable_hexes:
+            return []
+
+        visited = set()
+        queue = deque([(start, [])])
+        visited.add((start.row, start.column))
+
+        while queue:
+            current_hex, path = queue.popleft()
+            new_path = path + [current_hex]
+
+            if current_hex == end:
+                return new_path
+
+            for neighbor in self.get_neighboring_hexes(current_hex):
+                if (
+                    (neighbor.row, neighbor.column) not in visited
+                    and neighbor in reachable_hexes
+                ):
+                    visited.add((neighbor.row, neighbor.column))
+                    queue.append((neighbor, new_path))
+
+        return []
 
     def enemy_adjacent(self, unit: Unit, hex: Hex) -> bool:
         """Check if there are any enemy units adjacent to the given hex."""

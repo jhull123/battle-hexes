@@ -16,3 +16,9 @@ class Player(BaseModel):
 
     def has_faction(self, faction: Faction) -> bool:
         return faction in self.factions
+
+    def owns(self, unit) -> bool:
+        return unit.faction in self.factions
+
+    def own_units(self, units) -> List:
+        return [unit for unit in units if self.owns(unit)]
