@@ -43,8 +43,23 @@ class TestRandomPlayer(unittest.TestCase):
         moves = self.blue_player_rando.movement()
         self.assertEqual(moves, [], "Expected no moves for an empty board")
 
-    # def test_move_one_unit(self):
-    #     self.board.add_unit(self.blue1, 5, 5)
-    #     moves = self.blue_player.movement(self.game)
-    #     self.assertGreater(
-    # len(moves), 0, "Expected at least one move for the unit")
+    def test_random_hex_empty(self):
+        self.assertIsNone(self.blue_player_rando.random_hex(set()))
+
+    def test_random_hex_deterministic_choice(self):
+        hexes = {self.board.get_hex(1, 1), self.board.get_hex(2, 2)}
+        chosen_hex = self.blue_player_rando.random_hex(hexes)
+        self.assertEqual((chosen_hex.row, chosen_hex.column), (2, 2))
+
+    def test_move_one_unit(self):
+        self.board.add_unit(self.blue1, 5, 5)
+        moves = self.blue_player_rando.movement()
+        self.assertEqual(len(moves), 1, "Expected one movement plan")
+
+        plan = moves[0]
+        path_coords = [(hex.row, hex.column) for hex in plan.path]
+        self.assertEqual(
+            path_coords,
+            [(5, 5), (4, 5), (3, 5)],
+            "Unit should move along the expected path"
+        )
