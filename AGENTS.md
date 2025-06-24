@@ -10,7 +10,8 @@ This repository contains two main projects:
 ## Helper scripts
 
 - `api-checks.sh`: Runs unit tests and the `flake8` linter for the Python API.
-  Execute this from the repository root with `./api-checks.sh`.
+  Execute this from the repository root with `./api-checks.sh`. The script runs
+  in a subshell so it won't change your current working directory.
 
 ### Working with the API
 

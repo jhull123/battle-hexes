@@ -9,7 +9,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 API_DIR="$REPO_ROOT/battle-hexes-api"
 
-cd "$API_DIR"
-
-pytest
-flake8 src/ tests/
+# Run checks in a subshell so the caller's directory is not affected
+(
+  cd "$API_DIR"
+  pytest
+  flake8 src/ tests/
+)
