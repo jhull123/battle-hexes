@@ -1,3 +1,4 @@
+from src.cpu.randomplayer import RandomPlayer
 from src.game.board import Board, BoardModel
 from src.game.player import Player, PlayerType
 from src.game.sparseboard import SparseBoard
@@ -68,11 +69,15 @@ class Game:
         blue_faction = Faction(
              id=UUID("38400000-8cf0-11bd-b23e-10b96e4ef00d", version=4),
              name="Blue Faction", color="#4682B4")
-        player2 = Player(name="Player 2",
-                         type=PlayerType.CPU,
-                         factions=[blue_faction])
+        board = Board(10, 10)
+        player2 = RandomPlayer(
+            name="Player 2",
+            type=PlayerType.CPU,
+            factions=[blue_faction],
+            board=board
+        )
 
-        game = Game([player1, player2], Board(10, 10))
+        game = Game([player1, player2], board)
 
         red_unit = Unit(
              UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),

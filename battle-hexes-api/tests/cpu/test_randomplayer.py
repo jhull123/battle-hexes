@@ -22,7 +22,9 @@ class TestRandomPlayer(unittest.TestCase):
             factions=[self.blue_faction],
         )
         self.blue_player_rando = RandomPlayer(
-            player=blue_player,
+            name='Blue Player',
+            type=PlayerType.CPU,
+            factions=[self.blue_faction],
             board=self.board
         )
         self.game = Game(players=[blue_player], board=self.board)
