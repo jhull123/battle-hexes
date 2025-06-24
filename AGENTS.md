@@ -15,7 +15,9 @@ This repository contains two main projects:
 
 ### Working with the API
 
-- Install dependencies using both requirement files:
-  `pip install -r requirements.txt -r requirements-test.txt`.
+- Install dependencies using both requirement files located inside the
+  `battle-hexes-api` directory:
+  `pip install -r battle-hexes-api/requirements.txt \
+     -r battle-hexes-api/requirements-test.txt`.
 - Keep code Flake8-compliant and run `./api-checks.sh` before sending a PR to
   ensure tests and linting pass.
