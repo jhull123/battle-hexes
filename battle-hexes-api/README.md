@@ -18,7 +18,7 @@ Upgrade `pip`.
 
 Install dependencies.
 
-    pip install -r requirements.txt 
+    pip install -r requirements.txt -r requirements-test.txt
 
 ## Running Locally
 
