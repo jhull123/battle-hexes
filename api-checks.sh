@@ -15,3 +15,7 @@ API_DIR="$REPO_ROOT/battle-hexes-api"
   pytest
   flake8 src/ tests/
 )
+
+# Capture and forward the exit code of the subshell
+exit_code=$?
+exit $exit_code
