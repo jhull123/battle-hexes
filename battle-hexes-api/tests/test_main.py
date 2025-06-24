@@ -36,3 +36,20 @@ class TestFastAPI(unittest.TestCase):
             SparseBoard(**sparse_board_data))
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_board.to_sparse_board.assert_called_once()
+
+    @patch('main.game_repo')
+    def test_generate_movement(self, mock_game_repo):
+        mock_plan = MagicMock()
+        mock_player = MagicMock()
+        mock_player.movement.return_value = [mock_plan]
+        mock_game = MagicMock()
+        mock_game.get_current_player.return_value = mock_player
+        mock_game_repo.get_game.return_value = mock_game
+        mock_plan.to_dict.return_value = {"plan": 1}
+
+        game_id = "game-456"
+        response = self.client.post(f"/games/{game_id}/movement")
+
+        self.assertEqual(response.json(), {"plans": [{"plan": 1}]})
+        mock_player.movement.assert_called_once_with()
+        mock_plan.to_dict.assert_called_once_with()
