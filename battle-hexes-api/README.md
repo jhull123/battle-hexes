@@ -38,3 +38,8 @@ To run the `flake8` linter:
 
     flake8 src/ tests/
 
+## Convenience script
+
+From the repository root you can run `./api-checks.sh` to execute both the tests
+and `flake8` together. This is useful before committing code.
+
