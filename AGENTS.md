@@ -21,3 +21,7 @@ This repository contains two main projects:
      -r battle-hexes-api/requirements-test.txt`.
 - Keep code Flake8-compliant and run `./api-checks.sh` before sending a PR to
   ensure tests and linting pass.
+ 
+### Working with the Web frontend
+- Install dependencies with `npm install` inside the `battle-hexes-web` directory.
+- Run `npm run test-and-build` from `battle-hexes-web` to lint, test, and build the app before submitting a PR.
