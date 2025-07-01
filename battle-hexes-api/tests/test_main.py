@@ -53,3 +53,17 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(response.json(), {"plans": [{"plan": 1}]})
         mock_player.movement.assert_called_once_with()
         mock_plan.to_dict.assert_called_once_with()
+
+    @patch('main.game_repo')
+    def test_end_turn(self, mock_game_repo):
+        mock_game = MagicMock()
+        mock_game_repo.get_game.return_value = mock_game
+        sparse_board_data = {"units": []}
+
+        game_id = "game-789"
+        self.client.post(f"/games/{game_id}/end-turn", json=sparse_board_data)
+
+        mock_game.update.assert_called_once_with(
+            SparseBoard(**sparse_board_data))
+        mock_game.next_player.assert_called_once_with()
+        mock_game_repo.update_game.assert_called_once_with(mock_game)

@@ -56,3 +56,13 @@ def generate_movement(game_id: str):
     print(f"Generating movement for player: {current_player.name}")
     plans = current_player.movement()
     return {"plans": [p.to_dict() for p in plans]}
+
+
+@app.post('/games/{game_id}/end-turn')
+def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
+    """Update game state at the end of a player's turn."""
+    game = game_repo.get_game(game_id)
+    game.update(sparse_board)
+    game.next_player()
+    game_repo.update_game(game)
+    return game.to_game_model()
