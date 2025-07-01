@@ -25,4 +25,7 @@ This repository contains two main projects:
 ### Working with the Web Frontend
 
 - Install Node dependencies inside `battle-hexes-web` with `npm install`.
-- Run unit tests with `npm test` and integration tests with `npm run test:e2e`.
+- Run unit tests with `npm test`.
+- Agents will not be able to run integration tests (`npm run test:e2e`) because
+  most environments (like the Codex sandbox) will not allow binary downloads. As such, 
+  running the e2e tests is not necessary for opening a PR.
