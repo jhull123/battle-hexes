@@ -1,6 +1,10 @@
 import unittest
 from game.board import Board
 from game.game import Game
+from game.player import Player, PlayerType
+from unit.faction import Faction
+from unit.unit import Unit
+from game.unitmovementplan import UnitMovementPlan
 
 
 class TestGame(unittest.TestCase):
@@ -56,3 +60,21 @@ class TestGame(unittest.TestCase):
         game = Game([], board)
         # next_player should return None if there are no players
         self.assertIsNone(game.next_player())
+
+    def test_apply_movement_plans_updates_unit_coordinates(self):
+        board = Board(5, 5)
+        import uuid
+        faction = Faction(id=uuid.uuid4(), name="f", color="#fff")
+        player = Player(name="P", type=PlayerType.HUMAN, factions=[faction])
+        unit = Unit(id=2, name="U", faction=faction, player=player,
+                    type="Infantry", attack=1, defense=1, move=1)
+        board.add_unit(unit, 0, 0)
+        game = Game([player], board)
+
+        start_hex = board.get_hex(0, 0)
+        end_hex = board.get_hex(0, 1)
+        plan = UnitMovementPlan(unit, [start_hex, end_hex])
+
+        game.apply_movement_plans([plan])
+
+        self.assertEqual(unit.get_coords(), (0, 1))
