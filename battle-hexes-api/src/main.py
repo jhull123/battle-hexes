@@ -53,5 +53,6 @@ def generate_movement(game_id: str):
     """Generate movement plans for the current player."""
     game = game_repo.get_game(game_id)
     current_player = game.get_current_player()
+    print(f"Generating movement for player: {current_player.name}")
     plans = current_player.movement()
     return {"plans": [p.to_dict() for p in plans]}
