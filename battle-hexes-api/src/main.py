@@ -50,12 +50,17 @@ def resolve_combat(
 
 @app.post('/games/{game_id}/movement')
 def generate_movement(game_id: str):
-    """Generate movement plans for the current player."""
+    """Generate and apply movement plans for the current player."""
     game = game_repo.get_game(game_id)
     current_player = game.get_current_player()
     print(f"Generating movement for player: {current_player.name}")
     plans = current_player.movement()
-    return {"plans": [p.to_dict() for p in plans]}
+    game.apply_movement_plans(plans)
+    game_repo.update_game(game)
+    return {
+        "game": game.to_game_model(),
+        "plans": [p.to_dict() for p in plans],
+    }
 
 
 @app.post('/games/{game_id}/end-turn')
