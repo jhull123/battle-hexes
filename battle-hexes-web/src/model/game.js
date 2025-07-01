@@ -59,8 +59,11 @@ export class Game {
   }
 
   resolveCombat(finishedCb) {
-    this.#combatResolver.resolveCombat();
-    finishedCb();
+    return this.#combatResolver.resolveCombat().then(() => {
+      if (finishedCb) {
+        finishedCb();
+      }
+    });
   }
   
   static async newGameFromServer() {
