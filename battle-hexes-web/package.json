@@ -6,7 +6,8 @@
     "lint": "eslint src/",
     "test": "jest",
     "build": "webpack",
-    "test-and-build": "npm run lint && npm test && npm run build"
+    "test-and-build": "npm run lint && npm test && npm run build",
+    "test:e2e": "npm run build && playwright test"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@eslint/js": "^9.18.0",
+    "@playwright/test": "^1.53.2",
     "babel-jest": "^29.7.0",
     "css-loader": "^7.1.2",
     "eslint": "^9.18.0",
