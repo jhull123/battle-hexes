@@ -4,6 +4,7 @@ from src.game.player import Player, PlayerType
 from src.game.sparseboard import SparseBoard
 from src.unit.faction import Faction
 from src.unit.unit import Unit
+from src.game.unitmovementplan import UnitMovementPlan
 from pydantic import BaseModel
 from typing import List
 import uuid
@@ -35,6 +36,14 @@ class Game:
 
     def get_current_player(self) -> Player:
         return self.current_player
+
+    def apply_movement_plans(self, plans: List["UnitMovementPlan"]) -> None:
+        """Apply a collection of movement plans to update unit positions."""
+        for plan in plans:
+            if not plan.path:
+                continue
+            final_hex = plan.path[-1]
+            plan.unit.set_coords(final_hex.row, final_hex.column)
 
     def next_player(self) -> Player:
         """Advance to the next player and return it."""
