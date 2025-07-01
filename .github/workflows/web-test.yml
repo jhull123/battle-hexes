@@ -34,3 +34,11 @@ jobs:
       - name: Build project
         working-directory: battle-hexes-web
         run: npm run build
+
+      - name: Install Playwright browsers
+        working-directory: battle-hexes-web
+        run: npx playwright install --with-deps
+
+      - name: Run e2e tests
+        working-directory: battle-hexes-web
+        run: npm run test:e2e
