@@ -57,7 +57,10 @@ def generate_movement(game_id: str):
     plans = current_player.movement()
     game.apply_movement_plans(plans)
     game_repo.update_game(game)
-    return game.to_game_model()
+    return {
+        "game": game.to_game_model(),
+        "plans": [p.to_dict() for p in plans],
+    }
 
 
 @app.post('/games/{game_id}/end-turn')

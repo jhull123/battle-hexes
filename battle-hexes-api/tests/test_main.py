@@ -42,6 +42,7 @@ class TestFastAPI(unittest.TestCase):
         mock_plan = MagicMock()
         mock_player = MagicMock()
         mock_player.movement.return_value = [mock_plan]
+        mock_plan.to_dict.return_value = {"plan": 1}
         mock_game = MagicMock()
         mock_game.get_current_player.return_value = mock_player
         mock_game.to_game_model.return_value = {"id": "game-456"}
@@ -54,7 +55,11 @@ class TestFastAPI(unittest.TestCase):
         mock_game.apply_movement_plans.assert_called_once_with([mock_plan])
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_game.to_game_model.assert_called_once_with()
-        self.assertEqual(response.json(), {"id": "game-456"})
+        mock_plan.to_dict.assert_called_once_with()
+        self.assertEqual(
+            response.json(),
+            {"game": {"id": "game-456"}, "plans": [{"plan": 1}]},
+        )
 
     @patch('main.game_repo')
     def test_end_turn_updates_game_and_returns_game_model(
