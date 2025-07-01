@@ -2,8 +2,8 @@ import unittest
 from game.board import Board
 from game.game import Game
 from game.player import Player, PlayerType
-from unit.faction import Faction
-from unit.unit import Unit
+from src.unit.faction import Faction
+from src.unit.unit import Unit
 from game.unitmovementplan import UnitMovementPlan
 
 
