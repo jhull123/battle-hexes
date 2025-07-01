@@ -83,22 +83,26 @@ export class Menu {
   }
 
   doEndPhase() {
+    const finishPhase = () => {
+      console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+      const switchedPlayers = this.#game.endPhase();
+      this.updateMenu();
+      this.#disableOrEnableActionButton();
+
+      if (switchedPlayers) {
+        axios.post(
+          `${API_URL}/games/${this.#game.getId()}/end-turn`,
+          this.#game.getBoard().sparseBoard()
+        ).catch(err => console.error('Failed to update game state', err))
+         .finally(() => this.#game.getCurrentPlayer().play(this.#game));
+      }
+    };
+
     if (this.#game.getCurrentPhase().toLowerCase() === 'combat') {
       console.log('Resolving combat.');
-      this.#game.resolveCombat(this.#postCombat);
-    }
-
-    console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
-    const switchedPlayers = this.#game.endPhase();
-    this.updateMenu();
-    this.#disableOrEnableActionButton();
-
-    if (switchedPlayers) {
-      axios.post(
-        `${API_URL}/games/${this.#game.getId()}/end-turn`,
-        this.#game.getBoard().sparseBoard()
-      ).catch(err => console.error('Failed to update game state', err));
-      this.#game.getCurrentPlayer().play(this.#game);
+      this.#game.resolveCombat(this.#postCombat).then(finishPhase);
+    } else {
+      finishPhase();
     }
   }
 
