@@ -83,26 +83,34 @@ export class Menu {
   }
 
   doEndPhase() {
-    const finishPhase = () => {
-      console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
-      const switchedPlayers = this.#game.endPhase();
-      this.updateMenu();
-      this.#disableOrEnableActionButton();
-
-      if (switchedPlayers) {
-        axios.post(
-          `${API_URL}/games/${this.#game.getId()}/end-turn`,
-          this.#game.getBoard().sparseBoard()
-        ).catch(err => console.error('Failed to update game state', err))
-         .finally(() => this.#game.getCurrentPlayer().play(this.#game));
-      }
-    };
-
-    if (this.#game.getCurrentPhase().toLowerCase() === 'combat') {
-      console.log('Resolving combat.');
-      this.#game.resolveCombat(this.#postCombat).then(finishPhase);
+    if (this.#isCombatPhase()) {
+      this.#handleCombatPhase();
     } else {
-      finishPhase();
+      this.#finishPhase();
+    }
+  }
+
+  #isCombatPhase() {
+    return this.#game.getCurrentPhase().toLowerCase() === 'combat';
+  }
+
+  #handleCombatPhase() {
+    console.log('Resolving combat.');
+    this.#game.resolveCombat(this.#postCombat).then(() => this.#finishPhase());
+  }
+
+  #finishPhase() {
+    console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+    const switchedPlayers = this.#game.endPhase();
+    this.updateMenu();
+    this.#disableOrEnableActionButton();
+
+    if (switchedPlayers) {
+      axios.post(
+        `${API_URL}/games/${this.#game.getId()}/end-turn`,
+        this.#game.getBoard().sparseBoard()
+      ).catch(err => console.error('Failed to update game state', err))
+       .finally(() => this.#game.getCurrentPlayer().play(this.#game));
     }
   }
 
@@ -113,7 +121,7 @@ export class Menu {
 
   #postCombat() {
     console.log('Combat phase is over.')
-    // TODO: update the UI to show the results of the combat
+    // TODO: update the menu area of the UI to show the results of the combat
   }
 
   #setCurrentTurn() {
