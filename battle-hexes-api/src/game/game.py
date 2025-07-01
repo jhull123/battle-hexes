@@ -36,6 +36,14 @@ class Game:
     def get_current_player(self) -> Player:
         return self.current_player
 
+    def next_player(self) -> Player:
+        """Advance to the next player and return it."""
+        if not self.players:
+            return None
+        idx = self.players.index(self.current_player)
+        self.current_player = self.players[(idx + 1) % len(self.players)]
+        return self.current_player
+
     def to_game_model(self) -> GameModel:
         return GameModel(
             id=self.id,

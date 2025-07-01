@@ -1,3 +1,6 @@
+import axios from 'axios';
+import { API_URL } from './model/battle-api.js';
+
 export class Menu {
   #game;
   #selHexContentsDiv;
@@ -89,8 +92,12 @@ export class Menu {
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
     this.#disableOrEnableActionButton();
-    
+
     if (switchedPlayers) {
+      axios.post(
+        `${API_URL}/games/${this.#game.getId()}/end-turn`,
+        this.#game.getBoard().sparseBoard()
+      ).catch(err => console.error('Failed to update game state', err));
       this.#game.getCurrentPlayer().play(this.#game);
     }
   }
