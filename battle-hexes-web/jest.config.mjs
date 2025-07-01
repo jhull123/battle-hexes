@@ -5,5 +5,6 @@ export default {
     '^.+\\.jsx?$': 'babel-jest',
   },
   testEnvironment: 'node', // or 'jsdom' if you're testing browser-like functionality
+  testPathIgnorePatterns: ['<rootDir>/e2e/'],
 };
 

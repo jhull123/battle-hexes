@@ -21,3 +21,8 @@ This repository contains two main projects:
      -r battle-hexes-api/requirements-test.txt`.
 - Keep code Flake8-compliant and run `./api-checks.sh` before sending a PR to
   ensure tests and linting pass.
+
+### Working with the Web Frontend
+
+- Install Node dependencies inside `battle-hexes-web` with `npm install`.
+- Run unit tests with `npm test` and integration tests with `npm run test:e2e`.

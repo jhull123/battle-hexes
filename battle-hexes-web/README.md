@@ -12,6 +12,10 @@ Web based UI for the Battle Hexes game.
 
     npm test
 
+### Running Integration Tests
+
+    npm run test:e2e
+
 ### Building the App
 
     npm run build
