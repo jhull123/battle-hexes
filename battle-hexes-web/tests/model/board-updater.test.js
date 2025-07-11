@@ -24,24 +24,27 @@ describe('updateBoard', () => {
 
   test('update empty board with no units', () => {
     boardUpdater.updateBoard(board, []);
-    expect(eventBus.emit).toHaveBeenCalledTimes(1);
+    expect(eventBus.emit).toHaveBeenCalledTimes(2);
     expect(eventBus.emit).toHaveBeenCalledWith('redraw');
+    expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
 
   test('one unit no update', () => {
     board.addUnit(redUnit, 4, 5);
     boardUpdater.updateBoard(board, [{id: 'unit-001', row: 4, column: 5}]);
     expect(redUnit.getContainingHex().coordsHumanString()).toBe('4, 5');
-    expect(eventBus.emit).toHaveBeenCalledTimes(1);
+    expect(eventBus.emit).toHaveBeenCalledTimes(2);
     expect(eventBus.emit).toHaveBeenCalledWith('redraw');
+    expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
 
   test('one unit moves', () => {
     board.addUnit(redUnit, 4, 5);
     boardUpdater.updateBoard(board, [{id: 'unit-001', row: 6, column: 7}]);
     expect(redUnit.getContainingHex().coordsHumanString()).toBe('6, 7');
-    expect(eventBus.emit).toHaveBeenCalledTimes(1);
+    expect(eventBus.emit).toHaveBeenCalledTimes(2);
     expect(eventBus.emit).toHaveBeenCalledWith('redraw');
+    expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
 
   test('one unit eliminated', () => {
@@ -49,7 +52,8 @@ describe('updateBoard', () => {
     boardUpdater.updateBoard(board, []);
     expect(redUnit.getContainingHex()).toBeNull();
     expect(board.getHex(4, 5).getUnits().length).toBe(0);
-    expect(eventBus.emit).toHaveBeenCalledTimes(1);
+    expect(eventBus.emit).toHaveBeenCalledTimes(2);
     expect(eventBus.emit).toHaveBeenCalledWith('redraw');
+    expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
 });

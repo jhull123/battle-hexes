@@ -49,6 +49,9 @@ new p5((p) => {
       console.log('Redrawing board.');
       p.draw();
     });
+    eventBus.on('menuUpdate', () => {
+      menu.updateMenu();
+    });
   };
 
   p.draw = function() {

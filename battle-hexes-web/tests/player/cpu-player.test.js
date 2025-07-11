@@ -25,13 +25,21 @@ describe('CpuPlayer', () => {
     cpuPlayer = new CpuPlayer('CPU');
     const board = new Board(1, 1);
     const players = new Players([cpuPlayer]);
-    game = new Game('game-1', ['Movement', 'Combat'], players, board);
+    game = new Game('game-1', ['Movement', 'Combat', 'End Turn'], players, board);
   });
 
-  test('calls movement endpoint during movement phase', async () => {
+  test('calls movement endpoint during movement phase and advances phase based on combat', async () => {
+    jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(true);
     await cpuPlayer.play(game);
     expect(axios.post).toHaveBeenCalledWith(`${API_URL}/games/${game.getId()}/movement`);
     expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), []);
+    expect(game.getCurrentPhase()).toBe('Combat');
+  });
+
+  test('skips combat when there is none', async () => {
+    jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(false);
+    await cpuPlayer.play(game);
+    expect(game.getCurrentPhase()).toBe('End Turn');
   });
 
   test('does not call endpoint in other phases', async () => {
