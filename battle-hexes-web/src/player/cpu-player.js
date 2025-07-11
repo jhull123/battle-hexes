@@ -24,6 +24,17 @@ export class CpuPlayer extends Player {
 
         game.endPhase();
         eventBus.emit('menuUpdate');
+
+        if (game.getCurrentPhase() === 'End Turn') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await axios.post(
+            `${API_URL}/games/${game.getId()}/end-turn`,
+            game.getBoard().sparseBoard()
+          ).catch(err => console.error('Failed to update game state', err));
+          game.endPhase();
+          eventBus.emit('menuUpdate');
+          game.getCurrentPlayer().play(game);
+        }
       } catch (err) {
         console.error('Failed to fetch CPU movement plans', err);
       }
