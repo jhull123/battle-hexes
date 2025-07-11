@@ -19,6 +19,7 @@ export class BoardUpdater {
     }
 
     eventBus.emit('redraw');
+    eventBus.emit('menuUpdate');
   }
 
   #findUnit(id, units) {

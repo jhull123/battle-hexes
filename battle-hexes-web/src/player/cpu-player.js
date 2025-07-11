@@ -2,6 +2,7 @@ import { playerTypes, Player } from './player.js';
 import axios from 'axios';
 import { API_URL } from '../model/battle-api.js';
 import { BoardUpdater } from '../model/board-updater.js';
+import { eventBus } from '../event-bus.js';
 
 export class CpuPlayer extends Player {
   constructor(name, factions) {
@@ -20,6 +21,12 @@ export class CpuPlayer extends Player {
           game.getBoard(),
           response.data.game.board.units
         );
+
+        game.endPhase();
+        if (!game.getBoard().hasCombat()) {
+          game.endPhase();
+        }
+        eventBus.emit('menuUpdate');
       } catch (err) {
         console.error('Failed to fetch CPU movement plans', err);
       }
