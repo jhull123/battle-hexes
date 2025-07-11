@@ -64,14 +64,19 @@ def generate_movement(game_id: str):
 
 
 @app.post('/games/{game_id}/end-turn')
-def end_turn(game_id: str):
+def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Update game state at the end of a player's turn."""
     game = game_repo.get_game(game_id)
+
+    # sync the server-side board state with the client provided one
+    game.update(sparse_board)
+
     old_player = game.get_current_player()
     new_player = game.next_player()
     print(
         f"The turn has ended for player: {old_player.name}. "
         f"Now it's {new_player.name}'s turn."
     )
+
     game_repo.update_game(game)
     return game.to_game_model()
