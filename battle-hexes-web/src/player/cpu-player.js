@@ -1,6 +1,7 @@
 import { playerTypes, Player } from './player.js';
 import axios from 'axios';
 import { API_URL } from '../model/battle-api.js';
+import { BoardUpdater } from '../model/board-updater.js';
 
 export class CpuPlayer extends Player {
   constructor(name, factions) {
@@ -14,6 +15,11 @@ export class CpuPlayer extends Player {
           `${API_URL}/games/${game.getId()}/movement`
         );
         console.log('CPU movement plans:', response.data);
+        const boardUpdater = new BoardUpdater();
+        boardUpdater.updateBoard(
+          game.getBoard(),
+          response.data.game.board.units
+        );
       } catch (err) {
         console.error('Failed to fetch CPU movement plans', err);
       }
