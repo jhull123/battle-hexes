@@ -23,9 +23,6 @@ export class CpuPlayer extends Player {
         );
 
         game.endPhase();
-        if (!game.getBoard().hasCombat()) {
-          game.endPhase();
-        }
         eventBus.emit('menuUpdate');
       } catch (err) {
         console.error('Failed to fetch CPU movement plans', err);
