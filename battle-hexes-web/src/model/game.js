@@ -27,6 +27,7 @@ export class Game {
     if (newPhaseIdx >= this.#phases.length) {
       this.#currentPhase = this.#phases[0];
       this.#players.nextPlayer();
+      this.#board.resetMovesRemaining();
       return true;
     } else {
       this.#currentPhase = this.#phases[newPhaseIdx];

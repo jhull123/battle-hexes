@@ -79,10 +79,16 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.get_game.return_value = mock_game
 
         game_id = "game-789"
+        sparse_board_data = {"units": []}
+
         response = self.client.post(
-            f"/games/{game_id}/end-turn"
+            f"/games/{game_id}/end-turn",
+            json=sparse_board_data
         )
 
+        mock_game.update.assert_called_once_with(
+            SparseBoard(**sparse_board_data)
+        )
         mock_game.get_current_player.assert_called_once_with()
         mock_game.next_player.assert_called_once_with()
         mock_game_repo.update_game.assert_called_once_with(mock_game)
