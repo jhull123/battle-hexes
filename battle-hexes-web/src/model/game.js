@@ -30,6 +30,10 @@ export class Game {
       return true;
     } else {
       this.#currentPhase = this.#phases[newPhaseIdx];
+      if (this.#currentPhase.toLowerCase() === 'combat'
+          && !this.#board.hasCombat()) {
+        return this.endPhase();
+      }
       return false;
     }
   }

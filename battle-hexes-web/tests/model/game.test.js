@@ -20,15 +20,18 @@ describe('constructor', () => {
 });
 
 describe('endPhase', () => {
-  test('endPhase moves to next phase when turn is not over', () => {
-    game.endPhase();
+  test('moves to combat when there is combat', () => {
+    jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(true);
+    const switched = game.endPhase();
+    expect(switched).toBe(false);
     expect(game.getCurrentPhase()).toBe(phases[1]);
     expect(game.getCurrentPlayer()).toEqual(player1);
   });
 
-  test('endPhase moves to next player when turn is over', () => {
-    game.endPhase();
-    game.endPhase();
+  test('skips combat and moves to next player when none', () => {
+    jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(false);
+    const switched = game.endPhase();
+    expect(switched).toBe(true);
     expect(game.getCurrentPhase()).toBe(phases[0]);
     expect(game.getCurrentPlayer()).toEqual(player2);
   });
