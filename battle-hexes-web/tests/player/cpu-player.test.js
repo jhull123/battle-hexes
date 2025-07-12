@@ -29,11 +29,25 @@ describe('CpuPlayer', () => {
   });
 
   test('calls movement endpoint during movement phase and advances phase based on combat', async () => {
+    jest.useFakeTimers();
     jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(true);
-    await cpuPlayer.play(game);
+    const resolveCombatSpy = jest.spyOn(game, 'resolveCombat').mockResolvedValue();
+
+    const playPromise = cpuPlayer.play(game);
+    await Promise.resolve();
+
     expect(axios.post).toHaveBeenCalledWith(`${API_URL}/games/${game.getId()}/movement`);
     expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), []);
-    expect(game.getCurrentPhase()).toBe('Combat');
+
+    await jest.runAllTimersAsync();
+    await playPromise;
+
+    expect(resolveCombatSpy).toHaveBeenCalled();
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/end-turn`,
+      game.getBoard().sparseBoard()
+    );
+    expect(game.getCurrentPhase()).toBe('Movement');
   });
 
   test('skips combat when there is none and automatically ends turn', async () => {
@@ -59,10 +73,22 @@ describe('CpuPlayer', () => {
     expect(game.getCurrentPhase()).toBe('Movement');
   });
 
-  test('does not call endpoint in other phases', async () => {
+  test('resolves combat when starting in combat phase', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(true);
     game.endPhase(); // move to Combat phase
-    await cpuPlayer.play(game);
-    expect(axios.post).not.toHaveBeenCalled();
-    expect(mockUpdateBoard).not.toHaveBeenCalled();
+    const resolveCombatSpy = jest.spyOn(game, 'resolveCombat').mockResolvedValue();
+
+    const playPromise = cpuPlayer.play(game);
+    await Promise.resolve();
+
+    await jest.runAllTimersAsync();
+    await playPromise;
+
+    expect(resolveCombatSpy).toHaveBeenCalled();
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/end-turn`,
+      game.getBoard().sparseBoard()
+    );
   });
 });

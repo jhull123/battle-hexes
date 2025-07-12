@@ -25,19 +25,29 @@ export class CpuPlayer extends Player {
         game.endPhase();
         eventBus.emit('menuUpdate');
 
-        if (game.getCurrentPhase() === 'End Turn') {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          await axios.post(
-            `${API_URL}/games/${game.getId()}/end-turn`,
-            game.getBoard().sparseBoard()
-          ).catch(err => console.error('Failed to update game state', err));
-          game.endPhase();
-          eventBus.emit('menuUpdate');
-          game.getCurrentPlayer().play(game);
-        }
+        return this.play(game);
       } catch (err) {
         console.error('Failed to fetch CPU movement plans', err);
       }
+    } else if (game.getCurrentPhase() === 'Combat') {
+      try {
+        await game.resolveCombat();
+        game.endPhase();
+        eventBus.emit('menuUpdate');
+
+        return this.play(game);
+      } catch (err) {
+        console.error('Failed to resolve combat', err);
+      }
+    } else if (game.getCurrentPhase() === 'End Turn') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await axios.post(
+        `${API_URL}/games/${game.getId()}/end-turn`,
+        game.getBoard().sparseBoard()
+      ).catch(err => console.error('Failed to update game state', err));
+      game.endPhase();
+      eventBus.emit('menuUpdate');
+      game.getCurrentPlayer().play(game);
     }
 
     console.log(`${this.getName()} is playing ${game.getId()}.`);
