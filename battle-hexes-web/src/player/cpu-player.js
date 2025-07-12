@@ -27,6 +27,7 @@ export class CpuPlayer extends Player {
         game.endPhase();
         eventBus.emit('menuUpdate');
 
+        await new Promise(resolve => setTimeout(resolve, 2000));
         return this.play(game);
       } catch (err) {
         console.error('Failed to fetch CPU movement plans', err);
@@ -37,6 +38,7 @@ export class CpuPlayer extends Player {
         game.endPhase();
         eventBus.emit('menuUpdate');
 
+        await new Promise(resolve => setTimeout(resolve, 2000));
         return this.play(game);
       } catch (err) {
         console.error('Failed to resolve combat', err);
@@ -49,6 +51,7 @@ export class CpuPlayer extends Player {
       ).catch(err => console.error('Failed to update game state', err));
       game.endPhase();
       eventBus.emit('menuUpdate');
+      await new Promise(resolve => setTimeout(resolve, 2000));
       game.getCurrentPlayer().play(game);
     }
 
