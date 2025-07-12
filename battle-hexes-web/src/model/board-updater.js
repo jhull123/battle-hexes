@@ -18,6 +18,7 @@ export class BoardUpdater {
       }
     }
 
+    board.refreshCombat();
     eventBus.emit('redraw');
     eventBus.emit('menuUpdate');
   }

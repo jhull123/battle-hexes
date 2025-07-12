@@ -10,6 +10,8 @@ export class CpuPlayer extends Player {
   }
 
   async play(game) {
+    console.log(`Playing phase: ${game.getCurrentPhase()}`);
+    
     if (game.getCurrentPhase() === 'Movement') {
       try {
         const response = await axios.post(
