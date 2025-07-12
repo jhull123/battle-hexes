@@ -36,17 +36,27 @@ describe('CpuPlayer', () => {
     const playPromise = cpuPlayer.play(game);
     await Promise.resolve();
 
+    // Movement phase: after 2s, axios.post for movement
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(axios.post).toHaveBeenCalledWith(`${API_URL}/games/${game.getId()}/movement`);
     expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), []);
 
-    await jest.runAllTimersAsync();
-    await playPromise;
-
+    // Combat phase: after 2s, resolveCombat
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(resolveCombatSpy).toHaveBeenCalled();
+
+    // End Turn phase: after 2s, axios.post for end-turn
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(axios.post).toHaveBeenCalledWith(
       `${API_URL}/games/${game.getId()}/end-turn`,
       game.getBoard().sparseBoard()
     );
+
+    // After all phases, phase should be back to Movement
+    await playPromise;
     expect(game.getCurrentPhase()).toBe('Movement');
   });
 
@@ -57,19 +67,23 @@ describe('CpuPlayer', () => {
     const playPromise = cpuPlayer.play(game);
     await Promise.resolve();
 
-    expect(game.getCurrentPhase()).toBe('End Turn');
+    // Movement phase: after 2s, axios.post for movement
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(axios.post).toHaveBeenCalledWith(
       `${API_URL}/games/${game.getId()}/movement`
     );
     expect(axios.post).toHaveBeenCalledTimes(1);
 
-    await jest.runAllTimersAsync();
-    await playPromise;
-
+    // End Turn phase: after 2s, axios.post for end-turn
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(axios.post).toHaveBeenCalledWith(
       `${API_URL}/games/${game.getId()}/end-turn`,
       game.getBoard().sparseBoard()
     );
+    await playPromise;
+    // After all phases, phase should be back to Movement
     expect(game.getCurrentPhase()).toBe('Movement');
   });
 
@@ -82,13 +96,18 @@ describe('CpuPlayer', () => {
     const playPromise = cpuPlayer.play(game);
     await Promise.resolve();
 
-    await jest.runAllTimersAsync();
-    await playPromise;
-
+    // Combat phase: after 2s, resolveCombat
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(resolveCombatSpy).toHaveBeenCalled();
+
+    // End Turn phase: after 2s, axios.post for end-turn
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
     expect(axios.post).toHaveBeenCalledWith(
       `${API_URL}/games/${game.getId()}/end-turn`,
       game.getBoard().sparseBoard()
     );
+    await playPromise;
   });
 });
