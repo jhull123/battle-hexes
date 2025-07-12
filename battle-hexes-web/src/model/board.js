@@ -207,6 +207,19 @@ export class Board {
     return occupiedHexes;
   }
 
+  refreshCombat() {
+    for (let unit of this.getUnits()) {
+      unit.resetCombat();
+    }
+
+    for (let unit of this.getUnits()) {
+      const hex = unit.getContainingHex();
+      if (hex) {
+        unit.updateCombatOpponents(this.getAdjacentHexes(hex));
+      }
+    }
+  }
+
   sparseBoard() {
     const sparseUnits = [];
     for (let unit of this.getUnits()) {
