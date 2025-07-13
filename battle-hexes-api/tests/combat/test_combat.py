@@ -141,3 +141,13 @@ class TestCombat(unittest.TestCase):
 
         self.assertEqual(2, len(self.board.get_units()))
         self.assertEqual((5, 5), self.blue_unit.get_coords())
+
+    def test_defender_retreat_off_map_eliminates_unit(self):
+        self.board.add_unit(self.red_unit, 0, 1)
+        self.board.add_unit(self.blue_unit, 0, 0)
+        self.combat.set_static_die_roll(3)
+
+        self.combat.resolve_combat()
+
+        self.assertEqual(1, len(self.board.get_units()))
+        self.assertEqual(self.red_unit, self.board.get_units()[0])
