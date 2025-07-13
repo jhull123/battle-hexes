@@ -63,6 +63,14 @@ export class Game {
     return this.#board;
   }
 
+  isGameOver() {
+    const owners = new Set();
+    for (const unit of this.#board.getUnits()) {
+      owners.add(unit.getOwningPlayer());
+    }
+    return owners.size <= 1;
+  }
+
   resolveCombat(finishedCb) {
     return this.#combatResolver.resolveCombat().then(() => {
       if (finishedCb) {
