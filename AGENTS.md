@@ -7,6 +7,8 @@ This repository contains two main projects:
 - **`battle-hexes-web`**: the JavaScript frontend using p5.js.
 - **`battle-hexes-api`**: the Python backend built with FastAPI.
 
+See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
+
 ## Helper scripts
 
 - `api-checks.sh`: Runs unit tests and the `flake8` linter for the Python API.

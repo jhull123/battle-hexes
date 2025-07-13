@@ -142,13 +142,18 @@ class Board:
             if cost >= move_points:
                 continue
 
+            if self.enemy_adjacent(unit, current_hex):
+                # Movement must stop when entering a hex adjacent to an enemy
+                # unit, so do not expand further from this hex.
+                continue
+
             for neighbor in self.get_neighboring_hexes(current_hex):
-                if neighbor not in visited:
-                    visited.add(neighbor)
+                coord = (neighbor.row, neighbor.column)
+                if coord not in visited:
+                    visited.add(coord)
                     reachable_hexes.add(neighbor)
-                    if not self.enemy_adjacent(unit, neighbor):
-                        # TODO static cost of 1
-                        queue.append((neighbor, cost + 1))
+                    # TODO static cost of 1
+                    queue.append((neighbor, cost + 1))
 
         return reachable_hexes
 
@@ -172,6 +177,10 @@ class Board:
 
             if current_hex == end:
                 return new_path
+
+            if self.enemy_adjacent(unit, current_hex):
+                # Cannot continue moving once adjacent to an enemy unit
+                continue
 
             for neighbor in self.get_neighboring_hexes(current_hex):
                 if (

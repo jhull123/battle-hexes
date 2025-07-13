@@ -278,3 +278,27 @@ class TestBoard(unittest.TestCase):
             len(reachable_hexes), 16,
             "Unit with 2 move points should reach 16 hexes excl obstacles"
         )
+
+    def test_shortest_path_avoids_enemy_adjacent(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 0, 3)
+
+        start_hex = self.board.get_hex(2, 2)
+        end_hex = self.board.get_hex(0, 2)
+
+        path = self.board.shortest_path(self.red_unit, start_hex, end_hex)
+        coords = [(h.row, h.column) for h in path]
+
+        self.assertTrue(len(coords) > 1)
+        self.assertNotIn((1, 2), coords)
+        self.assertEqual(coords[-1], (0, 2))
+
+    def test_shortest_path_blocked_when_start_adjacent(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 1, 2)
+
+        start_hex = self.board.get_hex(2, 2)
+        end_hex = self.board.get_hex(2, 3)
+
+        path = self.board.shortest_path(self.red_unit, start_hex, end_hex)
+        self.assertEqual(path, [])
