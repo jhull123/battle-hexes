@@ -34,6 +34,7 @@ describe('CpuPlayer', () => {
     const board = new Board(1, 1);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
     game = new Game('game-1', ['Movement', 'Combat', 'End Turn'], players, board);
+    jest.spyOn(game, 'isGameOver').mockReturnValue(false);
   });
 
   test('calls movement endpoint during movement phase and advances phase based on combat', async () => {
@@ -124,6 +125,7 @@ describe('CpuPlayer', () => {
     const board = new Board(1, 2);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
     game = new Game('g2', ['Movement', 'End Turn'], players, board);
+    jest.spyOn(game, 'isGameOver').mockReturnValue(false);
     const unit = new Unit('unit-001');
     board.addUnit(unit, 0, 0);
     axios.post.mockResolvedValueOnce({
@@ -150,5 +152,37 @@ describe('CpuPlayer', () => {
 
     await jest.runOnlyPendingTimersAsync();
     await playPromise;
+  });
+
+  test('does not take action when game is already over', async () => {
+    jest.spyOn(game, 'isGameOver').mockReturnValue(true);
+
+    await cpuPlayer.play(game);
+
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
+  test('stops playing when game becomes over mid-turn', async () => {
+    jest.useFakeTimers();
+    const isGameOverSpy = jest.spyOn(game, 'isGameOver');
+    isGameOverSpy.mockReturnValueOnce(false).mockReturnValue(true);
+    jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(false);
+
+    const playPromise = cpuPlayer.play(game);
+    await Promise.resolve();
+
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
+
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/movement`
+    );
+
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
+
+    await playPromise;
+
+    expect(axios.post).toHaveBeenCalledTimes(1);
   });
 });

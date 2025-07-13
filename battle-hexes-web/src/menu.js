@@ -122,7 +122,11 @@ export class Menu {
         `${API_URL}/games/${this.#game.getId()}/end-turn`,
         this.#game.getBoard().sparseBoard()
       ).catch(err => console.error('Failed to update game state', err))
-       .finally(() => this.#game.getCurrentPlayer().play(this.#game));
+       .finally(() => {
+         if (!this.#game.isGameOver()) {
+           this.#game.getCurrentPlayer().play(this.#game);
+         }
+       });
     }
   }
 
