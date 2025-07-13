@@ -1,3 +1,10 @@
+import { MovementAnimator } from '../../src/animation/movement-animator.js';
+jest.mock('../../src/animation/movement-animator.js', () => ({
+  MovementAnimator: jest.fn().mockImplementation(() => ({
+    animate: jest.fn(),
+  })),
+}));
+
 import { Board } from '../../src/model/board.js';
 import { Faction } from '../../src/model/faction.js';
 import { Unit } from '../../src/model/unit.js';
@@ -81,5 +88,31 @@ describe('sparseBoard', () => {
 
     expect(unitMap['unit-002'].row).toBe(2);
     expect(unitMap['unit-002'].column).toBe(4)
+  });
+});
+
+describe('animator integration', () => {
+  test('getAnimator returns animator instance from constructor', () => {
+    const board = new Board(1, 1);
+    expect(typeof board.getAnimator().animate).toBe('function');
+  });
+
+  test('selectHex uses animator to animate movement', () => {
+    const player = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00')];
+    factions[0].setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.setPlayers({ getCurrentPlayer: () => player });
+    const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
+    board.addUnit(unit, 0, 0);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+
+    const animatorInstance = board.getAnimator();
+    board.selectHex(start);
+    board.selectHex(end);
+
+    expect(animatorInstance.animate).toHaveBeenCalledWith(unit, [start, end], true);
   });
 });
