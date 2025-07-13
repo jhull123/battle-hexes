@@ -34,6 +34,15 @@ export class Board {
     }
   }
 
+  removeUnit(unit) {
+    const hex = unit.getContainingHex();
+    if (hex) {
+      hex.removeUnit(unit);
+    }
+    this.#units.delete(unit);
+    unit.setContainingHex(null);
+  }
+
   getUnits() {
     return this.#units;
   }
