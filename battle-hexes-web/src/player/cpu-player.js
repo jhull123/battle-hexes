@@ -11,6 +11,9 @@ export class CpuPlayer extends Player {
   }
 
   async play(game) {
+    if (game.isGameOver()) {
+      return;
+    }
     console.log(`Playing phase: ${game.getCurrentPhase()}`);
     
     if (game.getCurrentPhase() === 'Movement') {
@@ -66,7 +69,9 @@ export class CpuPlayer extends Player {
       ).catch(err => console.error('Failed to update game state', err));
       game.endPhase();
       eventBus.emit('menuUpdate');
-      game.getCurrentPlayer().play(game);
+      if (!game.isGameOver()) {
+        game.getCurrentPlayer().play(game);
+      }
     }
 
     console.log(`${this.getName()} is playing ${game.getId()}.`);
