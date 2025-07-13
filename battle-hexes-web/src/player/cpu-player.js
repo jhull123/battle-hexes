@@ -3,6 +3,7 @@ import axios from 'axios';
 import { API_URL } from '../model/battle-api.js';
 import { BoardUpdater } from '../model/board-updater.js';
 import { eventBus } from '../event-bus.js';
+import { MovementAnimator } from '../animation/movement-animator.js';
 
 export class CpuPlayer extends Player {
   constructor(name, factions) {
@@ -19,6 +20,20 @@ export class CpuPlayer extends Player {
           `${API_URL}/games/${game.getId()}/movement`
         );
         console.log('CPU movement plans:', response.data);
+
+        const animator = new MovementAnimator(game.getBoard());
+        for (const plan of response.data.plans) {
+          const unit = [...game.getBoard().getUnits()].find(
+            u => u.getId() === plan.unit_id
+          );
+          if (unit) {
+            const path = plan.path.map(h =>
+              game.getBoard().getHex(h.row, h.column)
+            );
+            await animator.animate(unit, path);
+          }
+        }
+
         const boardUpdater = new BoardUpdater();
         boardUpdater.updateBoard(
           game.getBoard(),

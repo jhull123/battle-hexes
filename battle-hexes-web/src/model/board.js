@@ -1,4 +1,5 @@
 import { Hex } from './hex.js';
+import { MovementAnimator } from '../animation/movement-animator.js';
 
 export class Board {
   #hexMap;
@@ -6,10 +7,12 @@ export class Board {
   #hoverHex;
   #units;
   #players;
+  #animator;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
     this.#units = new Set();
+    this.#animator = new MovementAnimator(this);
 
     for (let row = 0; row < rows; row++) {
       for (let column = 0; column < columns; column++) {
@@ -33,6 +36,10 @@ export class Board {
 
   getUnits() {
     return this.#units;
+  }
+
+  getAnimator() {
+    return this.#animator;
   }
 
   getHex(row, column) {
@@ -60,9 +67,8 @@ export class Board {
         && oldSelection.getUnits()[0].isMovable() && !this.isOppositionHex(hexToSelect)) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
-      this.moveUnit(units[0], oldSelection, hexToSelect);
-      // units[0].addToMovePath(oldSelection);
-      // units[0].addToMovePath(hexToSelect);
+      const path = [oldSelection, hexToSelect];
+      this.#animator.animate(units[0], path, true);
       oldSelection.setSelected(false);
       hexToSelect.setSelected(true);
       this.setHoverHex(undefined);
