@@ -40,6 +40,10 @@ class Combat:
                     battle_participants[1].get_coords(),
                     2
                 )
+                if not self.board.is_in_bounds(
+                        battle_participants[0].row,
+                        battle_participants[0].column):
+                    self.board.remove_units(battle_participants[0])
             case CombatResult.DEFENDER_ELIMINATED:
                 self.board.remove_units(battle_participants[1])
             case CombatResult.DEFENDER_RETREAT_2:
@@ -47,6 +51,10 @@ class Combat:
                     battle_participants[0].get_coords(),
                     2
                 )
+                if not self.board.is_in_bounds(
+                        battle_participants[1].row,
+                        battle_participants[1].column):
+                    self.board.remove_units(battle_participants[1])
             case CombatResult.EXCHANGE:
                 self.board.remove_units(battle_participants)
             case _:

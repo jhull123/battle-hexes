@@ -56,6 +56,10 @@ class Board:
             return self.hexes[index]
         return None
 
+    def is_in_bounds(self, row: int, column: int) -> bool:
+        """Return True if the coordinates are on the board."""
+        return 0 <= row < self.rows and 0 <= column < self.columns
+
     def add_unit(self, unit: Unit, row: int, column: int) -> None:
         if not (0 <= row < self.rows) or not (0 <= column < self.columns):
             raise ValueError("Unit is out of bounds")
