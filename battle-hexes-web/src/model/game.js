@@ -70,7 +70,7 @@ export class Game {
         owners.add(unit.getOwningPlayer());
       }
     }
-    console.log(`Remaining players: ${[...owners].map(p => p?.name || p).join(', ')}`);
+    // console.log(`Remaining players: ${[...owners].map(p => p && typeof p === 'object' && 'getName' in p ? p.getName() : (p?.name || p)).join(', ')}`);
     return owners.size <= 1;
   }
 
