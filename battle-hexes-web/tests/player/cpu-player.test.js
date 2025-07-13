@@ -1,7 +1,14 @@
 import axios from 'axios';
+import { MovementAnimator } from '../../src/animation/movement-animator.js';
+jest.mock('../../src/animation/movement-animator.js', () => ({
+  MovementAnimator: jest.fn().mockImplementation(() => ({
+    animate: jest.fn().mockResolvedValue(),
+  })),
+}));
 import { CpuPlayer } from '../../src/player/cpu-player.js';
 import { Game } from '../../src/model/game.js';
 import { Board } from '../../src/model/board.js';
+import { Unit } from '../../src/model/unit.js';
 import { Player, Players } from '../../src/player/player.js';
 import { API_URL } from '../../src/model/battle-api.js';
 import { BoardUpdater } from '../../src/model/board-updater.js';
@@ -22,6 +29,7 @@ describe('CpuPlayer', () => {
     axios.post.mockClear();
     axios.post.mockResolvedValue({ data: { game: { board: { units: [] } }, plans: [] } });
     mockUpdateBoard.mockClear();
+    MovementAnimator.mockClear();
     cpuPlayer = new CpuPlayer('CPU');
     const board = new Board(1, 1);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
@@ -108,6 +116,39 @@ describe('CpuPlayer', () => {
       `${API_URL}/games/${game.getId()}/end-turn`,
       game.getBoard().sparseBoard()
     );
+    await playPromise;
+  });
+
+  test('animates movement plans returned from server', async () => {
+    jest.useFakeTimers();
+    const board = new Board(1, 2);
+    const players = new Players([cpuPlayer, new Player('Dummy')]);
+    game = new Game('g2', ['Movement', 'End Turn'], players, board);
+    const unit = new Unit('unit-001');
+    board.addUnit(unit, 0, 0);
+    axios.post.mockResolvedValueOnce({
+      data: {
+        game: { board: { units: [] } },
+        plans: [
+          {
+            unit_id: 'unit-001',
+            path: [ { row: 0, column: 0 }, { row: 0, column: 1 } ]
+          }
+        ]
+      }
+    });
+
+    const playPromise = cpuPlayer.play(game);
+    await Promise.resolve();
+
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
+
+    expect(MovementAnimator).toHaveBeenCalledWith(game.getBoard());
+    expect(MovementAnimator.mock.calls.length).toBeGreaterThan(1);
+    expect(mockUpdateBoard).toHaveBeenCalled();
+
+    await jest.runOnlyPendingTimersAsync();
     await playPromise;
   });
 });
