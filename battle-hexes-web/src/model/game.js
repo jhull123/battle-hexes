@@ -32,7 +32,7 @@ export class Game {
     } else {
       this.#currentPhase = this.#phases[newPhaseIdx];
       if (this.#currentPhase.toLowerCase() === 'combat'
-          && !this.#board.hasCombat()) {
+        && !this.#board.hasCombat()) {
         return this.endPhase();
       }
       return false;
@@ -68,6 +68,7 @@ export class Game {
     for (const unit of this.#board.getUnits()) {
       owners.add(unit.getOwningPlayer());
     }
+    console.log(`Remaining players: ${[...owners].map(p => p?.name || p).join(', ')}`);
     return owners.size <= 1;
   }
 
@@ -78,7 +79,7 @@ export class Game {
       }
     });
   }
-  
+
   static async newGameFromServer() {
     const response = await axios.post(`${API_URL}/games`, {});
     return response.data;
