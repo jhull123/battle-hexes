@@ -25,6 +25,10 @@ new p5((p) => {
   const game = new GameCreator().createGame(gameData);
   const menu = new Menu(game);
 
+  if (!game.getCurrentPlayer().isHuman()) {
+    game.getCurrentPlayer().play(game);
+  }
+
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
   hexDrawWithCoords.setShowHexCoords(true);
   const hexDraw = new HexDrawer(p, hexRadius);
