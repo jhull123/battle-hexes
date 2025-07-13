@@ -6,12 +6,18 @@ export class Menu {
   #selHexContentsDiv;
   #selHexCoordDiv;
   #unitMovesLeftDiv;
+  #newGameBtn;
+  #gameOverLabel;
 
   constructor(game) {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
+    this.#newGameBtn = document.getElementById('newGameBtn');
+    this.#gameOverLabel = document.getElementById('gameOverLabel');
+
+    this.#newGameBtn.addEventListener('click', () => location.reload());
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -70,6 +76,12 @@ export class Menu {
     this.#setCurrentTurn();
     this.#updatePhasesStyling();
     this.#disableOrEnableActionButton();
+
+    if (this.#game.isGameOver()) {
+      this.#showGameOver();
+    } else {
+      this.#hideGameOver();
+    }
   }
 
   #updateCombatIndicator() {
@@ -116,7 +128,7 @@ export class Menu {
 
   #disableOrEnableActionButton() {
     const endPhaseBtn = document.getElementById('endPhaseBtn');
-    endPhaseBtn.disabled = !this.#game.getCurrentPlayer().isHuman();
+    endPhaseBtn.disabled = !this.#game.getCurrentPlayer().isHuman() || this.#game.isGameOver();
   }
 
   #postCombat() {
@@ -140,5 +152,15 @@ export class Menu {
         phaseElem.classList.remove('current-phase');
       }
     }
+  }
+
+  #showGameOver() {
+    this.#gameOverLabel.style.display = 'block';
+    this.#newGameBtn.style.display = 'block';
+  }
+
+  #hideGameOver() {
+    this.#gameOverLabel.style.display = 'none';
+    this.#newGameBtn.style.display = 'none';
   }
 }

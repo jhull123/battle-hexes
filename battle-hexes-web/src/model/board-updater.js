@@ -11,7 +11,7 @@ export class BoardUpdater {
 
       if (unit === null) {
         // unit was eliminated
-        containingHex.removeUnit(boardUnit);
+        board.removeUnit(boardUnit);
       } else {
         const destinationHex = board.getHex(unit.row, unit.column);
         board.updateUnitPosition(boardUnit, containingHex, destinationHex);

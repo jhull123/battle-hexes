@@ -52,6 +52,7 @@ describe('updateBoard', () => {
     boardUpdater.updateBoard(board, []);
     expect(redUnit.getContainingHex()).toBeNull();
     expect(board.getHex(4, 5).getUnits().length).toBe(0);
+    expect(board.getUnits().has(redUnit)).toBe(false);
     expect(eventBus.emit).toHaveBeenCalledTimes(2);
     expect(eventBus.emit).toHaveBeenCalledWith('redraw');
     expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');

@@ -1,5 +1,7 @@
 import { Board } from "../../src/model/board";
 import { Game } from "../../src/model/game";
+import { Faction } from "../../src/model/faction";
+import { Unit } from "../../src/model/unit";
 import { Player, Players } from "../../src/player/player";
 
 let game;
@@ -34,5 +36,46 @@ describe('endPhase', () => {
     expect(switched).toBe(true);
     expect(game.getCurrentPhase()).toBe(phases[0]);
     expect(game.getCurrentPlayer()).toEqual(player2);
+  });
+});
+
+describe('isGameOver', () => {
+  test('returns false when multiple players have units', () => {
+    const f1 = new Faction('f1', 'f1', '#f00');
+    const f2 = new Faction('f2', 'f2', '#0f0');
+    f1.setOwningPlayer(player1);
+    f2.setOwningPlayer(player2);
+
+    const u1 = new Unit('u1', 'Unit1', f1, null, 1, 1, 1);
+    const u2 = new Unit('u2', 'Unit2', f2, null, 1, 1, 1);
+    game.getBoard().addUnit(u1, 0, 0);
+    game.getBoard().addUnit(u2, 0, 1);
+
+    expect(game.isGameOver()).toBe(false);
+  });
+
+  test('returns true when only one player has units', () => {
+    const f1 = new Faction('f1', 'f1', '#f00');
+    f1.setOwningPlayer(player1);
+    const u1 = new Unit('u1', 'Unit1', f1, null, 1, 1, 1);
+    game.getBoard().addUnit(u1, 0, 0);
+
+    expect(game.isGameOver()).toBe(true);
+  });
+
+  test('returns true after a unit is eliminated leaving one player', () => {
+    const f1 = new Faction('f1', 'f1', '#f00');
+    const f2 = new Faction('f2', 'f2', '#0f0');
+    f1.setOwningPlayer(player1);
+    f2.setOwningPlayer(player2);
+
+    const u1 = new Unit('u1', 'Unit1', f1, null, 1, 1, 1);
+    const u2 = new Unit('u2', 'Unit2', f2, null, 1, 1, 1);
+    game.getBoard().addUnit(u1, 0, 0);
+    game.getBoard().addUnit(u2, 0, 1);
+
+    game.getBoard().removeUnit(u2);
+
+    expect(game.isGameOver()).toBe(true);
   });
 });
