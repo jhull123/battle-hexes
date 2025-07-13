@@ -66,7 +66,9 @@ export class Game {
   isGameOver() {
     const owners = new Set();
     for (const unit of this.#board.getUnits()) {
-      owners.add(unit.getOwningPlayer());
+      if (unit.getContainingHex()) {
+        owners.add(unit.getOwningPlayer());
+      }
     }
     return owners.size <= 1;
   }
