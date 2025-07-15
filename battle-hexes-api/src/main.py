@@ -36,33 +36,6 @@ app.add_middleware(
 def create_game():
     """Create a new sample game and store it in the repository."""
     new_game = GameFactory.create_sample_game()
-
-    # Replace CPU players with `RandomPlayer` so movement can be generated.
-    original_players = list(new_game.players)
-    converted_players = []
-    for p in original_players:
-        if p.type == PlayerType.CPU:
-            converted_players.append(
-                RandomPlayer(
-                    name=p.name,
-                    type=p.type,
-                    factions=p.factions,
-                    board=new_game.board,
-                )
-            )
-        else:
-            converted_players.append(p)
-
-    # Update game with converted players and reassign unit owners accordingly
-    new_game.players = converted_players
-    new_game.current_player = converted_players[0]
-
-    for unit in new_game.board.get_units():
-        for old_p, new_p in zip(original_players, converted_players):
-            if unit.player == old_p:
-                unit._player = new_p
-                break
-
     game_repo.update_game(new_game)
     return new_game.to_game_model()
 
