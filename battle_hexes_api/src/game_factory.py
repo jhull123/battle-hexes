@@ -1,8 +1,9 @@
 from uuid import UUID
 
+from battle_agent_random.randomplayer import RandomPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
-from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -27,16 +28,18 @@ class GameFactory:
 
         board = Board(10, 10)
 
-        player1 = Player(
+        player1 = RandomPlayer(
             name="Player 1",
             type=PlayerType.CPU,
             factions=[red_faction],
+            board=board
         )
 
-        player2 = Player(
+        player2 = RandomPlayer(
             name="Player 2",
             type=PlayerType.CPU,
             factions=[blue_faction],
+            board=board
         )
 
         game = Game([player1, player2], board)

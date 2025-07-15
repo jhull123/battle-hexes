@@ -9,14 +9,16 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+print("Repo root:", REPO_ROOT)
 sys.path.insert(0, str(REPO_ROOT / "battle_hexes_core" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "battle_agent_random" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "battle_agent_rl" / "src"))
+print("sys.path:", sys.path)
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
 from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
-from game_factory import GameFactory  # noqa: E402
+from src.game_factory import GameFactory  # noqa: E402
 
 app = FastAPI()
 game_repo = GameRepository()
