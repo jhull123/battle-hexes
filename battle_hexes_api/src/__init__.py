@@ -1,0 +1,1 @@
+"""Battle Hexes API package."""

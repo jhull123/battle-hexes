@@ -2,25 +2,28 @@
 
 Welcome, agents!
 
-This repository contains two main projects:
+This repository now contains multiple projects:
 
+- **`battle_hexes_core`**: dependency-free domain classes.
+- **`battle_agent_random`**: a simple random move generator.
+- **`battle_agent_rl`**: reinforcement learning agents (work in progress).
+- **`battle_hexes_api`**: the FastAPI backend using the above packages.
 - **`battle-hexes-web`**: the JavaScript frontend using p5.js.
-- **`battle-hexes-api`**: the Python backend built with FastAPI.
 
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
 
 ## Helper scripts
-
-- `api-checks.sh`: Runs unit tests and the `flake8` linter for the Python API.
-  Execute this from the repository root with `./api-checks.sh`. The script runs
-  in a subshell so it won't change your current working directory.
+- `api-checks.sh`: Runs unit tests and the `flake8` linter for all Python
+  packages. Execute this from the repository root with `./api-checks.sh`. The
+  script adjusts `PYTHONPATH` so the API can import the core and agent
+  packages while tests run.
 
 ### Working with the API
 
 - Install dependencies using both requirement files located inside the
-  `battle-hexes-api` directory:
-  `pip install -r battle-hexes-api/requirements.txt \
-     -r battle-hexes-api/requirements-test.txt`.
+  `battle_hexes_api` directory:
+  `pip install -r battle_hexes_api/requirements.txt \
+     -r battle_hexes_api/requirements-test.txt`.
 - Keep code Flake8-compliant and run `./api-checks.sh` before sending a PR to
   ensure tests and linting pass.
 

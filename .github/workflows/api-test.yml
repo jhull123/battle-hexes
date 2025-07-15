@@ -3,7 +3,12 @@ name: Test Python API
 on:
   push:
     paths:
-      - 'battle-hexes-api/**'
+      - 'battle_hexes_api/**'
+      - 'battle_hexes_core/**'
+      - 'battle_agent_random/**'
+      - 'battle_agent_rl/**'
+      - 'api-checks.sh'
+      - '.github/workflows/api-test.yml'
   workflow_dispatch:
 
 jobs:
@@ -20,16 +25,10 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        working-directory: battle-hexes-api
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
+          pip install -r battle_hexes_api/requirements.txt
+          pip install -r battle_hexes_api/requirements-test.txt
 
-      - name: Run tests
-        working-directory: battle-hexes-api
-        run: pytest
-
-      - name: Run linter (Flake8)
-        working-directory: battle-hexes-api
-        run: flake8 src/ tests/ 
+      - name: Run checks
+        run: ./api-checks.sh
