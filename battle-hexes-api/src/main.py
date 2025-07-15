@@ -14,11 +14,11 @@ sys.path.insert(0, str(REPO_ROOT / "battle-agent-random"))
 sys.path.insert(0, str(REPO_ROOT / "battle-agent-rl"))
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
-from battle_hexes_core.game.game import Game  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
 from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
 from battle_hexes_core.game.player import PlayerType  # noqa: E402
 from battle_agent_random.randomplayer import RandomPlayer  # noqa: E402
+from game_factory import GameFactory  # noqa: E402
 
 app = FastAPI()
 game_repo = GameRepository()
@@ -34,7 +34,8 @@ app.add_middleware(
 
 @app.post('/games')
 def create_game():
-    new_game = Game.create_sample_game()
+    """Create a new sample game and store it in the repository."""
+    new_game = GameFactory.create_sample_game()
 
     # Replace CPU players with `RandomPlayer` so movement can be generated.
     original_players = list(new_game.players)
