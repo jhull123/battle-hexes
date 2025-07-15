@@ -3,10 +3,10 @@ name: Test Python API
 on:
   push:
     paths:
-      - 'battle-hexes-api/**'
-      - 'battle-hexes-core/**'
-      - 'battle-agent-random/**'
-      - 'battle-agent-rl/**'
+      - 'battle_hexes_api/**'
+      - 'battle_hexes_core/**'
+      - 'battle_agent_random/**'
+      - 'battle_agent_rl/**'
       - 'api-checks.sh'
       - '.github/workflows/api-test.yml'
   workflow_dispatch:
@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r battle-hexes-api/requirements.txt
-          pip install -r battle-hexes-api/requirements-test.txt
+          pip install -r battle_hexes_api/requirements.txt
+          pip install -r battle_hexes_api/requirements-test.txt
 
       - name: Run checks
         run: ./api-checks.sh
