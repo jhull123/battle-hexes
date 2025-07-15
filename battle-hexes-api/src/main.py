@@ -1,10 +1,22 @@
 from fastapi import FastAPI
 from fastapi import Body
 from fastapi.middleware.cors import CORSMiddleware
-from battle_hexes_core.combat.combat import Combat
-from battle_hexes_core.game.game import Game
-from battle_hexes_core.game.gamerepo import GameRepository
-from battle_hexes_core.game.sparseboard import SparseBoard
+
+# Allow running the API without installing the sibling packages by adding them
+# to ``sys.path`` relative to this file. This lets ``fastapi dev src/main.py``
+# work when executed from inside ``battle-hexes-api``.
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "battle-hexes-core"))
+sys.path.insert(0, str(REPO_ROOT / "battle-agent-random"))
+sys.path.insert(0, str(REPO_ROOT / "battle-agent-rl"))
+
+from battle_hexes_core.combat.combat import Combat  # noqa: E402
+from battle_hexes_core.game.game import Game  # noqa: E402
+from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
+from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
 
 app = FastAPI()
 game_repo = GameRepository()

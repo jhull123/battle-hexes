@@ -26,6 +26,10 @@ To start the server locally in development mode:
 
     fastapi dev src/main.py
 
+The ``main.py`` module automatically adjusts ``PYTHONPATH`` so you can run this
+command from within ``battle-hexes-api`` without installing the sibling
+packages first.
+
 ## Running Tests
 
 Use the following command to run the unit tests:
