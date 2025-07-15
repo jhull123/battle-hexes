@@ -13,9 +13,10 @@ This repository now contains multiple projects:
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
 
 ## Helper scripts
-- `api-checks.sh`: Runs unit tests and the `flake8` linter for the Python API.
-  Execute this from the repository root with `./api-checks.sh`. The script runs
-  in a subshell and adjusts `PYTHONPATH` so the API can import the core and agent packages.
+- `api-checks.sh`: Runs unit tests and the `flake8` linter for all Python
+  packages. Execute this from the repository root with `./api-checks.sh`. The
+  script adjusts `PYTHONPATH` so the API can import the core and agent
+  packages while tests run.
 
 ### Working with the API
 

@@ -1,1 +1,1 @@
-from .randomplayer import RandomPlayer
+from .randomplayer import RandomPlayer  # noqa: F401 re-export
