@@ -1,10 +1,9 @@
-from src.cpu.randomplayer import RandomPlayer
-from src.game.board import Board, BoardModel
-from src.game.player import Player, PlayerType
-from src.game.sparseboard import SparseBoard
-from src.unit.faction import Faction
-from src.unit.unit import Unit
-from src.game.unitmovementplan import UnitMovementPlan
+from battle_hexes_core.game.board import Board, BoardModel
+from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.sparseboard import SparseBoard
+from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.unit.unit import Unit
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from pydantic import BaseModel
 from typing import List
 import uuid
@@ -86,18 +85,16 @@ class Game:
 
         board = Board(10, 10)
 
-        player1 = RandomPlayer(
+        player1 = Player(
             name="Player 1",
             type=PlayerType.CPU,
             factions=[red_faction],
-            board=board
         )
 
-        player2 = RandomPlayer(
+        player2 = Player(
             name="Player 2",
             type=PlayerType.CPU,
             factions=[blue_faction],
-            board=board
         )
 
         game = Game([player1, player2], board)

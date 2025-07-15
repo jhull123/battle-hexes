@@ -1,10 +1,10 @@
 import unittest
 import uuid
-from src.game.board import Board
-from src.game.player import Player, PlayerType
-from src.game.sparseboard import SparseBoard
-from src.unit.faction import Faction
-from src.unit.unit import Unit
+from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.sparseboard import SparseBoard
+from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.unit.unit import Unit
 
 
 class TestBoard(unittest.TestCase):

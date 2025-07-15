@@ -1,5 +1,5 @@
 from typing import List, Any
-from src.game.hex import Hex
+from battle_hexes_core.game.hex import Hex
 
 
 class UnitMovementPlan:

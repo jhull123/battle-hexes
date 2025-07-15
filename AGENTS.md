@@ -2,18 +2,20 @@
 
 Welcome, agents!
 
-This repository contains two main projects:
+This repository now contains multiple projects:
 
+- **`battle-hexes-core`**: dependency-free domain classes.
+- **`battle-agent-random`**: a simple random move generator.
+- **`battle-agent-rl`**: reinforcement learning agents (work in progress).
+- **`battle-hexes-api`**: the FastAPI backend using the above packages.
 - **`battle-hexes-web`**: the JavaScript frontend using p5.js.
-- **`battle-hexes-api`**: the Python backend built with FastAPI.
 
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
 
 ## Helper scripts
-
 - `api-checks.sh`: Runs unit tests and the `flake8` linter for the Python API.
   Execute this from the repository root with `./api-checks.sh`. The script runs
-  in a subshell so it won't change your current working directory.
+  in a subshell and adjusts `PYTHONPATH` so the API can import the core and agent packages.
 
 ### Working with the API
 

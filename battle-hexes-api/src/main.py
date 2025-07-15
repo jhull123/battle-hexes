@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi import Body
 from fastapi.middleware.cors import CORSMiddleware
-from src.combat.combat import Combat
-from src.game.game import Game
-from src.game.gamerepo import GameRepository
-from src.game.sparseboard import SparseBoard
+from battle_hexes_core.combat.combat import Combat
+from battle_hexes_core.game.game import Game
+from battle_hexes_core.game.gamerepo import GameRepository
+from battle_hexes_core.game.sparseboard import SparseBoard
 
 app = FastAPI()
 game_repo = GameRepository()

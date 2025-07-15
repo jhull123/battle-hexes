@@ -1,12 +1,12 @@
 import unittest
 import uuid
-from src.game.board import Board
-from src.game.game import Game
-from src.game.game import Player, PlayerType
-from src.combat.combat import Combat
-from src.combat.combatresult import CombatResult
-from src.unit.faction import Faction
-from src.unit.unit import Unit
+from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.game import Game
+from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.combat.combat import Combat
+from battle_hexes_core.combat.combatresult import CombatResult
+from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.unit.unit import Unit
 
 
 class TestCombat(unittest.TestCase):

@@ -1,8 +1,8 @@
 import unittest
 import uuid
-from src.unit.unit import Unit
-from src.game.player import Player, PlayerType
-from src.unit.faction import Faction
+from battle_hexes_core.unit.unit import Unit
+from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.unit.faction import Faction
 
 
 class TestUnit(unittest.TestCase):

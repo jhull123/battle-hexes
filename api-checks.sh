@@ -12,7 +12,8 @@ API_DIR="$REPO_ROOT/battle-hexes-api"
 # Run checks in a subshell so the caller's directory is not affected
 (
   cd "$API_DIR"
-  pytest
+  PYTHONPATH="$REPO_ROOT/battle-hexes-core:$REPO_ROOT/battle-agent-random:\$PYTHONPATH" \
+    pytest
   flake8 src/ tests/
 )
 

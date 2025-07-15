@@ -1,4 +1,7 @@
-from src.combat.combatresult import CombatResult, CombatResultData
+from battle_hexes_core.combat.combatresult import (
+    CombatResult,
+    CombatResultData,
+)
 from math import gcd
 import random
 
