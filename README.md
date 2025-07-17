@@ -24,7 +24,7 @@ Create a virtual environment and install dependencies from both requirement file
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r battle-hexes-api/requirements.txt -r battle-hexes-api/requirements-test.txt
+pip install -r requirements.txt -r requirements-test.txt
 ```
 
 You can run unit tests and linting for all Python packages with:

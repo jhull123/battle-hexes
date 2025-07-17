@@ -30,8 +30,7 @@ tests and linter across **all** Python packages. The script adjusts
 
 - Install dependencies using both requirement files located inside the
   `battle_hexes_api` directory:
-  `pip install -r battle_hexes_api/requirements.txt \
-     -r battle_hexes_api/requirements-test.txt`.
+  `pip install -r requirements.txt -r requirements-test.txt`.
 - Keep code Flake8-compliant and run `./server-side-checks.sh` before sending a
   PR to ensure tests and linting pass.
 
