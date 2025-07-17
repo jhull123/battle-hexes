@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
-from battle_hexes_core.game.hex import Hex
+from game.unitmovementplan import UnitMovementPlan
+from game.hex import Hex
 
 
 class TestUnitMovementPlan(unittest.TestCase):

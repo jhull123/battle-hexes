@@ -1,5 +1,5 @@
 import unittest
-from battle_hexes_core.game.player import Player, PlayerType
+from game.player import Player, PlayerType
 
 
 class TestPlayer(unittest.TestCase):

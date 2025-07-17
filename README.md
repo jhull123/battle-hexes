@@ -8,6 +8,8 @@ This repository now contains several Python packages:
 - **battle_agent_random** – a simple `RandomPlayer` implementation.
 - **battle_agent_rl** – a placeholder for reinforcement learning agents.
 - **battle_hexes_api** – a FastAPI service for game lifecycle endpoints.
+All Python source code now lives directly under each package's `src` directory (e.g. `battle_hexes_core/src`) so the project name is not repeated.
+
 
 From the ``battle_hexes_api`` directory you can run ``fastapi dev src/main.py``
 to start the development server. The API module adjusts ``PYTHONPATH`` at

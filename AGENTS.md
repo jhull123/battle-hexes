@@ -9,6 +9,8 @@ This repository now contains multiple projects:
 - **`battle_agent_rl`**: reinforcement learning agents (work in progress).
 - **`battle_hexes_api`**: the FastAPI backend using the above packages.
 - **`battle-hexes-web`**: the JavaScript frontend using p5.js.
+Python source files are located directly inside each project's `src` directory (e.g. `battle_hexes_core/src`).
+
 
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
 

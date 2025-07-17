@@ -1,10 +1,10 @@
 from random import choice
 from typing import List, Set
 from pydantic import PrivateAttr
-from battle_hexes_core.game.board import Board
-from battle_hexes_core.game.hex import Hex
-from battle_hexes_core.game.player import Player
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
+from game.board import Board
+from game.hex import Hex
+from game.player import Player
+from game.unitmovementplan import UnitMovementPlan
 
 
 class RandomPlayer(Player):

@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 import uuid
-from battle_hexes_core.game.player import Player
-from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.unit.sparseunit import SparseUnit
+from game.player import Player
+from unit.faction import Faction
+from unit.sparseunit import SparseUnit
 
 
 class UnitModel(BaseModel):

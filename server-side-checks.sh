@@ -12,6 +12,6 @@ pytest
 
 cd "$REPO_ROOT"
 flake8 \
-  battle_hexes_core/src/battle_hexes_core battle_hexes_core/tests \
-  battle_agent_random/src/battle_agent_random battle_agent_random/tests \
+  battle_hexes_core/src battle_hexes_core/tests \
+  battle_agent_random/src battle_agent_random/tests \
   battle_hexes_api/src battle_hexes_api/tests

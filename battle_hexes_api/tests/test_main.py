@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from main import app
-from battle_hexes_core.game.sparseboard import SparseBoard
+from game.sparseboard import SparseBoard
 
 
 class TestFastAPI(unittest.TestCase):
