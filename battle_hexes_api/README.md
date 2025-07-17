@@ -44,6 +44,12 @@ To run the `flake8` linter:
 
 ## Convenience script
 
-From the repository root you can run `./api-checks.sh` to execute both the tests
-and `flake8` together. This is useful before committing code.
+You can run the checks for this package directly:
+
+```bash
+./checks.sh
+```
+
+Or from the repository root run `./server-side-checks.sh` to execute the tests
+and `flake8` across all Python packages.
 

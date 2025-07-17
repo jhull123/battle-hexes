@@ -25,9 +25,9 @@ source .venv/bin/activate
 pip install -r battle-hexes-api/requirements.txt -r battle-hexes-api/requirements-test.txt
 ```
 
-You can run unit tests and linting together with:
+You can run unit tests and linting for all Python packages with:
 
 ```bash
-./api-checks.sh
+./server-side-checks.sh
 ```
 

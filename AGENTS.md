@@ -13,10 +13,16 @@ This repository now contains multiple projects:
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
 
 ## Helper scripts
-- `api-checks.sh`: Runs unit tests and the `flake8` linter for all Python
-  packages. Execute this from the repository root with `./api-checks.sh`. The
-  script adjusts `PYTHONPATH` so the API can import the core and agent
-  packages while tests run.
+Each Python project contains a `checks.sh` script that runs its unit tests and
+`flake8` linter:
+
+- `battle_hexes_core/checks.sh`
+- `battle_agent_random/checks.sh`
+- `battle_hexes_api/checks.sh`
+
+From the repository root you can execute `./server-side-checks.sh` to run the
+tests and linter across **all** Python packages. The script adjusts
+`PYTHONPATH` so the API can import the core and agent packages while tests run.
 
 ### Working with the API
 
@@ -24,8 +30,8 @@ See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for a primer on the core game rules.
   `battle_hexes_api` directory:
   `pip install -r battle_hexes_api/requirements.txt \
      -r battle_hexes_api/requirements-test.txt`.
-- Keep code Flake8-compliant and run `./api-checks.sh` before sending a PR to
-  ensure tests and linting pass.
+- Keep code Flake8-compliant and run `./server-side-checks.sh` before sending a
+  PR to ensure tests and linting pass.
 
 ### Working with the Web Frontend
 

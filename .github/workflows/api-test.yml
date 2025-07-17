@@ -1,4 +1,4 @@
-name: Test Python API
+name: Test Python Packages
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - 'battle_hexes_core/**'
       - 'battle_agent_random/**'
       - 'battle_agent_rl/**'
-      - 'api-checks.sh'
+      - 'server-side-checks.sh'
       - '.github/workflows/api-test.yml'
   workflow_dispatch:
 
@@ -31,4 +31,4 @@ jobs:
           pip install -r battle_hexes_api/requirements-test.txt
 
       - name: Run checks
-        run: ./api-checks.sh
+        run: ./server-side-checks.sh
