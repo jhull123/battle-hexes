@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-from main import app
-from game.sparseboard import SparseBoard
+from battle_hexes_api.main import app
+from battle_hexes_core.game.sparseboard import SparseBoard
 
 
 class TestFastAPI(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestFastAPI(unittest.TestCase):
         get_response = self.client.get(f'/games/{new_game_id}')
         self.assertEqual(new_game_id, get_response.json().get('id'))
 
-    @patch('main.game_repo')
+    @patch('battle_hexes_api.main.game_repo')
     def test_resolve_combat_placeholder(self, mock_game_repo):
         mock_board = MagicMock()
         sparse_board_data = {
@@ -37,7 +37,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_board.to_sparse_board.assert_called_once()
 
-    @patch('main.game_repo')
+    @patch('battle_hexes_api.main.game_repo')
     def test_generate_movement(self, mock_game_repo):
         mock_plan = MagicMock()
         mock_player = MagicMock()
@@ -61,7 +61,7 @@ class TestFastAPI(unittest.TestCase):
             {"game": {"id": "game-456"}, "plans": [{"plan": 1}]},
         )
 
-    @patch('main.game_repo')
+    @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_updates_game_and_returns_game_model(
         self, mock_game_repo
     ):

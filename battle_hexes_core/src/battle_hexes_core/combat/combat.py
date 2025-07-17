@@ -1,10 +1,10 @@
-from game.game import Game
-from combat.combatresult import (
+from battle_hexes_core.game.game import Game
+from battle_hexes_core.combat.combatresult import (
     CombatResult,
     CombatResultData,
 )
-from combat.combatresults import CombatResults
-from combat.combatsolver import CombatSolver
+from battle_hexes_core.combat.combatresults import CombatResults
+from battle_hexes_core.combat.combatsolver import CombatSolver
 
 
 class Combat:

@@ -1,4 +1,4 @@
-from combat.combatresult import (
+from battle_hexes_core.combat.combatresult import (
     CombatResult,
     CombatResultData,
 )

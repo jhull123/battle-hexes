@@ -3,9 +3,9 @@ from collections import deque
 from pydantic import BaseModel
 from typing import List, Set
 from uuid import UUID
-from game.hex import Hex
-from game.sparseboard import SparseBoard
-from unit.unit import Unit, UnitModel
+from battle_hexes_core.game.hex import Hex
+from battle_hexes_core.game.sparseboard import SparseBoard
+from battle_hexes_core.unit.unit import Unit, UnitModel
 
 
 class BoardModel(BaseModel):

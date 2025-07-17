@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import List
-from unit.faction import Faction
-from game.unitmovementplan import UnitMovementPlan
+from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
 
 class PlayerType(Enum):

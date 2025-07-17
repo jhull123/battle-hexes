@@ -1,5 +1,5 @@
 from typing import List
-from combat.combatresult import CombatResult
+from battle_hexes_core.combat.combatresult import CombatResult
 
 
 class CombatResults:

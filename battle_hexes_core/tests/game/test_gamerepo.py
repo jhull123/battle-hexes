@@ -1,7 +1,7 @@
 import unittest
-from game.board import Board
-from game.game import Game
-from game.gamerepo import GameRepository
+from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.game import Game
+from battle_hexes_core.game.gamerepo import GameRepository
 
 
 class TestGameRepos(unittest.TestCase):

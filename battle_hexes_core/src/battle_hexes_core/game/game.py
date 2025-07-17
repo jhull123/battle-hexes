@@ -1,8 +1,8 @@
-from game.board import Board, BoardModel
-from game.player import Player
-from game.sparseboard import SparseBoard
-from unit.faction import Faction
-from game.unitmovementplan import UnitMovementPlan
+from battle_hexes_core.game.board import Board, BoardModel
+from battle_hexes_core.game.player import Player
+from battle_hexes_core.game.sparseboard import SparseBoard
+from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from pydantic import BaseModel
 from typing import List
 import uuid

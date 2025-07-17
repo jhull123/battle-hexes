@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-export PYTHONPATH="$REPO_ROOT/battle_hexes_core/src:$REPO_ROOT/battle_agent_random/src:$REPO_ROOT/battle_agent_rl/src:${PYTHONPATH:-}"
+export PYTHONPATH="$REPO_ROOT/battle_hexes_core/src:$REPO_ROOT/battle_agent_random/src:$REPO_ROOT/battle_hexes_api/src:${PYTHONPATH:-}"
 
 cd "$REPO_ROOT/battle_hexes_core"
 pytest

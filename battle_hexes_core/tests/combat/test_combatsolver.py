@@ -1,6 +1,6 @@
 import unittest
-from combat.combatsolver import CombatSolver
-from combat.combatresult import CombatResult
+from battle_hexes_core.combat.combatsolver import CombatSolver
+from battle_hexes_core.combat.combatresult import CombatResult
 
 
 class TestCombatSolver(unittest.TestCase):
