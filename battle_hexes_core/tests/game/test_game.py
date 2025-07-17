@@ -1,10 +1,10 @@
 import unittest
-from battle_hexes_core.game.board import Board
-from battle_hexes_core.game.game import Game
-from battle_hexes_core.game.player import Player, PlayerType
-from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.unit.unit import Unit
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
+from game.board import Board
+from game.game import Game
+from game.player import Player, PlayerType
+from unit.faction import Faction
+from unit.unit import Unit
+from game.unitmovementplan import UnitMovementPlan
 
 
 class TestGame(unittest.TestCase):
