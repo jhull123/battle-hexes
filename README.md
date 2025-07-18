@@ -2,13 +2,14 @@
 
 Turn-based strategy game engine.
 
-This repository now contains several Python packages:
+This repository now contains several packages:
 
 - **battle_hexes_core** – domain models like `Game`, `Board` and `Unit`.
 - **battle_agent_random** – a simple `RandomPlayer` implementation.
 - **battle_agent_rl** – a placeholder for reinforcement learning agents.
 - **battle_hexes_api** – a FastAPI service for game lifecycle endpoints.
-All Python source code now lives directly under each package's `src` directory (e.g. `battle_hexes_core/src`) so the project name is not repeated.
+- **battle-hexes-web** – a p5.js web-based UI.
+Source code for each project lives inside its own `src` directory (for example `battle_hexes_core/src` or `battle-hexes-web/src`) so the project name is not repeated.
 
 
 From the ``battle_hexes_api`` directory you can run ``fastapi dev src/main.py``
@@ -31,5 +32,15 @@ You can run unit tests and linting for all Python packages with:
 
 ```bash
 ./server-side-checks.sh
+```
+
+## Setting up the Web UI
+
+Install Node dependencies and run the frontend tests inside `battle-hexes-web`:
+
+```bash
+cd battle-hexes-web
+npm install
+npm test
 ```
 

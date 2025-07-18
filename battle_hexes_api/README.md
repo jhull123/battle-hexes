@@ -16,9 +16,9 @@ Upgrade `pip`.
 
     python -m pip install --upgrade pip
 
-Install dependencies.
+Install dependencies from the repository root.
 
-    pip install -r requirements.txt -r requirements-test.txt
+    pip install -r ../requirements.txt -r ../requirements-test.txt
 
 ## Running Locally
 
