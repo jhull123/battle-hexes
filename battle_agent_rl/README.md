@@ -1,3 +1,4 @@
 # Battle Agent RL
 
-Placeholder for future reinforcement learning based agents.
+This package will host reinforcement learning based agents. It currently
+contains a simple `RLPlayer` class that returns no movement plans.
