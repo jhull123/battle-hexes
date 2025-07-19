@@ -6,7 +6,7 @@ This repository now contains several packages:
 
 - **battle_hexes_core** – domain models like `Game`, `Board` and `Unit`.
 - **battle_agent_random** – a simple `RandomPlayer` implementation.
-- **battle_agent_rl** – a placeholder for reinforcement learning agents.
+- **battle_agent_rl** – early reinforcement learning agents. Currently includes an `RLPlayer` that performs no movement.
 - **battle_hexes_api** – a FastAPI service for game lifecycle endpoints.
 - **battle-hexes-web** – a p5.js web-based UI.
 Source code for each project lives inside its own `src` directory (for example `battle_hexes_core/src` or `battle-hexes-web/src`) so the project name is not repeated.
