@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from battle_agent_random.randomplayer import RandomPlayer
+from battle_agent_rl.rlplayer import RLPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import PlayerType
@@ -35,7 +36,7 @@ class GameFactory:
             board=board
         )
 
-        player2 = RandomPlayer(
+        player2 = RLPlayer(
             name="Player 2",
             type=PlayerType.CPU,
             factions=[blue_faction],
