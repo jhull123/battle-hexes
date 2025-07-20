@@ -10,7 +10,6 @@ from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.unit.unit import Unit
 
 from .rlplayer import RLPlayer
 
@@ -22,6 +21,7 @@ class QLearningPlayer(RLPlayer):
     _gamma: float = PrivateAttr()
     _epsilon: float = PrivateAttr()
     _q: Dict[Tuple[Hashable, Hashable], float] = PrivateAttr()
+    _last_actions: Dict[str, Tuple[Hashable, Hashable]] = PrivateAttr()
 
     def __init__(
         self,
@@ -38,6 +38,7 @@ class QLearningPlayer(RLPlayer):
         self._gamma = gamma
         self._epsilon = epsilon
         self._q = defaultdict(float)
+        self._last_actions = {}
 
     # ------------------------------------------------------------------
     # Q-Learning helpers
@@ -85,36 +86,22 @@ class QLearningPlayer(RLPlayer):
     # ------------------------------------------------------------------
     # Reward helpers
     # ------------------------------------------------------------------
-    # TODO this should be handled by combat_results()
-    def elimination_reward(
-        self,
-        before_units: List[Unit],
-        after_units: List[Unit],
-    ) -> int:
-        """Return reward for units eliminated between two board states."""
-        friend_ids_before = {
-            u.get_id()
-            for u in before_units
-            if u.get_faction() in self.factions
-        }
-        friend_ids_after = {
-            u.get_id()
-            for u in after_units
-            if u.get_faction() in self.factions
-        }
-        enemy_ids_before = {
-            u.get_id()
-            for u in before_units
-            if u.get_faction() not in self.factions
-        }
-        enemy_ids_after = {
-            u.get_id()
-            for u in after_units
-            if u.get_faction() not in self.factions
-        }
-        friends_lost = len(friend_ids_before - friend_ids_after)
-        enemies_eliminated = len(enemy_ids_before - enemy_ids_after)
-        return enemies_eliminated - friends_lost
+    def calculate_reward(self, combat_results: CombatResults) -> int:
+        """Return reward based on combat outcomes."""
+        from battle_hexes_core.combat.combatresult import CombatResult
+
+        attacker = bool(self._last_actions)
+        reward = 0
+        for battle in combat_results.get_battles():
+            result = battle.get_combat_result()
+            if result == CombatResult.DEFENDER_ELIMINATED:
+                reward += 1 if attacker else -1
+            elif result == CombatResult.ATTACKER_ELIMINATED:
+                reward += -1 if attacker else 1
+            elif result == CombatResult.EXCHANGE:
+                # Both sides lose one unit
+                reward += 0
+        return reward
 
     # ------------------------------------------------------------------
     # Movement (\u03b5-greedy using Q-table). State is board snapshot.
@@ -131,6 +118,7 @@ class QLearningPlayer(RLPlayer):
     def movement(self) -> List[UnitMovementPlan]:
         plans: List[UnitMovementPlan] = []
         state = self.board_state()
+        self._last_actions = {}
         for unit in self.own_units(self._board.get_units()):
             start_hex = self._board.get_hex(unit.row, unit.column)
             reachable = list(self._board.get_reachable_hexes(unit, start_hex))
@@ -141,6 +129,7 @@ class QLearningPlayer(RLPlayer):
             chosen = self.choose_action(state, actions)
             if chosen is None:
                 continue
+            self._last_actions[str(unit.get_id())] = (state, chosen)
             _, row, col = chosen
             target_hex = self._board.get_hex(row, col)
             path = self._board.shortest_path(unit, start_hex, target_hex)
@@ -150,6 +139,35 @@ class QLearningPlayer(RLPlayer):
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """Informs the player of the combat results."""
-        # TODO !
-        # This method can be used to update Q-values based on combat outcomes.
-        pass
+        reward = self.calculate_reward(combat_results)
+        next_state = self.board_state()
+        for state, action in self._last_actions.values():
+            self.update_q(state, action, reward, next_state)
+        self._last_actions = {}
+        print("Q-table after combat:")
+        print(self._format_q_table(next_state))
+
+    # ------------------------------------------------------------------
+    # Debug helpers
+    # ------------------------------------------------------------------
+    def _format_q_table(self, state: Hashable) -> str:
+        """Return a human-readable Q-table for the given board state."""
+        rows = []
+        for r in range(self._board.get_rows()):
+            indent = " " if r % 2 == 1 else ""
+            cells = []
+            for c in range(self._board.get_columns()):
+                q_vals = [
+                    self._q[(s, a)]
+                    for (s, a) in self._q
+                    if (
+                        s == state
+                        and isinstance(a, tuple)
+                        and a[1] == r
+                        and a[2] == c
+                    )
+                ]
+                cell = f"{max(q_vals):4.1f}" if q_vals else "   ."
+                cells.append(cell)
+            rows.append(indent + " ".join(cells))
+        return "\n".join(rows)
