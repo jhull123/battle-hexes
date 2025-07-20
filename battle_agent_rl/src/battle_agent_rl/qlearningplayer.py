@@ -144,3 +144,4 @@ class QLearningPlayer(RLPlayer):
         for state, action in self._last_actions.values():
             self.update_q(state, action, reward, next_state)
         self._last_actions = {}
+        print("Q-table after combat:", dict(self._q))
