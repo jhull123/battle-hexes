@@ -25,6 +25,9 @@ class Game:
     def get_id(self):
         return self.id
 
+    def get_players(self):
+        return self.players
+
     def get_board(self):
         return self.board
 

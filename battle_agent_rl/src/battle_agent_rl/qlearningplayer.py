@@ -6,6 +6,7 @@ from typing import Dict, Hashable, List, Tuple
 
 from pydantic import PrivateAttr
 
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
@@ -84,6 +85,7 @@ class QLearningPlayer(RLPlayer):
     # ------------------------------------------------------------------
     # Reward helpers
     # ------------------------------------------------------------------
+    # TODO this should be handled by combat_results()
     def elimination_reward(
         self,
         before_units: List[Unit],
@@ -145,3 +147,9 @@ class QLearningPlayer(RLPlayer):
             if path:
                 plans.append(UnitMovementPlan(unit, path))
         return plans
+
+    def combat_results(self, combat_results: CombatResults) -> None:
+        """Informs the player of the combat results."""
+        # TODO !
+        # This method can be used to update Q-values based on combat outcomes.
+        pass

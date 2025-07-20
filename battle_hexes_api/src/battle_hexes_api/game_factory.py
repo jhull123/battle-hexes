@@ -27,7 +27,7 @@ class GameFactory:
             color="#4682B4",
         )
 
-        board = Board(10, 10)
+        board = Board(5, 5)
 
         player1 = RandomPlayer(
             name="Player 1",
@@ -55,7 +55,7 @@ class GameFactory:
             2,
             6,
         )
-        game.board.add_unit(red_unit, 6, 4)
+        game.board.add_unit(red_unit, 4, 2)
 
         blue_unit = Unit(
             UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
@@ -67,6 +67,6 @@ class GameFactory:
             4,
             4,
         )
-        game.board.add_unit(blue_unit, 3, 5)
+        game.board.add_unit(blue_unit, 1, 2)
 
         return game

@@ -9,6 +9,7 @@ from battle_hexes_core.combat.combatsolver import CombatSolver
 
 class Combat:
     def __init__(self, game: Game):
+        self.game = game
         self.board = game.get_board()
         self.attacking_player = game.get_current_player()
         self.combat_solver = CombatSolver()
@@ -18,6 +19,9 @@ class Combat:
         for battle_participants in self.find_combat():
             battle_result = self.__resolve_combat(battle_participants)
             combat_results.add_battle(battle_result)
+        for player in self.game.get_players():
+            print("Combat results for player:", type(player))
+            player.combat_results(combat_results)
         return combat_results
 
     def __resolve_combat(self, battle_participants) -> CombatResultData:

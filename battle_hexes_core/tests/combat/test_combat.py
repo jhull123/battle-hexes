@@ -9,17 +9,23 @@ from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
 
+class MyTestPlayer(Player):
+    def combat_results(self, combat_results):
+        pass
+
+
 class TestCombat(unittest.TestCase):
     def setUp(self):
         self.red_faction = Faction(id=uuid.uuid4(), name='Red', color='red')
         self.blue_faction = Faction(id=uuid.uuid4(), name='Blue', color='blue')
 
-        self.red_player = Player(
+        self.red_player = MyTestPlayer(
             name='Red Player',
             type=PlayerType.HUMAN,
             factions=[self.red_faction]
         )
-        self.blue_player = Player(
+
+        self.blue_player = MyTestPlayer(
             name='Blue Player',
             type=PlayerType.CPU,
             factions=[self.blue_faction]

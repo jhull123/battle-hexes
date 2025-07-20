@@ -1,6 +1,7 @@
 from random import choice
 from typing import List, Set
 from pydantic import PrivateAttr
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.hex import Hex
 from battle_hexes_core.game.player import Player
@@ -41,3 +42,7 @@ class RandomPlayer(Player):
         if not hexes:
             return None
         return choice(list(hexes))
+
+    def combat_results(self, combat_results: CombatResults) -> None:
+        # RandomPlayer does not handle combat results.
+        pass

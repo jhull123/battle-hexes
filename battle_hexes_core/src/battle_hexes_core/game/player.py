@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import List
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
@@ -27,3 +28,7 @@ class Player(BaseModel):
     def movement(self) -> List[UnitMovementPlan]:
         """Return a list of movement plans for the player's units."""
         raise NotImplementedError("Subclasses must implement movement")
+
+    def combat_results(self, combat_results: CombatResults) -> None:
+        """Informs the player of the combat results."""
+        raise NotImplementedError("Subclasses must implement combat_results")
