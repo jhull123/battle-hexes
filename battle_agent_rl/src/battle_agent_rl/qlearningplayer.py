@@ -144,4 +144,30 @@ class QLearningPlayer(RLPlayer):
         for state, action in self._last_actions.values():
             self.update_q(state, action, reward, next_state)
         self._last_actions = {}
-        print("Q-table after combat:", dict(self._q))
+        print("Q-table after combat:")
+        print(self._format_q_table(next_state))
+
+    # ------------------------------------------------------------------
+    # Debug helpers
+    # ------------------------------------------------------------------
+    def _format_q_table(self, state: Hashable) -> str:
+        """Return a human-readable Q-table for the given board state."""
+        rows = []
+        for r in range(self._board.get_rows()):
+            indent = " " if r % 2 == 1 else ""
+            cells = []
+            for c in range(self._board.get_columns()):
+                q_vals = [
+                    self._q[(s, a)]
+                    for (s, a) in self._q
+                    if (
+                        s == state
+                        and isinstance(a, tuple)
+                        and a[1] == r
+                        and a[2] == c
+                    )
+                ]
+                cell = f"{max(q_vals):4.1f}" if q_vals else "   ."
+                cells.append(cell)
+            rows.append(indent + " ".join(cells))
+        return "\n".join(rows)
