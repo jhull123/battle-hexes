@@ -44,6 +44,7 @@ class Game:
                 continue
             final_hex = plan.path[-1]
             plan.unit.set_coords(final_hex.row, final_hex.column)
+        self.get_current_player().movement_cb()
 
     def next_player(self) -> Player:
         """Advance to the next player and return it."""

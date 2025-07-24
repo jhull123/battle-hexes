@@ -229,6 +229,42 @@ class Board:
 
         return max(abs(ax - bx), abs(ay - by), abs(az - bz))
 
+    def get_nearest_enemy_unit(self, unit: Unit) -> Unit | None:
+        """
+        Return the closest enemy unit to the given unit.
+        If no enemy units are found, returns None.
+        """
+        if unit is None or unit.get_coords() is None:
+            return None
+
+        own_faction = unit.get_faction()
+        row, column = unit.get_coords()
+        start_hex = self.get_hex(row, column)
+
+        if start_hex is None:
+            return None
+
+        min_distance = float("inf")
+        nearest_enemy = None
+
+        for other in self.get_units():
+            if other == unit or other.get_faction() == own_faction:
+                continue
+
+            if other.get_coords() is None:
+                continue
+
+            other_hex = self.get_hex(*other.get_coords())
+            if other_hex is None:
+                continue
+
+            distance = Board.hex_distance(start_hex, other_hex)
+            if distance < min_distance:
+                min_distance = distance
+                nearest_enemy = other
+
+        return nearest_enemy
+
     def get_units_for_hexes(self, hexes: List[Hex]) -> List[Unit]:
         units = []
         for unit in self.units.values():

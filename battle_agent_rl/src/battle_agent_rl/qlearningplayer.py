@@ -37,12 +37,22 @@ class QLearningPlayer(RLPlayer):
         plans: List[UnitMovementPlan] = []
         return plans
 
+    def movement_cb(self) -> None:
+        """
+        Called after the player's unit plan has been applied to the board.
+        """
+        self.calculate_reward()
+
     def combat_results(self, combat_results: CombatResults) -> None:
-        """Informs the player of the combat results."""
+        """
+        Informs the player of the combat results.
+        The board object is also updated at this point with the results of the
+        player's movement plan.
+        """
         # TODO not implemented yet!
         pass
 
-    def calculate_reward(self):
+    def calculate_reward(self) -> float:
         """Return a positional reward for the current board state."""
         board = self._board
         friendly_units = self.own_units(board.get_units())
@@ -59,4 +69,5 @@ class QLearningPlayer(RLPlayer):
                 if distance > 0:
                     reward += (friendly_strength - enemy_strength) / distance
 
+        print(f"Reward for {self.name}: {reward}")
         return reward

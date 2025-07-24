@@ -29,6 +29,12 @@ class Player(BaseModel):
         """Return a list of movement plans for the player's units."""
         raise NotImplementedError("Subclasses must implement movement")
 
+    def movement_cb(self) -> None:
+        """
+        Called after the player's unit plan has been applied to the board.
+        """
+        pass
+
     def combat_results(self, combat_results: CombatResults) -> None:
         """Informs the player of the combat results."""
         raise NotImplementedError("Subclasses must implement combat_results")
