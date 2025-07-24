@@ -20,7 +20,6 @@ class Combat:
             battle_result = self.__resolve_combat(battle_participants)
             combat_results.add_battle(battle_result)
         for player in self.game.get_players():
-            print("Combat results for player:", type(player))
             player.combat_results(combat_results)
         return combat_results
 

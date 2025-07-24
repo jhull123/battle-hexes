@@ -207,6 +207,14 @@ class Board:
 
         return False
 
+    def hex_distance(friendly_hex, enemy_hex) -> int:
+        """
+        Calculate the hex distance between two hexes taking into account the
+        even-r offset hex grid layout.
+        """
+        # TODO implement hex distance calculation
+        return 0
+
     def get_units_for_hexes(self, hexes: List[Hex]) -> List[Unit]:
         units = []
         for unit in self.units.values():
