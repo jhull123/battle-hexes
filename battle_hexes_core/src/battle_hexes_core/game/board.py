@@ -212,8 +212,22 @@ class Board:
         Calculate the hex distance between two hexes taking into account the
         even-r offset hex grid layout.
         """
-        # TODO implement hex distance calculation
-        return 0
+        if friendly_hex is None or enemy_hex is None:
+            raise ValueError("hex arguments must not be None")
+
+        def to_cube(hex_obj: Hex) -> tuple[int, int, int]:
+            """Convert offset coordinates to cube coordinates (odd-q)."""
+            col = hex_obj.column
+            row = hex_obj.row
+            x = col
+            z = row - (col - (col & 1)) // 2
+            y = -x - z
+            return x, y, z
+
+        ax, ay, az = to_cube(friendly_hex)
+        bx, by, bz = to_cube(enemy_hex)
+
+        return max(abs(ax - bx), abs(ay - by), abs(az - bz))
 
     def get_units_for_hexes(self, hexes: List[Hex]) -> List[Unit]:
         units = []

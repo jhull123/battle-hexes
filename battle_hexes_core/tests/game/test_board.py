@@ -302,3 +302,12 @@ class TestBoard(unittest.TestCase):
 
         path = self.board.shortest_path(self.red_unit, start_hex, end_hex)
         self.assertEqual(path, [])
+
+    def test_hex_distance(self):
+        a = self.board.get_hex(0, 0)
+        b = self.board.get_hex(1, 0)
+        c = self.board.get_hex(1, 1)
+
+        self.assertEqual(Board.hex_distance(a, a), 0)
+        self.assertEqual(Board.hex_distance(a, b), 1)
+        self.assertEqual(Board.hex_distance(a, c), 2)

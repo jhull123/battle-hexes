@@ -43,44 +43,20 @@ class QLearningPlayer(RLPlayer):
         pass
 
     def calculate_reward(self):
-        """
-        Calculate the reward based on the player's unit positions on the board.
+        """Return a positional reward for the current board state."""
+        board = self._board
+        friendly_units = self.own_units(board.get_units())
+        enemy_units = [u for u in board.get_units() if u not in friendly_units]
 
-        TODO: Implement proximity-based reward to encourage strong units to
-        move closer to weaker enemy units, and discourage approaching stronger
-        enemies.
+        reward = 0.0
+        for f_unit in friendly_units:
+            friendly_strength = f_unit.get_attack() + f_unit.get_defense()
+            f_hex = board.get_hex(f_unit.row, f_unit.column)
+            for e_unit in enemy_units:
+                enemy_strength = e_unit.get_attack() + e_unit.get_defense()
+                e_hex = board.get_hex(e_unit.row, e_unit.column)
+                distance = Board.hex_distance(f_hex, e_hex)
+                if distance > 0:
+                    reward += (friendly_strength - enemy_strength) / distance
 
-        For each pair of (friendly_unit, enemy_unit):
-
-            1. Compute the strength of both units as:
-               strength = unit.attack + unit.defense
-
-            2. Compute the distance between the units using the board's hex
-               distance:
-               distance = board.hex_distance(friendly_hex, enemy_hex)
-
-            3. If distance > 0, compute the pairwise reward as:
-               (friendly_strength - enemy_strength) / distance
-
-        Sum this value over all pairs of friendly and enemy units. This total
-        value is the reward for the current board state.
-
-        Notes:
-        - This approach encourages a unit to move toward enemies it can likely
-          defeat, and to stay away from stronger enemies.
-        - Division by zero should be avoided; skip or guard against pairs at
-          distance = 0.
-
-        Consider:
-        reward = self.calculate_reward()
-        self.update_q(state, action, reward, next_state)
-
-        You're telling your agent:
-
-        “Taking this action from this state led to this reward and landed me
-        in this next state.”
-
-        This lets it learn which actions are worth repeating from similar board
-        positions in the future.
-        """
-        pass
+        return reward
