@@ -79,10 +79,27 @@ class QLearningPlayer(RLPlayer):
             actions = self.available_actions(unit)
             chosen = self.choose_action(state, actions)
             self._last_actions[unit.get_id()] = (state, chosen)
-            print(unit.get_id(), "→", state, chosen)
+
+        self.print_last_actions()
 
         plans: List[UnitMovementPlan] = []
         return plans
+
+    def move_plan(
+            self,
+            action: ActionIntent,
+            magnitude: int
+            ) -> UnitMovementPlan:
+        """
+        Create a movement plan for the unit based on the chosen action and
+        magnitude.
+        ADVANCE: move toward the nearest enemy hex by the specified
+                 magnitude.
+        RETREAT: move away from the nearest enemy hex by the specified
+                 magnitude.
+        HOLD: do not move.
+        """
+        pass  # Not implemented yet, placeholder for future logic
 
     def available_actions(self, unit: Unit) -> List[Tuple[ActionIntent, int]]:
         actions = [(ActionIntent.HOLD, 0)]
@@ -163,6 +180,7 @@ class QLearningPlayer(RLPlayer):
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
+        self.print_q_table()
         self._last_actions = {}
 
     def combat_results(self, combat_results: CombatResults) -> None:
@@ -194,3 +212,15 @@ class QLearningPlayer(RLPlayer):
 
         print(f"Reward for {self.name}: {reward}")
         return reward
+
+    def print_last_actions(self) -> None:
+        """Print the last actions taken by the player."""
+        print(f"Last actions for {self.name}:")
+        for unit_id, (state, action) in self._last_actions.items():
+            print(f"  Unit ID: {unit_id}, State: {state}, Action: {action}")
+
+    def print_q_table(self) -> None:
+        """Print the Q-table for debugging purposes."""
+        print(f"Q-table for {self.name}:")
+        for (state, action), value in self._q_table.items():
+            print(f"  State: {state}, Action: {action}, Q-value: {value:.4f}")
