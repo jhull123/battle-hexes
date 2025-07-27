@@ -68,8 +68,8 @@ class SampleGameCreator:
         )
         blue_unit.set_coords(8, 19)
 
-        return GameFactory().create_game(
+        return GameFactory(
             board_size,
             [player1, player2],
             [red_unit, blue_unit],
-        )
+        ).create_game()
