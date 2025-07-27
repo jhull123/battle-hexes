@@ -14,6 +14,7 @@ class GameFactory:
 
     @staticmethod
     def create_sample_game() -> Game:
+        # TODO refactor to use the create_game method when ready
         """Create a simple two-player game with preset units."""
         red_faction = Faction(
             id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
@@ -76,3 +77,12 @@ class GameFactory:
         game.board.add_unit(blue_unit, 9, 20)
 
         return game
+
+    def create_game(
+            self,
+            board_size: tuple[int, int],
+            players: list[Player],
+            units: list[Unit]
+            ) -> Game:
+        # TODO implement me!
+        return None
