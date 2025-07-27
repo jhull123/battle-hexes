@@ -25,12 +25,14 @@ class QLearningPlayer(RLPlayer):
     Simple Q-learning agent.
 
     _last_actions
-    Temporary store for the most recent (state, action) pairs, used for Q-value
-    updates.
+    Temporary store for the most recent unit, state and action tuples used
+    when updating Q-values after movement or combat.
     key: unit ID
     value:
-        (my_strength, nearest_enemy_strength, distance_to_nearest_enemy),
-        (action, magnitude)
+        (unit, state, action)
+            unit: Unit object reference
+            state: (my_strength, nearest_enemy_strength, distance)
+            action: (ActionIntent, magnitude)
 
     actions ∈ { "ADVANCE", "RETREAT", "HOLD" }
     magnitude ∈ { 0, 1, 2, ..., unit.get_move() }
@@ -79,7 +81,9 @@ class QLearningPlayer(RLPlayer):
             state = self.encode_unit_state(unit)
             actions = self.available_actions(unit)
             chosen = self.choose_action(state, actions)
-            self._last_actions[unit.get_id()] = (state, chosen)
+            # Store the unit reference so we can update after combat even if it
+            # was destroyed.
+            self._last_actions[unit.get_id()] = (unit, state, chosen)
             plan = self.move_plan(unit, chosen[0], chosen[1])
             if plan is not None:
                 plans.append(plan)
@@ -201,15 +205,15 @@ class QLearningPlayer(RLPlayer):
         Called after the player's unit plan has been applied to the board.
         """
         reward = self.calculate_reward()
-        for unit in self.own_units(self._board.get_units()):
-            record = self._last_actions.get(unit.get_id())
-            if record is None:
-                continue
-            state, action = record
+        for unit, state_action in [
+            (record[0], (record[1], record[2]))
+            for record in self._last_actions.values()
+        ]:
+            state, action = state_action
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
-        self._last_actions = {}
+        # Do not clear _last_actions here so combat_results can also use them
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
@@ -217,9 +221,33 @@ class QLearningPlayer(RLPlayer):
         The board object is also updated at this point with the results of the
         player's movement plan.
         """
-        # TODO update last actions based on combat results
-        # TODO not implemented yet!
-        pass
+        from battle_hexes_core.combat.combatresult import CombatResult
+
+        # Determine if this player was the attacker.
+        # During the attacker's turn ``_last_actions`` stores the actions.
+        attacker = bool(self._last_actions)
+
+        reward = 0.0
+        for battle in combat_results.get_battles():
+            result = battle.get_combat_result()
+            if result == CombatResult.DEFENDER_ELIMINATED:
+                reward += 1.0 if attacker else -1.0
+            elif result == CombatResult.ATTACKER_ELIMINATED:
+                reward += -1.0 if attacker else 1.0
+            elif result == CombatResult.EXCHANGE:
+                reward += 0.0
+
+        for unit, state_action in [
+            (record[0], (record[1], record[2]))
+            for record in self._last_actions.values()
+        ]:
+            state, action = state_action
+            next_state = self.encode_unit_state(unit)
+            next_actions = self.available_actions(unit)
+            self.update_q(state, action, reward, next_state, next_actions)
+
+        # Clear stored actions now that Q-values have been updated
+        self._last_actions = {}
 
     def calculate_reward(self) -> float:
         """Return a positional reward for the current board state."""
@@ -249,8 +277,12 @@ class QLearningPlayer(RLPlayer):
     def print_last_actions(self) -> None:
         """Print the last actions taken by the player."""
         print(f"Last actions for {self.name}:")
-        for unit_id, (state, action) in self._last_actions.items():
-            print(f"  Unit ID: {unit_id}, State: {state}, Action: {action}")
+        for unit_id, (unit, state, action) in self._last_actions.items():
+            msg = (
+                f"  Unit ID: {unit_id}, Unit: {unit.get_name()}, "
+                f"State: {state}, Action: {action}"
+            )
+            print(msg)
 
     def print_q_table(self) -> None:
         """Print the Q-table for debugging purposes."""
