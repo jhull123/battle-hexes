@@ -73,6 +73,7 @@ def main(episodes: int = 5) -> None:
         board_size=(30, 30),
         players=[random_player, rl_player],
         units=units,
+        randomize_positions=True
     )
 
     agent_trainer = AgentTrainer(game_factory, episodes)

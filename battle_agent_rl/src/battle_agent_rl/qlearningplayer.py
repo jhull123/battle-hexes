@@ -84,8 +84,7 @@ class QLearningPlayer(RLPlayer):
             if plan is not None:
                 plans.append(plan)
 
-        self.print_last_actions()
-
+        # self.print_last_actions()
         return plans
 
     def move_plan(
@@ -210,7 +209,6 @@ class QLearningPlayer(RLPlayer):
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
-        self.print_q_table()
         self._last_actions = {}
 
     def combat_results(self, combat_results: CombatResults) -> None:
@@ -242,8 +240,11 @@ class QLearningPlayer(RLPlayer):
                 else:
                     print("Warning: Distance is zero in calculate_reward!")
 
-        print(f"Reward for {self.name}: {reward}")
+        # print(f"Reward for {self.name}: {reward}")
         return reward
+
+    def end_game_cb(self) -> None:
+        self.print_q_table()
 
     def print_last_actions(self) -> None:
         """Print the last actions taken by the player."""

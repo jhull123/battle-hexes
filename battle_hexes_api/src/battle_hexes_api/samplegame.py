@@ -4,7 +4,7 @@ from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.gamefactory import GameFactory
-from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -31,11 +31,17 @@ class SampleGameCreator:
 
         board = Board(*board_size)
 
-        player1 = Player(
+        player1 = QLearningPlayer(
             name="Player 1",
-            type=PlayerType.HUMAN,
+            type=PlayerType.CPU,
             factions=[red_faction],
+            board=board
         )
+        # player1 = Player(
+        #     name="Player 1",
+        #     type=PlayerType.HUMAN,
+        #     factions=[red_faction],
+        # )
 
         player2 = QLearningPlayer(
             name="Player 2",
