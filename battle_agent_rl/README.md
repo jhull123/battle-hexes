@@ -23,3 +23,9 @@ The number of training episodes can be passed as an argument:
 ./train_qlearning.sh 10
 ```
 
+You can also invoke the trainer module directly:
+
+```bash
+python -m battle_agent_rl.qlearningtrainer 10
+```
+
