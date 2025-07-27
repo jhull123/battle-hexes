@@ -18,7 +18,7 @@ print("sys.path:", sys.path)
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
 from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
-from battle_hexes_api.game_factory import GameFactory  # noqa: E402
+from battle_hexes_api.samplegame import SampleGameCreator  # noqa: E402
 
 app = FastAPI()
 game_repo = GameRepository()
@@ -35,7 +35,7 @@ app.add_middleware(
 @app.post('/games')
 def create_game():
     """Create a new sample game and store it in the repository."""
-    new_game = GameFactory.create_sample_game()
+    new_game = SampleGameCreator.create_sample_game()
     game_repo.update_game(new_game)
     return new_game.to_game_model()
 

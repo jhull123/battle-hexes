@@ -3,12 +3,13 @@ from uuid import UUID
 from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
+from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
 
-class GameFactory:
+class SampleGameCreator:
     """Utility class for constructing game instances."""
 
     @staticmethod
@@ -53,6 +54,7 @@ class GameFactory:
             2,
             1,
         )
+        red_unit.set_coords(2, 2)
 
         blue_unit = Unit(
             UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
@@ -64,44 +66,10 @@ class GameFactory:
             4,
             4,
         )
+        blue_unit.set_coords(8, 19)
 
         return GameFactory().create_game(
             board_size,
             [player1, player2],
             [red_unit, blue_unit],
         )
-
-    def create_game(
-            self,
-            board_size: tuple[int, int],
-            players: list[Player],
-            units: list[Unit]
-            ) -> Game:
-        """Create a ``Game`` with the given board size, players and units."""
-        rows, cols = board_size
-
-        board = None
-        for player in players:
-            if hasattr(player, "_board"):
-                board = getattr(player, "_board")
-                break
-
-        if (
-            board is None
-            or board.get_rows() != rows
-            or board.get_columns() != cols
-        ):
-            board = Board(rows, cols)
-            for player in players:
-                if hasattr(player, "_board"):
-                    player._board = board
-
-        game = Game(players, board)
-
-        for unit in units:
-            coords = unit.get_coords()
-            if coords is None:
-                continue
-            board.add_unit(unit, coords[0], coords[1])
-
-        return game
