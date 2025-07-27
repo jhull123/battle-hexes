@@ -2,6 +2,11 @@ import unittest
 import uuid
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer, ActionIntent
+from battle_hexes_core.combat.combatresult import (
+    CombatResult,
+    CombatResultData,
+)
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
@@ -155,12 +160,29 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
     def test_q_table_update_after_movement(self):
         self.player.movement()
-        state, action = self.player._last_actions[self.friend.get_id()]
+        _, state, action = self.player._last_actions[self.friend.get_id()]
         self.player.movement_cb()
         expected_q = 0.5 * 2  # alpha * reward
         self.assertAlmostEqual(
             self.player._q_table[(state, action)], expected_q
         )
+
+    def test_combat_results_updates_q_table(self):
+        state = self.player.encode_unit_state(self.friend)
+        action = (ActionIntent.HOLD, 0)
+        self.player._last_actions = {
+            self.friend.get_id(): (self.friend, state, action)
+        }
+
+        results = CombatResults()
+        results.add_battle(
+            CombatResultData((1, 1), 1, CombatResult.DEFENDER_ELIMINATED)
+        )
+        self.board.remove_units(self.enemy)
+
+        self.player.combat_results(results)
+
+        self.assertEqual(self.player._q_table[(state, action)], 0.5)
 
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):
