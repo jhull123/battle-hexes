@@ -7,14 +7,17 @@ from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.game.player import PlayerType
-from battle_hexes_core.training import AgentTrainer
+from battle_hexes_core.training.agenttrainer import AgentTrainer
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
 
 def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
     """Create players and their starting units."""
-    random_player_factions = [Faction(id=uuid.uuid4())]
+    random_player_factions = [
+        Faction(id=uuid.uuid4(), name="Random Faction", color="red")
+    ]
+
     random_player = RandomPlayer(
         name="Random Player",
         type=PlayerType.CPU,
@@ -35,7 +38,10 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         column=2,
     )
 
-    rl_player_factions = [Faction(id=uuid.uuid4())]
+    rl_player_factions = [
+        Faction(id=uuid.uuid4(), name="RL Faction", color="blue")
+    ]
+
     rl_player = QLearningPlayer(
         name="Q Learning Player",
         type=PlayerType.CPU,
