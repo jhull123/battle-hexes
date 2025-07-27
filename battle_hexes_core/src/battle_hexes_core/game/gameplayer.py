@@ -18,7 +18,6 @@ class GamePlayer:
 
             plans = current_player.movement()
             self.game.apply_movement_plans(plans)
-            current_player.movement_cb()
 
             Combat(self.game).resolve_combat()
 
