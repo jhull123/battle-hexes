@@ -75,9 +75,11 @@ class Game:
                 return player
         raise ValueError(f"No player found for faction {faction.name}")
 
-    def play(self) -> None:
-        """
-        Start the game loop and play until the game is over. All players must
-        be of type CPU.
-        """
-        pass
+    def is_game_over(self) -> bool:
+        """Return True if zero or one players still have units on the board."""
+        active_players = {
+            unit.player.name
+            for unit in self.get_board().get_units()
+            if unit.get_coords() is not None
+        }
+        return len(active_players) <= 1
