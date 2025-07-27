@@ -11,7 +11,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 print("Repo root:", REPO_ROOT)
 sys.path.insert(0, str(REPO_ROOT / "battle_hexes_core" / "src"))
-sys.path.insert(0, str(REPO_ROOT / "battle_agent_random" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "battle_agent_rl" / "src"))
 print("sys.path:", sys.path)
 

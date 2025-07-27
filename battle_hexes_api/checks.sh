@@ -8,7 +8,7 @@ set -euo pipefail
 # Determine repository root directory
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # Add package directories to PYTHONPATH so tests can import them
-export PYTHONPATH="$REPO_ROOT/battle_hexes_core/src:$REPO_ROOT/battle_agent_random/src:$REPO_ROOT/battle_hexes_api/src:${PYTHONPATH:-}"
+export PYTHONPATH="$REPO_ROOT/battle_hexes_core/src:$REPO_ROOT/battle_hexes_api/src:${PYTHONPATH:-}"
 
 # Run tests for the API package
 cd "$REPO_ROOT/battle_hexes_api"

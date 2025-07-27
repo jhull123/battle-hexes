@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from battle_agent_random.randomplayer import RandomPlayer
+from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
