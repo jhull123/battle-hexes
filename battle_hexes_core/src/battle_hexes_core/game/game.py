@@ -74,7 +74,7 @@ class Game:
             if faction in player.factions:
                 return player
         raise ValueError(f"No player found for faction {faction.name}")
-    
+
     def play(self) -> None:
         """
         Start the game loop and play until the game is over. All players must
