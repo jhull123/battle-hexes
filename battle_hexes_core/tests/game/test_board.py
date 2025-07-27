@@ -311,3 +311,25 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(Board.hex_distance(a, a), 0)
         self.assertEqual(Board.hex_distance(a, b), 1)
         self.assertEqual(Board.hex_distance(a, c), 2)
+
+    def test_path_towards_limited_steps(self):
+        self.board.add_unit(self.red_unit, 2, 1)
+        self.board.add_unit(self.blue_unit, 4, 1)
+
+        enemy_hex = self.board.get_hex(4, 1)
+        path = self.board.path_towards(self.red_unit, enemy_hex, 1)
+        coords = [(h.row, h.column) for h in path]
+        self.assertEqual(coords, [(2, 1), (3, 1)])
+
+    def test_path_away_from_increases_distance(self):
+        self.board.add_unit(self.red_unit, 2, 1)
+        self.board.add_unit(self.blue_unit, 0, 1)
+
+        threat_hex = self.board.get_hex(0, 1)
+        start_hex = self.board.get_hex(2, 1)
+        start_dist = Board.hex_distance(start_hex, threat_hex)
+        path = self.board.path_away_from(self.red_unit, threat_hex, 1)
+        end_hex = path[-1]
+        end_dist = Board.hex_distance(end_hex, threat_hex)
+        self.assertEqual(len(path), 2)
+        self.assertGreater(end_dist, start_dist)

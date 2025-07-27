@@ -74,19 +74,23 @@ class QLearningPlayer(RLPlayer):
 
     def movement(self) -> List[UnitMovementPlan]:
         self._last_actions = {}
+        plans: List[UnitMovementPlan] = []
         for unit in self.own_units(self._board.get_units()):
             state = self.encode_unit_state(unit)
             actions = self.available_actions(unit)
             chosen = self.choose_action(state, actions)
             self._last_actions[unit.get_id()] = (state, chosen)
+            plan = self.move_plan(unit, chosen[0], chosen[1])
+            if plan is not None:
+                plans.append(plan)
 
         self.print_last_actions()
 
-        plans: List[UnitMovementPlan] = []
         return plans
 
     def move_plan(
             self,
+            unit: Unit,
             action: ActionIntent,
             magnitude: int
             ) -> UnitMovementPlan:
@@ -99,7 +103,33 @@ class QLearningPlayer(RLPlayer):
                  magnitude.
         HOLD: do not move.
         """
-        pass  # Not implemented yet, placeholder for future logic
+        board = self._board
+        start_coords = unit.get_coords()
+        if start_coords is None:
+            return UnitMovementPlan(unit, [])
+
+        start_hex = board.get_hex(*start_coords)
+        if start_hex is None:
+            return UnitMovementPlan(unit, [])
+
+        if action == ActionIntent.HOLD or magnitude <= 0:
+            return UnitMovementPlan(unit, [start_hex])
+
+        enemy = board.get_nearest_enemy_unit(unit)
+        if enemy is None or enemy.get_coords() is None:
+            return UnitMovementPlan(unit, [start_hex])
+
+        enemy_hex = board.get_hex(*enemy.get_coords())
+
+        if action == ActionIntent.ADVANCE:
+            path = board.path_towards(unit, enemy_hex, magnitude)
+        else:  # RETREAT
+            path = board.path_away_from(unit, enemy_hex, magnitude)
+
+        if not path:
+            path = [start_hex]
+
+        return UnitMovementPlan(unit, path)
 
     def available_actions(self, unit: Unit) -> List[Tuple[ActionIntent, int]]:
         actions = [(ActionIntent.HOLD, 0)]
