@@ -55,11 +55,11 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         faction=rl_player_factions[0],
         player=rl_player,
         type="Infantry",
-        attack=2,
-        defense=2,
-        move=1,
-        row=4,
-        column=4,
+        attack=4,
+        defense=4,
+        move=4,
+        row=29,
+        column=29,
     )
 
     return random_player, rl_player, [random_unit, rl_unit]

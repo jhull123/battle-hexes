@@ -239,6 +239,8 @@ class QLearningPlayer(RLPlayer):
                 distance = Board.hex_distance(f_hex, e_hex)
                 if distance > 0:
                     reward += (friendly_strength - enemy_strength) / distance
+                else:
+                    print("Warning: Distance is zero in calculate_reward!")
 
         print(f"Reward for {self.name}: {reward}")
         return reward
