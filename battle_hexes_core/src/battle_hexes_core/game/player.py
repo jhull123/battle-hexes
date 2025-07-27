@@ -38,3 +38,7 @@ class Player(BaseModel):
     def combat_results(self, combat_results: CombatResults) -> None:
         """Informs the player of the combat results."""
         raise NotImplementedError("Subclasses must implement combat_results")
+
+    def end_game_cb(self) -> None:
+        """Called when the game has concluded."""
+        pass

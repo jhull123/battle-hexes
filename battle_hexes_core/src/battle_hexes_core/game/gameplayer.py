@@ -26,3 +26,6 @@ class GamePlayer:
                 break
 
             self.game.next_player()
+
+        for player in self.game.get_players():
+            player.end_game_cb()
