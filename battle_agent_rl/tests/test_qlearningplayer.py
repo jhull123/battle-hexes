@@ -107,5 +107,61 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
         self.assertAlmostEqual(reward, 2.6666666666666665)
 
 
+class TestQLearningPlayerQUpdates(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(3, 3)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+            alpha=0.5,
+            gamma=0.0,
+            epsilon=0.0,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+        self.friend = Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        self.enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            2,
+            2,
+            3,
+        )
+        self.board.add_unit(self.friend, 0, 0)
+        self.board.add_unit(self.enemy, 1, 0)
+
+    def test_q_table_update_after_movement(self):
+        self.player.movement()
+        state, action = self.player._last_actions[self.friend.get_id()]
+        self.player.movement_cb()
+        expected_q = 0.5 * 2  # alpha * reward
+        self.assertAlmostEqual(
+            self.player._q_table[(state, action)], expected_q
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
