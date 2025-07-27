@@ -1,5 +1,6 @@
 """Utility to train a simple Q-learning agent against a random opponent."""
 
+import argparse
 import uuid
 from typing import List
 
@@ -81,4 +82,15 @@ def main(episodes: int = 5) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Train the Q-learning player against a random opponent"
+    )
+    parser.add_argument(
+        "episodes",
+        nargs="?",
+        type=int,
+        default=5,
+        help="number of training episodes to run",
+    )
+    args = parser.parse_args()
+    main(args.episodes)
