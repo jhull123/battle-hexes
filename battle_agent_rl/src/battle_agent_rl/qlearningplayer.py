@@ -254,5 +254,8 @@ class QLearningPlayer(RLPlayer):
     def print_q_table(self) -> None:
         """Print the Q-table for debugging purposes."""
         print(f"Q-table for {self.name}:")
-        for (state, action), value in self._q_table.items():
+        items = sorted(
+            self._q_table.items(), key=lambda item: item[1], reverse=True
+        )
+        for (state, action), value in items:
             print(f"  State: {state}, Action: {action}, Q-value: {value:.4f}")

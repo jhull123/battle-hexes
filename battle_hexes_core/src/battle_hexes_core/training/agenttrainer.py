@@ -1,6 +1,7 @@
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.gameplayer import GamePlayer
 
+
 class AgentTrainer:
     def __init__(self, gamefactory: GameFactory, episodes: int = 100):
         self.gamefactory = gamefactory
