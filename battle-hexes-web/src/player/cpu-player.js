@@ -6,6 +6,8 @@ import { eventBus } from '../event-bus.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
 
 export class CpuPlayer extends Player {
+  static PHASE_DELAY_MS = 333;
+
   constructor(name, factions) {
     super(name, playerTypes.CPU, factions);
   }
@@ -18,7 +20,7 @@ export class CpuPlayer extends Player {
     
     if (game.getCurrentPhase() === 'Movement') {
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
         const response = await axios.post(
           `${API_URL}/games/${game.getId()}/movement`
         );
@@ -52,7 +54,7 @@ export class CpuPlayer extends Player {
       }
     } else if (game.getCurrentPhase() === 'Combat') {
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
         await game.resolveCombat();
         game.endPhase();
         eventBus.emit('menuUpdate');
@@ -62,7 +64,7 @@ export class CpuPlayer extends Player {
         console.error('Failed to resolve combat', err);
       }
     } else if (game.getCurrentPhase() === 'End Turn') {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
       await axios.post(
         `${API_URL}/games/${game.getId()}/end-turn`,
         game.getBoard().sparseBoard()

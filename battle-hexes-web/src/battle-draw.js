@@ -59,7 +59,7 @@ new p5((p) => {
   };
 
   p.draw = function() {
-    console.log("I'm starting to draw!");
+    // console.log("I'm starting to draw!");
     p.background(90);
   
     for (let currentHex of game.getBoard().getAllHexes()) {

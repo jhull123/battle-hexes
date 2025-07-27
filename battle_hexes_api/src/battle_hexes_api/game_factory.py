@@ -4,7 +4,7 @@ from battle_agent_random.randomplayer import RandomPlayer
 from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
-from battle_hexes_core.game.player import PlayerType
+from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -27,11 +27,17 @@ class GameFactory:
             color="#4682B4",
         )
 
-        board = Board(5, 5)
+        board = Board(10, 25)
 
         player1 = RandomPlayer(
             name="Player 1",
             type=PlayerType.CPU,
+            factions=[red_faction],
+            board=board
+        )
+        player1 = Player(
+            name="Player 1",
+            type=PlayerType.HUMAN,
             factions=[red_faction],
             board=board
         )
@@ -53,9 +59,9 @@ class GameFactory:
             "Infantry",
             2,
             2,
-            6,
+            1,
         )
-        game.board.add_unit(red_unit, 4, 2)
+        game.board.add_unit(red_unit, 1, 1)
 
         blue_unit = Unit(
             UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
@@ -67,6 +73,6 @@ class GameFactory:
             4,
             4,
         )
-        game.board.add_unit(blue_unit, 1, 2)
+        game.board.add_unit(blue_unit, 9, 20)
 
         return game

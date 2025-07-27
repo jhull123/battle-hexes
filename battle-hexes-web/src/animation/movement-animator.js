@@ -4,7 +4,7 @@ export class MovementAnimator {
   #board;
   #delay;
 
-  constructor(board, delay = 300) {
+  constructor(board, delay = 200) {
     this.#board = board;
     this.#delay = delay;
   }
