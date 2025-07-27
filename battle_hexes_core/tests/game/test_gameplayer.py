@@ -1,6 +1,7 @@
 import unittest
 import uuid
 from unittest.mock import patch, MagicMock
+from pydantic import PrivateAttr
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
@@ -11,6 +12,8 @@ from battle_hexes_core.unit.unit import Unit
 
 
 class DummyCPUPlayer(Player):
+    _ended: bool = PrivateAttr(False)
+
     def __init__(self, name, factions):
         super().__init__(name=name, type=PlayerType.CPU, factions=factions)
 
@@ -22,6 +25,9 @@ class DummyCPUPlayer(Player):
 
     def combat_results(self, combat_results):
         pass
+
+    def end_game_cb(self):
+        self._ended = True
 
 
 class TestGamePlayer(unittest.TestCase):
@@ -76,3 +82,5 @@ class TestGamePlayer(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertIs(units[0], red_unit)
         self.assertEqual(StubCombat.instances, 1)
+        self.assertTrue(red_player._ended)
+        self.assertTrue(blue_player._ended)
