@@ -265,6 +265,60 @@ class Board:
 
         return nearest_enemy
 
+    def path_towards(
+        self, unit: Unit, target_hex: Hex, max_steps: int
+    ) -> List[Hex]:
+        """Return a truncated shortest path from the unit to ``target_hex``."""
+        if unit.get_coords() is None:
+            return []
+
+        start_hex = self.get_hex(*unit.get_coords())
+        if start_hex is None:
+            return []
+
+        reachable = self.get_reachable_hexes(
+            unit, start_hex, move_points=max_steps
+        )
+        if not reachable:
+            return [start_hex]
+
+        best = min(
+            reachable, key=lambda h: Board.hex_distance(h, target_hex)
+        )
+
+        full_path = self.shortest_path(unit, start_hex, best)
+        if not full_path:
+            return [start_hex]
+
+        return full_path[: max_steps + 1]
+
+    def path_away_from(
+        self, unit: Unit, threat_hex: Hex, max_steps: int
+    ) -> List[Hex]:
+        """Return a path that increases distance from ``threat_hex``."""
+        if unit.get_coords() is None:
+            return []
+
+        start_hex = self.get_hex(*unit.get_coords())
+        if start_hex is None:
+            return []
+
+        reachable = self.get_reachable_hexes(
+            unit, start_hex, move_points=max_steps
+        )
+        if not reachable:
+            return [start_hex]
+
+        farthest = max(
+            reachable, key=lambda h: Board.hex_distance(h, threat_hex)
+        )
+
+        path = self.shortest_path(unit, start_hex, farthest)
+        if not path:
+            return [start_hex]
+
+        return path[: max_steps + 1]
+
     def get_units_for_hexes(self, hexes: List[Hex]) -> List[Unit]:
         units = []
         for unit in self.units.values():

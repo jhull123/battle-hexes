@@ -1,7 +1,7 @@
 import unittest
 import uuid
 
-from battle_agent_rl.qlearningplayer import QLearningPlayer
+from battle_agent_rl.qlearningplayer import QLearningPlayer, ActionIntent
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
@@ -161,6 +161,64 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
         self.assertAlmostEqual(
             self.player._q_table[(state, action)], expected_q
         )
+
+
+class TestQLearningPlayerMovePlan(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(3, 3)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+        self.friend = Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        self.enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            2,
+            2,
+            3,
+        )
+        self.board.add_unit(self.friend, 2, 1)
+        self.board.add_unit(self.enemy, 0, 1)
+
+    def test_advance_creates_forward_path(self):
+        plan = self.player.move_plan(self.friend, ActionIntent.ADVANCE, 1)
+        coords = [(h.row, h.column) for h in plan.path]
+        self.assertEqual(coords, [(2, 1), (1, 1)])
+
+    def test_retreat_increases_distance(self):
+        enemy_hex = self.board.get_hex(0, 1)
+        start_hex = self.board.get_hex(2, 1)
+        start_dist = Board.hex_distance(start_hex, enemy_hex)
+        plan = self.player.move_plan(self.friend, ActionIntent.RETREAT, 1)
+        end_hex = plan.path[-1]
+        end_dist = Board.hex_distance(end_hex, enemy_hex)
+        self.assertGreaterEqual(end_dist, start_dist)
 
 
 if __name__ == "__main__":
