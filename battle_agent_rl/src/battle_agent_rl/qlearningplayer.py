@@ -1,7 +1,8 @@
 from enum import Enum
-from pydantic import PrivateAttr
+import random
 from typing import List, Tuple
-import uuid
+
+from pydantic import PrivateAttr
 
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
@@ -69,18 +70,58 @@ class QLearningPlayer(RLPlayer):
         self._gamma = gamma
         self._epsilon = epsilon
         self._q_table = {}
+        self._last_actions = {}
 
     def movement(self) -> List[UnitMovementPlan]:
-        self._last_actions = dict[uuid.UUID, Tuple]()
-        for unit in self._board.get_units():
+        self._last_actions = {}
+        for unit in self.own_units(self._board.get_units()):
             state = self.encode_unit_state(unit)
-            self._last_actions[unit.get_id()] = state
-            print(unit.get_id(), "→", state)
-
-        # TODO: Finish movement logic for Q-learning player
+            actions = self.available_actions(unit)
+            chosen = self.choose_action(state, actions)
+            self._last_actions[unit.get_id()] = (state, chosen)
+            print(unit.get_id(), "→", state, chosen)
 
         plans: List[UnitMovementPlan] = []
         return plans
+
+    def available_actions(self, unit: Unit) -> List[Tuple[ActionIntent, int]]:
+        actions = [(ActionIntent.HOLD, 0)]
+        move = unit.get_move()
+        for i in range(1, move + 1):
+            actions.append((ActionIntent.ADVANCE, i))
+            actions.append((ActionIntent.RETREAT, i))
+        return actions
+
+    def choose_action(
+        self,
+        state: Tuple[int, int, int],
+        actions: List[Tuple[ActionIntent, int]],
+    ) -> Tuple[ActionIntent, int]:
+        if not actions:
+            return (ActionIntent.HOLD, 0)
+        if random.random() < self._epsilon:
+            return random.choice(actions)
+        q_values = [self._q_table.get((state, a), 0.0) for a in actions]
+        max_q = max(q_values)
+        best = [a for a, q in zip(actions, q_values) if q == max_q]
+        return random.choice(best)
+
+    def update_q(
+        self,
+        state: Tuple[int, int, int],
+        action: Tuple[ActionIntent, int],
+        reward: float,
+        next_state: Tuple[int, int, int],
+        next_actions: List[Tuple[ActionIntent, int]],
+    ) -> None:
+        next_q_values = [
+            self._q_table.get((next_state, a), 0.0) for a in next_actions
+        ]
+        next_max = max(next_q_values) if next_q_values else 0.0
+        old_q = self._q_table.get((state, action), 0.0)
+        self._q_table[(state, action)] = old_q + self._alpha * (
+            reward + self._gamma * next_max - old_q
+        )
 
     def encode_unit_state(self, unit: Unit) -> Tuple[int, int, int]:
         """
@@ -113,7 +154,16 @@ class QLearningPlayer(RLPlayer):
         """
         Called after the player's unit plan has been applied to the board.
         """
-        self.calculate_reward()
+        reward = self.calculate_reward()
+        for unit in self.own_units(self._board.get_units()):
+            record = self._last_actions.get(unit.get_id())
+            if record is None:
+                continue
+            state, action = record
+            next_state = self.encode_unit_state(unit)
+            next_actions = self.available_actions(unit)
+            self.update_q(state, action, reward, next_state, next_actions)
+        self._last_actions = {}
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
