@@ -5,7 +5,6 @@ Welcome, agents!
 This repository now contains multiple projects:
 
 - **`battle_hexes_core`**: dependency-free domain classes.
-- **`battle_agent_random`**: a simple random move generator.
 - **`battle_agent_rl`**: reinforcement learning agents (work in progress).
 - **`battle_hexes_api`**: the FastAPI backend using the above packages.
 - **`battle-hexes-web`**: the JavaScript frontend using p5.js.
@@ -19,7 +18,6 @@ Each Python project contains a `checks.sh` script that runs its unit tests and
 `flake8` linter:
 
 - `battle_hexes_core/checks.sh`
-- `battle_agent_random/checks.sh`
 - `battle_hexes_api/checks.sh`
 
 From the repository root you can execute `./server-side-checks.sh` to run the

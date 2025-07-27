@@ -5,7 +5,6 @@ on:
     paths:
       - 'battle_hexes_api/**'
       - 'battle_hexes_core/**'
-      - 'battle_agent_random/**'
       - 'battle_agent_rl/**'
       - 'server-side-checks.sh'
       - '.github/workflows/api-test.yml'

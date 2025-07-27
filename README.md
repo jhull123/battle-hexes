@@ -5,7 +5,6 @@ Turn-based strategy game engine.
 This repository now contains several packages:
 
 - **battle_hexes_core** – domain models like `Game`, `Board` and `Unit`.
-- **battle_agent_random** – a simple `RandomPlayer` implementation.
 - **battle_agent_rl** – early reinforcement learning agents. Currently includes an `RLPlayer` that performs no movement.
 - **battle_hexes_api** – a FastAPI service for game lifecycle endpoints.
 - **battle-hexes-web** – a p5.js web-based UI.
