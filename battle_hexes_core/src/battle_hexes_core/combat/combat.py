@@ -17,6 +17,13 @@ class Combat:
     def resolve_combat(self):
         combat_results = CombatResults()
         for battle_participants in self.find_combat():
+            if (
+                battle_participants[0].get_coords() is None
+                or battle_participants[1].get_coords() is None
+            ):
+                # A participant may have been removed earlier in the turn
+                # (e.g. by another combat). Skip invalid pairs.
+                continue
             battle_result = self.__resolve_combat(battle_participants)
             combat_results.add_battle(battle_result)
         for player in self.game.get_players():
@@ -38,6 +45,12 @@ class Combat:
             battle_participants,
             combat_result: CombatResultData
     ) -> None:
+        if (
+            battle_participants[0].get_coords() is None
+            or battle_participants[1].get_coords() is None
+        ):
+            # One or both units no longer occupy the board. Nothing to update.
+            return
         match combat_result.get_combat_result():
             case CombatResult.ATTACKER_ELIMINATED:
                 self.board.remove_units(battle_participants[0])
