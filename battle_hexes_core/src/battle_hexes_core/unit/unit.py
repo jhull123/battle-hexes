@@ -99,7 +99,10 @@ class Unit:
             from_hex: tuple[int, int],
             distance: int
     ) -> None:
-        """Moves the unit away from the given hex in Even-r Offset."""
+        """Move the unit away from ``from_hex`` using Even-r offset rules."""
+        if from_hex is None or self.row is None or self.column is None:
+            return
+
         from_row, from_col = from_hex
 
         if self.column == from_col:
