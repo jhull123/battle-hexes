@@ -152,8 +152,25 @@ class TestCombat(unittest.TestCase):
         self.board.add_unit(self.red_unit, 0, 1)
         self.board.add_unit(self.blue_unit, 0, 0)
         self.combat.set_static_die_roll(3)
-
-        self.combat.resolve_combat()
+        combat_result = self.combat.resolve_combat()
 
         self.assertEqual(1, len(self.board.get_units()))
         self.assertEqual(self.red_unit, self.board.get_units()[0])
+        self.assertEqual(
+            CombatResult.DEFENDER_ELIMINATED,
+            combat_result.get_battles()[0].get_combat_result(),
+        )
+
+    def test_attacker_retreat_off_map_eliminates_unit(self):
+        self.board.add_unit(self.red_unit, 0, 0)
+        self.board.add_unit(self.blue_unit, 0, 1)
+        self.combat.set_static_die_roll(4)
+
+        combat_result = self.combat.resolve_combat()
+
+        self.assertEqual(1, len(self.board.get_units()))
+        self.assertEqual(self.blue_unit, self.board.get_units()[0])
+        self.assertEqual(
+            CombatResult.ATTACKER_ELIMINATED,
+            combat_result.get_battles()[0].get_combat_result(),
+        )

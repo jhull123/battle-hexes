@@ -50,6 +50,9 @@ class Combat:
                         battle_participants[0].row,
                         battle_participants[0].column):
                     self.board.remove_units(battle_participants[0])
+                    combat_result.combat_result = (
+                        CombatResult.ATTACKER_ELIMINATED
+                    )
             case CombatResult.DEFENDER_ELIMINATED:
                 self.board.remove_units(battle_participants[1])
             case CombatResult.DEFENDER_RETREAT_2:
@@ -61,6 +64,9 @@ class Combat:
                         battle_participants[1].row,
                         battle_participants[1].column):
                     self.board.remove_units(battle_participants[1])
+                    combat_result.combat_result = (
+                        CombatResult.DEFENDER_ELIMINATED
+                    )
             case CombatResult.EXCHANGE:
                 self.board.remove_units(battle_participants)
             case _:
