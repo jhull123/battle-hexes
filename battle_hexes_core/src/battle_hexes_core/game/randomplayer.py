@@ -24,10 +24,10 @@ class RandomPlayer(Player):
                 starting_hex
             )
             selected_hex = self.random_hex(reachable_hexes)
-            print(
-                f"Unit {unit.name} is moving from {starting_hex} to "
-                f"{selected_hex}"
-            )
+            # print(
+            #     f"Unit {unit.name} is moving from {starting_hex} to "
+            #     f"{selected_hex}"
+            # )
             path = self._board.shortest_path(
                 unit,
                 starting_hex,

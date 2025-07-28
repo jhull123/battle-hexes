@@ -226,16 +226,22 @@ class QLearningPlayer(RLPlayer):
         # Determine if this player was the attacker.
         # During the attacker's turn ``_last_actions`` stores the actions.
         attacker = bool(self._last_actions)
+        bonus = 10.0
 
         reward = 0.0
         for battle in combat_results.get_battles():
             result = battle.get_combat_result()
+            combat_award = 0.0
             if result == CombatResult.DEFENDER_ELIMINATED:
-                reward += 1.0 if attacker else -1.0
+                combat_award += bonus if attacker else -bonus
             elif result == CombatResult.ATTACKER_ELIMINATED:
-                reward += -1.0 if attacker else 1.0
+                combat_award += -bonus if attacker else bonus
             elif result == CombatResult.EXCHANGE:
-                reward += 0.0
+                combat_award += bonus * 0.10
+            else:
+                combat_award += bonus * 0.10
+            print("Combat award is", combat_award, "for", result)
+            reward += combat_award
 
         for unit, state_action in [
             (record[0], (record[1], record[2]))

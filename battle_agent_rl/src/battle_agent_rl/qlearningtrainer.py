@@ -35,8 +35,8 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         attack=2,
         defense=2,
         move=1,
-        row=2,
-        column=2,
+        row=0,
+        column=0,
     )
 
     rl_player_factions = [
@@ -50,20 +50,33 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         board=None,  # Board will be set later
     )
 
-    rl_unit = Unit(
+    rl_unit_1 = Unit(
         id=uuid.uuid4(),
-        name="RL Unit",
+        name="RL Unit 1",
         faction=rl_player_factions[0],
         player=rl_player,
         type="Infantry",
         attack=4,
         defense=4,
         move=4,
-        row=29,
-        column=29,
+        row=9,
+        column=9,
     )
 
-    return random_player, rl_player, [random_unit, rl_unit]
+    rl_unit_2 = Unit(
+        id=uuid.uuid4(),
+        name="RL Unit 2",
+        faction=rl_player_factions[0],
+        player=rl_player,
+        type="Infantry",
+        attack=3,
+        defense=4,
+        move=5,
+        row=0,
+        column=9,
+    )
+
+    return random_player, rl_player, [random_unit, rl_unit_1, rl_unit_2]
 
 
 def main(episodes: int = 5) -> None:
@@ -71,7 +84,7 @@ def main(episodes: int = 5) -> None:
     random_player, rl_player, units = build_players()
 
     game_factory = GameFactory(
-        board_size=(30, 30),
+        board_size=(10, 10),
         players=[random_player, rl_player],
         units=units,
         randomize_positions=True
