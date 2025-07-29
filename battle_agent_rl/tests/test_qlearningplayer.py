@@ -1,5 +1,6 @@
 import unittest
 import uuid
+import os
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer, ActionIntent
 from battle_hexes_core.combat.combatresult import (
@@ -243,6 +244,36 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         end_hex = plan.path[-1]
         end_dist = Board.hex_distance(end_hex, enemy_hex)
         self.assertGreaterEqual(end_dist, start_dist)
+
+
+class TestQLearningPlayerSaveLoad(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(1, 1)
+        self.faction = Faction(id=uuid.uuid4(), name="F", color="red")
+        self.file_path = "qtable_test.pkl"
+
+    def tearDown(self):
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
+
+    def build_player(self) -> QLearningPlayer:
+        return QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.faction],
+            board=self.board,
+        )
+
+    def test_save_and_load(self):
+        player = self.build_player()
+        state = (1, 2, 3)
+        action = (ActionIntent.HOLD, 0)
+        player._q_table[(state, action)] = 4.2
+        player.save_q_table(self.file_path)
+
+        new_player = self.build_player()
+        new_player.load_q_table(self.file_path)
+        self.assertEqual(new_player._q_table, player._q_table)
 
 
 if __name__ == "__main__":
