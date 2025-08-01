@@ -138,7 +138,7 @@ class CombatSolver:
         odds = self.get_odds(attack_factor, defense_factor)
         odds_label = f'{odds[0]}:{odds[1]}'
         print(
-            "Resolving combat with", attack_factor, "against", 
+            "Resolving combat with", attack_factor, "against",
             defense_factor, "at odds", odds_label
         )
 

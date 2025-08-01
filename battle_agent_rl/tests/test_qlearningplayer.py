@@ -183,9 +183,9 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
         self.player.combat_results(results)
 
-        # With a combat bonus of 10 and alpha=0.5 the expected Q-value
-        # update is 5.0 when a single unit is eliminated.
-        self.assertEqual(self.player._q_table[(state, action)], 5.0)
+        # With a combat bonus of 100 and alpha=0.5 the expected Q-value
+        # update is 500.0 when a single unit is eliminated.
+        self.assertEqual(self.player._q_table[(state, action)], 500.0)
 
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):
