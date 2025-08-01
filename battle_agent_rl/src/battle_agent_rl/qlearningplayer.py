@@ -1,5 +1,6 @@
 from enum import Enum
 import random
+import pickle
 from typing import List, Tuple
 
 from pydantic import PrivateAttr
@@ -73,6 +74,19 @@ class QLearningPlayer(RLPlayer):
         self._epsilon = epsilon
         self._q_table = {}
         self._last_actions = {}
+
+    def save_q_table(self, file_path: str) -> None:
+        """Save the internal Q-table to ``file_path`` using pickle."""
+        with open(file_path, "wb") as f:
+            pickle.dump(self._q_table, f)
+
+    def load_q_table(self, file_path: str) -> None:
+        """Load a Q-table from ``file_path`` if the file exists."""
+        try:
+            with open(file_path, "rb") as f:
+                self._q_table = pickle.load(f)
+        except FileNotFoundError:
+            pass
 
     def movement(self) -> List[UnitMovementPlan]:
         self._last_actions = {}
