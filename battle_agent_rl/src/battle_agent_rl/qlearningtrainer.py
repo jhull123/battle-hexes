@@ -92,6 +92,8 @@ def main(episodes: int = 5) -> None:
 
     agent_trainer = AgentTrainer(game_factory, episodes)
     agent_trainer.train()
+    rl_player.print_q_table()
+    rl_player.save_q_table("q_table.json")
 
 
 if __name__ == "__main__":
