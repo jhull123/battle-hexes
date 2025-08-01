@@ -64,7 +64,7 @@ class QLearningPlayer(RLPlayer):
         factions: List[Faction],
         board: Board,
         alpha: float = 0.1,
-        gamma: float = 0.9,
+        gamma: float = 0.15,
         epsilon: float = 0.1,
     ) -> None:
         super().__init__(name=name, type=type, factions=factions, board=board)
@@ -226,7 +226,7 @@ class QLearningPlayer(RLPlayer):
         # Determine if this player was the attacker.
         # During the attacker's turn ``_last_actions`` stores the actions.
         attacker = bool(self._last_actions)
-        bonus = 10.0
+        bonus = 1000.0
 
         reward = 0.0
         for battle in combat_results.get_battles():

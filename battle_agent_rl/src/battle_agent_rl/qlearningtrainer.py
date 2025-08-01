@@ -63,20 +63,20 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         column=9,
     )
 
-    rl_unit_2 = Unit(
-        id=uuid.uuid4(),
-        name="RL Unit 2",
-        faction=rl_player_factions[0],
-        player=rl_player,
-        type="Infantry",
-        attack=3,
-        defense=4,
-        move=5,
-        row=0,
-        column=9,
-    )
+    # rl_unit_2 = Unit(
+    #    id=uuid.uuid4(),
+    #     name="RL Unit 2",
+    #     faction=rl_player_factions[0],
+    #     player=rl_player,
+    #     type="Heavy Infantry",
+    #     attack=100,
+    #     defense=40,
+    #     move=5,
+    #     row=0,
+    #     column=9,
+    # )
 
-    return random_player, rl_player, [random_unit, rl_unit_1, rl_unit_2]
+    return random_player, rl_player, [random_unit, rl_unit_1]
 
 
 def main(episodes: int = 5) -> None:
