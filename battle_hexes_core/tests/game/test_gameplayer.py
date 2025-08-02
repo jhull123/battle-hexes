@@ -84,3 +84,43 @@ class TestGamePlayer(unittest.TestCase):
         self.assertEqual(StubCombat.instances, 1)
         self.assertTrue(red_player._ended)
         self.assertTrue(blue_player._ended)
+
+    def test_play_respects_max_turns(self):
+        board = Board(2, 2)
+        red_faction = Faction(id=uuid.uuid4(), name="Red", color="red")
+        blue_faction = Faction(id=uuid.uuid4(), name="Blue", color="blue")
+
+        red_player = DummyCPUPlayer("Red", [red_faction])
+        blue_player = DummyCPUPlayer("Blue", [blue_faction])
+
+        red_unit = Unit(
+            uuid.uuid4(), "R", red_faction, red_player, "I", 1, 1, 1
+        )
+        blue_unit = Unit(
+            uuid.uuid4(), "B", blue_faction, blue_player, "I", 1, 1, 1
+        )
+        board.add_unit(red_unit, 0, 0)
+        board.add_unit(blue_unit, 0, 1)
+
+        game = Game([red_player, blue_player], board)
+        gp = GamePlayer(game)
+
+        class StubCombat:
+            instances = 0
+
+            def __init__(self, game_obj):
+                self.game = game_obj
+
+            def resolve_combat(self):
+                StubCombat.instances += 1
+                return MagicMock()
+
+        with patch("battle_hexes_core.game.gameplayer.Combat", StubCombat):
+            gp.play(max_turns=3)
+
+        self.assertEqual(StubCombat.instances, 3)
+        units = game.get_board().get_units()
+        self.assertEqual(len(units), 2)
+        self.assertFalse(game.is_game_over())
+        self.assertTrue(red_player._ended)
+        self.assertTrue(blue_player._ended)
