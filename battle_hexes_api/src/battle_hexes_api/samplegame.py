@@ -1,10 +1,12 @@
 from uuid import UUID
+from pathlib import Path
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.player import PlayerType
+from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -31,24 +33,24 @@ class SampleGameCreator:
 
         board = Board(*board_size)
 
-        player1 = QLearningPlayer(
+        repo_root = Path(__file__).resolve().parents[3]
+        q_table_path = repo_root / "battle_agent_rl" / "q_table.json"
+
+        player1 = RandomPlayer(
             name="Player 1",
             type=PlayerType.CPU,
             factions=[red_faction],
-            board=board
+            board=board,
         )
-        # player1 = Player(
-        #     name="Player 1",
-        #     type=PlayerType.HUMAN,
-        #     factions=[red_faction],
-        # )
 
         player2 = QLearningPlayer(
             name="Player 2",
             type=PlayerType.CPU,
             factions=[blue_faction],
-            board=board
+            board=board,
         )
+
+        player2.load_q_table(q_table_path)
 
         red_unit = Unit(
             UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
