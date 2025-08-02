@@ -60,7 +60,7 @@ class SampleGameCreator:
             "Infantry",
             2,
             2,
-            1,
+            6,
         )
         red_unit.set_coords(2, 2)
 

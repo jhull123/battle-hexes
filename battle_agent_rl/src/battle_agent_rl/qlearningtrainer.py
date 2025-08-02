@@ -34,7 +34,7 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         type="Infantry",
         attack=2,
         defense=2,
-        move=1,
+        move=6,
         row=0,
         column=0,
     )
