@@ -48,6 +48,7 @@ class SampleGameCreator:
             type=PlayerType.CPU,
             factions=[blue_faction],
             board=board,
+            epsilon=0.0,
         )
 
         player2.load_q_table(q_table_path)
