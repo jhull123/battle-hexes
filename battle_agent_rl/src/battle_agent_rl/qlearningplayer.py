@@ -54,6 +54,8 @@ class QLearningPlayer(RLPlayer):
     _alpha: float = PrivateAttr()
     _gamma: float = PrivateAttr()
     _epsilon: float = PrivateAttr()
+    _turn_penalty: float = PrivateAttr()
+    _turn_count: int = PrivateAttr()
 
     _last_actions: dict = PrivateAttr()
     _q_table: dict = PrivateAttr()
@@ -67,11 +69,14 @@ class QLearningPlayer(RLPlayer):
         alpha: float = 0.1,
         gamma: float = 0.15,
         epsilon: float = 0.1,
+        turn_penalty: float = 0.1,
     ) -> None:
         super().__init__(name=name, type=type, factions=factions, board=board)
         self._alpha = alpha
         self._gamma = gamma
         self._epsilon = epsilon
+        self._turn_penalty = turn_penalty
+        self._turn_count = 0
         self._q_table = {}
         self._last_actions = {}
 
@@ -218,7 +223,10 @@ class QLearningPlayer(RLPlayer):
         """
         Called after the player's unit plan has been applied to the board.
         """
-        reward = self.calculate_reward()
+        self._turn_count += 1
+        reward = (
+            self.calculate_reward() - self._turn_penalty * self._turn_count
+        )
         for unit, state_action in [
             (record[0], (record[1], record[2]))
             for record in self._last_actions.values()
