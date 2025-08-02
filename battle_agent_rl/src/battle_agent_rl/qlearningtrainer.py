@@ -84,7 +84,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     random_player, rl_player, units = build_players()
 
     game_factory = GameFactory(
-        board_size=(10, 10),
+        board_size=(16, 16),
         players=[random_player, rl_player],
         units=units,
         randomize_positions=True
