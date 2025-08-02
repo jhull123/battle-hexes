@@ -79,7 +79,7 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
     return random_player, rl_player, [random_unit, rl_unit_1]
 
 
-def main(episodes: int = 5) -> None:
+def main(episodes: int = 5, max_turns: int = 5) -> None:
     """Train the Q-learning player for a given number of episodes."""
     random_player, rl_player, units = build_players()
 
@@ -90,7 +90,7 @@ def main(episodes: int = 5) -> None:
         randomize_positions=True
     )
 
-    agent_trainer = AgentTrainer(game_factory, episodes)
+    agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
     agent_trainer.train()
     rl_player.print_q_table()
     rl_player.save_q_table("q_table.json")
@@ -107,5 +107,11 @@ if __name__ == "__main__":
         default=5,
         help="number of training episodes to run",
     )
+    parser.add_argument(
+        "--max-turns",
+        type=int,
+        default=5,
+        help="maximum number of turns per game",
+    )
     args = parser.parse_args()
-    main(args.episodes)
+    main(args.episodes, args.max_turns)
