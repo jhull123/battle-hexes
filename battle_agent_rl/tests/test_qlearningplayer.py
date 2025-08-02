@@ -28,6 +28,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
             type=PlayerType.CPU,
             factions=[self.friendly_faction],
             board=self.board,
+            turn_penalty=0,
         )
         self.enemy_player = Player(
             name="Opponent",
@@ -130,6 +131,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
             alpha=0.5,
             gamma=0.0,
             epsilon=0.0,
+            turn_penalty=0,
         )
         self.enemy_player = Player(
             name="Opponent",
@@ -202,6 +204,7 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
             type=PlayerType.CPU,
             factions=[self.friendly_faction],
             board=self.board,
+            turn_penalty=0,
         )
         self.enemy_player = Player(
             name="Opponent",
@@ -262,6 +265,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
             type=PlayerType.CPU,
             factions=[self.faction],
             board=self.board,
+            turn_penalty=0,
         )
 
     def test_save_and_load(self):
@@ -274,6 +278,62 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
         new_player = self.build_player()
         new_player.load_q_table(self.file_path)
         self.assertEqual(new_player._q_table, player._q_table)
+
+
+class TestQLearningPlayerTurnPenalty(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(3, 3)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+            alpha=1.0,
+            gamma=0.0,
+            epsilon=0.0,
+            turn_penalty=1.0,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+        self.friend = Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            0,
+        )
+        self.enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            2,
+            2,
+            0,
+        )
+        self.board.add_unit(self.friend, 0, 0)
+        self.board.add_unit(self.enemy, 1, 0)
+
+    def test_reward_decreases_each_turn(self):
+        for expected in [1.0, 0.0]:
+            self.player.movement()
+            _, state, action = self.player._last_actions[self.friend.get_id()]
+            self.player.movement_cb()
+            q_val = self.player._q_table[(state, action)]
+            self.assertAlmostEqual(q_val, expected)
 
 
 if __name__ == "__main__":
