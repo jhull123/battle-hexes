@@ -36,6 +36,13 @@ jobs:
       # TODO debugging step to verify AWS credentials
       - name: Check AWS identity
         run: aws sts get-caller-identity
+      - name: Deploy infrastructure
+        run: |
+          aws cloudformation deploy \
+            --stack-name battle-hexes-web \
+            --template-file battle-hexes-web/cloudformation-template.yml \
+            --parameter-overrides BucketName=${{ secrets.WEB_BUCKET_NAME }} \
+            --no-fail-on-empty-changeset
 
-      - name: Deploy placeholder
-        run: echo "Deploy step not implemented"
+      - name: Sync build artifacts
+        run: aws s3 sync battle-hexes-web/dist s3://${{ secrets.WEB_BUCKET_NAME }}
