@@ -33,7 +33,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-        run: aws sts get-caller-identity
       - name: Deploy infrastructure
         run: |
           aws cloudformation deploy \
