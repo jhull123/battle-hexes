@@ -23,5 +23,11 @@ jobs:
         working-directory: battle-hexes-web
         run: npm run build
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Deploy placeholder
         run: echo "Deploy step not implemented"
