@@ -43,3 +43,10 @@ jobs:
 
       - name: Sync build artifacts
         run: aws s3 sync battle-hexes-web/dist s3://${{ secrets.WEB_BUCKET_NAME }}
+
+      - name: Show stack outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name battle-hexes-web \
+            --query "Stacks[0].Outputs" \
+            --output table
