@@ -68,5 +68,5 @@ jobs:
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
               VpcId=$VPC_ID \
-              SubnetIds=\"$SUBNET_IDS\" \
+              SubnetIds=$SUBNET_IDS \
               EcrImage=$ECR_IMAGE
