@@ -57,7 +57,7 @@ jobs:
       - name: Deploy CloudFormation Stack
         env:
           VPC_ID: ${{ secrets.VPC_ID }}
-          SUBNET_IDS: ${{ secrets.SUBNET_IDS }} # Space-separated string
+          SUBNET_IDS: ${{ secrets.SUBNET_IDS }} # Comma-separated string
           ECR_IMAGE: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
         run: |
           aws cloudformation deploy \
