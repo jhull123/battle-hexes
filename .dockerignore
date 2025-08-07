@@ -1,0 +1,15 @@
+# Docker build context for the API image
+# Ignore git and local environments
+.git
+.github
+.env
+*.venv
+__pycache__
+*.pyc
+
+# Exclude tests and development scripts
+**/tests
+**/checks.sh
+
+# Frontend not needed for API image
+battle-hexes-web
