@@ -61,7 +61,7 @@ jobs:
           ECR_IMAGE: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
         run: |
           aws cloudformation deploy \
-            --template-file battle_hexes_api/ecs-backend.yaml \
+            --template-file battle_hexes_api/ecs-backend.yml \
             --stack-name battle-hexes-api-dev \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
