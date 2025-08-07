@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi import Body
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 # Allow running the API without installing the sibling packages by adding them
@@ -39,9 +40,17 @@ def create_game():
     return new_game.to_game_model()
 
 
+def _get_game_or_404(game_id: str):
+    """Return the game for ``game_id`` or raise a 404 error."""
+    try:
+        return game_repo.get_game(game_id)
+    except (KeyError, ValueError):
+        raise HTTPException(status_code=404, detail="Game not found")
+
+
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
-    return game_repo.get_game(game_id).to_game_model()
+    return _get_game_or_404(game_id).to_game_model()
 
 
 @app.post('/games/{game_id}/combat')
@@ -50,7 +59,7 @@ def resolve_combat(
     sparse_board: SparseBoard = Body(...)
 ) -> SparseBoard:
     print(f'We got game: {game_id}')
-    game = game_repo.get_game(game_id)
+    game = _get_game_or_404(game_id)
     game.update(sparse_board)
 
     results = Combat(game).resolve_combat()
@@ -65,7 +74,7 @@ def resolve_combat(
 @app.post('/games/{game_id}/movement')
 def generate_movement(game_id: str):
     """Generate and apply movement plans for the current player."""
-    game = game_repo.get_game(game_id)
+    game = _get_game_or_404(game_id)
     current_player = game.get_current_player()
     print(f"Generating movement for player: {current_player.name}")
     plans = current_player.movement()
@@ -80,7 +89,7 @@ def generate_movement(game_id: str):
 @app.post('/games/{game_id}/end-turn')
 def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Update game state at the end of a player's turn."""
-    game = game_repo.get_game(game_id)
+    game = _get_game_or_404(game_id)
 
     # sync the server-side board state with the client provided one
     game.update(sparse_board)

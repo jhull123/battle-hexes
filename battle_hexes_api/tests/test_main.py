@@ -1,6 +1,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
+
 from battle_hexes_api.main import app
 from battle_hexes_core.game.sparseboard import SparseBoard
 
@@ -15,6 +18,15 @@ class TestFastAPI(unittest.TestCase):
 
         get_response = self.client.get(f'/games/{new_game_id}')
         self.assertEqual(new_game_id, get_response.json().get('id'))
+
+    def test_get_game_invalid_uuid_returns_404(self):
+        response = self.client.get('/games/not-a-uuid')
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_game_missing_returns_404(self):
+        missing_id = uuid4()
+        response = self.client.get(f'/games/{missing_id}')
+        self.assertEqual(response.status_code, 404)
 
     @patch('battle_hexes_api.main.game_repo')
     def test_resolve_combat_placeholder(self, mock_game_repo):
