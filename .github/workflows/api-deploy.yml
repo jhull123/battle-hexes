@@ -67,6 +67,6 @@ jobs:
             --stack-name battle-hexes-api-dev \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
-              VpcId=$VPC_ID \
-              SubnetIds=$SUBNET_IDS \
-              EcrImage=$ECR_IMAGE
+              "VpcId=$VPC_ID" \
+              "SubnetIds=$SUBNET_IDS" \
+              "EcrImage=$ECR_IMAGE"
