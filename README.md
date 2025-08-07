@@ -33,6 +33,18 @@ You can run unit tests and linting for all Python packages with:
 ./server-side-checks.sh
 ```
 
+### Running the API with Docker
+
+The API project includes a Dockerfile at `battle_hexes_api/Dockerfile`. From the
+repository root build and run the image:
+
+```bash
+docker build -f battle_hexes_api/Dockerfile -t battle-hexes-api .
+docker run -p 8000:8000 battle-hexes-api
+```
+
+The API will be available at <http://localhost:8000>.
+
 ## Setting up the Web UI
 
 Install Node dependencies and run the frontend tests inside `battle-hexes-web`:
