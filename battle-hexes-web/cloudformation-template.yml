@@ -30,6 +30,30 @@ Resources:
             Principal: '*'
             Action: s3:GetObject
             Resource: !Sub '${WebsiteBucket.Arn}/*'
+  WebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: WebsiteOrigin
+            DomainName: !Sub "${WebsiteBucket}.s3-website-${AWS::Region}.amazonaws.com"
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only  # because S3 static website endpoints don't support HTTPS
+        DefaultCacheBehavior:
+          TargetOriginId: WebsiteOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_100  # Cheapest CDN tier
 Outputs:
   BucketName:
     Description: Name of the website bucket
@@ -37,3 +61,6 @@ Outputs:
   WebsiteURL:
     Description: URL for website hosted on S3
     Value: !GetAtt WebsiteBucket.WebsiteURL
+  CloudFrontURL:
+    Description: "CloudFront distribution URL"
+    Value: !Sub "https://${WebsiteDistribution.DomainName}"
