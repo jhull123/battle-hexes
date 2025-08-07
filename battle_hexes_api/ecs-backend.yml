@@ -8,7 +8,7 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
   EcrImage:
     Type: String
-    Description: Full image URI, e.g., 084828574081.dkr.ecr.us-east-1.amazonaws.com/battle-hexes-api:latest
+    Description: Full image URI
 
 Resources:
 
