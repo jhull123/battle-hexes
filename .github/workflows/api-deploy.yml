@@ -1,0 +1,44 @@
+name: Deploy API to Dev
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push-to-ecr:
+    name: Build & Push Docker Image to ECR
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # Required for OIDC role assumption
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: latest
+        run: |
+          echo "Building image using battle_hexes_api/Dockerfile..."
+          docker build -f battle_hexes_api/Dockerfile -t $ECR_REPOSITORY:$IMAGE_TAG .
+
+          echo "Tagging image..."
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          echo "Pushing image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Done
+        run: echo "Image successfully pushed to ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}"
