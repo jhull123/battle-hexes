@@ -60,6 +60,8 @@ jobs:
           SUBNET_IDS: ${{ secrets.SUBNET_IDS }} # Comma-separated string
           ECR_IMAGE: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
         run: |
+          SUBNET_IDS=$(echo $RAW_SUBNET_IDS | tr ',' ' ')
+          
           aws cloudformation deploy \
             --template-file battle_hexes_api/ecs-backend.yml \
             --stack-name battle-hexes-api-dev \
