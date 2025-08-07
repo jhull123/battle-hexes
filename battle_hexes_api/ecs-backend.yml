@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Fargate deployment for battle-hexes-api
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  EcrImage:
+    Type: String
+    Description: Full image URI, e.g., 084828574081.dkr.ecr.us-east-1.amazonaws.com/battle-hexes-api:latest
+
+Resources:
+
+  BattleHexesCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: battle-hexes-dev-cluster
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: battle-hexes-execution-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  BattleHexesSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP for ECS
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+
+  BattleHexesTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: battle-hexes-api-task
+      RequiresCompatibilities: [FARGATE]
+      Cpu: 256
+      Memory: 512
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: battle-hexes-api
+          Image: !Ref EcrImage
+          PortMappings:
+            - ContainerPort: 8000
+
+  BattleHexesService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref BattleHexesCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: !Ref SubnetIds
+          SecurityGroups:
+            - !Ref BattleHexesSecurityGroup
+      TaskDefinition: !Ref BattleHexesTaskDefinition
+
+Outputs:
+  PublicClusterName:
+    Description: ECS Cluster name
+    Value: !Ref BattleHexesCluster
