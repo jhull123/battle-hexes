@@ -31,16 +31,57 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP to ALB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
   BattleHexesSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP for ECS
+      GroupDescription: Allow HTTP from ALB to ECS
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 8000
           ToPort: 8000
-          CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+
+  BattleHexesLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: battle-hexes-alb
+      Scheme: internet-facing
+      Type: application
+      Subnets: !Ref SubnetIds
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+
+  BattleHexesTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: battle-hexes-api-tg
+      Port: 8000
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /
+
+  BattleHexesListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref BattleHexesLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BattleHexesTargetGroup
 
   BattleHexesTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -59,10 +100,15 @@ Resources:
 
   BattleHexesService:
     Type: AWS::ECS::Service
+    DependsOn: BattleHexesListener
     Properties:
       Cluster: !Ref BattleHexesCluster
       DesiredCount: 1
       LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: battle-hexes-api
+          ContainerPort: 8000
+          TargetGroupArn: !Ref BattleHexesTargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
