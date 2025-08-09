@@ -12,6 +12,11 @@ class TestFastAPI(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 
+    def test_health_check(self):
+        response = self.client.get('/health')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
     def test_create_game(self):
         post_response = self.client.post('/games')
         new_game_id = post_response.json().get('id')

@@ -21,6 +21,14 @@ from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
 from battle_hexes_api.samplegame import SampleGameCreator  # noqa: E402
 
 app = FastAPI()
+
+
+@app.get("/health")
+def health():
+    """Health check endpoint used by load balancers."""
+    return {"status": "ok"}
+
+
 game_repo = GameRepository()
 
 app.add_middleware(
