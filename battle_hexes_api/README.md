@@ -2,6 +2,9 @@
 
 Server-side functions for Battle Hexes.
 
+The API exposes a simple health check at `GET /health` for use with load
+balancers and uptime monitoring.
+
 ## Local Set-up
 
 Create a virtual environment.
