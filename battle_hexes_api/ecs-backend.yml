@@ -63,15 +63,19 @@ Resources:
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
 
-  BattleHexesTargetGroup:
+  BattleTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: battle-hexes-api-tg
+      TargetType: ip
       Port: 8000
       Protocol: HTTP
       VpcId: !Ref VpcId
-      TargetType: ip
-      HealthCheckPath: /
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 15
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: 200-399
 
   BattleHexesListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -97,6 +101,13 @@ Resources:
           Image: !Ref EcrImage
           PortMappings:
             - ContainerPort: 8000
+          Command:
+            - uvicorn
+            - src.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
 
   BattleHexesService:
     Type: AWS::ECS::Service
@@ -105,6 +116,7 @@ Resources:
       Cluster: !Ref BattleHexesCluster
       DesiredCount: 1
       LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 60
       LoadBalancers:
         - ContainerName: battle-hexes-api
           ContainerPort: 8000
