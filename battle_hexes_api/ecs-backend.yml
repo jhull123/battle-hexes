@@ -85,7 +85,7 @@ Resources:
       Protocol: HTTP
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref BattleHexesTargetGroup
+          TargetGroupArn: !Ref BattleTargetGroup
 
   BattleHexesTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -101,13 +101,6 @@ Resources:
           Image: !Ref EcrImage
           PortMappings:
             - ContainerPort: 8000
-          Command:
-            - uvicorn
-            - src.main:app
-            - --host
-            - 0.0.0.0
-            - --port
-            - "8000"
 
   BattleHexesService:
     Type: AWS::ECS::Service
@@ -120,7 +113,7 @@ Resources:
       LoadBalancers:
         - ContainerName: battle-hexes-api
           ContainerPort: 8000
-          TargetGroupArn: !Ref BattleHexesTargetGroup
+          TargetGroupArn: !Ref BattleTargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -133,3 +126,6 @@ Outputs:
   PublicClusterName:
     Description: ECS Cluster name
     Value: !Ref BattleHexesCluster
+  AlbDNSName:
+    Description: Public DNS for the ALB
+    Value: !GetAtt BattleHexesLoadBalancer.DNSName
