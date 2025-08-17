@@ -59,6 +59,9 @@ jobs:
           VPC_ID: ${{ secrets.VPC_ID }}
           SUBNET_IDS: ${{ secrets.SUBNET_IDS }} # Comma-separated string
           ECR_IMAGE: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
+          ACM_CERT_ARN: ${{ secrets.ACM_CERT_ARN }}
+          HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
+          API_DOMAIN_NAME: api-dev.battlehexes.com
         run: |
           aws cloudformation deploy \
             --template-file battle_hexes_api/ecs-backend.yml \
@@ -67,4 +70,7 @@ jobs:
             --parameter-overrides \
               "VpcId=$VPC_ID" \
               SubnetIds="$SUBNET_IDS" \
-              "EcrImage=$ECR_IMAGE"
+              "EcrImage=$ECR_IMAGE" \
+              AcmCertificateArn="$ACM_CERT_ARN" \
+              HostedZoneId="$HOSTED_ZONE_ID" \
+              ApiDomainName="$API_DOMAIN_NAME"

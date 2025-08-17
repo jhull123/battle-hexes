@@ -9,6 +9,16 @@ Parameters:
   EcrImage:
     Type: String
     Description: Full image URI
+  AcmCertificateArn:
+    Type: String
+    Description: ACM cert ARN covering your API hostname (same region as ALB)
+  HostedZoneId:
+    Type: String
+    Description: Public hosted zone ID for battlehexes.com
+  ApiDomainName:
+    Type: String
+    Default: api-dev.battlehexes.com
+    Description: Public DNS name for this environment
 
 Resources:
 
@@ -40,6 +50,10 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
 
   BattleHexesSecurityGroup:
@@ -77,12 +91,28 @@ Resources:
       Matcher:
         HttpCode: 200-399
 
-  BattleHexesListener:
+  BattleHexesHttpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref BattleHexesLoadBalancer
       Port: 80
       Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: '443'
+            StatusCode: HTTP_301
+
+  BattleHexesHttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref BattleHexesLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !Ref AcmCertificateArn
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref BattleTargetGroup
@@ -104,7 +134,7 @@ Resources:
 
   BattleHexesService:
     Type: AWS::ECS::Service
-    DependsOn: BattleHexesListener
+    DependsOn: BattleHexesHttpsListener
     Properties:
       Cluster: !Ref BattleHexesCluster
       DesiredCount: 1
@@ -122,6 +152,17 @@ Resources:
             - !Ref BattleHexesSecurityGroup
       TaskDefinition: !Ref BattleHexesTaskDefinition
 
+  ApiAliasRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref ApiDomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt BattleHexesLoadBalancer.DNSName
+        HostedZoneId: !GetAtt BattleHexesLoadBalancer.CanonicalHostedZoneID
+        EvaluateTargetHealth: false
+
 Outputs:
   PublicClusterName:
     Description: ECS Cluster name
@@ -129,3 +170,6 @@ Outputs:
   AlbDNSName:
     Description: Public DNS for the ALB
     Value: !GetAtt BattleHexesLoadBalancer.DNSName
+  ApiUrl:
+    Description: HTTPS endpoint
+    Value: !Sub "https://${ApiDomainName}"

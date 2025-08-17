@@ -22,4 +22,4 @@ WORKDIR /app/battle_hexes_api
 EXPOSE 8000
 
 # Start the API using Uvicorn
-CMD ["uvicorn", "battle_hexes_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn","battle_hexes_api.main:app","--host","0.0.0.0","--port","8000","--proxy-headers"]
