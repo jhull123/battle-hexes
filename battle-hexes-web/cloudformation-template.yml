@@ -4,6 +4,16 @@ Parameters:
   BucketName:
     Type: String
     Description: Name of the S3 bucket to host the website
+  AcmCertificateArn:
+    Type: String
+    Description: ACM certificate ARN in us-east-1 for the web domain
+  HostedZoneId:
+    Type: String
+    Description: Public hosted zone ID for battlehexes.com
+  WebDomainName:
+    Type: String
+    Default: dev.battlehexes.com
+    Description: Public DNS name for this environment
 Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -36,6 +46,8 @@ Resources:
       DistributionConfig:
         Enabled: true
         DefaultRootObject: index.html
+        Aliases:
+          - !Ref WebDomainName
         Origins:
           - Id: WebsiteOrigin
             DomainName: !Sub "${WebsiteBucket}.s3-website-${AWS::Region}.amazonaws.com"
@@ -54,6 +66,21 @@ Resources:
             Cookies:
               Forward: none
         PriceClass: PriceClass_100  # Cheapest CDN tier
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+  WebsiteAliasRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref WebDomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt WebsiteDistribution.DomainName
+        HostedZoneId: !GetAtt WebsiteDistribution.HostedZoneId
+        EvaluateTargetHealth: false
 Outputs:
   BucketName:
     Description: Name of the website bucket
@@ -64,3 +91,6 @@ Outputs:
   CloudFrontURL:
     Description: "CloudFront distribution URL"
     Value: !Sub "https://${WebsiteDistribution.DomainName}"
+  WebUrl:
+    Description: Public URL for the website
+    Value: !Sub "https://${WebDomainName}"
