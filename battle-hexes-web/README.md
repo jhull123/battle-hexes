@@ -29,3 +29,28 @@ The web frontend now includes simple browser-based tests using Playwright.
 
     npm run test-and-build
 
+## Deployment
+
+The `cloudformation-template.yml` provisions an S3 bucket, CloudFront
+distribution, and Route 53 record for a custom domain. You will need:
+
+- `BucketName` – S3 bucket for static assets
+- `AcmCertificateArn` – ACM certificate ARN in `us-east-1`
+- `HostedZoneId` – Route 53 hosted zone ID for `battlehexes.com`
+- `WebDomainName` – (optional) fully qualified domain name, defaults to
+  `dev.battlehexes.com`
+
+Deploy using AWS CLI:
+
+```
+aws cloudformation deploy \
+  --template-file cloudformation-template.yml \
+  --stack-name battle-hexes-web \
+  --parameter-overrides BucketName=YOUR_BUCKET \
+    AcmCertificateArn=YOUR_CERT_ARN HostedZoneId=YOUR_ZONE_ID \
+    WebDomainName=dev.battlehexes.com
+```
+
+After the stack completes, the site will be served from your specified
+domain using HTTPS.
+

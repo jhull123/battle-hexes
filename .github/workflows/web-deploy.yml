@@ -34,15 +34,26 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy infrastructure
+        env:
+          BUCKET_NAME: ${{ secrets.WEB_BUCKET_NAME }}
+          ACM_CERT_ARN: ${{ secrets.ACM_CERT_ARN }}
+          HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
+          WEB_DOMAIN_NAME: ${{ secrets.WEB_DOMAIN_NAME }}
         run: |
           aws cloudformation deploy \
             --stack-name battle-hexes-web \
             --template-file battle-hexes-web/cloudformation-template.yml \
-            --parameter-overrides BucketName=${{ secrets.WEB_BUCKET_NAME }} \
+            --parameter-overrides \
+              BucketName=$BUCKET_NAME \
+              AcmCertificateArn=$ACM_CERT_ARN \
+              HostedZoneId=$HOSTED_ZONE_ID \
+              WebDomainName=$WEB_DOMAIN_NAME \
             --no-fail-on-empty-changeset
 
       - name: Sync build artifacts
-        run: aws s3 sync battle-hexes-web/dist s3://${{ secrets.WEB_BUCKET_NAME }}
+        env:
+          BUCKET_NAME: ${{ secrets.WEB_BUCKET_NAME }}
+        run: aws s3 sync battle-hexes-web/dist s3://$BUCKET_NAME
 
       - name: Show stack outputs
         run: |
