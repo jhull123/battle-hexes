@@ -46,7 +46,7 @@ jobs:
               BucketName=$BUCKET_NAME \
               AcmCertificateArn=$ACM_CERT_ARN \
               HostedZoneId=$HOSTED_ZONE_ID \
-              WebDomainName=$WEB_DOMAIN_NAME \
+              WebDomainName=dev.battlehexes.com \
             --no-fail-on-empty-changeset
 
       - name: Sync build artifacts
