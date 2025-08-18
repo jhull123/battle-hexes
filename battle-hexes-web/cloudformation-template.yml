@@ -14,6 +14,11 @@ Parameters:
     Type: String
     Default: dev.battlehexes.com
     Description: Public DNS name for this environment
+    AllowedPattern: '^[a-z0-9.-]+$'
+
+Conditions:
+  HasAlias: !Not [!Equals [!Ref WebDomainName, ""]]
+
 Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -46,8 +51,7 @@ Resources:
       DistributionConfig:
         Enabled: true
         DefaultRootObject: index.html
-        Aliases:
-          - !Ref WebDomainName
+        Aliases: !If [HasAlias, [!Ref WebDomainName], !Ref "AWS::NoValue"]
         Origins:
           - Id: WebsiteOrigin
             DomainName: !Sub "${WebsiteBucket}.s3-website-${AWS::Region}.amazonaws.com"
@@ -79,8 +83,9 @@ Resources:
       Type: A
       AliasTarget:
         DNSName: !GetAtt WebsiteDistribution.DomainName
-        HostedZoneId: !GetAtt WebsiteDistribution.HostedZoneId
+        HostedZoneId: Z2FDTNDATAQYW2     # CloudFront’s global hosted zone ID
         EvaluateTargetHealth: false
+
 Outputs:
   BucketName:
     Description: Name of the website bucket
