@@ -38,7 +38,6 @@ jobs:
           BUCKET_NAME: ${{ secrets.WEB_BUCKET_NAME }}
           ACM_CERT_ARN: ${{ secrets.ACM_CERT_ARN }}
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
-          WEB_DOMAIN_NAME: ${{ secrets.WEB_DOMAIN_NAME }}
         run: |
           aws cloudformation deploy \
             --stack-name battle-hexes-web \
