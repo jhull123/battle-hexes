@@ -23,7 +23,13 @@ The web frontend now includes simple browser-based tests using Playwright.
 
 ### Building the App
 
+Build for a locally running API:
+
     npm run build
+
+Build for the dev API deployment:
+
+    npm run build:dev
 
 ### Lint, Test, and Build
 
