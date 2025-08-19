@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "description": "",
   "devDependencies": {
     "@babel/core": "^7.26.0",
