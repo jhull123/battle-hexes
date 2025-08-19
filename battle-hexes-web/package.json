@@ -6,7 +6,7 @@
     "lint": "eslint src/",
     "test": "jest",
     "build": "webpack --env API_URL=http://localhost:8000",
-    "build:dev": "webpack --env API_URL=https://dev-api.battlehexes.com",
+    "build:dev": "webpack --env API_URL=https://api-dev.battlehexes.com",
     "test-and-build": "npm run lint && npm test && npm run build",
     "test:e2e": "npm run build && playwright test"
   },
