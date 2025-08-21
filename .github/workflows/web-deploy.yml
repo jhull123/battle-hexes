@@ -52,7 +52,13 @@ jobs:
       - name: Sync build artifacts
         env:
           BUCKET_NAME: ${{ secrets.WEB_BUCKET_NAME }}
-        run: aws s3 sync battle-hexes-web/dist s3://$BUCKET_NAME
+        run: |
+          aws s3 sync battle-hexes-web/dist s3://$BUCKET_NAME \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --delete
+          aws s3 cp battle-hexes-web/dist/index.html s3://$BUCKET_NAME/index.html \
+            --cache-control "no-cache, max-age=0, must-revalidate"
 
       - name: Show stack outputs
         run: |
