@@ -69,6 +69,23 @@ Resources:
             QueryString: false
             Cookies:
               Forward: none
+          DefaultTTL: 0
+          MinTTL: 0
+          MaxTTL: 31536000
+        CacheBehaviors:
+          - PathPattern: 'index.html'
+            TargetOriginId: WebsiteOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
         PriceClass: PriceClass_100  # Cheapest CDN tier
         ViewerCertificate:
           AcmCertificateArn: !Ref AcmCertificateArn
