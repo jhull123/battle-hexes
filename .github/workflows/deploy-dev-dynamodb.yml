@@ -1,0 +1,65 @@
+name: Deploy Dev DynamoDB
+
+on:
+  workflow_dispatch:
+    inputs:
+      table_name:
+        description: "DynamoDB table name"
+        required: true
+        default: "battle-hexes-dev"
+      enable_streams:
+        description: "Enable DynamoDB Streams? (true/false)"
+        required: true
+        default: "false"
+      stream_view_type:
+        description: "Stream view type (NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES, KEYS_ONLY)"
+        required: true
+        default: "NEW_AND_OLD_IMAGES"
+      stack_name:
+        description: "CloudFormation stack name"
+        required: true
+        default: "battle-hexes-dev-data"
+      template_path:
+        description: "Path to the CFN template in the repo"
+        required: true
+        default: "battle_hexes_api/dev-database.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # for OIDC to assume role
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (assume deploy role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy CloudFormation stack
+        run: |
+          set -euo pipefail
+          aws cloudformation deploy \
+            --template-file "${{ inputs.template_path }}" \
+            --stack-name "${{ inputs.stack_name }}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              TableName=${{ inputs.table_name }} \
+              EnableStreams=${{ inputs.enable_streams }} \
+              StreamViewType=${{ inputs.stream_view_type }}
+
+      - name: Enable termination protection
+        run: |
+          aws cloudformation update-termination-protection \
+            --stack-name "${{ inputs.stack_name }}" \
+            --enable-termination-protection
+
+      - name: Show stack outputs
+        run: |
+          aws cloudformation describe-stacks --stack-name "${{ inputs.stack_name }}" \
+            --query "Stacks[0].Outputs" --output table

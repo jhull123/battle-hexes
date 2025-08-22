@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Battle Hexes - Dev DynamoDB Table (data-only stack; safe to delete without losing data)
+
+Parameters:
+  TableName:
+    Type: String
+    Default: battle-hexes-dev
+    Description: DynamoDB table name for the dev environment
+  EnableStreams:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+    Description: Enable DynamoDB Streams for the table
+  StreamViewType:
+    Type: String
+    AllowedValues: [NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES, KEYS_ONLY]
+    Default: NEW_AND_OLD_IMAGES
+    Description: Stream view type (only used if EnableStreams=true)
+
+Conditions:
+  UseStreams: !Equals [!Ref EnableStreams, "true"]
+
+Resources:
+  BattleHexesDevTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      StreamSpecification:
+        Fn::If:
+          - UseStreams
+          - { StreamViewType: !Ref StreamViewType }
+          - { Ref: AWS::NoValue }
+      Tags:
+        - Key: project
+          Value: battle-hexes
+        - Key: env
+          Value: dev
+
+Outputs:
+  DevTableName:
+    Description: Table name
+    Value: !Ref BattleHexesDevTable
+    Export:
+      Name: battle-hexes-dev:TableName
+  DevTableArn:
+    Description: Table ARN
+    Value: !GetAtt BattleHexesDevTable.Arn
+    Export:
+      Name: battle-hexes-dev:TableArn
+  DevTableStreamArn:
+    Condition: UseStreams
+    Description: Stream ARN (only if streams enabled)
+    Value: !GetAtt BattleHexesDevTable.StreamArn
+    Export:
+      Name: battle-hexes-dev:TableStreamArn
