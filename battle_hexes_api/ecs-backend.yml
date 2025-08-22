@@ -26,6 +26,9 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: battle-hexes-dev-cluster
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -126,6 +129,9 @@ Resources:
       Memory: 512
       NetworkMode: awsvpc
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
       ContainerDefinitions:
         - Name: battle-hexes-api
           Image: !Ref EcrImage
@@ -138,7 +144,11 @@ Resources:
     Properties:
       Cluster: !Ref BattleHexesCluster
       DesiredCount: 1
-      LaunchType: FARGATE
+      CapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 2
+        - CapacityProvider: FARGATE
+          Weight: 1
       HealthCheckGracePeriodSeconds: 60
       LoadBalancers:
         - ContainerName: battle-hexes-api
@@ -151,6 +161,16 @@ Resources:
           SecurityGroups:
             - !Ref BattleHexesSecurityGroup
       TaskDefinition: !Ref BattleHexesTaskDefinition
+
+  BattleHexesServiceAutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: BattleHexesService
+    Properties:
+      MinCapacity: 0
+      MaxCapacity: 2
+      ResourceId: !Sub "service/${BattleHexesCluster}/${BattleHexesService}"
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
 
   ApiAliasRecord:
     Type: AWS::Route53::RecordSet
