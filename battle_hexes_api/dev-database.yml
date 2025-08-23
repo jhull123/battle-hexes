@@ -10,7 +10,7 @@ Parameters:
     Type: String
     AllowedValues: ["true", "false"]
     Default: "true"
-    Description: "true: create/manage table in this stack; false: reference existing table"
+    Description: "true: create/manage table; false: reference existing table"
   EnableStreams:
     Type: String
     AllowedValues: ["true", "false"]
@@ -25,6 +25,9 @@ Parameters:
 Conditions:
   CreateTable: !Equals [!Ref ManageTable, "true"]
   UseStreams:  !Equals [!Ref EnableStreams, "true"]
+  CreateTableAndUseStreams: !And
+    - !Equals [!Ref ManageTable, "true"]
+    - !Equals [!Ref EnableStreams, "true"]
 
 Resources:
   BattleHexesDevTable:
@@ -67,7 +70,6 @@ Outputs:
   DevTableName:
     Description: Table name (created or referenced)
     Value: !If [CreateTable, !Ref BattleHexesDevTable, !Ref TableName]
-    # keep your existing export names so other stacks don't break
     Export:
       Name: battle-hexes-dev:TableName
 
@@ -81,7 +83,7 @@ Outputs:
       Name: battle-hexes-dev:TableArn
 
   DevTableStreamArn:
-    Condition: And [ CreateTable, UseStreams ]
+    Condition: CreateTableAndUseStreams
     Description: Stream ARN (only when this stack manages the table and streams are enabled)
     Value: !GetAtt BattleHexesDevTable.StreamArn
     Export:
