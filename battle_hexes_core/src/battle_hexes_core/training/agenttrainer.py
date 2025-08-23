@@ -1,5 +1,10 @@
+import logging
+
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.gameplayer import GamePlayer
+
+
+logger = logging.getLogger(__name__)
 
 
 class AgentTrainer:
@@ -16,6 +21,6 @@ class AgentTrainer:
     def train(self) -> None:
         for episode in range(self.episodes):
             game = self.gamefactory.create_game()
-            print()
-            print(f"Starting game {episode + 1}/{self.episodes}")
+            logger.info("")
+            logger.info("Starting game %d/%d", episode + 1, self.episodes)
             GamePlayer(game).play(max_turns=self.max_turns)
