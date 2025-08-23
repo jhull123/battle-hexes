@@ -46,7 +46,7 @@ jobs:
   deploy-cloudformation:
     name: Deploy CloudFormation Stack
     runs-on: ubuntu-latest
-    needs: build-and-push-to-ecr
+    # needs: build-and-push-to-ecr
 
     permissions:
       id-token: write
