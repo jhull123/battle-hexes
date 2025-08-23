@@ -41,10 +41,41 @@ Resources:
         - CapacityProvider: FARGATE
           Weight: 1
 
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "battle-hexes-task-role-${AWS::StackName}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+    Policies:
+      - PolicyName: DynamoAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:BatchGetItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:DescribeTable
+              Resource:
+                - !ImportValue battle-hexes-dev:TableArn
+                - !Sub
+                  - "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${T}/index/*"
+                  - { T: !ImportValue battle-hexes-dev:TableName }
+
   TaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: battle-hexes-execution-role
+      RoleName: !Sub "battle-hexes-execution-role-${AWS::StackName}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -84,7 +115,7 @@ Resources:
   BattleHexesLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: battle-hexes-alb
+      Name: !Sub "battle-hexes-alb-${AWS::StackName}"
       Scheme: internet-facing
       Type: application
       Subnets: !Ref SubnetIds
@@ -104,6 +135,9 @@ Resources:
       HealthyThresholdCount: 2
       Matcher:
         HttpCode: 200-399
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "10"
 
   BattleHexesHttpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -133,6 +167,7 @@ Resources:
 
   BattleHexesTaskDefinition:
     Type: AWS::ECS::TaskDefinition
+    DependsOn: ApiLogGroup
     Properties:
       Family: battle-hexes-api-task
       RequiresCompatibilities: [FARGATE]
@@ -140,6 +175,7 @@ Resources:
       Memory: 512
       NetworkMode: awsvpc
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
       RuntimePlatform:
         CpuArchitecture: ARM64
         OperatingSystemFamily: LINUX
@@ -148,6 +184,21 @@ Resources:
           Image: !Ref EcrImage
           PortMappings:
             - ContainerPort: 8000
+          Environment:
+            - Name: DDB_TABLE_NAME
+              Value: !ImportValue battle-hexes-dev:TableName
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ApiLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/battle-hexes-api/${AWS::StackName}"
+      RetentionInDays: 14
 
   BattleHexesService:
     Type: AWS::ECS::Service
@@ -163,7 +214,7 @@ Resources:
           Weight: 2
         - CapacityProvider: FARGATE
           Weight: 1
-      EnableExecuteCommand: true
+      EnableExecuteCommand: false
       EnableECSManagedTags: true
       PropagateTags: SERVICE
       DeploymentConfiguration:
@@ -191,7 +242,7 @@ Resources:
     Properties:
       MinCapacity: 0
       MaxCapacity: 2
-      ResourceId: !Sub "service/${BattleHexesCluster}/${BattleHexesService}"
+      ResourceId: !Sub "service/${BattleHexesCluster}/${BattleHexesService.Name}"
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
