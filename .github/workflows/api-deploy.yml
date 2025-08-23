@@ -5,7 +5,6 @@ on:
 
 jobs:
   build-and-push-to-ecr:
-    if: false
     name: Build & Push Docker Image to ECR
     runs-on: ubuntu-latest
 
@@ -46,7 +45,7 @@ jobs:
   deploy-cloudformation:
     name: Deploy CloudFormation Stack
     runs-on: ubuntu-latest
-    # needs: build-and-push-to-ecr
+    needs: build-and-push-to-ecr
 
     permissions:
       id-token: write
