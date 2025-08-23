@@ -7,6 +7,7 @@ agents) and other settings.
 
 ## Back End
 1. Move game state to database (DynamoDB).
+1. ~~Replace prints with logging.~~
 
 ## Scenario Editor
 Create a new project for creating and editing scenarios.

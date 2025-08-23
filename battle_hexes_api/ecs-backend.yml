@@ -51,26 +51,26 @@ Resources:
           - Effect: Allow
             Principal: { Service: ecs-tasks.amazonaws.com }
             Action: sts:AssumeRole
-    Policies:
-      - PolicyName: DynamoAccess
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:UpdateItem
-                - dynamodb:BatchWriteItem
-                - dynamodb:BatchGetItem
-                - dynamodb:Query
-                - dynamodb:Scan
-                - dynamodb:DescribeTable
-              Resource:
-                - !ImportValue battle-hexes-dev:TableArn
-                - !Sub
-                  - "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${T}/index/*"
-                  - { T: !ImportValue battle-hexes-dev:TableName }
+      Policies:
+        - PolicyName: DynamoAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:DescribeTable
+                Resource:
+                  - !ImportValue battle-hexes-dev:TableArn
+                  - !Sub
+                    - "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${T}/index/*"
+                    - { T: !ImportValue battle-hexes-dev:TableName }
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
