@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Battle Hexes - Dev DynamoDB (idempotent: create or reference existing table)
+Description: Battle Hexes - Dev DynamoDB
 
 Parameters:
   TableName:
