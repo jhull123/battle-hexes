@@ -5,6 +5,7 @@ on:
 
 jobs:
   build-and-push-to-ecr:
+    if: false
     name: Build & Push Docker Image to ECR
     runs-on: ubuntu-latest
 
@@ -70,6 +71,11 @@ jobs:
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
           API_DOMAIN_NAME: api-dev.battlehexes.com
         run: |
+          # Pre-create (or verify) the ECS App Auto Scaling service-linked role
+          if ! aws iam get-role --role-name AWSServiceRoleForApplicationAutoScaling_ECSService >/dev/null 2>&1; then
+            aws iam create-service-linked-role --aws-service-name ecs.application-autoscaling.amazonaws.com
+          fi
+
           aws cloudformation deploy \
             --template-file battle_hexes_api/ecs-backend.yml \
             --stack-name battle-hexes-api-dev \
