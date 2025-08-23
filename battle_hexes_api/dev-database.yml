@@ -1,28 +1,35 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Battle Hexes - Dev DynamoDB Table (data-only stack; safe to delete without losing data)
+Description: Battle Hexes - Dev DynamoDB (idempotent: create or reference existing table)
 
 Parameters:
   TableName:
     Type: String
     Default: battle-hexes-dev
-    Description: DynamoDB table name for the dev environment
+    Description: DynamoDB table name to create or reference
+  ManageTable:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: "true: create/manage table in this stack; false: reference existing table"
   EnableStreams:
     Type: String
     AllowedValues: ["true", "false"]
     Default: "false"
-    Description: Enable DynamoDB Streams for the table
+    Description: Enable DynamoDB Streams (only when ManageTable=true)
   StreamViewType:
     Type: String
     AllowedValues: [NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES, KEYS_ONLY]
     Default: NEW_AND_OLD_IMAGES
-    Description: Stream view type (only used if EnableStreams=true)
+    Description: Stream view type (only used if EnableStreams=true and ManageTable=true)
 
 Conditions:
-  UseStreams: !Equals [!Ref EnableStreams, "true"]
+  CreateTable: !Equals [!Ref ManageTable, "true"]
+  UseStreams:  !Equals [!Ref EnableStreams, "true"]
 
 Resources:
   BattleHexesDevTable:
     Type: AWS::DynamoDB::Table
+    Condition: CreateTable
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
@@ -58,18 +65,24 @@ Resources:
 
 Outputs:
   DevTableName:
-    Description: Table name
-    Value: !Ref BattleHexesDevTable
+    Description: Table name (created or referenced)
+    Value: !If [CreateTable, !Ref BattleHexesDevTable, !Ref TableName]
+    # keep your existing export names so other stacks don't break
     Export:
       Name: battle-hexes-dev:TableName
+
   DevTableArn:
-    Description: Table ARN
-    Value: !GetAtt BattleHexesDevTable.Arn
+    Description: Table ARN (created or referenced)
+    Value: !If
+      - CreateTable
+      - !GetAtt BattleHexesDevTable.Arn
+      - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}"
     Export:
       Name: battle-hexes-dev:TableArn
+
   DevTableStreamArn:
-    Condition: UseStreams
-    Description: Stream ARN (only if streams enabled)
+    Condition: And [ CreateTable, UseStreams ]
+    Description: Stream ARN (only when this stack manages the table and streams are enabled)
     Value: !GetAtt BattleHexesDevTable.StreamArn
     Export:
       Name: battle-hexes-dev:TableStreamArn
