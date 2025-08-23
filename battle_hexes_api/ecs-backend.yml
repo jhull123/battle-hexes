@@ -26,9 +26,20 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: battle-hexes-dev-cluster
+
+  ClusterCapacityProviders:
+    Type: AWS::ECS::ClusterCapacityProviderAssociations
+    Properties:
+      Cluster: !Ref BattleHexesCluster
       CapacityProviders:
         - FARGATE
         - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Base: 1
+          Weight: 1
+        - CapacityProvider: FARGATE
+          Weight: 1
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -140,15 +151,27 @@ Resources:
 
   BattleHexesService:
     Type: AWS::ECS::Service
-    DependsOn: BattleHexesHttpsListener
+    DependsOn:
+      - BattleHexesHttpsListener
+      - ClusterCapacityProviders
     Properties:
       Cluster: !Ref BattleHexesCluster
+      ServiceName: !Sub "battle-hexes-api-${AWS::StackName}"
       DesiredCount: 1
       CapacityProviderStrategy:
         - CapacityProvider: FARGATE_SPOT
           Weight: 2
         - CapacityProvider: FARGATE
           Weight: 1
+      EnableExecuteCommand: true
+      EnableECSManagedTags: true
+      PropagateTags: SERVICE
+      DeploymentConfiguration:
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
       HealthCheckGracePeriodSeconds: 60
       LoadBalancers:
         - ContainerName: battle-hexes-api
