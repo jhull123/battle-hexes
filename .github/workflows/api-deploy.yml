@@ -36,11 +36,6 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            -f battle_hexes_api/Dockerfile \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            --push .
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
             --provenance=false \
             -f battle_hexes_api/Dockerfile \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
