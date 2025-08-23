@@ -1,6 +1,7 @@
 from enum import Enum
-import random
+import logging
 import pickle
+import random
 from typing import List, Tuple
 
 from pydantic import PrivateAttr
@@ -13,6 +14,9 @@ from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
 from .rlplayer import RLPlayer
+
+
+logger = logging.getLogger(__name__)
 
 
 class ActionIntent(Enum):
@@ -262,7 +266,7 @@ class QLearningPlayer(RLPlayer):
                 combat_award += bonus * 0.10
             else:
                 combat_award += bonus * 0.10
-            print("Combat award is", combat_award, "for", result)
+            logger.info("Combat award is %s for %s", combat_award, result)
             reward += combat_award
 
         for unit, state_action in [
@@ -294,7 +298,9 @@ class QLearningPlayer(RLPlayer):
                 if distance > 0:
                     reward += (friendly_strength - enemy_strength) / distance
                 else:
-                    print("Warning: Distance is zero in calculate_reward!")
+                    logger.info(
+                        "Warning: Distance is zero in calculate_reward!"
+                    )
 
         # print(f"Reward for {self.name}: {reward}")
         return reward
@@ -305,19 +311,21 @@ class QLearningPlayer(RLPlayer):
 
     def print_last_actions(self) -> None:
         """Print the last actions taken by the player."""
-        print(f"Last actions for {self.name}:")
+        logger.info("Last actions for %s:", self.name)
         for unit_id, (unit, state, action) in self._last_actions.items():
             msg = (
                 f"  Unit ID: {unit_id}, Unit: {unit.get_name()}, "
                 f"State: {state}, Action: {action}"
             )
-            print(msg)
+            logger.info(msg)
 
     def print_q_table(self) -> None:
         """Print the Q-table for debugging purposes."""
-        print(f"Q-table for {self.name}:")
+        logger.info("Q-table for %s:", self.name)
         items = sorted(
             self._q_table.items(), key=lambda item: item[1], reverse=True
         )
         for (state, action), value in items:
-            print(f"  State: {state}, Action: {action}, Q-value: {value:.4f}")
+            logger.info(
+                "  State: %s, Action: %s, Q-value: %.4f", state, action, value
+            )

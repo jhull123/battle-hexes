@@ -3,17 +3,18 @@ from fastapi import Body
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-# Allow running the API without installing the sibling packages by adding them
-# to ``sys.path`` relative to this file. This lets ``fastapi dev src/main.py``
-# work when executed from inside ``battle_hexes_api``.
+import logging
 import sys
 from pathlib import Path
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
-print("Repo root:", REPO_ROOT)
+logger.info("Repo root: %s", REPO_ROOT)
 sys.path.insert(0, str(REPO_ROOT / "battle_hexes_core" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "battle_agent_rl" / "src"))
-print("sys.path:", sys.path)
+logger.info("sys.path: %s", sys.path)
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
@@ -66,12 +67,12 @@ def resolve_combat(
     game_id: str,
     sparse_board: SparseBoard = Body(...)
 ) -> SparseBoard:
-    print(f'We got game: {game_id}')
+    logger.info("We got game: %s", game_id)
     game = _get_game_or_404(game_id)
     game.update(sparse_board)
 
     results = Combat(game).resolve_combat()
-    print('Combat results:', results)
+    logger.info('Combat results: %s', results)
 
     game_repo.update_game(game)
     sparse_board = game.get_board().to_sparse_board()
@@ -84,7 +85,7 @@ def generate_movement(game_id: str):
     """Generate and apply movement plans for the current player."""
     game = _get_game_or_404(game_id)
     current_player = game.get_current_player()
-    print(f"Generating movement for player: {current_player.name}")
+    logger.info("Generating movement for player: %s", current_player.name)
     plans = current_player.movement()
     game.apply_movement_plans(plans)
     game_repo.update_game(game)
@@ -104,9 +105,10 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     old_player = game.get_current_player()
     new_player = game.next_player()
-    print(
-        f"The turn has ended for player: {old_player.name}. "
-        f"Now it's {new_player.name}'s turn."
+    logger.info(
+        "The turn has ended for player: %s. Now it's %s's turn.",
+        old_player.name,
+        new_player.name,
     )
 
     game_repo.update_game(game)
