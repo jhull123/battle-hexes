@@ -115,12 +115,14 @@ Resources:
   BattleHexesLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub "battle-hexes-alb-${AWS::StackName}"
       Scheme: internet-facing
       Type: application
       Subnets: !Ref SubnetIds
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: battle-hexes-alb
 
   BattleTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
