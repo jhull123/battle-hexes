@@ -2,27 +2,6 @@ name: Deploy Dev DynamoDB
 
 on:
   workflow_dispatch:
-    inputs:
-      table_name:
-        description: "DynamoDB table name"
-        required: true
-        default: "battle-hexes-dev"
-      enable_streams:
-        description: "Enable DynamoDB Streams? (true/false)"
-        required: true
-        default: "false"
-      stream_view_type:
-        description: "Stream view type (NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES, KEYS_ONLY)"
-        required: true
-        default: "NEW_AND_OLD_IMAGES"
-      stack_name:
-        description: "CloudFormation stack name"
-        required: true
-        default: "battle-hexes-dev-data"
-      template_path:
-        description: "Path to the CFN template in the repo"
-        required: true
-        default: "battle_hexes_api/dev-database.yml"
 
 jobs:
   deploy:
@@ -44,22 +23,31 @@ jobs:
       - name: Deploy CloudFormation stack
         run: |
           set -euo pipefail
+          export TABLE_NAME="battle-hexes-dev"
+
+          if aws dynamodb describe-table --table-name "$TABLE_NAME" >/dev/null 2>&1; then
+            MANAGE=false
+          else
+            MANAGE=true
+          fi
+
           aws cloudformation deploy \
-            --template-file "${{ inputs.template_path }}" \
-            --stack-name "${{ inputs.stack_name }}" \
+            --template-file "battle_hexes_api/dev-database.yml" \
+            --stack-name battle-hexes-dev-data \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
-              TableName=${{ inputs.table_name }} \
-              EnableStreams=${{ inputs.enable_streams }} \
-              StreamViewType=${{ inputs.stream_view_type }}
+              TableName="$TABLE_NAME" \
+              ManageTable="$MANAGE" \
+              EnableStreams=false \
+              StreamViewType="NEW_AND_OLD_IMAGES"
 
       - name: Enable termination protection
         run: |
           aws cloudformation update-termination-protection \
-            --stack-name "${{ inputs.stack_name }}" \
+            --stack-name "battle-hexes-dev-data" \
             --enable-termination-protection
 
       - name: Show stack outputs
         run: |
-          aws cloudformation describe-stacks --stack-name "${{ inputs.stack_name }}" \
+          aws cloudformation describe-stacks --stack-name "battle-hexes-dev-data" \
             --query "Stacks[0].Outputs" --output table
