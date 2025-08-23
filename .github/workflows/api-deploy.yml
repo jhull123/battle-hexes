@@ -40,7 +40,7 @@ jobs:
             -f battle_hexes_api/Dockerfile \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             --push \
-            ./battle_hexes_api
+            .
 
   deploy-cloudformation:
     name: Deploy CloudFormation Stack
