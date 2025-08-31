@@ -1,7 +1,9 @@
 from uuid import UUID
 from pathlib import Path
+import uuid
 
-from battle_agent_rl.qlearningplayer import QLearningPlayer
+# from battle_agent_rl.qlearningplayer import QLearningPlayer
+from battle_agent_rl.multiunitqlearn import MulitUnitQLearnPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.gamefactory import GameFactory
@@ -17,7 +19,7 @@ class SampleGameCreator:
     @staticmethod
     def create_sample_game() -> Game:
         """Create a simple two-player game with preset units."""
-        board_size = (10, 25)
+        board_size = (10, 10)
 
         red_faction = Faction(
             id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
@@ -33,8 +35,6 @@ class SampleGameCreator:
 
         board = Board(*board_size)
 
-        repo_root = Path(__file__).resolve().parents[3]
-        q_table_path = repo_root / "battle_agent_rl" / "q_table.json"
 
         player1 = RandomPlayer(
             name="Player 1",
@@ -43,15 +43,23 @@ class SampleGameCreator:
             board=board,
         )
 
-        player2 = QLearningPlayer(
+        # repo_root = Path(__file__).resolve().parents[3]
+        # q_table_path = repo_root / "battle_agent_rl" / "q_table.json"
+        # player2 = QLearningPlayer(
+        #    name="Player 2",
+        #    type=PlayerType.CPU,
+        #    factions=[blue_faction],
+        #    board=board,
+        #    epsilon=0.0,
+        # )
+        # player2.load_q_table(q_table_path)
+
+        player2 = MulitUnitQLearnPlayer(
             name="Player 2",
             type=PlayerType.CPU,
             factions=[blue_faction],
             board=board,
-            epsilon=0.0,
         )
-
-        player2.load_q_table(q_table_path)
 
         red_unit = Unit(
             UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
@@ -75,10 +83,22 @@ class SampleGameCreator:
             4,
             4,
         )
-        blue_unit.set_coords(8, 19)
+        blue_unit.set_coords(8, 9)
+
+        blue_two = Unit(
+            uuid.uuid4(),
+            "Blue Two",
+            blue_faction,
+            player2,
+            "Scout",
+            2,
+            2,
+            5,
+        )
+        blue_two.set_coords(9, 5)
 
         return GameFactory(
             board_size,
             [player1, player2],
-            [red_unit, blue_unit],
+            [red_unit, blue_unit, blue_two],
         ).create_game()

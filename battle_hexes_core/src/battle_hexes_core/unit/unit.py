@@ -63,6 +63,10 @@ class Unit:
     def get_defense(self):
         return self.defense
 
+    def get_strength(self) -> int:
+        """The sum of the unit's attack and defense factors."""
+        return self.attack + self.defense
+
     def get_move(self):
         return self.move
 

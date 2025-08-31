@@ -207,7 +207,7 @@ class Board:
 
         return False
 
-    def hex_distance(friendly_hex, enemy_hex) -> int:
+    def hex_distance(self, friendly_hex, enemy_hex) -> int:
         """
         Calculate the hex distance between two hexes taking into account the
         even-r offset hex grid layout.
@@ -229,10 +229,11 @@ class Board:
 
         return max(abs(ax - bx), abs(ay - by), abs(az - bz))
 
-    def get_nearest_enemy_unit(self, unit: Unit) -> Unit | None:
+    def get_nearest_unit(self, unit: Unit, friend: bool) -> Unit | None:
         """
-        Return the closest enemy unit to the given unit.
-        If no enemy units are found, returns None.
+        Return the closest unit to `unit` based on faction.
+        If `friend` is True, search same-faction units; otherwise search opposing-faction units.
+        Returns None if no matching unit is found or the starting hex is invalid.
         """
         if unit is None or unit.get_coords() is None:
             return None
@@ -240,30 +241,44 @@ class Board:
         own_faction = unit.get_faction()
         row, column = unit.get_coords()
         start_hex = self.get_hex(row, column)
-
         if start_hex is None:
             return None
 
         min_distance = float("inf")
-        nearest_enemy = None
+        nearest_match: Unit | None = None
 
         for other in self.get_units():
-            if other == unit or other.get_faction() == own_faction:
+            if other is unit:
+                continue
+            if other.get_coords() is None:
                 continue
 
-            if other.get_coords() is None:
+            # Filter by friend/foe
+            same_faction = (other.get_faction() == own_faction)
+            if friend and not same_faction:
+                continue
+            if not friend and same_faction:
                 continue
 
             other_hex = self.get_hex(*other.get_coords())
             if other_hex is None:
                 continue
 
-            distance = Board.hex_distance(start_hex, other_hex)
+            distance = self.hex_distance(start_hex, other_hex)
             if distance < min_distance:
                 min_distance = distance
-                nearest_enemy = other
+                nearest_match = other
 
-        return nearest_enemy
+        return nearest_match
+
+    def get_nearest_friendly_unit(self, unit: Unit) -> Unit | None:
+        """Return the closest same-faction unit to `unit` (or None if none)."""
+        return self.get_nearest_unit(unit, friend=True)
+
+    def get_nearest_enemy_unit(self, unit: Unit) -> Unit | None:
+        """Return the closest opposing-faction unit to `unit` (or None if none)."""
+        return self.get_nearest_unit(unit, friend=False)
+
 
     def path_towards(
         self, unit: Unit, target_hex: Hex, max_steps: int
@@ -283,7 +298,7 @@ class Board:
             return [start_hex]
 
         best = min(
-            reachable, key=lambda h: Board.hex_distance(h, target_hex)
+            reachable, key=lambda h: self.hex_distance(h, target_hex)
         )
 
         full_path = self.shortest_path(unit, start_hex, best)
@@ -310,7 +325,7 @@ class Board:
             return [start_hex]
 
         farthest = max(
-            reachable, key=lambda h: Board.hex_distance(h, threat_hex)
+            reachable, key=lambda h: self.hex_distance(h, threat_hex)
         )
 
         path = self.shortest_path(unit, start_hex, farthest)

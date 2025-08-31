@@ -240,6 +240,7 @@ class QLearningPlayer(RLPlayer):
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
         # Do not clear _last_actions here so combat_results can also use them
+        self.print_q_table()
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
