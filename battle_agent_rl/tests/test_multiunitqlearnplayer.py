@@ -75,15 +75,12 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
 
     def test_encode_unit_state_values(self):
         state = self.player.encode_unit_state(self.friend1)
-        friend1_hex = self.board.get_hex(1, 1)
-        enemy_hex = self.board.get_hex(2, 2)
-        friend2_hex = self.board.get_hex(0, 0)
         expected = (
             self.friend1.get_strength(),
             self.enemy.get_strength(),
-            Board.hex_distance(friend1_hex, enemy_hex),
+            0,  # eta to enemy (distance 1, move 3)
             self.friend2.get_strength(),
-            Board.hex_distance(friend1_hex, friend2_hex),
+            0,  # eta to friend (distance 2, move 3)
             1,
         )
         self.assertEqual(state, expected)
@@ -91,14 +88,12 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
     def test_encode_unit_state_no_enemy(self):
         self.board.remove_units(self.enemy)
         state = self.player.encode_unit_state(self.friend1)
-        friend1_hex = self.board.get_hex(1, 1)
-        friend2_hex = self.board.get_hex(0, 0)
         expected = (
             self.friend1.get_strength(),
             0,
             0,
             self.friend2.get_strength(),
-            Board.hex_distance(friend1_hex, friend2_hex),
+            0,  # eta to friend
             1,
         )
         self.assertEqual(state, expected)
@@ -106,12 +101,10 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
     def test_encode_unit_state_no_friend(self):
         self.board.remove_units(self.friend2)
         state = self.player.encode_unit_state(self.friend1)
-        friend1_hex = self.board.get_hex(1, 1)
-        enemy_hex = self.board.get_hex(2, 2)
         expected = (
             self.friend1.get_strength(),
             self.enemy.get_strength(),
-            Board.hex_distance(friend1_hex, enemy_hex),
+            0,  # eta to enemy remains 0 (distance 1)
             0,
             0,
             0,
@@ -130,6 +123,15 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
             0,
         )
         self.assertEqual(state, expected)
+
+    def test_distance_to_eta_bin(self):
+        move = 4
+        self.assertEqual(self.player._distance_to_eta_bin(3, move), 0)
+        self.assertEqual(self.player._distance_to_eta_bin(4, move), 0)
+        self.assertEqual(self.player._distance_to_eta_bin(5, move), 1)
+        self.assertEqual(self.player._distance_to_eta_bin(8, move), 1)
+        self.assertEqual(self.player._distance_to_eta_bin(9, move), 2)
+        self.assertEqual(self.player._distance_to_eta_bin(20, move), 3)
 
 
 if __name__ == "__main__":
