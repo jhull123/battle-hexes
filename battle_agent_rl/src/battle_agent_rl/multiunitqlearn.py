@@ -7,7 +7,7 @@ from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
 
-from .rlplayer import RLPlayer
+from .qlearningplayer import QLearningPlayer
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def _format_unit_state(state) -> str:
         return str(state)
 
 
-class MulitUnitQLearnPlayer(RLPlayer):
+class MulitUnitQLearnPlayer(QLearningPlayer):
     """A Q-learning player for multi-unit battles.
 
     Unary state ``s_i`` (order matters!)
@@ -56,8 +56,15 @@ class MulitUnitQLearnPlayer(RLPlayer):
     def movement(self) -> List[UnitMovementPlan]:
         plans: List[UnitMovementPlan] = []
         for unit in self.own_units(self._board.get_units()):
-            starting_hex = self._board.get_hex(unit.row, unit.column)
-            plans.append(UnitMovementPlan(unit, [starting_hex]))
+            state = self._encode_unit_state(unit)
+            actions = self.available_actions(unit)
+            chosen = self.choose_action(state, actions)
+            # Store the unit reference so we can update after combat even if it
+            # was destroyed.
+            self._last_actions[unit.get_id()] = (unit, state, chosen)
+            plan = self.move_plan(unit, chosen[0], chosen[1])
+            if plan is not None:
+                plans.append(plan)
         return plans
 
     def _encode_unit_state(self, unit) -> tuple:
