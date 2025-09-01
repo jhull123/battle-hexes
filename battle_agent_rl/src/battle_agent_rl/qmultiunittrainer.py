@@ -1,9 +1,10 @@
 """Train a multi-unit Q-learning agent against a random opponent."""
 
 import argparse
+import logging
 import random
 import uuid
-import logging
+from pathlib import Path
 from typing import List
 
 from battle_agent_rl.multiunitqlearn import MulitUnitQLearnPlayer
@@ -96,6 +97,15 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     """Train the MultiUnit Q-learning player."""
     random_player, rl_player, units = build_players()
 
+    q_table_path = Path("q_multiunit_table.pkl")
+    if q_table_path.exists():
+        rl_player.load_q_table(str(q_table_path))
+        logger.info("Loaded existing Q-table from %s", q_table_path)
+    else:
+        logger.info(
+            "No existing Q-table found at %s, starting fresh", q_table_path
+        )
+
     game_factory = GameFactory(
         board_size=(16, 16),
         players=[random_player, rl_player],
@@ -106,7 +116,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
     agent_trainer.train()
     # rl_player.print_q_table()
-    rl_player.save_q_table("q_multiunit_table.pkl")
+    rl_player.save_q_table(str(q_table_path))
 
 
 if __name__ == "__main__":
