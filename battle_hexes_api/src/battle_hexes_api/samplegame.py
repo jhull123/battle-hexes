@@ -1,5 +1,4 @@
 from uuid import UUID
-from pathlib import Path
 import uuid
 
 # from battle_agent_rl.qlearningplayer import QLearningPlayer
@@ -34,7 +33,6 @@ class SampleGameCreator:
         )
 
         board = Board(*board_size)
-
 
         player1 = RandomPlayer(
             name="Player 1",
