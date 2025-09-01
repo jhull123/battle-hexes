@@ -88,6 +88,49 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
         )
         self.assertEqual(state, expected)
 
+    def test_encode_unit_state_no_enemy(self):
+        self.board.remove_units(self.enemy)
+        state = self.player.encode_unit_state(self.friend1)
+        friend1_hex = self.board.get_hex(1, 1)
+        friend2_hex = self.board.get_hex(0, 0)
+        expected = (
+            self.friend1.get_strength(),
+            0,
+            0,
+            self.friend2.get_strength(),
+            Board.hex_distance(friend1_hex, friend2_hex),
+            1,
+        )
+        self.assertEqual(state, expected)
+
+    def test_encode_unit_state_no_friend(self):
+        self.board.remove_units(self.friend2)
+        state = self.player.encode_unit_state(self.friend1)
+        friend1_hex = self.board.get_hex(1, 1)
+        enemy_hex = self.board.get_hex(2, 2)
+        expected = (
+            self.friend1.get_strength(),
+            self.enemy.get_strength(),
+            Board.hex_distance(friend1_hex, enemy_hex),
+            0,
+            0,
+            0,
+        )
+        self.assertEqual(state, expected)
+
+    def test_encode_unit_state_unit_removed(self):
+        self.board.remove_units(self.friend1)
+        state = self.player.encode_unit_state(self.friend1)
+        expected = (
+            self.friend1.get_strength(),
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        self.assertEqual(state, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
