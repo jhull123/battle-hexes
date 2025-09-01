@@ -7,25 +7,25 @@ opponent.
 See the `RLPLAN.md` file for information on the plan to develop various
 RL agents.
 
-## Running the training demo
+## Training scripts
 
-The script `train_qlearning.sh` starts a small training session using the
-`QLearningPlayer` against a `RandomPlayer`.  It sets up `PYTHONPATH` so the
-uninstalled packages can be imported correctly.
+Two helper scripts start training sessions with the required `PYTHONPATH`:
 
 ```bash
 ./train_qlearning.sh
+./train_multiunit_qlearning.sh
 ```
 
-The number of training episodes can be passed as an argument:
+Each accepts the number of training episodes as an optional argument:
 
 ```bash
 ./train_qlearning.sh 10
+./train_multiunit_qlearning.sh 10
 ```
 
-You can also invoke the trainer module directly:
+You can also invoke the trainer modules directly:
 
 ```bash
 python -m battle_agent_rl.qlearningtrainer 10
+python -m battle_agent_rl.qmultiunittrainer 10
 ```
-
