@@ -1,11 +1,11 @@
 import logging
 import math
-from typing import List
+from typing import List, Tuple
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import PlayerType
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.unit.unit import Unit
 
 from .qlearningplayer import QLearningPlayer
 
@@ -53,21 +53,9 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
     ) -> None:
         super().__init__(name=name, type=type, factions=factions, board=board)
 
-    def movement(self) -> List[UnitMovementPlan]:
-        plans: List[UnitMovementPlan] = []
-        for unit in self.own_units(self._board.get_units()):
-            state = self._encode_unit_state(unit)
-            actions = self.available_actions(unit)
-            chosen = self.choose_action(state, actions)
-            # Store the unit reference so we can update after combat even if it
-            # was destroyed.
-            self._last_actions[unit.get_id()] = (unit, state, chosen)
-            plan = self.move_plan(unit, chosen[0], chosen[1])
-            if plan is not None:
-                plans.append(plan)
-        return plans
-
-    def _encode_unit_state(self, unit) -> tuple:
+    def encode_unit_state(
+            self, unit: Unit
+    ) -> Tuple[int, int, int, int, int, int]:
         """
         Returns a 6-tuple:
         (my_strength, nearest_enemy_strength, dist_to_enemy,
@@ -146,7 +134,7 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
             return 3
         return 4  # very heavy
 
-    def movement_cb(self) -> None:
+    def x_movement_cb(self) -> None:
         """
         Called after the player's unit plan has been applied to the board.
         """

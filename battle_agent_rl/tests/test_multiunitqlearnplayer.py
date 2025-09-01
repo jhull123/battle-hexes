@@ -74,7 +74,7 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
         )
 
     def test_encode_unit_state_values(self):
-        state = self.player._encode_unit_state(self.friend1)
+        state = self.player.encode_unit_state(self.friend1)
         friend1_hex = self.board.get_hex(1, 1)
         enemy_hex = self.board.get_hex(2, 2)
         friend2_hex = self.board.get_hex(0, 0)

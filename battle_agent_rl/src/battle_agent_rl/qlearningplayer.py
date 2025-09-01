@@ -307,7 +307,7 @@ class QLearningPlayer(RLPlayer):
         return reward
 
     def end_game_cb(self) -> None:
-        # self.print_q_table()
+        self.print_q_table()
         pass
 
     def print_last_actions(self) -> None:
