@@ -4,7 +4,6 @@ import argparse
 import random
 import uuid
 import logging
-import sys
 from typing import List
 
 from battle_agent_rl.multiunitqlearn import MulitUnitQLearnPlayer
