@@ -3,6 +3,8 @@
 import argparse
 import random
 import uuid
+import logging
+import sys
 from typing import List
 
 from battle_agent_rl.multiunitqlearn import MulitUnitQLearnPlayer
@@ -12,6 +14,10 @@ from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.training.agenttrainer import AgentTrainer
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
+
+
+# module logger
+logger = logging.getLogger(__name__)
 
 
 # (attack, defense, movement) with weights for selection
@@ -125,4 +131,9 @@ if __name__ == "__main__":
         help="maximum number of turns per game",
     )
     args = parser.parse_args()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    logger.info("Training with args %s", args)
     main(args.episodes, args.max_turns)
