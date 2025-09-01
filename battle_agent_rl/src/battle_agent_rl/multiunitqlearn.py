@@ -16,16 +16,16 @@ def _format_unit_state(state) -> str:
     """Return a human-readable, two-letter-abbrev string for a 6-tuple state.
 
     Expected state layout:
-    (my_strength, nearest_enemy_strength, dist_to_enemy,
-     nearest_ally_strength, dist_to_ally, ally_density_bin)
+    (my_strength, nearest_enemy_strength, eta_to_enemy,
+     nearest_ally_strength, eta_to_ally, ally_density_bin)
     Values are formatted as zero-padded two-digit integers. If the
     input is malformed, fall back to the raw representation.
     """
     try:
         s0, s1, s2, s3, s4, s5 = state
         return (
-            f"MY{int(s0):02d} EN{int(s1):02d} DE{int(s2):02d} "
-            f"AL{int(s3):02d} DA{int(s4):02d} AD{int(s5):02d}"
+            f"MY{int(s0):02d} EN{int(s1):02d} TE{int(s2):02d} "
+            f"AL{int(s3):02d} TA{int(s4):02d} AD{int(s5):02d}"
         )
     except Exception:
         return str(state)
@@ -35,8 +35,11 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
     """A Q-learning player for multi-unit battles.
 
     Unary state ``s_i`` (order matters!)
-    ``(my_str_bin, nearest_enemy_str_bin, dist_enemy_bin,``
-    `` nearest_ally_str_bin, dist_ally_bin, ally_density_bin)``
+    ``(my_str_bin, nearest_enemy_str_bin, eta_enemy_bin,``
+    `` nearest_ally_str_bin, eta_ally_bin, ally_density_bin)``
+    ``eta_*`` values represent the estimated additional turns (0--3) the
+    unit would need to reach the corresponding hex based on its movement
+    factor.
 
     Pairwise state ``s_ij`` (symmetric; order matters only in the action
     pair)
@@ -53,13 +56,29 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
     ) -> None:
         super().__init__(name=name, type=type, factions=factions, board=board)
 
+    def _distance_to_eta_bin(self, distance: int, move: int) -> int:
+        """Convert a hex distance to an ETA bin based on ``move``.
+
+        The result is the number of additional turns required to reach the
+        target hex, clamped to ``0``--``3``. Distances of zero or units with no
+        movement return ``0``.
+        """
+        if distance <= 0 or move <= 0:
+            return 0
+        extra_turns = (distance - 1) // move
+        return min(3, extra_turns)
+
     def encode_unit_state(
             self, unit: Unit
     ) -> Tuple[int, int, int, int, int, int]:
-        """
-        Returns a 6-tuple:
-        (my_strength, nearest_enemy_strength, dist_to_enemy,
-         nearest_ally_strength, dist_to_ally, ally_density_bin)
+        """Return a 6-tuple state for ``unit``.
+
+        ``(my_strength, nearest_enemy_strength, eta_to_enemy,
+         nearest_ally_strength, eta_to_ally, ally_density_bin)``
+
+        ``eta_to_enemy`` and ``eta_to_ally`` are estimated additional turns
+        (0--3) to reach the respective target hexes based on the unit's
+        movement factor.
         """
 
         my_strength = unit.get_strength()
@@ -71,23 +90,27 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         if own_hex is None:
             return (my_strength, 0, 0, 0, 0, 0)
 
+        move = unit.get_move()
+
         nearest_enemy = self._board.get_nearest_enemy_unit(unit)
         if nearest_enemy is None or nearest_enemy.get_coords() is None:
             enemy_strength = 0
-            enemy_dist = 0
+            enemy_eta = 0
         else:
             enemy_hex = self._board.get_hex(*nearest_enemy.get_coords())
             enemy_strength = nearest_enemy.get_strength()
             enemy_dist = self._board.hex_distance(own_hex, enemy_hex)
+            enemy_eta = self._distance_to_eta_bin(enemy_dist, move)
 
         nearest_friend = self._board.get_nearest_friendly_unit(unit)
         if nearest_friend is None or nearest_friend.get_coords() is None:
             friend_strength = 0
-            friend_dist = 0
+            friend_eta = 0
         else:
             friend_hex = self._board.get_hex(*nearest_friend.get_coords())
             friend_strength = nearest_friend.get_strength()
             friend_dist = self._board.hex_distance(own_hex, friend_hex)
+            friend_eta = self._distance_to_eta_bin(friend_dist, move)
 
         density = self._ally_density_decayed(
             unit, radius=8, use_exponential=False, lam=2.0
@@ -97,9 +120,9 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         return (
             my_strength,
             enemy_strength,
-            enemy_dist,
+            enemy_eta,
             friend_strength,
-            friend_dist,
+            friend_eta,
             density_bin,
         )
 
