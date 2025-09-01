@@ -207,11 +207,9 @@ class Board:
 
         return False
 
-    def hex_distance(self, friendly_hex, enemy_hex) -> int:
-        """
-        Calculate the hex distance between two hexes taking into account the
-        even-r offset hex grid layout.
-        """
+    @staticmethod
+    def hex_distance(friendly_hex, enemy_hex) -> int:
+        """Calculate the distance between two hexes on an even-r grid."""
         if friendly_hex is None or enemy_hex is None:
             raise ValueError("hex arguments must not be None")
 
@@ -219,10 +217,10 @@ class Board:
             """Convert offset coordinates to cube coordinates (odd-q)."""
             col = hex_obj.column
             row = hex_obj.row
-            x = col
-            z = row - (col - (col & 1)) // 2
-            y = -x - z
-            return x, y, z
+            x_coord = col
+            z_coord = row - (col - (col & 1)) // 2
+            y_coord = -x_coord - z_coord
+            return x_coord, y_coord, z_coord
 
         ax, ay, az = to_cube(friendly_hex)
         bx, by, bz = to_cube(enemy_hex)
@@ -230,10 +228,11 @@ class Board:
         return max(abs(ax - bx), abs(ay - by), abs(az - bz))
 
     def get_nearest_unit(self, unit: Unit, friend: bool) -> Unit | None:
-        """
-        Return the closest unit to `unit` based on faction.
-        If `friend` is True, search same-faction units; otherwise search opposing-faction units.
-        Returns None if no matching unit is found or the starting hex is invalid.
+        """Return the closest unit to ``unit`` based on faction.
+
+        If ``friend`` is True, search same-faction units; otherwise search
+        opposing-faction units. Returns ``None`` if no matching unit is found
+        or the starting hex is invalid.
         """
         if unit is None or unit.get_coords() is None:
             return None
@@ -254,7 +253,7 @@ class Board:
                 continue
 
             # Filter by friend/foe
-            same_faction = (other.get_faction() == own_faction)
+            same_faction = other.get_faction() == own_faction
             if friend and not same_faction:
                 continue
             if not friend and same_faction:
@@ -276,9 +275,8 @@ class Board:
         return self.get_nearest_unit(unit, friend=True)
 
     def get_nearest_enemy_unit(self, unit: Unit) -> Unit | None:
-        """Return the closest opposing-faction unit to `unit` (or None if none)."""
+        """Return the closest opposing-faction unit to ``unit`` or ``None``."""
         return self.get_nearest_unit(unit, friend=False)
-
 
     def path_towards(
         self, unit: Unit, target_hex: Hex, max_steps: int
