@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import UUID
 import uuid
 
@@ -41,8 +42,8 @@ class SampleGameCreator:
             board=board,
         )
 
-        # repo_root = Path(__file__).resolve().parents[3]
-        # q_table_path = repo_root / "battle_agent_rl" / "q_table.json"
+        repo_root = Path(__file__).resolve().parents[3]
+        # q_table_path = repo_root / "battle_agent_rl" / "q_table.pkl"
         # player2 = QLearningPlayer(
         #    name="Player 2",
         #    type=PlayerType.CPU,
@@ -58,6 +59,8 @@ class SampleGameCreator:
             factions=[blue_faction],
             board=board,
         )
+        q_table_path = repo_root / "battle_agent_rl" / "q_multiunit_table.pkl"
+        player2.load_q_table(q_table_path)
 
         red_unit = Unit(
             UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
@@ -91,7 +94,7 @@ class SampleGameCreator:
             "Scout",
             2,
             2,
-            5,
+            6,
         )
         blue_two.set_coords(9, 5)
 

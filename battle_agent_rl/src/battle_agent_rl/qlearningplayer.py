@@ -174,9 +174,32 @@ class QLearningPlayer(RLPlayer):
             return (ActionIntent.HOLD, 0)
         if random.random() < self._epsilon:
             return random.choice(actions)
+
+        # logger.info("Available actions are:")
+        # for a in actions:
+        #     logger.info("  Action: %s", a)
+
         q_values = [self._q_table.get((state, a), 0.0) for a in actions]
+
+        # example_key = (state, (ActionIntent.HOLD, 0))
+        # logger.info("Example key is: %s", example_key)
+
+        # example_q = self._q_table.get(example_key)  # Example access to Q-val
+        # logger.info("Example Q-value is: %s", example_q)
+
+        logger.info("Current state is: %s", state)
+        logger.info("Q-values are:")
+        for a, q in zip(actions, q_values):
+            if q != 0.0:
+                logger.info("  Action: %s, Q-value: %.4f", a, q)
+
         max_q = max(q_values)
         best = [a for a, q in zip(actions, q_values) if q == max_q]
+
+        # logger.info("Best actions are:")
+        # for a in best:
+        #     logger.info("  Action: %s", a)
+
         return random.choice(best)
 
     def update_q(
@@ -240,7 +263,7 @@ class QLearningPlayer(RLPlayer):
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
         # Do not clear _last_actions here so combat_results can also use them
-        self.print_q_table()
+        self.print_q_table(logging.DEBUG)
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
@@ -320,13 +343,24 @@ class QLearningPlayer(RLPlayer):
             )
             logger.info(msg)
 
-    def print_q_table(self) -> None:
-        """Print the Q-table for debugging purposes."""
-        logger.info("Q-table for %s:", self.name)
+    def print_q_table(self, level: int = logging.INFO) -> None:
+        """Print the Q-table for debugging purposes.
+
+        A logging level may be passed (default: logging.INFO). The messages
+        will be emitted using :py:meth:`logging.Logger.log` so callers can
+        choose a different severity (e.g. DEBUG).
+        """
+        # Avoid expensive formatting/sorting when the logger won't emit at
+        # the requested level.
+        if not logger.isEnabledFor(level):
+            return
+
+        logger.log(level, "Q-table for %s:", self.name)
         items = sorted(
             self._q_table.items(), key=lambda item: item[1], reverse=True
         )
         for (state, action), value in items:
-            logger.info(
-                "  State: %s, Action: %s, Q-value: %.4f", state, action, value
+            logger.log(
+                level, "  State: %s, Action: %s, Q-value: %.4f", state, action,
+                value
             )

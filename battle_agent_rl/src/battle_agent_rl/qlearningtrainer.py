@@ -93,7 +93,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
     agent_trainer.train()
     rl_player.print_q_table()
-    rl_player.save_q_table("q_table.json")
+    rl_player.save_q_table("q_table.pkl")
 
 
 if __name__ == "__main__":
