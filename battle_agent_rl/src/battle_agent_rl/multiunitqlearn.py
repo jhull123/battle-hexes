@@ -62,15 +62,32 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
          nearest_ally_strength, dist_to_ally, ally_density_bin)
         """
 
+        my_strength = unit.get_strength()
+        coords = unit.get_coords()
+        if coords is None:
+            return (my_strength, 0, 0, 0, 0, 0)
+
+        own_hex = self._board.get_hex(*coords)
+        if own_hex is None:
+            return (my_strength, 0, 0, 0, 0, 0)
+
         nearest_enemy = self._board.get_nearest_enemy_unit(unit)
-        enemy_hex = self._board.get_hex(
-            nearest_enemy.row, nearest_enemy.column
-        )
-        own_hex = self._board.get_hex(unit.row, unit.column)
+        if nearest_enemy is None or nearest_enemy.get_coords() is None:
+            enemy_strength = 0
+            enemy_dist = 0
+        else:
+            enemy_hex = self._board.get_hex(*nearest_enemy.get_coords())
+            enemy_strength = nearest_enemy.get_strength()
+            enemy_dist = self._board.hex_distance(own_hex, enemy_hex)
+
         nearest_friend = self._board.get_nearest_friendly_unit(unit)
-        friend_hex = self._board.get_hex(
-            nearest_friend.row, nearest_friend.column
-        )
+        if nearest_friend is None or nearest_friend.get_coords() is None:
+            friend_strength = 0
+            friend_dist = 0
+        else:
+            friend_hex = self._board.get_hex(*nearest_friend.get_coords())
+            friend_strength = nearest_friend.get_strength()
+            friend_dist = self._board.hex_distance(own_hex, friend_hex)
 
         density = self._ally_density_decayed(
             unit, radius=8, use_exponential=False, lam=2.0
@@ -78,12 +95,12 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         density_bin = self._bin_ally_density(density)
 
         return (
-            unit.get_strength(),
-            nearest_enemy.get_strength(),
-            self._board.hex_distance(own_hex, enemy_hex),
-            nearest_friend.get_strength(),
-            self._board.hex_distance(own_hex, friend_hex),
-            density_bin
+            my_strength,
+            enemy_strength,
+            enemy_dist,
+            friend_strength,
+            friend_dist,
+            density_bin,
         )
 
     def _ally_density_decayed(
