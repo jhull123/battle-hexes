@@ -255,7 +255,8 @@ class QLearningPlayer(RLPlayer):
         """
         self._turn_count += 1
         reward = (
-            self.calculate_reward() - self._turn_penalty * self._turn_count
+            # self.calculate_reward() - self._turn_penalty * self._turn_count
+            self._turn_count * -0.1
         )
         for unit, state_action in [
             (record[0], (record[1], record[2]))
@@ -280,19 +281,21 @@ class QLearningPlayer(RLPlayer):
         # During the attacker's turn ``_last_actions`` stores the actions.
         attacker = bool(self._last_actions)
         bonus = 1000.0
+        half_bonus = bonus / 2.0
+        double_bonus = bonus * 2.0
 
         reward = 0.0
         for battle in combat_results.get_battles():
             result = battle.get_combat_result()
             combat_award = 0.0
             if result == CombatResult.DEFENDER_ELIMINATED:
-                combat_award += bonus if attacker else -bonus
+                combat_award += double_bonus if attacker else -half_bonus
             elif result == CombatResult.ATTACKER_ELIMINATED:
-                combat_award += -bonus if attacker else bonus
+                combat_award += -half_bonus if attacker else half_bonus
             elif result == CombatResult.EXCHANGE:
-                combat_award += bonus * 0.10
+                combat_award += half_bonus
             else:
-                combat_award += bonus * 0.10
+                combat_award += half_bonus if attacker else 1.0
             logger.info("Combat award is %s for %s", combat_award, result)
             reward += combat_award
 
@@ -329,7 +332,7 @@ class QLearningPlayer(RLPlayer):
                         "Warning: Distance is zero in calculate_reward!"
                     )
 
-        # print(f"Reward for {self.name}: {reward}")
+        logger.info(f"Reward for {self.name}: {reward}")
         return reward
 
     def end_game_cb(self) -> None:
