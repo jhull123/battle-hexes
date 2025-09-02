@@ -98,12 +98,14 @@ class QLearningPlayer(RLPlayer):
             pass
 
     def movement(self) -> List[UnitMovementPlan]:
+        logger.info("")
+        logger.info("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
         for unit in self.own_units(self._board.get_units()):
             state = self.encode_unit_state(unit)
             actions = self.available_actions(unit)
-            chosen = self.choose_action(state, actions)
+            chosen = self.choose_action(unit, state, actions)
             # Store the unit reference so we can update after combat even if it
             # was destroyed.
             self._last_actions[unit.get_id()] = (unit, state, chosen)
@@ -167,6 +169,7 @@ class QLearningPlayer(RLPlayer):
 
     def choose_action(
         self,
+        unit: Unit,
         state: Tuple[int, int, int],
         actions: List[Tuple[ActionIntent, int]],
     ) -> Tuple[ActionIntent, int]:
@@ -175,7 +178,7 @@ class QLearningPlayer(RLPlayer):
         if random.random() < self._epsilon:
             return random.choice(actions)
 
-        logger.info("Current state is: %s", state)
+        logger.info("Current state for unit %s is: %s", str(unit), state)
         logger.info("Available actions are:")
         for a in actions:
             logger.info("  Action: %s", a)
@@ -330,7 +333,7 @@ class QLearningPlayer(RLPlayer):
         return reward
 
     def end_game_cb(self) -> None:
-        self.print_q_table(logging.DEBUG)
+        self.print_q_table(logging.INFO)
         pass
 
     def print_last_actions(self) -> None:

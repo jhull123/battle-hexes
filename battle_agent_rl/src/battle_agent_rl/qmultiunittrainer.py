@@ -83,7 +83,7 @@ def build_players() -> tuple[RandomPlayer, MulitUnitQLearnPlayer, List[Unit]]:
         board=None,  # Board will be set later
     )
 
-    total_units = random.randint(2, 10)
+    total_units = random.randint(2, 5)
     random_count = random.randint(1, total_units - 1)
     rl_count = total_units - random_count
 
@@ -107,7 +107,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
         )
 
     game_factory = GameFactory(
-        board_size=(16, 16),
+        board_size=(10, 10),
         players=[random_player, rl_player],
         units=units,
         randomize_positions=True,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max-turns",
         type=int,
-        default=5,
+        default=10,
         help="maximum number of turns per game",
     )
     args = parser.parse_args()
