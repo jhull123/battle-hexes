@@ -175,9 +175,10 @@ class QLearningPlayer(RLPlayer):
         if random.random() < self._epsilon:
             return random.choice(actions)
 
-        # logger.info("Available actions are:")
-        # for a in actions:
-        #     logger.info("  Action: %s", a)
+        logger.info("Current state is: %s", state)
+        logger.info("Available actions are:")
+        for a in actions:
+            logger.info("  Action: %s", a)
 
         q_values = [self._q_table.get((state, a), 0.0) for a in actions]
 
@@ -187,18 +188,17 @@ class QLearningPlayer(RLPlayer):
         # example_q = self._q_table.get(example_key)  # Example access to Q-val
         # logger.info("Example Q-value is: %s", example_q)
 
-        logger.info("Current state is: %s", state)
         logger.info("Q-values are:")
         for a, q in zip(actions, q_values):
-            if q != 0.0:
-                logger.info("  Action: %s, Q-value: %.4f", a, q)
+            # if q != 0.0:
+            logger.info("  Action: %s, Q-value: %.4f", a, q)
 
         max_q = max(q_values)
         best = [a for a, q in zip(actions, q_values) if q == max_q]
 
-        # logger.info("Best actions are:")
-        # for a in best:
-        #     logger.info("  Action: %s", a)
+        logger.info("Best actions are:")
+        for a in best:
+            logger.info("  Action: %s", a)
 
         return random.choice(best)
 
@@ -330,7 +330,7 @@ class QLearningPlayer(RLPlayer):
         return reward
 
     def end_game_cb(self) -> None:
-        self.print_q_table()
+        self.print_q_table(logging.DEBUG)
         pass
 
     def print_last_actions(self) -> None:

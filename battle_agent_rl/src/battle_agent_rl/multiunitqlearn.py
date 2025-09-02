@@ -12,25 +12,6 @@ from .qlearningplayer import QLearningPlayer
 logger = logging.getLogger(__name__)
 
 
-def _format_unit_state(state) -> str:
-    """Return a human-readable, two-letter-abbrev string for a 6-tuple state.
-
-    Expected state layout:
-    (my_strength, nearest_enemy_strength, eta_to_enemy,
-     nearest_ally_strength, eta_to_ally, ally_density_bin)
-    Values are formatted as zero-padded two-digit integers. If the
-    input is malformed, fall back to the raw representation.
-    """
-    try:
-        s0, s1, s2, s3, s4, s5 = state
-        return (
-            f"MY{int(s0):02d} EN{int(s1):02d} TE{int(s2):02d} "
-            f"AL{int(s3):02d} TA{int(s4):02d} AD{int(s5):02d}"
-        )
-    except Exception:
-        return str(state)
-
-
 class MulitUnitQLearnPlayer(QLearningPlayer):
     """A Q-learning player for multi-unit battles.
 
@@ -173,11 +154,3 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         if x <= 15.0:  # heavy
             return 3
         return 4  # very heavy
-
-    def x_movement_cb(self) -> None:
-        """
-        Called after the player's unit plan has been applied to the board.
-        """
-        for unit in self.own_units(self._board.get_units()):
-            state = self._encode_unit_state(unit)
-            logger.info(_format_unit_state(state))
