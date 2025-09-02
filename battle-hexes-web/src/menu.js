@@ -8,6 +8,8 @@ export class Menu {
   #unitMovesLeftDiv;
   #newGameBtn;
   #gameOverLabel;
+  #autoNewGameChk;
+  #autoReloadScheduled = false;
 
   constructor(game) {
     this.#game = game;
@@ -16,8 +18,14 @@ export class Menu {
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
+    this.#autoNewGameChk = document.getElementById('autoNewGame');
 
     this.#newGameBtn.addEventListener('click', () => location.reload());
+    this.#autoNewGameChk.addEventListener('change', () => {
+      if (this.#game.isGameOver()) {
+        this.#showGameOver();
+      }
+    });
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -160,7 +168,15 @@ export class Menu {
 
   #showGameOver() {
     this.#gameOverLabel.style.display = 'block';
-    this.#newGameBtn.style.display = 'block';
+    if (this.#autoNewGameChk.checked) {
+      this.#newGameBtn.style.display = 'none';
+      if (!this.#autoReloadScheduled) {
+        this.#autoReloadScheduled = true;
+        setTimeout(() => location.reload(), 2000);
+      }
+    } else {
+      this.#newGameBtn.style.display = 'block';
+    }
   }
 
   #hideGameOver() {
