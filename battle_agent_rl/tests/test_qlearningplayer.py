@@ -2,7 +2,11 @@ import unittest
 import uuid
 import os
 
-from battle_agent_rl.qlearningplayer import QLearningPlayer, ActionIntent
+from battle_agent_rl.qlearningplayer import (
+    QLearningPlayer,
+    ActionIntent,
+    ActionMagnitude,
+)
 from battle_hexes_core.combat.combatresult import (
     CombatResult,
     CombatResultData,
@@ -172,7 +176,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
     def test_combat_results_updates_q_table(self):
         state = self.player.encode_unit_state(self.friend)
-        action = (ActionIntent.HOLD, 0)
+        action = (ActionIntent.HOLD, ActionMagnitude.NONE)
         self.player._last_actions = {
             self.friend.get_id(): (self.friend, state, action)
         }
@@ -235,7 +239,9 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         self.board.add_unit(self.enemy, 0, 1)
 
     def test_advance_creates_forward_path(self):
-        plan = self.player.move_plan(self.friend, ActionIntent.ADVANCE, 1)
+        plan = self.player.move_plan(
+            self.friend, ActionIntent.ADVANCE, ActionMagnitude.HALF
+        )
         coords = [(h.row, h.column) for h in plan.path]
         self.assertEqual(coords, [(2, 1), (1, 1)])
 
@@ -243,7 +249,9 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         enemy_hex = self.board.get_hex(0, 1)
         start_hex = self.board.get_hex(2, 1)
         start_dist = Board.hex_distance(start_hex, enemy_hex)
-        plan = self.player.move_plan(self.friend, ActionIntent.RETREAT, 1)
+        plan = self.player.move_plan(
+            self.friend, ActionIntent.RETREAT, ActionMagnitude.HALF
+        )
         end_hex = plan.path[-1]
         end_dist = Board.hex_distance(end_hex, enemy_hex)
         self.assertGreaterEqual(end_dist, start_dist)
@@ -271,7 +279,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
     def test_save_and_load(self):
         player = self.build_player()
         state = (1, 2, 3)
-        action = (ActionIntent.HOLD, 0)
+        action = (ActionIntent.HOLD, ActionMagnitude.NONE)
         player._q_table[(state, action)] = 4.2
         player.save_q_table(self.file_path)
 

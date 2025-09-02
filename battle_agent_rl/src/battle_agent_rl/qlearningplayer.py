@@ -25,6 +25,12 @@ class ActionIntent(Enum):
     HOLD = "HOLD"
 
 
+class ActionMagnitude(Enum):
+    FULL = "FULL"
+    HALF = "HALF"
+    NONE = "NONE"
+
+
 class QLearningPlayer(RLPlayer):
     """
     Simple Q-learning agent.
@@ -37,17 +43,18 @@ class QLearningPlayer(RLPlayer):
         (unit, state, action)
             unit: Unit object reference
             state: (my_strength, nearest_enemy_strength, distance)
-            action: (ActionIntent, magnitude)
+            action: (ActionIntent, ActionMagnitude)
 
     actions ∈ { "ADVANCE", "RETREAT", "HOLD" }
-    magnitude ∈ { 0, 1, 2, ..., unit.get_move() }
+    magnitude ∈ { ``FULL``, ``HALF``, ``NONE`` }
+        ``NONE`` is only used with the ``HOLD`` intent
 
     _q_table
     Q-value table that maps each (state, action) pair to a learned value
     estimate.
     key: Tuple[
         state: Tuple[int, int, int],
-        action: Tuple[ActionIntent, int]
+        action: Tuple[ActionIntent, ActionMagnitude]
     ]
     value: float  # Estimated Q-value for taking that action in that state
 
@@ -120,16 +127,18 @@ class QLearningPlayer(RLPlayer):
             self,
             unit: Unit,
             action: ActionIntent,
-            magnitude: int
+            magnitude: ActionMagnitude
             ) -> UnitMovementPlan:
         """
         Create a movement plan for the unit based on the chosen action and
         magnitude.
-        ADVANCE: move toward the nearest enemy hex by the specified
-                 magnitude.
-        RETREAT: move away from the nearest enemy hex by the specified
-                 magnitude.
-        HOLD: do not move.
+
+        ``ADVANCE``: move toward the nearest enemy hex.
+        ``RETREAT``: move away from the nearest enemy hex.
+        ``HOLD``: do not move.
+
+        ``FULL`` uses all movement points, ``HALF`` uses half (floored) and
+        ``NONE`` results in no movement.
         """
         board = self._board
         start_coords = unit.get_coords()
@@ -140,7 +149,13 @@ class QLearningPlayer(RLPlayer):
         if start_hex is None:
             return UnitMovementPlan(unit, [])
 
-        if action == ActionIntent.HOLD or magnitude <= 0:
+        move_points = unit.get_move()
+        if magnitude == ActionMagnitude.HALF:
+            move_points = move_points // 2
+        elif magnitude == ActionMagnitude.NONE:
+            move_points = 0
+
+        if action == ActionIntent.HOLD or move_points <= 0:
             return UnitMovementPlan(unit, [start_hex])
 
         enemy = board.get_nearest_enemy_unit(unit)
@@ -150,31 +165,35 @@ class QLearningPlayer(RLPlayer):
         enemy_hex = board.get_hex(*enemy.get_coords())
 
         if action == ActionIntent.ADVANCE:
-            path = board.path_towards(unit, enemy_hex, magnitude)
+            path = board.path_towards(unit, enemy_hex, move_points)
         else:  # RETREAT
-            path = board.path_away_from(unit, enemy_hex, magnitude)
+            path = board.path_away_from(unit, enemy_hex, move_points)
 
         if not path:
             path = [start_hex]
 
         return UnitMovementPlan(unit, path)
 
-    def available_actions(self, unit: Unit) -> List[Tuple[ActionIntent, int]]:
-        actions = [(ActionIntent.HOLD, 0)]
+    def available_actions(
+        self, unit: Unit
+    ) -> List[Tuple[ActionIntent, ActionMagnitude]]:
+        actions = [(ActionIntent.HOLD, ActionMagnitude.NONE)]
         move = unit.get_move()
-        for i in range(1, move + 1):
-            actions.append((ActionIntent.ADVANCE, i))
-            actions.append((ActionIntent.RETREAT, i))
+        if move > 0:
+            actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
+            actions.append((ActionIntent.ADVANCE, ActionMagnitude.FULL))
+            actions.append((ActionIntent.RETREAT, ActionMagnitude.HALF))
+            actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
         return actions
 
     def choose_action(
         self,
         unit: Unit,
         state: Tuple[int, int, int],
-        actions: List[Tuple[ActionIntent, int]],
-    ) -> Tuple[ActionIntent, int]:
+        actions: List[Tuple[ActionIntent, ActionMagnitude]],
+    ) -> Tuple[ActionIntent, ActionMagnitude]:
         if not actions:
-            return (ActionIntent.HOLD, 0)
+            return (ActionIntent.HOLD, ActionMagnitude.NONE)
         if random.random() < self._epsilon:
             return random.choice(actions)
 
@@ -185,7 +204,7 @@ class QLearningPlayer(RLPlayer):
 
         q_values = [self._q_table.get((state, a), 0.0) for a in actions]
 
-        # example_key = (state, (ActionIntent.HOLD, 0))
+        # example_key = (state, (ActionIntent.HOLD, ActionMagnitude.NONE))
         # logger.info("Example key is: %s", example_key)
 
         # example_q = self._q_table.get(example_key)  # Example access to Q-val
@@ -208,10 +227,10 @@ class QLearningPlayer(RLPlayer):
     def update_q(
         self,
         state: Tuple[int, int, int],
-        action: Tuple[ActionIntent, int],
+        action: Tuple[ActionIntent, ActionMagnitude],
         reward: float,
         next_state: Tuple[int, int, int],
-        next_actions: List[Tuple[ActionIntent, int]],
+        next_actions: List[Tuple[ActionIntent, ActionMagnitude]],
     ) -> None:
         next_q_values = [
             self._q_table.get((next_state, a), 0.0) for a in next_actions
