@@ -20,8 +20,21 @@ export class Menu {
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
 
+    // Initialize checkbox state from URL param
+    const params = new URLSearchParams(window.location.search);
+    this.#autoNewGameChk.checked = params.get('autoNewGame') === '1';
+
     this.#newGameBtn.addEventListener('click', () => location.reload());
     this.#autoNewGameChk.addEventListener('change', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (this.#autoNewGameChk.checked) {
+        params.set('autoNewGame', '1');
+      } else {
+        params.delete('autoNewGame');
+      }
+      const qs = params.toString();
+      history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+
       if (this.#game.isGameOver()) {
         this.#showGameOver();
       }
