@@ -1,3 +1,5 @@
+from itertools import combinations
+
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.combat.combatresult import (
     CombatResult,
@@ -91,12 +93,40 @@ class Combat:
                             CombatResult.DEFENDER_ELIMINATED
                         )
             case CombatResult.EXCHANGE:
-                self.board.remove_units(attackers + defenders)
+                defense_factor = sum(
+                    unit.get_defense() for unit in defenders
+                )
+                attackers_to_remove = self._attackers_to_remove(
+                    attackers,
+                    defense_factor,
+                )
+                self.board.remove_units(attackers_to_remove + defenders)
             case _:
                 raise Exception(
                     'Unhandled combat result:',
-                    combat_result.get_combat_result()
+                    combat_result.get_combat_result(),
                 )
+
+    def _attackers_to_remove(self, attackers, defense_factor):
+        """Return subset of attackers to remove for an exchange."""
+        best_subset = list(attackers)
+        best_total = sum(u.get_attack() for u in attackers)
+        for size in range(1, len(attackers) + 1):
+            for combo in combinations(attackers, size):
+                total = sum(u.get_attack() for u in combo)
+                if total >= defense_factor:
+                    if (
+                        len(combo) < len(best_subset)
+                        or (
+                            len(combo) == len(best_subset)
+                            and total < best_total
+                        )
+                    ):
+                        best_subset = list(combo)
+                        best_total = total
+            if len(best_subset) == size:
+                break
+        return best_subset
 
     def find_combat(self) -> list:
         results = []
