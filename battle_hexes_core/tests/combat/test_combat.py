@@ -118,6 +118,39 @@ class TestCombat(unittest.TestCase):
 
         self.assertEqual(0, len(self.board.get_units()))
 
+    def test_find_combat_includes_all_adjacent_units(self):
+        red_unit2 = Unit(
+            id=uuid.uuid4(),
+            name='Red Unit 2',
+            faction=self.red_faction,
+            player=self.red_player,
+            type='Infantry',
+            attack=3,
+            defense=3,
+            move=4,
+        )
+        blue_unit2 = Unit(
+            id=uuid.uuid4(),
+            name='Blue Unit 2',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Recon',
+            attack=2,
+            defense=2,
+            move=6,
+        )
+
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(red_unit2, 7, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.board.add_unit(blue_unit2, 6, 6)
+
+        battles = self.combat.find_combat()
+        self.assertEqual(1, len(battles))
+        attackers, defenders = battles[0]
+        self.assertCountEqual(attackers, [self.red_unit, red_unit2])
+        self.assertCountEqual(defenders, [self.blue_unit, blue_unit2])
+
     def test_a_back_2_from_lower_left_moves_attacker(self):
         self.board.add_unit(self.red_unit, 4, 4)
         self.board.add_unit(self.blue_unit, 3, 5)

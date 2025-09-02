@@ -16,28 +16,31 @@ class Combat:
 
     def resolve_combat(self):
         combat_results = CombatResults()
-        for battle_participants in self.find_combat():
+        for attackers, defenders in self.find_combat():
+            if not attackers or not defenders:
+                continue
             if (
-                battle_participants[0].get_coords() is None
-                or battle_participants[1].get_coords() is None
+                any(a.get_coords() is None for a in attackers)
+                or any(d.get_coords() is None for d in defenders)
             ):
                 # A participant may have been removed earlier in the turn
-                # (e.g. by another combat). Skip invalid pairs.
+                # (e.g. by another combat). Skip invalid groups.
                 continue
-            battle_result = self.__resolve_combat(battle_participants)
+            battle_result = self.__resolve_combat((attackers, defenders))
             combat_results.add_battle(battle_result)
         for player in self.game.get_players():
             player.combat_results(combat_results)
         return combat_results
 
     def __resolve_combat(self, battle_participants) -> CombatResultData:
-        attack_factor = battle_participants[0].get_attack()
-        defense_factor = battle_participants[1].get_defense()
+        attackers, defenders = battle_participants
+        attack_factor = sum(unit.get_attack() for unit in attackers)
+        defense_factor = sum(unit.get_defense() for unit in defenders)
         combat_result = self.combat_solver.solve_combat(
             attack_factor,
             defense_factor
         )
-        self.__update_board_for_result(battle_participants, combat_result)
+        self.__update_board_for_result((attackers, defenders), combat_result)
         return combat_result
 
     def __update_board_for_result(
@@ -45,43 +48,50 @@ class Combat:
             battle_participants,
             combat_result: CombatResultData
     ) -> None:
+        attackers, defenders = battle_participants
         if (
-            battle_participants[0].get_coords() is None
-            or battle_participants[1].get_coords() is None
+            any(a.get_coords() is None for a in attackers)
+            or any(d.get_coords() is None for d in defenders)
         ):
-            # One or both units no longer occupy the board. Nothing to update.
+            # One or more units no longer occupy the board. Nothing to update.
             return
         match combat_result.get_combat_result():
             case CombatResult.ATTACKER_ELIMINATED:
-                self.board.remove_units(battle_participants[0])
+                self.board.remove_units(attackers)
             case CombatResult.ATTACKER_RETREAT_2:
-                battle_participants[0].forced_move(
-                    battle_participants[1].get_coords(),
-                    2
-                )
-                if not self.board.is_in_bounds(
-                        battle_participants[0].row,
-                        battle_participants[0].column):
-                    self.board.remove_units(battle_participants[0])
-                    combat_result.combat_result = (
-                        CombatResult.ATTACKER_ELIMINATED
-                    )
+                origin = defenders[0].get_coords()
+                removed = []
+                for attacker in attackers:
+                    attacker.forced_move(origin, 2)
+                    if not self.board.is_in_bounds(
+                            attacker.row, attacker.column
+                    ):
+                        removed.append(attacker)
+                if removed:
+                    self.board.remove_units(removed)
+                    if len(removed) == len(attackers):
+                        combat_result.combat_result = (
+                            CombatResult.ATTACKER_ELIMINATED
+                        )
             case CombatResult.DEFENDER_ELIMINATED:
-                self.board.remove_units(battle_participants[1])
+                self.board.remove_units(defenders)
             case CombatResult.DEFENDER_RETREAT_2:
-                battle_participants[1].forced_move(
-                    battle_participants[0].get_coords(),
-                    2
-                )
-                if not self.board.is_in_bounds(
-                        battle_participants[1].row,
-                        battle_participants[1].column):
-                    self.board.remove_units(battle_participants[1])
-                    combat_result.combat_result = (
-                        CombatResult.DEFENDER_ELIMINATED
-                    )
+                origin = attackers[0].get_coords()
+                removed = []
+                for defender in defenders:
+                    defender.forced_move(origin, 2)
+                    if not self.board.is_in_bounds(
+                            defender.row, defender.column
+                    ):
+                        removed.append(defender)
+                if removed:
+                    self.board.remove_units(removed)
+                    if len(removed) == len(defenders):
+                        combat_result.combat_result = (
+                            CombatResult.DEFENDER_ELIMINATED
+                        )
             case CombatResult.EXCHANGE:
-                self.board.remove_units(battle_participants)
+                self.board.remove_units(attackers + defenders)
             case _:
                 raise Exception(
                     'Unhandled combat result:',
@@ -89,18 +99,41 @@ class Combat:
                 )
 
     def find_combat(self) -> list:
-        results = list()
+        results = []
+        units = self.board.get_units()
+        visited: set[object] = set()
 
-        for unit in self.board.get_units():
-            for other_unit in self.board.get_units():
-                if not self.attacking_player.has_faction(unit.get_faction()):
-                    # the unit is not an attacker
+        for unit in units:
+            if unit in visited:
+                continue
+
+            stack = [unit]
+            component = []
+            while stack:
+                current = stack.pop()
+                if current in visited:
                     continue
-                if self.attacking_player.has_faction(other_unit.get_faction()):
-                    # the other unit is not an opponent
-                    continue
-                if unit.is_adjacent(other_unit):
-                    results.append((unit, other_unit))
+                visited.add(current)
+                component.append(current)
+                for other in units:
+                    if other in visited:
+                        continue
+                    if (
+                        current.get_coords() == other.get_coords()
+                        or current.is_adjacent(other)
+                    ):
+                        stack.append(other)
+
+            attackers = [
+                u for u in component
+                if self.attacking_player.has_faction(u.get_faction())
+            ]
+            defenders = [
+                u for u in component
+                if not self.attacking_player.has_faction(u.get_faction())
+            ]
+            if attackers and defenders:
+                results.append((attackers, defenders))
 
         return results
 
