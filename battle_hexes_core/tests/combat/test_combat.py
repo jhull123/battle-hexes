@@ -118,6 +118,28 @@ class TestCombat(unittest.TestCase):
 
         self.assertEqual(0, len(self.board.get_units()))
 
+    def test_exchange_only_eliminates_needed_attackers(self):
+        red_unit2 = Unit(
+            id=uuid.uuid4(),
+            name='Red Unit 2',
+            faction=self.red_faction,
+            player=self.red_player,
+            type='Infantry',
+            attack=2,
+            defense=2,
+            move=4,
+        )
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(red_unit2, 6, 6)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.combat.set_static_die_roll(2)
+
+        self.combat.resolve_combat()
+
+        units = self.board.get_units()
+        self.assertEqual(1, len(units))
+        self.assertEqual(self.red_unit, units[0])
+
     def test_find_combat_includes_all_adjacent_units(self):
         red_unit2 = Unit(
             id=uuid.uuid4(),
