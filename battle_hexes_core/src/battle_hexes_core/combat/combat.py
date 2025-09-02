@@ -131,9 +131,19 @@ class Combat:
     def find_combat(self) -> list:
         results = []
         units = self.board.get_units()
+        engaged_units = [
+            u for u in units
+            if any(
+                (
+                    u.get_coords() == other.get_coords()
+                    or u.is_adjacent(other)
+                ) and not u.is_friendly(other)
+                for other in units
+            )
+        ]
         visited: set[object] = set()
 
-        for unit in units:
+        for unit in engaged_units:
             if unit in visited:
                 continue
 
@@ -145,7 +155,7 @@ class Combat:
                     continue
                 visited.add(current)
                 component.append(current)
-                for other in units:
+                for other in engaged_units:
                     if other in visited:
                         continue
                     if (
