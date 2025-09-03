@@ -87,11 +87,11 @@ class QLearningPlayer(RLPlayer):
     ) -> None:
         """
         Initialize a (Q-learning) player.
-        
+
             Args:
             name (str): Human-readable name for the player (used in logs/UI).
             type (PlayerType): What kind of player this is (e.g., HUMAN, AI).
-            factions (List[Faction]): One or more factions this player 
+            factions (List[Faction]): One or more factions this player
             controls.
             board (Board): The game board instance the player will interact
                 with.
@@ -106,7 +106,7 @@ class QLearningPlayer(RLPlayer):
                 action); with probability 1−ε it exploits the best known
                 action. Default: 0.1.
             turn_penalty (float, optional): Per-turn negative reward applied to
-                discourage stalling and incentivize faster resolution. 
+                discourage stalling and incentivize faster resolution.
                 Typically a small positive number that is subtracted each turn.
                 Default: 0.1.
         """
@@ -126,7 +126,7 @@ class QLearningPlayer(RLPlayer):
         """Disable learning for the agent."""
         self._learn = False
         self._alpha = 0.0
-    
+
     def disable_exploration(self) -> None:
         """Disable exploration for the agent."""
         self._explore = False
@@ -275,7 +275,7 @@ class QLearningPlayer(RLPlayer):
     ) -> None:
         if not self._learn:
             return
-        
+
         next_q_values = [
             self._q_table.get((next_state, a), 0.0) for a in next_actions
         ]
