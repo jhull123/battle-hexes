@@ -71,6 +71,9 @@ class QLearningPlayer(RLPlayer):
     _last_actions: dict = PrivateAttr()
     _q_table: dict = PrivateAttr()
 
+    _learn = PrivateAttr()
+    _explore = PrivateAttr()
+
     def __init__(
         self,
         name: str,
@@ -82,6 +85,32 @@ class QLearningPlayer(RLPlayer):
         epsilon: float = 0.1,
         turn_penalty: float = 0.1,
     ) -> None:
+        """
+        Initialize a (Q-learning) player.
+        
+            Args:
+            name (str): Human-readable name for the player (used in logs/UI).
+            type (PlayerType): What kind of player this is (e.g., HUMAN, AI).
+            factions (List[Faction]): One or more factions this player 
+            controls.
+            board (Board): The game board instance the player will interact
+                with.
+            alpha (float, optional): Learning rate ∈ [0, 1]. Higher values make
+                new rewards overwrite prior estimates more aggressively.
+                Default: 0.1.
+            gamma (float, optional): Discount factor ∈ [0, 1] for future
+                rewards. 0 emphasizes immediate rewards; values near 1 value
+                long-term return. Default: 0.15.
+            epsilon (float, optional): Exploration rate ∈ [0, 1] for ε-greedy
+                action selection. With probability ε the agent explores (random
+                action); with probability 1−ε it exploits the best known
+                action. Default: 0.1.
+            turn_penalty (float, optional): Per-turn negative reward applied to
+                discourage stalling and incentivize faster resolution. 
+                Typically a small positive number that is subtracted each turn.
+                Default: 0.1.
+        """
+
         super().__init__(name=name, type=type, factions=factions, board=board)
         self._alpha = alpha
         self._gamma = gamma
@@ -90,6 +119,18 @@ class QLearningPlayer(RLPlayer):
         self._turn_count = 0
         self._q_table = {}
         self._last_actions = {}
+        self._learn = True
+        self._explore = True
+
+    def disable_learning(self) -> None:
+        """Disable learning for the agent."""
+        self._learn = False
+        self._alpha = 0.0
+    
+    def disable_exploration(self) -> None:
+        """Disable exploration for the agent."""
+        self._explore = False
+        self._epsilon = 0.0
 
     def save_q_table(self, file_path: str) -> None:
         """Save the internal Q-table to ``file_path`` using pickle."""
@@ -232,6 +273,9 @@ class QLearningPlayer(RLPlayer):
         next_state: Tuple[int, int, int],
         next_actions: List[Tuple[ActionIntent, ActionMagnitude]],
     ) -> None:
+        if not self._learn:
+            return
+        
         next_q_values = [
             self._q_table.get((next_state, a), 0.0) for a in next_actions
         ]

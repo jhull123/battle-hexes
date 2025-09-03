@@ -34,8 +34,15 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         type: PlayerType,
         factions: List[Faction],
         board: Board,
+        alpha: float = 0.1,
+        gamma: float = 0.15,
+        epsilon: float = 0.1,
+        turn_penalty: float = 0.1,
     ) -> None:
-        super().__init__(name=name, type=type, factions=factions, board=board)
+        super().__init__(
+            name=name, type=type, factions=factions, board=board, alpha=alpha,
+            gamma=gamma, epsilon=epsilon, turn_penalty=turn_penalty
+        )
 
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
         """Convert a hex distance to an ETA bin based on ``move``.

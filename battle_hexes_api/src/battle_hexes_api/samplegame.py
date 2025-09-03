@@ -58,6 +58,7 @@ class SampleGameCreator:
             type=PlayerType.CPU,
             factions=[blue_faction],
             board=board,
+            epsilon=0.0,
         )
         q_table_path = repo_root / "battle_agent_rl" / "q_multiunit_table.pkl"
         player2.load_q_table(q_table_path)
