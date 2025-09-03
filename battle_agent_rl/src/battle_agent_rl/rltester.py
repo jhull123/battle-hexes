@@ -118,7 +118,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     exchanges = game_results.count_exchanges()
     total = wins + losses + draws + exchanges
     pct = (lambda c: (c / total * 100) if total else 0.0)
-    # numeric percentage values (used for score calculation) and formatted strings
+    # numeric percentage values and formatted strings for score calculation
     wins_pct = pct(wins)
     losses_pct = pct(losses)
     draws_pct = pct(draws)
@@ -133,7 +133,10 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     print(f"{'Wins':<9}: {wins:>3} ({pct_strs['Wins']:>{pct_width}})")
     print(f"{'Losses':<9}: {losses:>3} ({pct_strs['Losses']:>{pct_width}})")
     print(f"{'Draws':<9}: {draws:>3} ({pct_strs['Draws']:>{pct_width}})")
-    print(f"{'Exchanges':<9}: {exchanges:>3} ({pct_strs['Exchanges']:>{pct_width}})")
+    print(
+        f"{'Exchanges':<9}: {exchanges:>3} "
+        f"({pct_strs['Exchanges']:>{pct_width}})"
+    )
 
     # score based on percentage points:
     # +2 points per win percentage point, -2 per loss percentage point,

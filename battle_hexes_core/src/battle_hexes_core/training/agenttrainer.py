@@ -4,7 +4,6 @@ import logging
 
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.gameplayer import GamePlayer
-from typing import Tuple
 
 
 logger = logging.getLogger(__name__)
@@ -27,24 +26,29 @@ class AgentTrainer:
         for episode in range(self.episodes):
             game = self.gamefactory.create_game()
             logger.info("")
-            logger.info("Starting game %d/%d", episode + 1, self.episodes)
+            logger.info(
+                "Starting game %d/%d", episode + 1, self.episodes
+            )
             GamePlayer(game).play(max_turns=self.max_turns)
             results.add_result(GameResult(self.evaluate_game(game), 1))
         return results
-            
+
     def evaluate_game(self, game) -> GameOutcome:
         if not game.is_game_over():
             return GameOutcome.DRAW
-        
+
         # Gather active units on the board
-        units = [u for u in game.get_board().get_units() if u.get_coords() is not None]
+        units = [
+            u for u in game.get_board().get_units()
+            if u.get_coords() is not None
+        ]
 
         players = game.get_players()
-        player1, player2 = players[0], players[1]
+        player2 = players[1]
 
-        # p1_count = sum(1 for u in units if u.player == player1)
+        # p1_count = sum(1 for u in units if u.player == players[0])
         p2_count = sum(1 for u in units if u.player == player2)
-        
+
         # Game is over: decide outcome from player2's perspective
         # TODO hard-coded unit counts
         if p2_count == 2:
@@ -53,7 +57,7 @@ class AgentTrainer:
             outcome = GameOutcome.LOSS
         else:
             outcome = GameOutcome.EXCHANGE
-        
+
         return outcome
 
 
@@ -90,7 +94,10 @@ class GameResults:
         return len([r for r in self.results if r.outcome == GameOutcome.DRAW])
 
     def count_exchanges(self):
-        return len([r for r in self.results if r.outcome == GameOutcome.EXCHANGE])
+        return len([
+            r for r in self.results
+            if r.outcome == GameOutcome.EXCHANGE
+        ])
 
     def get_avg_turns(self):
         if not self.results:
