@@ -46,7 +46,7 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
             "Inf",
             2,
             2,
-            3,
+            1,
         )
         self.enemy = Unit(
             uuid.uuid4(),
@@ -80,7 +80,7 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
             self.enemy.get_strength(),
             0,  # eta to enemy (distance 1, move 3)
             self.friend2.get_strength(),
-            0,  # eta to friend (distance 2, move 3)
+            2,  # eta from friend to enemy (distance 3, move 1)
             1,
         )
         self.assertEqual(state, expected)
@@ -93,7 +93,7 @@ class TestMultiUnitQLearnPlayer(unittest.TestCase):
             0,
             0,
             self.friend2.get_strength(),
-            0,  # eta to friend
+            0,  # eta from friend to enemy (no enemy)
             1,
         )
         self.assertEqual(state, expected)

@@ -18,9 +18,10 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
     Unary state ``s_i`` (order matters!)
     ``(my_str_bin, nearest_enemy_str_bin, eta_enemy_bin,``
     `` nearest_ally_str_bin, eta_ally_bin, ally_density_bin)``
-    ``eta_*`` values represent the estimated additional turns (0--3) the
-    unit would need to reach the corresponding hex based on its movement
-    factor.
+    ``eta_enemy_bin`` is the estimated additional turns (0--3) the unit
+    would need to reach the nearest enemy based on its movement factor.
+    ``eta_ally_bin`` measures the turns the nearest ally would need to
+    reach that same enemy using the ally's movement factor.
 
     Pairwise state ``s_ij`` (symmetric; order matters only in the action
     pair)
@@ -62,11 +63,13 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         """Return a 6-tuple state for ``unit``.
 
         ``(my_strength, nearest_enemy_strength, eta_to_enemy,
-         nearest_ally_strength, eta_to_ally, ally_density_bin)``
+         nearest_ally_strength, eta_ally_to_enemy, ally_density_bin)``
 
-        ``eta_to_enemy`` and ``eta_to_ally`` are estimated additional turns
-        (0--3) to reach the respective target hexes based on the unit's
-        movement factor.
+        ``eta_to_enemy`` is the number of additional turns (0--3) the
+        unit would need to reach its nearest enemy based on the unit's
+        movement factor. ``eta_ally_to_enemy`` uses the nearest ally's
+        movement factor to estimate the turns required for that ally to
+        reach the unit's nearest enemy.
         """
 
         my_strength = unit.get_strength()
@@ -81,6 +84,7 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
         move = unit.get_move()
 
         nearest_enemy = self._board.get_nearest_enemy_unit(unit)
+        enemy_hex = None
         if nearest_enemy is None or nearest_enemy.get_coords() is None:
             enemy_strength = 0
             enemy_eta = 0
@@ -95,10 +99,15 @@ class MulitUnitQLearnPlayer(QLearningPlayer):
             friend_strength = 0
             friend_eta = 0
         else:
-            friend_hex = self._board.get_hex(*nearest_friend.get_coords())
             friend_strength = nearest_friend.get_strength()
-            friend_dist = self._board.hex_distance(own_hex, friend_hex)
-            friend_eta = self._distance_to_eta_bin(friend_dist, move)
+            if enemy_hex is None:
+                friend_eta = 0
+            else:
+                friend_hex = self._board.get_hex(*nearest_friend.get_coords())
+                friend_dist = self._board.hex_distance(friend_hex, enemy_hex)
+                friend_eta = self._distance_to_eta_bin(
+                    friend_dist, nearest_friend.get_move()
+                )
 
         density = self._ally_density_decayed(
             unit, radius=8, use_exponential=False, lam=2.0
