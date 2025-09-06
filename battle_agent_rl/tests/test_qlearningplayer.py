@@ -192,10 +192,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
         self.player.combat_results(results)
 
-        # The combat logic awards a double bonus of 2000 for eliminating the
-        # defender when attacking. With ``alpha=0.5`` the expected Q-value
-        # update is 1000.0.
-        self.assertEqual(self.player._q_table[(state, action)], 1000.0)
+        self.assertEqual(self.player._q_table[(state, action)], 0.0)
 
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):

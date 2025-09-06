@@ -338,28 +338,43 @@ class QLearningPlayer(RLPlayer):
         The board object is also updated at this point with the results of the
         player's movement plan.
         """
-        from battle_hexes_core.combat.combatresult import CombatResult
 
         # Determine if this player was the attacker.
         # During the attacker's turn ``_last_actions`` stores the actions.
-        attacker = bool(self._last_actions)
+        # attacker = bool(self._last_actions)
         bonus = 1000.0
         half_bonus = bonus / 2.0
         double_bonus = bonus * 2.0
 
         reward = 0.0
         for battle in combat_results.get_battles():
-            result = battle.get_combat_result()
             combat_award = 0.0
-            if result == CombatResult.DEFENDER_ELIMINATED:
-                combat_award += double_bonus if attacker else -half_bonus
-            elif result == CombatResult.ATTACKER_ELIMINATED:
-                combat_award += -half_bonus if attacker else half_bonus
-            elif result == CombatResult.EXCHANGE:
-                combat_award += half_bonus
-            else:
-                combat_award += half_bonus if attacker else 1.0
-            logger.info("Combat award is %s for %s", combat_award, result)
+            match battle.get_odds():
+                case (1, 7) | (1, 6) | (1, 5) | (1, 4) | (1, 3):
+                    combat_award = -bonus
+                case (1, 2):
+                    combat_award = -half_bonus
+                case (1, 1):
+                    combat_award = 0.0
+                case (2, 1):
+                    combat_award = bonus
+                case (3, 1) | (4, 1) | (5, 1) | (6, 1) | (7, 1):
+                    combat_award = double_bonus
+
+            result = battle.get_combat_result()
+            # TODO consider giving a results bonus
+            # if result == CombatResult.DEFENDER_ELIMINATED:
+            #     combat_award += double_bonus if attacker else -half_bonus
+            # elif result == CombatResult.ATTACKER_ELIMINATED:
+            #     combat_award += -half_bonus if attacker else half_bonus
+            # elif result == CombatResult.EXCHANGE:
+            #     combat_award += half_bonus
+            # else:
+            #     combat_award += half_bonus if attacker else 1.0
+            logger.info(
+                "Combat award is %s for %s at %s odds",
+                combat_award, result, battle.get_odds()
+            )
             reward += combat_award
 
         for unit, state_action in [
