@@ -2,8 +2,7 @@ from pathlib import Path
 from uuid import UUID
 import uuid
 
-# from battle_agent_rl.qlearningplayer import QLearningPlayer
-from battle_agent_rl.multiunitqlearn import MulitUnitQLearnPlayer
+from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.gamefactory import GameFactory
@@ -43,24 +42,15 @@ class SampleGameCreator:
         )
 
         repo_root = Path(__file__).resolve().parents[3]
-        # q_table_path = repo_root / "battle_agent_rl" / "q_table.pkl"
-        # player2 = QLearningPlayer(
-        #    name="Player 2",
-        #    type=PlayerType.CPU,
-        #    factions=[blue_faction],
-        #    board=board,
-        #    epsilon=0.0,
-        # )
-        # player2.load_q_table(q_table_path)
 
-        player2 = MulitUnitQLearnPlayer(
+        player2 = QLearningPlayer(
             name="Player 2",
             type=PlayerType.CPU,
             factions=[blue_faction],
             board=board,
             epsilon=0.0,
         )
-        q_table_path = repo_root / "battle_agent_rl" / "q_multiunit_table.pkl"
+        q_table_path = repo_root / "battle_agent_rl" / "q_table.pkl"
         player2.load_q_table(q_table_path)
 
         red_unit = Unit(

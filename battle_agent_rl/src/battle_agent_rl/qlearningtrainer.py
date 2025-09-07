@@ -1,7 +1,10 @@
-"""Utility to train a simple Q-learning agent against a random opponent."""
+"""Train a multi-unit Q-learning agent on the SampleGame scenario."""
 
 import argparse
+import logging
 import uuid
+from uuid import UUID
+from pathlib import Path
 from typing import List
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer
@@ -13,92 +16,110 @@ from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
 
+# module logger
+logger = logging.getLogger(__name__)
+
+
 def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
-    """Create players and their starting units."""
-    random_player_factions = [
-        Faction(id=uuid.uuid4(), name="Random Faction", color="red")
-    ]
+    """Create players and units matching ``SampleGameCreator``."""
+    red_faction = Faction(
+        id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
+        name="Red Faction",
+        color="#C81010",
+    )
+
+    blue_faction = Faction(
+        id=UUID("38400000-8cf0-11bd-b23e-10b96e4ef00d", version=4),
+        name="Blue Faction",
+        color="#4682B4",
+    )
 
     random_player = RandomPlayer(
-        name="Random Player",
+        name="Player 1",
         type=PlayerType.CPU,
-        factions=random_player_factions,
-        board=None,  # Board will be set later
+        factions=[red_faction],
+        board=None,
     )
-
-    random_unit = Unit(
-        id=uuid.uuid4(),
-        name="Random Unit",
-        faction=random_player_factions[0],
-        player=random_player,
-        type="Infantry",
-        attack=2,
-        defense=2,
-        move=6,
-        row=0,
-        column=0,
-    )
-
-    rl_player_factions = [
-        Faction(id=uuid.uuid4(), name="RL Faction", color="blue")
-    ]
 
     rl_player = QLearningPlayer(
-        name="Q Learning Player",
+        name="Player 2",
         type=PlayerType.CPU,
-        factions=rl_player_factions,
-        board=None,  # Board will be set later
+        factions=[blue_faction],
+        board=None,
     )
 
-    rl_unit_1 = Unit(
-        id=uuid.uuid4(),
-        name="RL Unit 1",
-        faction=rl_player_factions[0],
-        player=rl_player,
-        type="Infantry",
-        attack=4,
-        defense=4,
-        move=4,
-        row=9,
-        column=9,
+    red_unit = Unit(
+        UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
+        "Red Unit",
+        red_faction,
+        random_player,
+        "Infantry",
+        2,
+        2,
+        6,
     )
+    red_unit.set_coords(2, 2)
 
-    # rl_unit_2 = Unit(
-    #    id=uuid.uuid4(),
-    #     name="RL Unit 2",
-    #     faction=rl_player_factions[0],
-    #     player=rl_player,
-    #     type="Heavy Infantry",
-    #     attack=100,
-    #     defense=40,
-    #     move=5,
-    #     row=0,
-    #     column=9,
-    # )
+    blue_unit = Unit(
+        UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
+        "Blue Unit",
+        blue_faction,
+        rl_player,
+        "Infantry",
+        4,
+        4,
+        4,
+    )
+    blue_unit.set_coords(8, 9)
 
-    return random_player, rl_player, [random_unit, rl_unit_1]
+    blue_two = Unit(
+        uuid.uuid4(),
+        "Blue Two",
+        blue_faction,
+        rl_player,
+        "Scout",
+        2,
+        2,
+        6,
+    )
+    blue_two.set_coords(9, 5)
+
+    units = [red_unit, blue_unit, blue_two]
+
+    return random_player, rl_player, units
 
 
 def main(episodes: int = 5, max_turns: int = 5) -> None:
-    """Train the Q-learning player for a given number of episodes."""
+    """Train the MultiUnit Q-learning player."""
     random_player, rl_player, units = build_players()
 
+    q_table_path = Path("q_table.pkl")
+    if q_table_path.exists():
+        rl_player.load_q_table(str(q_table_path))
+        logger.info("Loaded existing Q-table from %s", q_table_path)
+    else:
+        logger.info(
+            "No existing Q-table found at %s, starting fresh", q_table_path
+        )
+
     game_factory = GameFactory(
-        board_size=(16, 16),
+        board_size=(10, 10),
         players=[random_player, rl_player],
         units=units,
-        randomize_positions=True
     )
 
     agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
     agent_trainer.train()
-    rl_player.print_q_table()
-    rl_player.save_q_table("q_table.pkl")
+    # rl_player.print_q_table()
+    rl_player.save_q_table(str(q_table_path))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Train the Q-learning player against a random opponent"
+        description=(
+            "Train the multi-unit Q-learning player "
+            "against a random opponent in the SampleGame scenario"
+        ),
     )
     parser.add_argument(
         "episodes",
@@ -110,8 +131,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max-turns",
         type=int,
-        default=5,
+        default=10,
         help="maximum number of turns per game",
     )
     args = parser.parse_args()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    logger.info("Training with args %s", args)
     main(args.episodes, args.max_turns)

@@ -257,6 +257,15 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         end_dist = Board.hex_distance(end_hex, enemy_hex)
         self.assertGreaterEqual(end_dist, start_dist)
 
+    def test_distance_to_eta_bin(self):
+        move = 4
+        self.assertEqual(self.player._distance_to_eta_bin(3, move), 0)
+        self.assertEqual(self.player._distance_to_eta_bin(4, move), 0)
+        self.assertEqual(self.player._distance_to_eta_bin(5, move), 1)
+        self.assertEqual(self.player._distance_to_eta_bin(8, move), 1)
+        self.assertEqual(self.player._distance_to_eta_bin(9, move), 2)
+        self.assertEqual(self.player._distance_to_eta_bin(20, move), 3)
+
 
 class TestQLearningPlayerSaveLoad(unittest.TestCase):
     def setUp(self):

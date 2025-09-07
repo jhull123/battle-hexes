@@ -7,7 +7,7 @@ from uuid import UUID
 from pathlib import Path
 from typing import List
 
-from battle_agent_rl.multiunitqlearn import MulitUnitQLearnPlayer
+from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.game.player import PlayerType
@@ -20,7 +20,7 @@ from battle_hexes_core.unit.unit import Unit
 logger = logging.getLogger(__name__)
 
 
-def build_players() -> tuple[RandomPlayer, MulitUnitQLearnPlayer, List[Unit]]:
+def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
     """Create players and units matching ``SampleGameCreator``."""
     red_faction = Faction(
         id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
@@ -41,7 +41,7 @@ def build_players() -> tuple[RandomPlayer, MulitUnitQLearnPlayer, List[Unit]]:
         board=None,
     )
 
-    rl_player = MulitUnitQLearnPlayer(
+    rl_player = QLearningPlayer(
         name="Player 2",
         type=PlayerType.CPU,
         factions=[blue_faction],
@@ -95,7 +95,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     """Train the MultiUnit Q-learning player."""
     random_player, rl_player, units = build_players()
 
-    q_table_path = Path("q_multiunit_table.pkl")
+    q_table_path = Path("q_table.pkl")
     if q_table_path.exists():
         rl_player.load_q_table(str(q_table_path))
         logger.info("Loaded existing Q-table from %s", q_table_path)
