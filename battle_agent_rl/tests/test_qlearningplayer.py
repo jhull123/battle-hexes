@@ -2,7 +2,11 @@ import unittest
 import uuid
 import os
 
-from battle_agent_rl.qlearningplayer import QLearningPlayer, ActionIntent
+from battle_agent_rl.qlearningplayer import (
+    QLearningPlayer,
+    ActionIntent,
+    ActionMagnitude,
+)
 from battle_hexes_core.combat.combatresult import (
     CombatResult,
     CombatResultData,
@@ -165,14 +169,17 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
         self.player.movement()
         _, state, action = self.player._last_actions[self.friend.get_id()]
         self.player.movement_cb()
-        expected_q = 0.5 * 2  # alpha * reward
+        # Reward is a turn penalty of ``-0.1`` which is applied after the first
+        # turn. With ``alpha=0.5`` and ``gamma=0`` the updated Q-value should
+        # reflect half of this reward.
+        expected_q = 0.5 * -0.1  # alpha * reward
         self.assertAlmostEqual(
             self.player._q_table[(state, action)], expected_q
         )
 
     def test_combat_results_updates_q_table(self):
         state = self.player.encode_unit_state(self.friend)
-        action = (ActionIntent.HOLD, 0)
+        action = (ActionIntent.HOLD, ActionMagnitude.NONE)
         self.player._last_actions = {
             self.friend.get_id(): (self.friend, state, action)
         }
@@ -185,9 +192,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
         self.player.combat_results(results)
 
-        # With a combat bonus of 100 and alpha=0.5 the expected Q-value
-        # update is 500.0 when a single unit is eliminated.
-        self.assertEqual(self.player._q_table[(state, action)], 500.0)
+        self.assertEqual(self.player._q_table[(state, action)], 0.0)
 
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):
@@ -235,7 +240,9 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         self.board.add_unit(self.enemy, 0, 1)
 
     def test_advance_creates_forward_path(self):
-        plan = self.player.move_plan(self.friend, ActionIntent.ADVANCE, 1)
+        plan = self.player.move_plan(
+            self.friend, ActionIntent.ADVANCE, ActionMagnitude.HALF
+        )
         coords = [(h.row, h.column) for h in plan.path]
         self.assertEqual(coords, [(2, 1), (1, 1)])
 
@@ -243,10 +250,21 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         enemy_hex = self.board.get_hex(0, 1)
         start_hex = self.board.get_hex(2, 1)
         start_dist = Board.hex_distance(start_hex, enemy_hex)
-        plan = self.player.move_plan(self.friend, ActionIntent.RETREAT, 1)
+        plan = self.player.move_plan(
+            self.friend, ActionIntent.RETREAT, ActionMagnitude.HALF
+        )
         end_hex = plan.path[-1]
         end_dist = Board.hex_distance(end_hex, enemy_hex)
         self.assertGreaterEqual(end_dist, start_dist)
+
+    def test_distance_to_eta_bin(self):
+        move = 4
+        self.assertEqual(self.player._distance_to_eta_bin(3, move), 0)
+        self.assertEqual(self.player._distance_to_eta_bin(4, move), 0)
+        self.assertEqual(self.player._distance_to_eta_bin(5, move), 1)
+        self.assertEqual(self.player._distance_to_eta_bin(8, move), 1)
+        self.assertEqual(self.player._distance_to_eta_bin(9, move), 2)
+        self.assertEqual(self.player._distance_to_eta_bin(20, move), 3)
 
 
 class TestQLearningPlayerSaveLoad(unittest.TestCase):
@@ -271,7 +289,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
     def test_save_and_load(self):
         player = self.build_player()
         state = (1, 2, 3)
-        action = (ActionIntent.HOLD, 0)
+        action = (ActionIntent.HOLD, ActionMagnitude.NONE)
         player._q_table[(state, action)] = 4.2
         player.save_q_table(self.file_path)
 
@@ -328,7 +346,9 @@ class TestQLearningPlayerTurnPenalty(unittest.TestCase):
         self.board.add_unit(self.enemy, 1, 0)
 
     def test_reward_decreases_each_turn(self):
-        for expected in [1.0, 0.0]:
+        # Each call to ``movement_cb`` applies an additional ``-0.1`` penalty.
+        # With ``alpha=1.0`` the Q-value mirrors the cumulative penalty.
+        for expected in [-0.1, -0.2]:
             self.player.movement()
             _, state, action = self.player._last_actions[self.friend.get_id()]
             self.player.movement_cb()
