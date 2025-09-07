@@ -1,5 +1,6 @@
 from enum import Enum
 import logging
+import math
 import pickle
 import random
 from typing import List, Tuple
@@ -25,6 +26,12 @@ class ActionIntent(Enum):
     HOLD = "HOLD"
 
 
+class ActionMagnitude(Enum):
+    FULL = "FULL"
+    HALF = "HALF"
+    NONE = "NONE"
+
+
 class QLearningPlayer(RLPlayer):
     """
     Simple Q-learning agent.
@@ -36,18 +43,32 @@ class QLearningPlayer(RLPlayer):
     value:
         (unit, state, action)
             unit: Unit object reference
-            state: (my_strength, nearest_enemy_strength, distance)
-            action: (ActionIntent, magnitude)
+            state: see description below
+            action: (ActionIntent, ActionMagnitude)
 
     actions ∈ { "ADVANCE", "RETREAT", "HOLD" }
-    magnitude ∈ { 0, 1, 2, ..., unit.get_move() }
+    magnitude ∈ { ``FULL``, ``HALF``, ``NONE`` }
+        ``NONE`` is only used with the ``HOLD`` intent
+
+    Unary state ``s_i`` (order matters!)
+    ``(my_str_bin, nearest_enemy_str_bin, eta_enemy_bin,``
+    `` nearest_ally_str_bin, eta_ally_bin, ally_density_bin)``
+    ``eta_enemy_bin`` is the estimated additional turns (0--3) the unit
+    would need to reach the nearest enemy based on its movement factor.
+    ``eta_ally_bin`` measures the turns the nearest ally would need to
+    reach that same enemy using the ally's movement factor.
+
+    Pairwise state ``s_ij`` (symmetric; order matters only in the action
+    pair)
+    ``(ally_dist_bin, strength_ratio_bin, enemy_bearing_align_bin,``
+    `` local_crowding_bin)``
 
     _q_table
     Q-value table that maps each (state, action) pair to a learned value
     estimate.
     key: Tuple[
-        state: Tuple[int, int, int],
-        action: Tuple[ActionIntent, int]
+        state: Tuple[int, int, int, int, int, int],
+        action: Tuple[ActionIntent, ActionMagnitude]
     ]
     value: float  # Estimated Q-value for taking that action in that state
 
@@ -64,6 +85,9 @@ class QLearningPlayer(RLPlayer):
     _last_actions: dict = PrivateAttr()
     _q_table: dict = PrivateAttr()
 
+    _learn = PrivateAttr()
+    _explore = PrivateAttr()
+
     def __init__(
         self,
         name: str,
@@ -75,6 +99,32 @@ class QLearningPlayer(RLPlayer):
         epsilon: float = 0.1,
         turn_penalty: float = 0.1,
     ) -> None:
+        """
+        Initialize a (Q-learning) player.
+
+            Args:
+            name (str): Human-readable name for the player (used in logs/UI).
+            type (PlayerType): What kind of player this is (e.g., HUMAN, AI).
+            factions (List[Faction]): One or more factions this player
+            controls.
+            board (Board): The game board instance the player will interact
+                with.
+            alpha (float, optional): Learning rate ∈ [0, 1]. Higher values make
+                new rewards overwrite prior estimates more aggressively.
+                Default: 0.1.
+            gamma (float, optional): Discount factor ∈ [0, 1] for future
+                rewards. 0 emphasizes immediate rewards; values near 1 value
+                long-term return. Default: 0.15.
+            epsilon (float, optional): Exploration rate ∈ [0, 1] for ε-greedy
+                action selection. With probability ε the agent explores (random
+                action); with probability 1−ε it exploits the best known
+                action. Default: 0.1.
+            turn_penalty (float, optional): Per-turn negative reward applied to
+                discourage stalling and incentivize faster resolution.
+                Typically a small positive number that is subtracted each turn.
+                Default: 0.1.
+        """
+
         super().__init__(name=name, type=type, factions=factions, board=board)
         self._alpha = alpha
         self._gamma = gamma
@@ -83,6 +133,18 @@ class QLearningPlayer(RLPlayer):
         self._turn_count = 0
         self._q_table = {}
         self._last_actions = {}
+        self._learn = True
+        self._explore = True
+
+    def disable_learning(self) -> None:
+        """Disable learning for the agent."""
+        self._learn = False
+        self._alpha = 0.0
+
+    def disable_exploration(self) -> None:
+        """Disable exploration for the agent."""
+        self._explore = False
+        self._epsilon = 0.0
 
     def save_q_table(self, file_path: str) -> None:
         """Save the internal Q-table to ``file_path`` using pickle."""
@@ -98,12 +160,14 @@ class QLearningPlayer(RLPlayer):
             pass
 
     def movement(self) -> List[UnitMovementPlan]:
+        logger.info("")
+        logger.info("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
         for unit in self.own_units(self._board.get_units()):
             state = self.encode_unit_state(unit)
             actions = self.available_actions(unit)
-            chosen = self.choose_action(state, actions)
+            chosen = self.choose_action(unit, state, actions)
             # Store the unit reference so we can update after combat even if it
             # was destroyed.
             self._last_actions[unit.get_id()] = (unit, state, chosen)
@@ -118,16 +182,18 @@ class QLearningPlayer(RLPlayer):
             self,
             unit: Unit,
             action: ActionIntent,
-            magnitude: int
+            magnitude: ActionMagnitude
             ) -> UnitMovementPlan:
         """
         Create a movement plan for the unit based on the chosen action and
         magnitude.
-        ADVANCE: move toward the nearest enemy hex by the specified
-                 magnitude.
-        RETREAT: move away from the nearest enemy hex by the specified
-                 magnitude.
-        HOLD: do not move.
+
+        ``ADVANCE``: move toward the nearest enemy hex.
+        ``RETREAT``: move away from the nearest enemy hex.
+        ``HOLD``: do not move.
+
+        ``FULL`` uses all movement points, ``HALF`` uses half (floored) and
+        ``NONE`` results in no movement.
         """
         board = self._board
         start_coords = unit.get_coords()
@@ -138,7 +204,13 @@ class QLearningPlayer(RLPlayer):
         if start_hex is None:
             return UnitMovementPlan(unit, [])
 
-        if action == ActionIntent.HOLD or magnitude <= 0:
+        move_points = unit.get_move()
+        if magnitude == ActionMagnitude.HALF:
+            move_points = move_points // 2
+        elif magnitude == ActionMagnitude.NONE:
+            move_points = 0
+
+        if action == ActionIntent.HOLD or move_points <= 0:
             return UnitMovementPlan(unit, [start_hex])
 
         enemy = board.get_nearest_enemy_unit(unit)
@@ -148,45 +220,76 @@ class QLearningPlayer(RLPlayer):
         enemy_hex = board.get_hex(*enemy.get_coords())
 
         if action == ActionIntent.ADVANCE:
-            path = board.path_towards(unit, enemy_hex, magnitude)
+            path = board.path_towards(unit, enemy_hex, move_points)
         else:  # RETREAT
-            path = board.path_away_from(unit, enemy_hex, magnitude)
+            path = board.path_away_from(unit, enemy_hex, move_points)
 
         if not path:
             path = [start_hex]
 
         return UnitMovementPlan(unit, path)
 
-    def available_actions(self, unit: Unit) -> List[Tuple[ActionIntent, int]]:
-        actions = [(ActionIntent.HOLD, 0)]
+    def available_actions(
+        self, unit: Unit
+    ) -> List[Tuple[ActionIntent, ActionMagnitude]]:
+        actions = [(ActionIntent.HOLD, ActionMagnitude.NONE)]
         move = unit.get_move()
-        for i in range(1, move + 1):
-            actions.append((ActionIntent.ADVANCE, i))
-            actions.append((ActionIntent.RETREAT, i))
+        if move > 0:
+            actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
+            actions.append((ActionIntent.ADVANCE, ActionMagnitude.FULL))
+            actions.append((ActionIntent.RETREAT, ActionMagnitude.HALF))
+            actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
         return actions
 
     def choose_action(
         self,
+        unit: Unit,
         state: Tuple[int, int, int],
-        actions: List[Tuple[ActionIntent, int]],
-    ) -> Tuple[ActionIntent, int]:
+        actions: List[Tuple[ActionIntent, ActionMagnitude]],
+    ) -> Tuple[ActionIntent, ActionMagnitude]:
         if not actions:
-            return (ActionIntent.HOLD, 0)
+            return (ActionIntent.HOLD, ActionMagnitude.NONE)
         if random.random() < self._epsilon:
             return random.choice(actions)
+
+        logger.info("Current state for unit %s is: %s", str(unit), state)
+        logger.info("Available actions are:")
+        for a in actions:
+            logger.info("  Action: %s", a)
+
         q_values = [self._q_table.get((state, a), 0.0) for a in actions]
+
+        # example_key = (state, (ActionIntent.HOLD, ActionMagnitude.NONE))
+        # logger.info("Example key is: %s", example_key)
+
+        # example_q = self._q_table.get(example_key)  # Example access to Q-val
+        # logger.info("Example Q-value is: %s", example_q)
+
+        logger.info("Q-values are:")
+        for a, q in zip(actions, q_values):
+            # if q != 0.0:
+            logger.info("  Action: %s, Q-value: %.4f", a, q)
+
         max_q = max(q_values)
         best = [a for a, q in zip(actions, q_values) if q == max_q]
+
+        logger.info("Best actions are:")
+        for a in best:
+            logger.info("  Action: %s", a)
+
         return random.choice(best)
 
     def update_q(
         self,
         state: Tuple[int, int, int],
-        action: Tuple[ActionIntent, int],
+        action: Tuple[ActionIntent, ActionMagnitude],
         reward: float,
         next_state: Tuple[int, int, int],
-        next_actions: List[Tuple[ActionIntent, int]],
+        next_actions: List[Tuple[ActionIntent, ActionMagnitude]],
     ) -> None:
+        if not self._learn:
+            return
+
         next_q_values = [
             self._q_table.get((next_state, a), 0.0) for a in next_actions
         ]
@@ -196,32 +299,131 @@ class QLearningPlayer(RLPlayer):
             reward + self._gamma * next_max - old_q
         )
 
-    def encode_unit_state(self, unit: Unit) -> Tuple[int, int, int]:
+    def _distance_to_eta_bin(self, distance: int, move: int) -> int:
+        """Convert a hex distance to an ETA bin based on ``move``.
+
+        The result is the number of additional turns required to reach the
+        target hex, clamped to ``0``--``3``. Distances of zero or units with no
+        movement return ``0``.
         """
-        Encode the state for a given unit as:
-        (my_strength, nearest_enemy_strength, distance_to_nearest_enemy)
+        if distance <= 0 or move <= 0:
+            return 0
+        extra_turns = (distance - 1) // move
+        return min(3, extra_turns)
+
+    def encode_unit_state(
+            self, unit: Unit
+    ) -> Tuple[int, int, int, int, int, int]:
+        """Return a 6-tuple state for ``unit``.
+
+        ``(my_strength, nearest_enemy_strength, eta_to_enemy,
+         nearest_ally_strength, eta_ally_to_enemy, ally_density_bin)``
+
+        ``eta_to_enemy`` is the number of additional turns (0--3) the
+        unit would need to reach its nearest enemy based on the unit's
+        movement factor. ``eta_ally_to_enemy`` uses the nearest ally's
+        movement factor to estimate the turns required for that ally to
+        reach the unit's nearest enemy.
         """
-        board = self._board
-        my_strength = unit.get_attack() + unit.get_defense()
-        my_coords = unit.get_coords()
 
-        if my_coords is None:
-            return (my_strength, 0, 0)
+        my_strength = unit.get_strength()
+        coords = unit.get_coords()
+        if coords is None:
+            return (my_strength, 0, 0, 0, 0, 0)
 
-        my_hex = board.get_hex(*my_coords)
-        nearest_enemy = board.get_nearest_enemy_unit(unit)
+        own_hex = self._board.get_hex(*coords)
+        if own_hex is None:
+            return (my_strength, 0, 0, 0, 0, 0)
 
+        move = unit.get_move()
+
+        nearest_enemy = self._board.get_nearest_enemy_unit(unit)
+        enemy_hex = None
         if nearest_enemy is None or nearest_enemy.get_coords() is None:
-            return (my_strength, 0, 0)
+            enemy_strength = 0
+            enemy_eta = 0
+        else:
+            enemy_hex = self._board.get_hex(*nearest_enemy.get_coords())
+            enemy_strength = nearest_enemy.get_strength()
+            enemy_dist = self._board.hex_distance(own_hex, enemy_hex)
+            enemy_eta = self._distance_to_eta_bin(enemy_dist, move)
 
-        nearest_enemy_strength = (
-            nearest_enemy.get_attack() + nearest_enemy.get_defense()
+        nearest_friend = self._board.get_nearest_friendly_unit(unit)
+        if nearest_friend is None or nearest_friend.get_coords() is None:
+            friend_strength = 0
+            friend_eta = 0
+        else:
+            friend_strength = nearest_friend.get_strength()
+            if enemy_hex is None:
+                friend_eta = 0
+            else:
+                friend_hex = self._board.get_hex(*nearest_friend.get_coords())
+                friend_dist = self._board.hex_distance(friend_hex, enemy_hex)
+                friend_eta = self._distance_to_eta_bin(
+                    friend_dist, nearest_friend.get_move()
+                )
+
+        density = self._ally_density_decayed(
+            unit, radius=8, use_exponential=False, lam=2.0
         )
-        enemy_hex = board.get_hex(*nearest_enemy.get_coords())
+        density_bin = self._bin_ally_density(density)
 
-        distance = Board.hex_distance(my_hex, enemy_hex)
+        return (
+            my_strength,
+            enemy_strength,
+            enemy_eta,
+            friend_strength,
+            friend_eta,
+            density_bin,
+        )
 
-        return (my_strength, nearest_enemy_strength, distance)
+    def _ally_density_decayed(
+        self,
+        unit,
+        radius: int = 2,
+        use_exponential: bool = False,
+        lam: float = 2.0,
+    ) -> float:
+        """
+        Sum over friendly units within `radius` of weight(d) * strength,
+        where weight(d) = 1/(1+d)  (or exp(-d/lam) if use_exponential=True).
+        Excludes `unit` itself.
+        """
+        me_hex = self._board.get_hex(unit.row, unit.column)
+        total = 0.0
+
+        for f in self.own_units(self._board.get_units()):
+            if f is unit:
+                continue
+            f_hex = self._board.get_hex(f.row, f.column)
+            d = self._board.hex_distance(me_hex, f_hex)
+            if d is None or d > radius:
+                continue
+
+            if use_exponential:
+                w = math.exp(-d / lam)  # smoother decay
+            else:
+                w = 1.0 / (1.0 + d)  # simple, fast
+
+            # if your Unit lacks get_strength(), swap for f.strength
+            total += w * float(f.get_strength())
+
+        return total
+
+    def _bin_ally_density(self, x: float) -> int:
+        """
+        Coarse bins so the tabular Q doesn't explode.
+        Tune thresholds after logging a few hundred values.
+        """
+        if x <= 0.0:  # none
+            return 0
+        if x <= 4.0:  # light
+            return 1
+        if x <= 9.0:  # medium
+            return 2
+        if x <= 15.0:  # heavy
+            return 3
+        return 4  # very heavy
 
     def movement_cb(self) -> None:
         """
@@ -229,7 +431,8 @@ class QLearningPlayer(RLPlayer):
         """
         self._turn_count += 1
         reward = (
-            self.calculate_reward() - self._turn_penalty * self._turn_count
+            # self.calculate_reward() - self._turn_penalty * self._turn_count
+            self._turn_count * -0.1
         )
         for unit, state_action in [
             (record[0], (record[1], record[2]))
@@ -240,6 +443,7 @@ class QLearningPlayer(RLPlayer):
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
         # Do not clear _last_actions here so combat_results can also use them
+        self.print_q_table(logging.DEBUG)
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
@@ -247,26 +451,43 @@ class QLearningPlayer(RLPlayer):
         The board object is also updated at this point with the results of the
         player's movement plan.
         """
-        from battle_hexes_core.combat.combatresult import CombatResult
 
         # Determine if this player was the attacker.
         # During the attacker's turn ``_last_actions`` stores the actions.
-        attacker = bool(self._last_actions)
+        # attacker = bool(self._last_actions)
         bonus = 1000.0
+        half_bonus = bonus / 2.0
+        double_bonus = bonus * 2.0
 
         reward = 0.0
         for battle in combat_results.get_battles():
-            result = battle.get_combat_result()
             combat_award = 0.0
-            if result == CombatResult.DEFENDER_ELIMINATED:
-                combat_award += bonus if attacker else -bonus
-            elif result == CombatResult.ATTACKER_ELIMINATED:
-                combat_award += -bonus if attacker else bonus
-            elif result == CombatResult.EXCHANGE:
-                combat_award += bonus * 0.10
-            else:
-                combat_award += bonus * 0.10
-            logger.info("Combat award is %s for %s", combat_award, result)
+            match battle.get_odds():
+                case (1, 7) | (1, 6) | (1, 5) | (1, 4) | (1, 3):
+                    combat_award = -bonus
+                case (1, 2):
+                    combat_award = -half_bonus
+                case (1, 1):
+                    combat_award = 0.0
+                case (2, 1):
+                    combat_award = bonus
+                case (3, 1) | (4, 1) | (5, 1) | (6, 1) | (7, 1):
+                    combat_award = double_bonus
+
+            result = battle.get_combat_result()
+            # TODO consider giving a results bonus
+            # if result == CombatResult.DEFENDER_ELIMINATED:
+            #     combat_award += double_bonus if attacker else -half_bonus
+            # elif result == CombatResult.ATTACKER_ELIMINATED:
+            #     combat_award += -half_bonus if attacker else half_bonus
+            # elif result == CombatResult.EXCHANGE:
+            #     combat_award += half_bonus
+            # else:
+            #     combat_award += half_bonus if attacker else 1.0
+            logger.info(
+                "Combat award is %s for %s at %s odds",
+                combat_award, result, battle.get_odds()
+            )
             reward += combat_award
 
         for unit, state_action in [
@@ -302,11 +523,11 @@ class QLearningPlayer(RLPlayer):
                         "Warning: Distance is zero in calculate_reward!"
                     )
 
-        # print(f"Reward for {self.name}: {reward}")
+        logger.info(f"Reward for {self.name}: {reward}")
         return reward
 
     def end_game_cb(self) -> None:
-        # self.print_q_table()
+        self.print_q_table(logging.INFO)
         pass
 
     def print_last_actions(self) -> None:
@@ -319,13 +540,24 @@ class QLearningPlayer(RLPlayer):
             )
             logger.info(msg)
 
-    def print_q_table(self) -> None:
-        """Print the Q-table for debugging purposes."""
-        logger.info("Q-table for %s:", self.name)
+    def print_q_table(self, level: int = logging.INFO) -> None:
+        """Print the Q-table for debugging purposes.
+
+        A logging level may be passed (default: logging.INFO). The messages
+        will be emitted using :py:meth:`logging.Logger.log` so callers can
+        choose a different severity (e.g. DEBUG).
+        """
+        # Avoid expensive formatting/sorting when the logger won't emit at
+        # the requested level.
+        if not logger.isEnabledFor(level):
+            return
+
+        logger.log(level, "Q-table for %s:", self.name)
         items = sorted(
             self._q_table.items(), key=lambda item: item[1], reverse=True
         )
         for (state, action), value in items:
-            logger.info(
-                "  State: %s, Action: %s, Q-value: %.4f", state, action, value
+            logger.log(
+                level, "  State: %s, Action: %s, Q-value: %.4f", state, action,
+                value
             )

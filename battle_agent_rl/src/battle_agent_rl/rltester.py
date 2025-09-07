@@ -47,6 +47,8 @@ def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
         factions=[blue_faction],
         board=None,
     )
+    rl_player.disable_exploration()
+    rl_player.disable_learning()
 
     red_unit = Unit(
         UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
@@ -109,15 +111,44 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     )
 
     agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
-    agent_trainer.train()
-    # rl_player.print_q_table()
-    rl_player.save_q_table(str(q_table_path))
+    game_results = agent_trainer.train()
+    wins = game_results.count_wins()
+    losses = game_results.count_losses()
+    draws = game_results.count_draws()
+    exchanges = game_results.count_exchanges()
+    total = wins + losses + draws + exchanges
+    pct = (lambda c: (c / total * 100) if total else 0.0)
+    # numeric percentage values and formatted strings for score calculation
+    wins_pct = pct(wins)
+    losses_pct = pct(losses)
+    draws_pct = pct(draws)
+    exchanges_pct = pct(exchanges)
+    pct_strs = {
+        "Wins": f"{wins_pct:.1f}%",
+        "Losses": f"{losses_pct:.1f}%",
+        "Draws": f"{draws_pct:.1f}%",
+        "Exchanges": f"{exchanges_pct:.1f}%",
+    }
+    pct_width = max(len(s) for s in pct_strs.values())
+    print(f"{'Wins':<9}: {wins:>3} ({pct_strs['Wins']:>{pct_width}})")
+    print(f"{'Losses':<9}: {losses:>3} ({pct_strs['Losses']:>{pct_width}})")
+    print(f"{'Draws':<9}: {draws:>3} ({pct_strs['Draws']:>{pct_width}})")
+    print(
+        f"{'Exchanges':<9}: {exchanges:>3} "
+        f"({pct_strs['Exchanges']:>{pct_width}})"
+    )
+
+    # score based on percentage points:
+    # +2 points per win percentage point, -2 per loss percentage point,
+    #  0 for exchanges, -1 per draw percentage point
+    score = 2 * wins_pct - 2 * losses_pct - 1 * draws_pct
+    print(f"{'Score':<9}: {score:>6.1f}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "Train the multi-unit Q-learning player "
+            "Test the multi-unit Q-learning player "
             "against a random opponent in the SampleGame scenario"
         ),
     )
@@ -126,7 +157,7 @@ if __name__ == "__main__":
         nargs="?",
         type=int,
         default=5,
-        help="number of training episodes to run",
+        help="number of test episodes to run",
     )
     parser.add_argument(
         "--max-turns",

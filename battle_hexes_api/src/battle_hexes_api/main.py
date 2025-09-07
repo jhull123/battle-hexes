@@ -57,6 +57,13 @@ def _get_game_or_404(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
 
+def _call_end_game_callbacks(game) -> None:
+    """Invoke each player's ``end_game_cb`` if the game is over."""
+    if game.is_game_over():
+        for player in game.get_players():
+            player.end_game_cb()
+
+
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
     return _get_game_or_404(game_id).to_game_model()
@@ -75,6 +82,7 @@ def resolve_combat(
     logger.info('Combat results: %s', results)
 
     game_repo.update_game(game)
+    _call_end_game_callbacks(game)
     sparse_board = game.get_board().to_sparse_board()
     sparse_board.last_combat_results = results.battles_as_result_schema()
     return sparse_board
@@ -89,6 +97,7 @@ def generate_movement(game_id: str):
     plans = current_player.movement()
     game.apply_movement_plans(plans)
     game_repo.update_game(game)
+    _call_end_game_callbacks(game)
     return {
         "game": game.to_game_model(),
         "plans": [p.to_dict() for p in plans],
@@ -112,4 +121,5 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     )
 
     game_repo.update_game(game)
+    _call_end_game_callbacks(game)
     return game.to_game_model()

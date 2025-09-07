@@ -54,6 +54,31 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_board.to_sparse_board.assert_called_once()
 
+    @patch('battle_hexes_api.main.Combat')
+    @patch('battle_hexes_api.main.game_repo')
+    def test_resolve_combat_calls_end_game_callback_when_game_over(
+        self, mock_game_repo, mock_combat
+    ):
+        mock_board = MagicMock()
+        mock_game = MagicMock()
+        mock_game.get_board.return_value = mock_board
+        mock_game.is_game_over.return_value = True
+        mock_player1 = MagicMock()
+        mock_player2 = MagicMock()
+        mock_game.get_players.return_value = [mock_player1, mock_player2]
+        mock_game_repo.get_game.return_value = mock_game
+        mock_combat.return_value.resolve_combat.return_value = MagicMock()
+
+        game_id = "game-123"
+        sparse_board_data = {"units": []}
+
+        self.client.post(
+            f"/games/{game_id}/combat", json=sparse_board_data
+        )
+
+        mock_player1.end_game_cb.assert_called_once_with()
+        mock_player2.end_game_cb.assert_called_once_with()
+
     @patch('battle_hexes_api.main.game_repo')
     def test_generate_movement(self, mock_game_repo):
         mock_plan = MagicMock()
@@ -115,3 +140,25 @@ class TestFastAPI(unittest.TestCase):
             response.json(),
             {"id": "game-789", "current_player": "Bob"}
         )
+
+    @patch('battle_hexes_api.main.game_repo')
+    def test_end_turn_calls_end_game_callback_when_game_over(
+        self, mock_game_repo
+    ):
+        mock_player1 = MagicMock()
+        mock_player2 = MagicMock()
+        mock_game = MagicMock()
+        mock_game.get_current_player.return_value = MagicMock()
+        mock_game.next_player.return_value = MagicMock()
+        mock_game.get_players.return_value = [mock_player1, mock_player2]
+        mock_game.is_game_over.return_value = True
+        mock_game.to_game_model.return_value = {}
+        mock_game_repo.get_game.return_value = mock_game
+
+        game_id = "game-789"
+        self.client.post(
+            f"/games/{game_id}/end-turn", json={"units": []}
+        )
+
+        mock_player1.end_game_cb.assert_called_once_with()
+        mock_player2.end_game_cb.assert_called_once_with()
