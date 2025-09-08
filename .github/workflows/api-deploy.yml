@@ -14,8 +14,6 @@ jobs:
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
       image_digest: ${{ steps.meta.outputs.image_digest }}
-      image_uri_tag: ${{ steps.meta.outputs.image_uri_tag }}
-      image_uri_digest: ${{ steps.meta.outputs.image_uri_digest }}
 
     steps:
       - name: Checkout code
@@ -96,18 +94,26 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Compose full image URI locally (avoid secrets in job outputs)
+      - name: Build final image URI (no secrets in outputs)
+        id: compose
+        run: |
+          set -euo pipefail
+          echo "uri=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}@${{ needs.build-and-push-to-ecr.outputs.image_digest }}" >> "$GITHUB_OUTPUT"
+
       # ✅ sanity check we actually have a value
       - name: Sanity-check image output
         run: |
           set -euo pipefail
-          echo "IMAGE(digest) = ${{ needs.build-and-push-to-ecr.outputs.image_uri_digest }}"
-          test -n "${{ needs.build-and-push-to-ecr.outputs.image_uri_digest }}"
+          echo "IMAGE(digest) = ${{ needs.build-and-push-to-ecr.outputs.image_digest }}"
+          echo "IMAGE(uri)    = ${{ steps.compose.outputs.uri }}"
+          test -n "${{ steps.compose.outputs.uri }}"
 
       - name: Deploy CloudFormation Stack (pin to digest)
         env:
           VPC_ID: ${{ secrets.VPC_ID }}
           SUBNET_IDS: ${{ secrets.SUBNET_IDS }}
-          ECR_IMAGE: ${{ needs.build-and-push-to-ecr.outputs.image_uri_digest }}  # <— immutable
+          ECR_IMAGE: ${{ steps.compose.outputs.uri }}  # repo@sha256:... (immutable)
           ACM_CERT_ARN: ${{ secrets.ACM_CERT_ARN }}
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
           API_DOMAIN_NAME: api-dev.battlehexes.com
