@@ -83,7 +83,15 @@ class QLearningPlayer(RLPlayer):
     _turn_count: int = PrivateAttr()
 
     _last_actions: dict = PrivateAttr()
-    _q_table: dict = PrivateAttr()
+    _q_table: dict = PrivateAttr()  # TODO remove after pairwise Q implemented
+
+    _q1: dict = PrivateAttr()         # (s_i, a_i) -> float
+    _q2: dict = PrivateAttr()         # (s_ij, a_i, a_j) -> float
+    _alpha_u: float = PrivateAttr()   # unary LR
+    _alpha_p: float = PrivateAttr()   # pairwise LR
+    _neighbor_radius: int = PrivateAttr()  # consider allies within 2 hexes
+    _neighbor_k: int = PrivateAttr()       # link to up to 2 nearest allies
+    _sweeps: int = PrivateAttr()           # best-response sweeps (2)
 
     _learn = PrivateAttr()
     _explore = PrivateAttr()
@@ -136,6 +144,15 @@ class QLearningPlayer(RLPlayer):
         self._learn = True
         self._explore = True
 
+        # pairwise Q-learning parameters
+        self._q1 = {}
+        self._q2 = {}
+        self._alpha_u = alpha
+        self._alpha_p = alpha * 0.25
+        self._neighbor_radius = 2
+        self._neighbor_k = 2
+        self._sweeps = 2
+
     def disable_learning(self) -> None:
         """Disable learning for the agent."""
         self._learn = False
@@ -148,16 +165,51 @@ class QLearningPlayer(RLPlayer):
 
     def save_q_table(self, file_path: str) -> None:
         """Save the internal Q-table to ``file_path`` using pickle."""
+        # TODO obsolete after pairwise Q implemented
         with open(file_path, "wb") as f:
             pickle.dump(self._q_table, f)
 
     def load_q_table(self, file_path: str) -> None:
         """Load a Q-table from ``file_path`` if the file exists."""
+        # TODO obsolete after pairwise Q implemented
         try:
             with open(file_path, "rb") as f:
                 self._q_table = pickle.load(f)
         except FileNotFoundError:
+            logger.warning("Q-table file not found: %s", file_path)
+
+    def save_q_tables(self, file_path: str) -> None:
+        with open(file_path, "wb") as f:
+            pickle.dump({"Q1": self._q1, "Q2": self._q2}, f)
+
+    def load_q_tables(self, file_path: str) -> None:
+        try:
+            with open(file_path, "rb") as f:
+                data = pickle.load(f)
+            if isinstance(data, dict) and "Q1" in data and "Q2" in data:
+                self._q1 = data["Q1"]
+                self._q2 = data["Q2"]
+            else:
+                # backward-compat: old single-table dumps
+                self._q1 = data if isinstance(data, dict) else {}
+                self._q2 = {}
+        except FileNotFoundError:
             pass
+
+    # ----- Q1/Q2 getters -----
+    def _q1_get(self, s_i, a_i) -> float:
+        return self._q1.get((s_i, a_i), 0.0)
+
+    def _q1_add(self, s_i, a_i, delta: float) -> None:
+        key = (s_i, a_i)
+        self._q1[key] = self._q1.get(key, 0.0) + delta
+
+    def _q2_get(self, s_ij, a_i, a_j) -> float:
+        return self._q2.get((s_ij, a_i, a_j), 0.0)
+
+    def _q2_add(self, s_ij, a_i, a_j, delta: float) -> None:
+        key = (s_ij, a_i, a_j)
+        self._q2[key] = self._q2.get(key, 0.0) + delta
 
     def movement(self) -> List[UnitMovementPlan]:
         logger.info("")
@@ -177,6 +229,21 @@ class QLearningPlayer(RLPlayer):
 
         # self.print_last_actions()
         return plans
+
+    def _encode_pair_state(self, ui: Unit, uj: Unit) -> tuple[int, int]:
+        """
+        Returns a 2-tuple describing the pair (ui, uj) anchored on ui's nearest
+        enemy:
+        - eta_diff_bin: (ETA_uj→E_ui) − (ETA_ui→E_ui), binned to
+            [-2,-1,0,+1,+2] where ETA is additional turns (0..3) based on each
+            unit's move factor. Positive => uj lags ui to the same target
+            enemy.
+        - power_diff_bin: normalized power advantage of (ui+uj) vs E_ui,
+            i.e., ((str_ui + str_uj) - str_enemy) / max(1, str_enemy),
+            binned to {-2,-1,0,+1,+2}.
+        """
+        # board = self._board
+        pass
 
     def move_plan(
             self,
