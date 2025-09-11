@@ -242,8 +242,46 @@ class QLearningPlayer(RLPlayer):
             i.e., ((str_ui + str_uj) - str_enemy) / max(1, str_enemy),
             binned to {-2,-1,0,+1,+2}.
         """
-        # board = self._board
-        pass
+        board = self._board
+
+        # If any units lack coordinates we cannot compute distances/ETAs.
+        if ui.get_coords() is None or uj.get_coords() is None:
+            return (0, 0)
+
+        # Find the enemy unit closest to ui. Pairwise state is anchored on
+        # this enemy. If no enemy exists we return a neutral state.
+        enemy = board.get_nearest_enemy_unit(ui)
+        if enemy is None or enemy.get_coords() is None:
+            return (0, 0)
+
+        ui_hex = board.get_hex(*ui.get_coords())
+        uj_hex = board.get_hex(*uj.get_coords())
+        enemy_hex = board.get_hex(*enemy.get_coords())
+        if ui_hex is None or uj_hex is None or enemy_hex is None:
+            return (0, 0)
+
+        # --- ETA difference bin ---
+        dist_ui = board.hex_distance(ui_hex, enemy_hex)
+        dist_uj = board.hex_distance(uj_hex, enemy_hex)
+        eta_ui = self._distance_to_eta_bin(dist_ui, ui.get_move())
+        eta_uj = self._distance_to_eta_bin(dist_uj, uj.get_move())
+        eta_diff = eta_uj - eta_ui
+        eta_diff_bin = max(-2, min(2, eta_diff))
+
+        # --- Power advantage bin ---
+        str_enemy = enemy.get_strength()
+        power_diff = (
+            (ui.get_strength() + uj.get_strength()) - str_enemy
+        ) / max(1, str_enemy)
+
+        # Round to nearest int, breaking .5 ties away from zero, then clamp.
+        if power_diff >= 0:
+            power_diff_bin = int(math.floor(power_diff + 0.5))
+        else:
+            power_diff_bin = int(-math.floor(-power_diff + 0.5))
+        power_diff_bin = max(-2, min(2, power_diff_bin))
+
+        return (eta_diff_bin, power_diff_bin)
 
     def move_plan(
             self,

@@ -267,6 +267,101 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         self.assertEqual(self.player._distance_to_eta_bin(20, move), 3)
 
 
+class TestQLearningPlayerEncodePairState(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(5, 5)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+            turn_penalty=0,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+
+    def test_eta_and_power_bins(self):
+        ui = Unit(
+            uuid.uuid4(),
+            "U1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        uj = Unit(
+            uuid.uuid4(),
+            "U2",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            1,
+        )
+        enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            4,
+            4,
+            3,
+        )
+        self.board.add_unit(ui, 0, 0)
+        self.board.add_unit(uj, 0, 2)
+        self.board.add_unit(enemy, 3, 0)
+        self.assertEqual(self.player._encode_pair_state(ui, uj), (2, 1))
+
+    def test_negative_bins(self):
+        ui = Unit(
+            uuid.uuid4(),
+            "U1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            2,
+            2,
+            1,
+        )
+        uj = Unit(
+            uuid.uuid4(),
+            "U2",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            1,
+            1,
+            3,
+        )
+        enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            6,
+            6,
+            3,
+        )
+        self.board.add_unit(ui, 0, 0)
+        self.board.add_unit(uj, 0, 2)
+        self.board.add_unit(enemy, 3, 0)
+        self.assertEqual(self.player._encode_pair_state(ui, uj), (-1, -1))
+
+
 class TestQLearningPlayerSaveLoad(unittest.TestCase):
     def setUp(self):
         self.board = Board(1, 1)
