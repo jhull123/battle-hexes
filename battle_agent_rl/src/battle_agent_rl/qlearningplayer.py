@@ -243,6 +243,7 @@ class QLearningPlayer(RLPlayer):
             binned to {-2,-1,0,+1,+2}.
         """
         # board = self._board
+        # TODO implement
         pass
 
     def move_plan(
