@@ -216,6 +216,16 @@ class QLearningPlayer(RLPlayer):
         logger.info("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
+
+        # encode pairwise states for all friendly unit pairs
+        for unit in self.own_units(self._board.get_units()):
+            ally = self._board.get_nearest_friendly_unit(unit)
+            if ally is None:
+                continue
+            # TODO pick up here !
+            pair_state = self._encode_pair_state(unit, ally)
+            logger.info("%s, %s, %s", unit, ally, pair_state)
+
         for unit in self.own_units(self._board.get_units()):
             state = self.encode_unit_state(unit)
             actions = self.available_actions(unit)
@@ -234,17 +244,58 @@ class QLearningPlayer(RLPlayer):
         """
         Returns a 2-tuple describing the pair (ui, uj) anchored on ui's nearest
         enemy:
-        - eta_diff_bin: (ETA_uj→E_ui) − (ETA_ui→E_ui), binned to
-            [-2,-1,0,+1,+2] where ETA is additional turns (0..3) based on each
-            unit's move factor. Positive => uj lags ui to the same target
-            enemy.
+
+        - eta_diff_bin: abs ETA gap to ui’s nearest enemy, binned to {0,1,2}.
+            eta_diff_bin = min(2, abs(ETA(uj→E_ui) - ETA(ui→E_ui))) where
+            ETA(x→E_ui) is the additional turns (0..3, with 3 = "3+ turns") for
+            unit x to reach E_ui given its move factor.
+            Interpretation: 0 = arrive same turn, 1 = off by 1 turn,
+            2 = off by ≥2 turns. (Direction—who leads/lags—is intentionally
+            omitted; unary state carries that.)
+
         - power_diff_bin: normalized power advantage of (ui+uj) vs E_ui,
             i.e., ((str_ui + str_uj) - str_enemy) / max(1, str_enemy),
             binned to {-2,-1,0,+1,+2}.
         """
-        # board = self._board
-        # TODO implement
-        pass
+        board = self._board
+
+        # If any units lack coordinates we cannot compute distances/ETAs.
+        if ui.get_coords() is None or uj.get_coords() is None:
+            return (0, 0)
+
+        # Find the enemy unit closest to ui. Pairwise state is anchored on
+        # this enemy. If no enemy exists we return a neutral state.
+        enemy = board.get_nearest_enemy_unit(ui)
+        if enemy is None or enemy.get_coords() is None:
+            return (0, 0)
+
+        ui_hex = board.get_hex(*ui.get_coords())
+        uj_hex = board.get_hex(*uj.get_coords())
+        enemy_hex = board.get_hex(*enemy.get_coords())
+        if ui_hex is None or uj_hex is None or enemy_hex is None:
+            return (0, 0)
+
+        # --- ETA difference bin (absolute) ---
+        dist_ui = board.hex_distance(ui_hex, enemy_hex)
+        dist_uj = board.hex_distance(uj_hex, enemy_hex)
+        eta_ui = self._distance_to_eta_bin(dist_ui, ui.get_move())
+        eta_uj = self._distance_to_eta_bin(dist_uj, uj.get_move())
+        eta_diff_bin = min(2, abs(eta_uj - eta_ui))
+
+        # --- Power advantage bin ---
+        str_enemy = enemy.get_strength()
+        power_diff = (
+            (ui.get_strength() + uj.get_strength()) - str_enemy
+        ) / max(1, str_enemy)
+
+        # Round to nearest int, breaking .5 ties away from zero, then clamp.
+        if power_diff >= 0:
+            power_diff_bin = int(math.floor(power_diff + 0.5))
+        else:
+            power_diff_bin = int(-math.floor(-power_diff + 0.5))
+        power_diff_bin = max(-2, min(2, power_diff_bin))
+
+        return (eta_diff_bin, power_diff_bin)
 
     def move_plan(
             self,
