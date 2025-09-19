@@ -83,10 +83,9 @@ class QLearningPlayer(RLPlayer):
     _turn_count: int = PrivateAttr()
 
     _last_actions: dict = PrivateAttr()
-    _q_table: dict = PrivateAttr()  # TODO remove after pairwise Q implemented
     _pair_last: dict = PrivateAttr()
-    _q1: dict = PrivateAttr()         # (s_i, a_i) -> float
-    _q2: dict = PrivateAttr()         # (s_ij, a_i, a_j) -> float
+    _q1: dict = PrivateAttr()         # unary table (s_i, a_i) -> float
+    _q2: dict = PrivateAttr()         # pairwise tbl (s_ij, a_i, a_j) -> float
     _alpha_u: float = PrivateAttr()   # unary LR
     _alpha_p: float = PrivateAttr()   # pairwise LR
     _neighbor_radius: int = PrivateAttr()  # consider allies within 2 hexes
@@ -139,7 +138,6 @@ class QLearningPlayer(RLPlayer):
         self._epsilon = epsilon
         self._turn_penalty = turn_penalty
         self._turn_count = 0
-        self._q_table = {}
         self._pair_last = {}
         self._last_actions = {}
         self._learn = True
@@ -164,38 +162,15 @@ class QLearningPlayer(RLPlayer):
         self._explore = False
         self._epsilon = 0.0
 
-    def save_q_table(self, file_path: str) -> None:
-        """Save the internal Q-table to ``file_path`` using pickle."""
-        # TODO obsolete after pairwise Q implemented
-        with open(file_path, "wb") as f:
-            pickle.dump(self._q_table, f)
-
-    def load_q_table(self, file_path: str) -> None:
-        """Load a Q-table from ``file_path`` if the file exists."""
-        # TODO obsolete after pairwise Q implemented
-        try:
-            with open(file_path, "rb") as f:
-                self._q_table = pickle.load(f)
-        except FileNotFoundError:
-            logger.warning("Q-table file not found: %s", file_path)
-
     def save_q_tables(self, file_path: str) -> None:
         with open(file_path, "wb") as f:
             pickle.dump({"Q1": self._q1, "Q2": self._q2}, f)
 
     def load_q_tables(self, file_path: str) -> None:
-        try:
-            with open(file_path, "rb") as f:
-                data = pickle.load(f)
-            if isinstance(data, dict) and "Q1" in data and "Q2" in data:
-                self._q1 = data["Q1"]
-                self._q2 = data["Q2"]
-            else:
-                # backward-compat: old single-table dumps
-                self._q1 = data if isinstance(data, dict) else {}
-                self._q2 = {}
-        except FileNotFoundError:
-            pass
+        with open(file_path, "rb") as f:
+            data = pickle.load(f)
+            self._q1 = data["Q1"]
+            self._q2 = data["Q2"]
 
     # ----- Q1/Q2 getters -----
     def _q1_get(self, s_i, a_i) -> float:
@@ -215,6 +190,11 @@ class QLearningPlayer(RLPlayer):
     def _select_actions_pairwise(
         self, units: List[Unit]
     ) -> Dict[Unit, Tuple[ActionIntent, ActionMagnitude]]:
+        """
+        Select joint actions via nearest-ally Q: ε-greedy on Q1, then one-sweep
+        best response using Q1+Q2.
+        """
+
         board = self._board
         unary_states: Dict[Unit, Tuple[int, ...]] = {}
         allies: Dict[Unit, Optional[Unit]] = {}
@@ -223,12 +203,14 @@ class QLearningPlayer(RLPlayer):
             Unit, List[Tuple[ActionIntent, ActionMagnitude]]
         ] = {}
 
+        # Precompute unary states, nearest allies, pair states, action lists
         for unit in units:
             unary_states[unit] = self.encode_unit_state(unit)
             allies[unit] = None
             pair_states[unit] = (0, 0)
             action_lists[unit] = self.available_actions(unit)
 
+        # Link unit to nearest ally in range and cache pairwise state
         for unit in units:
             ally = board.get_nearest_friendly_unit(unit)
             if ally is None or ally is unit or ally not in unary_states:
@@ -247,6 +229,7 @@ class QLearningPlayer(RLPlayer):
             allies[unit] = ally
             pair_states[unit] = self._encode_pair_state(unit, ally)
 
+        # Init per-unit actions: ε-greedy on Q1 (random or best unary action)
         joint_actions: Dict[Unit, Tuple[ActionIntent, ActionMagnitude]] = {}
         for unit in units:
             acts = action_lists[unit]
@@ -259,14 +242,17 @@ class QLearningPlayer(RLPlayer):
                 ]
                 joint_actions[unit] = max(qvals, key=lambda t: t[0])[1]
 
+        # One-sweep best response: refine action using Q1+Q2 vs ally's action
         for unit in units:
             current = joint_actions[unit]
             best_value = self._q1_get(unary_states[unit], current)
             ally = allies[unit]
             if ally is not None:
+                # Add the pairwise coordination value from _q2 to best_value
                 best_value += self._q2_get(
                     pair_states[unit], current, joint_actions[ally]
                 )
+            # Score each candidate Q1+Q2 and keep the highest-scoring action
             for candidate in action_lists[unit]:
                 value = self._q1_get(unary_states[unit], candidate)
                 if ally is not None:
@@ -281,23 +267,20 @@ class QLearningPlayer(RLPlayer):
         return joint_actions
 
     def movement(self) -> List[UnitMovementPlan]:
+        """
+        Select pairwise-aware actions, snapshot pair states, and build
+        UnitMovementPlans for all friendly units.
+        """
+
         logger.info("")
         logger.info("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
-
         units = self.own_units(self._board.get_units())
-
-        for unit in units:
-            ally = self._board.get_nearest_friendly_unit(unit)
-            if ally is None:
-                continue
-            pair_state = self._encode_pair_state(unit, ally)
-            logger.info("%s, %s, %s", unit, ally, pair_state)
-
         joint_actions = self._select_actions_pairwise(units)
         self._pair_last = {}
 
+        # Snapshot in-range ally pair-state (s_ij) for learning updates
         for u in units:
             ally = self._board.get_nearest_friendly_unit(u)
             if (
@@ -317,6 +300,7 @@ class QLearningPlayer(RLPlayer):
             s_ij = self._encode_pair_state(u, ally)
             self._pair_last[u.get_id()] = (ally.get_id(), s_ij)
 
+        # Store state/action, create movement plan, append to plans
         for unit in units:
             state = self.encode_unit_state(unit)
             chosen = joint_actions[unit]
@@ -448,44 +432,6 @@ class QLearningPlayer(RLPlayer):
             actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
         return actions
 
-    def choose_action(
-        self,
-        unit: Unit,
-        state: Tuple[int, int, int],
-        actions: List[Tuple[ActionIntent, ActionMagnitude]],
-    ) -> Tuple[ActionIntent, ActionMagnitude]:
-        if not actions:
-            return (ActionIntent.HOLD, ActionMagnitude.NONE)
-        if random.random() < self._epsilon:
-            return random.choice(actions)
-
-        logger.info("Current state for unit %s is: %s", str(unit), state)
-        logger.info("Available actions are:")
-        for a in actions:
-            logger.info("  Action: %s", a)
-
-        q_values = [self._q_table.get((state, a), 0.0) for a in actions]
-
-        # example_key = (state, (ActionIntent.HOLD, ActionMagnitude.NONE))
-        # logger.info("Example key is: %s", example_key)
-
-        # example_q = self._q_table.get(example_key)  # Example access to Q-val
-        # logger.info("Example Q-value is: %s", example_q)
-
-        logger.info("Q-values are:")
-        for a, q in zip(actions, q_values):
-            # if q != 0.0:
-            logger.info("  Action: %s, Q-value: %.4f", a, q)
-
-        max_q = max(q_values)
-        best = [a for a, q in zip(actions, q_values) if q == max_q]
-
-        logger.info("Best actions are:")
-        for a in best:
-            logger.info("  Action: %s", a)
-
-        return random.choice(best)
-
     def update_q(
         self,
         unit: Unit,
@@ -495,30 +441,35 @@ class QLearningPlayer(RLPlayer):
         next_state: Tuple[int, int, int, int, int, int],
         next_actions: List[Tuple[ActionIntent, ActionMagnitude]],
     ) -> None:
+        """
+        TD update for factored Q: bootstrap from max Q1(s′,·); update Q1(s,a)
+        and Q2(s_ij,a,a_ally) using pre-move ally snapshot.
+        """
+
         if not self._learn:
             return
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("update_q bootstrap for unit %s", unit)
+        # --- Bootstrap using Q1 only (simple, stable) ---
+        q1_now = self._q1_get(state, action)
+        if next_actions:
+            next_max_q1 = max(
+                self._q1_get(next_state, a) for a in next_actions
+            )
+        else:
+            next_max_q1 = 0.0
 
-        next_q_values = [
-            self._q_table.get((next_state, a), 0.0) for a in next_actions
-        ]
-        next_max = max(next_q_values) if next_q_values else 0.0
-        old_q = self._q_table.get((state, action), 0.0)
-        td = reward + self._gamma * next_max - old_q
+        td = reward + self._gamma * next_max_q1 - q1_now
 
-        self._q_table[(state, action)] = old_q + self._alpha * td
-
+        # Update unary table
         self._q1_add(state, action, self._alpha_u * td)
 
-        # --- Q2 update using the snapshot taken at selection time ---
+        # --- Update pairwise table using pre-move snapshot (if available) ---
         pair = self._pair_last.get(unit.get_id())
         if pair:
             ally_id, s_ij = pair
             ally_rec = self._last_actions.get(ally_id)
             if ally_rec and unit.get_id() < ally_id:  # update each pair once
-                ally_action = ally_rec[2]
+                ally_action = ally_rec[2]  # (ActionIntent, ActionMagnitude)
                 self._q2_add(s_ij, action, ally_action, self._alpha_p * td)
 
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
