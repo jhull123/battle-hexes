@@ -84,7 +84,7 @@ class QLearningPlayer(RLPlayer):
 
     _last_actions: dict = PrivateAttr()
     _q_table: dict = PrivateAttr()  # TODO remove after pairwise Q implemented
-
+    _pair_last: dict = PrivateAttr()
     _q1: dict = PrivateAttr()         # (s_i, a_i) -> float
     _q2: dict = PrivateAttr()         # (s_ij, a_i, a_j) -> float
     _alpha_u: float = PrivateAttr()   # unary LR
@@ -140,6 +140,7 @@ class QLearningPlayer(RLPlayer):
         self._turn_penalty = turn_penalty
         self._turn_count = 0
         self._q_table = {}
+        self._pair_last = {}
         self._last_actions = {}
         self._learn = True
         self._explore = True
@@ -240,7 +241,7 @@ class QLearningPlayer(RLPlayer):
             ally_hex = board.get_hex(*ally_coords)
             if unit_hex is None or ally_hex is None:
                 continue
-            distance = board.hex_distance(unit_hex, ally_hex)
+            distance = Board.hex_distance(unit_hex, ally_hex)
             if distance is None or distance > self._neighbor_radius:
                 continue
             allies[unit] = ally
@@ -295,6 +296,26 @@ class QLearningPlayer(RLPlayer):
             logger.info("%s, %s, %s", unit, ally, pair_state)
 
         joint_actions = self._select_actions_pairwise(units)
+        self._pair_last = {}
+
+        for u in units:
+            ally = self._board.get_nearest_friendly_unit(u)
+            if (
+                not ally
+                or ally is u
+                or ally.get_coords() is None
+                or u.get_coords() is None
+            ):
+                continue
+            u_hex = self._board.get_hex(*u.get_coords())
+            a_hex = self._board.get_hex(*ally.get_coords())
+            if not u_hex or not a_hex:
+                continue
+            d = Board.hex_distance(u_hex, a_hex)
+            if d is None or d > self._neighbor_radius:
+                continue
+            s_ij = self._encode_pair_state(u, ally)
+            self._pair_last[u.get_id()] = (ally.get_id(), s_ij)
 
         for unit in units:
             state = self.encode_unit_state(unit)
@@ -343,8 +364,8 @@ class QLearningPlayer(RLPlayer):
             return (0, 0)
 
         # --- ETA difference bin (absolute) ---
-        dist_ui = board.hex_distance(ui_hex, enemy_hex)
-        dist_uj = board.hex_distance(uj_hex, enemy_hex)
+        dist_ui = Board.hex_distance(ui_hex, enemy_hex)
+        dist_uj = Board.hex_distance(uj_hex, enemy_hex)
         eta_ui = self._distance_to_eta_bin(dist_ui, ui.get_move())
         eta_uj = self._distance_to_eta_bin(dist_uj, uj.get_move())
         eta_diff_bin = min(2, abs(eta_uj - eta_ui))
@@ -468,10 +489,10 @@ class QLearningPlayer(RLPlayer):
     def update_q(
         self,
         unit: Unit,
-        state: Tuple[int, int, int],
+        state: Tuple[int, int, int, int, int, int],
         action: Tuple[ActionIntent, ActionMagnitude],
         reward: float,
-        next_state: Tuple[int, int, int],
+        next_state: Tuple[int, int, int, int, int, int],
         next_actions: List[Tuple[ActionIntent, ActionMagnitude]],
     ) -> None:
         if not self._learn:
@@ -491,11 +512,13 @@ class QLearningPlayer(RLPlayer):
 
         self._q1_add(state, action, self._alpha_u * td)
 
-        ally = self._board.get_nearest_friendly_unit(unit)
-        if ally and ally is not unit and ally.get_id() in self._last_actions:
-            ally_action = self._last_actions[ally.get_id()][2]
-            s_ij = self._encode_pair_state(unit, ally)
-            if unit.get_id() < ally.get_id():
+        # --- Q2 update using the snapshot taken at selection time ---
+        pair = self._pair_last.get(unit.get_id())
+        if pair:
+            ally_id, s_ij = pair
+            ally_rec = self._last_actions.get(ally_id)
+            if ally_rec and unit.get_id() < ally_id:  # update each pair once
+                ally_action = ally_rec[2]
                 self._q2_add(s_ij, action, ally_action, self._alpha_p * td)
 
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
@@ -544,7 +567,7 @@ class QLearningPlayer(RLPlayer):
         else:
             enemy_hex = self._board.get_hex(*nearest_enemy.get_coords())
             enemy_strength = nearest_enemy.get_strength()
-            enemy_dist = self._board.hex_distance(own_hex, enemy_hex)
+            enemy_dist = Board.hex_distance(own_hex, enemy_hex)
             enemy_eta = self._distance_to_eta_bin(enemy_dist, move)
 
         nearest_friend = self._board.get_nearest_friendly_unit(unit)
@@ -557,7 +580,7 @@ class QLearningPlayer(RLPlayer):
                 friend_eta = 0
             else:
                 friend_hex = self._board.get_hex(*nearest_friend.get_coords())
-                friend_dist = self._board.hex_distance(friend_hex, enemy_hex)
+                friend_dist = Board.hex_distance(friend_hex, enemy_hex)
                 friend_eta = self._distance_to_eta_bin(
                     friend_dist, nearest_friend.get_move()
                 )
@@ -595,7 +618,7 @@ class QLearningPlayer(RLPlayer):
             if f is unit:
                 continue
             f_hex = self._board.get_hex(f.row, f.column)
-            d = self._board.hex_distance(me_hex, f_hex)
+            d = Board.hex_distance(me_hex, f_hex)
             if d is None or d > radius:
                 continue
 
@@ -704,6 +727,7 @@ class QLearningPlayer(RLPlayer):
 
         # Clear stored actions now that Q-values have been updated
         self._last_actions = {}
+        self._pair_last = {}
 
     def calculate_reward(self) -> float:
         """Return a positional reward for the current board state."""
@@ -754,6 +778,11 @@ class QLearningPlayer(RLPlayer):
         # the requested level.
         if not logger.isEnabledFor(level):
             return
+
+        logger.log(
+            level, "Q1 size=%d, Q2 size=%d, legacy Q=%d for %s",
+            len(self._q1), len(self._q2), len(self._q_table), self.name
+        )
 
         logger.log(level, "Q-table for %s:", self.name)
         items = sorted(
