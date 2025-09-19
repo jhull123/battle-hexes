@@ -35,63 +35,23 @@ class ActionMagnitude(Enum):
 class QLearningPlayer(RLPlayer):
     """
     Simple Q-learning agent.
-
-    _last_actions
-    Temporary store for the most recent unit, state and action tuples used
-    when updating Q-values after movement or combat.
-    key: unit ID
-    value:
-        (unit, state, action)
-            unit: Unit object reference
-            state: see description below
-            action: (ActionIntent, ActionMagnitude)
-
-    actions ∈ { "ADVANCE", "RETREAT", "HOLD" }
-    magnitude ∈ { ``FULL``, ``HALF``, ``NONE`` }
-        ``NONE`` is only used with the ``HOLD`` intent
-
-    Unary state ``s_i`` (order matters!)
-    ``(my_str_bin, nearest_enemy_str_bin, eta_enemy_bin,``
-    `` nearest_ally_str_bin, eta_ally_bin, ally_density_bin)``
-    ``eta_enemy_bin`` is the estimated additional turns (0--3) the unit
-    would need to reach the nearest enemy based on its movement factor.
-    ``eta_ally_bin`` measures the turns the nearest ally would need to
-    reach that same enemy using the ally's movement factor.
-
-    Pairwise state ``s_ij`` (symmetric; order matters only in the action
-    pair)
-    ``(ally_dist_bin, strength_ratio_bin, enemy_bearing_align_bin,``
-    `` local_crowding_bin)``
-
-    _q_table
-    Q-value table that maps each (state, action) pair to a learned value
-    estimate.
-    key: Tuple[
-        state: Tuple[int, int, int, int, int, int],
-        action: Tuple[ActionIntent, ActionMagnitude]
-    ]
-    value: float  # Estimated Q-value for taking that action in that state
-
-    This table is updated using the standard Q-learning rule:
-        Q(s, a) ← Q(s, a) + α * [r + γ * max_a' Q(s', a') - Q(s, a)]
     """
 
     _alpha: float = PrivateAttr()
     _gamma: float = PrivateAttr()
     _epsilon: float = PrivateAttr()
     _turn_penalty: float = PrivateAttr()
-    _turn_count: int = PrivateAttr()
 
+    # Agent state attributes
+    _turn_count: int = PrivateAttr()
     _last_actions: dict = PrivateAttr()
     _pair_last: dict = PrivateAttr()
     _q1: dict = PrivateAttr()         # unary table (s_i, a_i) -> float
     _q2: dict = PrivateAttr()         # pairwise tbl (s_ij, a_i, a_j) -> float
+
     _alpha_u: float = PrivateAttr()   # unary LR
     _alpha_p: float = PrivateAttr()   # pairwise LR
     _neighbor_radius: int = PrivateAttr()  # consider allies within 2 hexes
-    _neighbor_k: int = PrivateAttr()       # link to up to 2 nearest allies
-    _sweeps: int = PrivateAttr()           # best-response sweeps (2)
-
     _learn = PrivateAttr()
     _explore = PrivateAttr()
 
@@ -149,8 +109,6 @@ class QLearningPlayer(RLPlayer):
         self._alpha_u = alpha
         self._alpha_p = alpha * 0.25
         self._neighbor_radius = 2
-        self._neighbor_k = 2
-        self._sweeps = 2
 
     def disable_learning(self) -> None:
         """Disable learning for the agent."""
@@ -744,3 +702,21 @@ class QLearningPlayer(RLPlayer):
                 level, "  State: %s, Action: %s, Q-value: %.4f", state, action,
                 value
             )
+
+    def print_agent_state(self, level: int = logging.INFO) -> None:
+        """
+        Print the agent's internal state for debugging purposes.
+
+        A logging level may be passed (default: logging.INFO). The messages
+        will be emitted using :py:meth:`logging.Logger.log` so callers can
+        choose a different severity (e.g. DEBUG).
+        """
+        if not logger.isEnabledFor(level):
+            return
+
+        logger.log(level, "Agent state for %s:", self.name)
+        logger.log(level, "  Turn count: %d", self._turn_count)
+
+        logger.log(level, "  Last Actions [unit ID, (unit, state, action)]")
+        for unit_id, action in self._last_actions.items():
+            print(f"{unit_id}={action}")
