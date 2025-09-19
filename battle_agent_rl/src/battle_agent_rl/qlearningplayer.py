@@ -491,6 +491,13 @@ class QLearningPlayer(RLPlayer):
 
         self._q1_add(state, action, self._alpha_u * td)
 
+        ally = self._board.get_nearest_friendly_unit(unit)
+        if ally and ally is not unit and ally.get_id() in self._last_actions:
+            ally_action = self._last_actions[ally.get_id()][2]
+            s_ij = self._encode_pair_state(unit, ally)
+            if unit.get_id() < ally.get_id():
+                self._q2_add(s_ij, action, ally_action, self._alpha_p * td)
+
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
         """Convert a hex distance to an ETA bin based on ``move``.
 
