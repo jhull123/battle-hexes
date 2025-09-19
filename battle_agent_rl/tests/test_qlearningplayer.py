@@ -296,6 +296,9 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
         self.assertAlmostEqual(
             self.player._q_table[(state, action)], expected_q
         )
+        self.assertAlmostEqual(
+            self.player._q1[(state, action)], expected_q
+        )
 
     def test_combat_results_updates_q_table(self):
         state = self.player.encode_unit_state(self.friend)
@@ -313,6 +316,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
         self.player.combat_results(results)
 
         self.assertEqual(self.player._q_table[(state, action)], 0.0)
+        self.assertEqual(self.player._q1[(state, action)], 0.0)
 
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):

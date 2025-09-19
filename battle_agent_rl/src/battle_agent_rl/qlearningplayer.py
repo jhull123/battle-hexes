@@ -467,6 +467,7 @@ class QLearningPlayer(RLPlayer):
 
     def update_q(
         self,
+        unit: Unit,
         state: Tuple[int, int, int],
         action: Tuple[ActionIntent, ActionMagnitude],
         reward: float,
@@ -476,14 +477,19 @@ class QLearningPlayer(RLPlayer):
         if not self._learn:
             return
 
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("update_q bootstrap for unit %s", unit)
+
         next_q_values = [
             self._q_table.get((next_state, a), 0.0) for a in next_actions
         ]
         next_max = max(next_q_values) if next_q_values else 0.0
         old_q = self._q_table.get((state, action), 0.0)
-        self._q_table[(state, action)] = old_q + self._alpha * (
-            reward + self._gamma * next_max - old_q
-        )
+        td = reward + self._gamma * next_max - old_q
+
+        self._q_table[(state, action)] = old_q + self._alpha * td
+
+        self._q1_add(state, action, self._alpha_u * td)
 
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
         """Convert a hex distance to an ETA bin based on ``move``.
@@ -627,7 +633,9 @@ class QLearningPlayer(RLPlayer):
             state, action = state_action
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
-            self.update_q(state, action, reward, next_state, next_actions)
+            self.update_q(
+                unit, state, action, reward, next_state, next_actions
+            )
         # Do not clear _last_actions here so combat_results can also use them
         self.print_q_table(logging.DEBUG)
 
@@ -683,7 +691,9 @@ class QLearningPlayer(RLPlayer):
             state, action = state_action
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
-            self.update_q(state, action, reward, next_state, next_actions)
+            self.update_q(
+                unit, state, action, reward, next_state, next_actions
+            )
 
         # Clear stored actions now that Q-values have been updated
         self._last_actions = {}
