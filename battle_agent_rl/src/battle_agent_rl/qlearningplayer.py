@@ -145,6 +145,14 @@ class QLearningPlayer(RLPlayer):
         key = (s_ij, a_i, a_j)
         self._q2[key] = self._q2.get(key, 0.0) + delta
 
+    def _canon_pair_key(self, s_ij, a_i, a_j):
+        """Canonicalize pairwise state/action triple by arrival order."""
+
+        eta_gap, power_bin = s_ij
+        if eta_gap < 0:
+            return ((-eta_gap, power_bin), a_j, a_i)
+        return ((eta_gap, power_bin), a_i, a_j)
+
     def _select_actions_pairwise(
         self, units: List[Unit]
     ) -> Dict[Unit, Tuple[ActionIntent, ActionMagnitude]]:
@@ -204,20 +212,23 @@ class QLearningPlayer(RLPlayer):
         lambda_q2 = 0.2
         for unit in units:
             current = joint_actions[unit]
+            s_ij = pair_states[unit]
             best_value = self._q1_get(unary_states[unit], current)
             ally = allies[unit]
             if ally is not None:
-                # Add the pairwise coordination value from _q2 to best_value
-                best_value += lambda_q2 * self._q2_get(
-                    pair_states[unit], current, joint_actions[ally]
+                (s_ij_c, ai_c, aj_c) = self._canon_pair_key(
+                    s_ij, current, joint_actions[ally]
                 )
+                # Add the pairwise coordination value from _q2 to best_value
+                best_value += lambda_q2 * self._q2_get(s_ij_c, ai_c, aj_c)
             # Score each candidate Q1+Q2 and keep the highest-scoring action
             for candidate in action_lists[unit]:
                 value = self._q1_get(unary_states[unit], candidate)
                 if ally is not None:
-                    value += lambda_q2 * self._q2_get(
-                        pair_states[unit], candidate, joint_actions[ally]
+                    (s_ij_c, ai_c, aj_c) = self._canon_pair_key(
+                        s_ij, candidate, joint_actions[ally]
                     )
+                    value += lambda_q2 * self._q2_get(s_ij_c, ai_c, aj_c)
                 if value > best_value:
                     best_value = value
                     current = candidate
@@ -278,12 +289,14 @@ class QLearningPlayer(RLPlayer):
         Returns a 2-tuple describing the pair (ui, uj) anchored on ui's nearest
         enemy:
 
-        - eta_diff_bin: ETA gap to ui’s nearest enemy, binned to {0,1,2}.
-            eta_diff_bin = min(2, ETA(uj→E_ui - ETA(ui→E_ui))) where
+        - eta_diff_bin: ETA gap to ui’s nearest enemy, binned to
+            {-2,-1,0,+1,+2}. eta_diff_bin = clamp_[-2,+2](ETA(uj→E_ui)
+            - ETA(ui→E_ui)) where
             ETA(x→E_ui) is the additional turns (0..3, with 3 = "3+ turns") for
             unit x to reach E_ui given its move factor.
-            Interpretation: 0 = arrive same turn, 1 = off by 1 turn,
-            2 = off by ≥2 turns.
+            Interpretation: 0 = arrive same turn, 1 = ally lags by 1 turn,
+            2 = ally lags by ≥2 turns. Negative values mean the ally arrives
+            earlier; callers canonicalize on use.
 
         - power_diff_bin: normalized power advantage of (ui+uj) vs E_ui,
             i.e., ((str_ui + str_uj) - str_enemy) / max(1, str_enemy),
@@ -429,9 +442,13 @@ class QLearningPlayer(RLPlayer):
         if pair:
             ally_id, s_ij = pair
             ally_rec = self._last_actions.get(ally_id)
-            if ally_rec and unit.get_id() < ally_id:  # update each pair once
+            if ally_rec:
                 ally_action = ally_rec[2]  # (ActionIntent, ActionMagnitude)
-                self._q2_add(s_ij, action, ally_action, self._alpha_p * td)
+                (s_ij_c, ai_c, aj_c) = self._canon_pair_key(
+                    s_ij, action, ally_action
+                )
+                if unit.get_id() < ally_id:  # update each pair once
+                    self._q2_add(s_ij_c, ai_c, aj_c, self._alpha_p * td)
 
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
         """Convert a hex distance to an ETA bin based on ``move``.
