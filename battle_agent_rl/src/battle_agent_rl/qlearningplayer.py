@@ -218,7 +218,9 @@ class QLearningPlayer(RLPlayer):
         unary_states: Dict[Unit, Tuple[int, ...]] = {}
         allies: Dict[Unit, Optional[Unit]] = {}
         pair_states: Dict[Unit, Tuple[int, int]] = {}
-        action_lists: Dict[Unit, List[Tuple[ActionIntent, ActionMagnitude]]] = {}
+        action_lists: Dict[
+            Unit, List[Tuple[ActionIntent, ActionMagnitude]]
+        ] = {}
 
         for unit in units:
             unary_states[unit] = self.encode_unit_state(unit)
