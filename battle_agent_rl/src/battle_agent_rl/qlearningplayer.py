@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 import logging
 import math
@@ -53,6 +54,7 @@ class QLearningPlayer(RLPlayer):
     _alpha_u: float = PrivateAttr()   # unary LR
     _alpha_p: float = PrivateAttr()   # pairwise LR
     _neighbor_radius: int = PrivateAttr()  # how far to search for allies
+    _cohesion_kappa: float = PrivateAttr()
     _learn = PrivateAttr()
     _explore = PrivateAttr()
 
@@ -109,6 +111,7 @@ class QLearningPlayer(RLPlayer):
         self._alpha_u = alpha
         self._alpha_p = alpha * 0.25
         self._neighbor_radius = 12
+        self._cohesion_kappa = 2.0
 
     def disable_learning(self) -> None:
         """Disable learning for the agent."""
@@ -615,19 +618,51 @@ class QLearningPlayer(RLPlayer):
         Called after the player's unit plan has been applied to the board.
         """
         self._turn_count += 1
-        reward = (
+        base_reward = (
             # self.calculate_reward() - self._turn_penalty * self._turn_count
             self._turn_count * -0.1
         )
-        for unit, state_action in [
-            (record[0], (record[1], record[2]))
-            for record in self._last_actions.values()
-        ]:
-            state, action = state_action
+
+        pair_bonus = defaultdict(float)
+        kappa = self._cohesion_kappa
+        for unit_id, pair in self._pair_last.items():
+            if not pair:
+                continue
+            ally_id, prev_state = pair
+            if ally_id is None or unit_id >= ally_id:
+                continue
+
+            unit_record = self._last_actions.get(unit_id)
+            ally_record = self._last_actions.get(ally_id)
+            if not unit_record or not ally_record:
+                continue
+
+            unit = unit_record[0]
+            ally = ally_record[0]
+            gap_prev = abs(prev_state[0])
+            gap_next = abs(self._encode_pair_state(unit, ally)[0])
+            bonus = kappa * (gap_prev - gap_next)
+            half_bonus = 0.5 * bonus
+            if half_bonus:
+                logger.info(
+                    "Awarding cohesion bonus %.3f to units %s and %s "
+                    "(gap %.3f->%.3f)",
+                    half_bonus,
+                    unit_id,
+                    ally_id,
+                    gap_prev,
+                    gap_next,
+                )
+                pair_bonus[unit_id] += half_bonus
+                pair_bonus[ally_id] += half_bonus
+
+        for record in self._last_actions.values():
+            unit, state, action = record
+            shaped_reward = base_reward + pair_bonus.get(unit.get_id(), 0.0)
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
             self.update_q(
-                unit, state, action, reward, next_state, next_actions
+                unit, state, action, shaped_reward, next_state, next_actions
             )
         # Do not clear _last_actions here so combat_results can also use them
         logging.info("\nAgent state after movement callback...")
