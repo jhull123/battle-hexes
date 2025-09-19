@@ -97,11 +97,11 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
 
     q_table_path = Path("q_table.pkl")
     if q_table_path.exists():
-        rl_player.load_q_table(str(q_table_path))
-        logger.info("Loaded existing Q-table from %s", q_table_path)
+        rl_player.load_q_tables(str(q_table_path))
+        logger.info("Loaded existing Q-tables from %s", q_table_path)
     else:
         logger.info(
-            "No existing Q-table found at %s, starting fresh", q_table_path
+            "No existing Q-tables found at %s, starting fresh", q_table_path
         )
 
     game_factory = GameFactory(

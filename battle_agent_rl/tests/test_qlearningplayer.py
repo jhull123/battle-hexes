@@ -242,43 +242,6 @@ class TestQLearningPlayerEncodePairState(unittest.TestCase):
         self.board.add_unit(enemy, 3, 0)
         self.assertEqual(self.player._encode_pair_state(ui, uj), (2, 1))
 
-    def test_negative_bins(self):
-        """ensure eta difference for pairs is absolute for symmetry"""
-        ui = Unit(
-            uuid.uuid4(),
-            "U1",
-            self.friendly_faction,
-            self.player,
-            "Inf",
-            2,
-            2,
-            1,
-        )
-        uj = Unit(
-            uuid.uuid4(),
-            "U2",
-            self.friendly_faction,
-            self.player,
-            "Inf",
-            1,
-            1,
-            3,
-        )
-        enemy = Unit(
-            uuid.uuid4(),
-            "E1",
-            self.enemy_faction,
-            self.enemy_player,
-            "Inf",
-            6,
-            6,
-            3,
-        )
-        self.board.add_unit(ui, 0, 0)
-        self.board.add_unit(uj, 0, 2)
-        self.board.add_unit(enemy, 3, 0)
-        self.assertEqual(self.player._encode_pair_state(ui, uj), (1, -1))
-
 
 if __name__ == "__main__":
     unittest.main()

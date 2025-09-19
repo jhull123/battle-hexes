@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 from pydantic import PrivateAttr
 
 from battle_hexes_core.combat.combatresults import CombatResults
+from battle_hexes_core.combat.combatresult import CombatResult
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
@@ -51,7 +52,7 @@ class QLearningPlayer(RLPlayer):
 
     _alpha_u: float = PrivateAttr()   # unary LR
     _alpha_p: float = PrivateAttr()   # pairwise LR
-    _neighbor_radius: int = PrivateAttr()  # consider allies within 2 hexes
+    _neighbor_radius: int = PrivateAttr()  # how far to search for allies
     _learn = PrivateAttr()
     _explore = PrivateAttr()
 
@@ -61,7 +62,7 @@ class QLearningPlayer(RLPlayer):
         type: PlayerType,
         factions: List[Faction],
         board: Board,
-        alpha: float = 0.1,
+        alpha: float = 0.09,
         gamma: float = 0.15,
         epsilon: float = 0.1,
         turn_penalty: float = 0.1,
@@ -78,7 +79,6 @@ class QLearningPlayer(RLPlayer):
                 with.
             alpha (float, optional): Learning rate ∈ [0, 1]. Higher values make
                 new rewards overwrite prior estimates more aggressively.
-                Default: 0.1.
             gamma (float, optional): Discount factor ∈ [0, 1] for future
                 rewards. 0 emphasizes immediate rewards; values near 1 value
                 long-term return. Default: 0.15.
@@ -108,7 +108,7 @@ class QLearningPlayer(RLPlayer):
         self._q2 = {}
         self._alpha_u = alpha
         self._alpha_p = alpha * 0.25
-        self._neighbor_radius = 2
+        self._neighbor_radius = 12
 
     def disable_learning(self) -> None:
         """Disable learning for the agent."""
@@ -201,20 +201,21 @@ class QLearningPlayer(RLPlayer):
                 joint_actions[unit] = max(qvals, key=lambda t: t[0])[1]
 
         # One-sweep best response: refine action using Q1+Q2 vs ally's action
+        lambda_q2 = 0.2
         for unit in units:
             current = joint_actions[unit]
             best_value = self._q1_get(unary_states[unit], current)
             ally = allies[unit]
             if ally is not None:
                 # Add the pairwise coordination value from _q2 to best_value
-                best_value += self._q2_get(
+                best_value += lambda_q2 * self._q2_get(
                     pair_states[unit], current, joint_actions[ally]
                 )
             # Score each candidate Q1+Q2 and keep the highest-scoring action
             for candidate in action_lists[unit]:
                 value = self._q1_get(unary_states[unit], candidate)
                 if ally is not None:
-                    value += self._q2_get(
+                    value += lambda_q2 * self._q2_get(
                         pair_states[unit], candidate, joint_actions[ally]
                     )
                 if value > best_value:
@@ -267,7 +268,9 @@ class QLearningPlayer(RLPlayer):
             if plan is not None:
                 plans.append(plan)
 
-        # self.print_last_actions()
+        logging.info("\nAgent state after movement...")
+        self.print_agent_state(logging.INFO)
+        logging.info("")
         return plans
 
     def _encode_pair_state(self, ui: Unit, uj: Unit) -> tuple[int, int]:
@@ -275,13 +278,12 @@ class QLearningPlayer(RLPlayer):
         Returns a 2-tuple describing the pair (ui, uj) anchored on ui's nearest
         enemy:
 
-        - eta_diff_bin: abs ETA gap to ui’s nearest enemy, binned to {0,1,2}.
-            eta_diff_bin = min(2, abs(ETA(uj→E_ui) - ETA(ui→E_ui))) where
+        - eta_diff_bin: ETA gap to ui’s nearest enemy, binned to {0,1,2}.
+            eta_diff_bin = min(2, ETA(uj→E_ui - ETA(ui→E_ui))) where
             ETA(x→E_ui) is the additional turns (0..3, with 3 = "3+ turns") for
             unit x to reach E_ui given its move factor.
             Interpretation: 0 = arrive same turn, 1 = off by 1 turn,
-            2 = off by ≥2 turns. (Direction—who leads/lags—is intentionally
-            omitted; unary state carries that.)
+            2 = off by ≥2 turns.
 
         - power_diff_bin: normalized power advantage of (ui+uj) vs E_ui,
             i.e., ((str_ui + str_uj) - str_enemy) / max(1, str_enemy),
@@ -305,12 +307,13 @@ class QLearningPlayer(RLPlayer):
         if ui_hex is None or uj_hex is None or enemy_hex is None:
             return (0, 0)
 
-        # --- ETA difference bin (absolute) ---
+        # --- ETA difference bin ---
         dist_ui = Board.hex_distance(ui_hex, enemy_hex)
         dist_uj = Board.hex_distance(uj_hex, enemy_hex)
         eta_ui = self._distance_to_eta_bin(dist_ui, ui.get_move())
         eta_uj = self._distance_to_eta_bin(dist_uj, uj.get_move())
-        eta_diff_bin = min(2, abs(eta_uj - eta_ui))
+        eta_gap = eta_uj - eta_ui               # + => uj lags, - => uj leads
+        eta_gap_bin = max(-2, min(2, eta_gap))  # [-2..+2], keeps direction
 
         # --- Power advantage bin ---
         str_enemy = enemy.get_strength()
@@ -325,7 +328,7 @@ class QLearningPlayer(RLPlayer):
             power_diff_bin = int(-math.floor(-power_diff + 0.5))
         power_diff_bin = max(-2, min(2, power_diff_bin))
 
-        return (eta_diff_bin, power_diff_bin)
+        return (eta_gap_bin, power_diff_bin)
 
     def move_plan(
             self,
@@ -576,7 +579,9 @@ class QLearningPlayer(RLPlayer):
                 unit, state, action, reward, next_state, next_actions
             )
         # Do not clear _last_actions here so combat_results can also use them
-        self.print_q_table(logging.DEBUG)
+        logging.info("\nAgent state after movement callback...")
+        self.print_agent_state(logging.INFO)
+        logging.info("")
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
@@ -584,11 +589,8 @@ class QLearningPlayer(RLPlayer):
         The board object is also updated at this point with the results of the
         player's movement plan.
         """
-
-        # Determine if this player was the attacker.
-        # During the attacker's turn ``_last_actions`` stores the actions.
-        # attacker = bool(self._last_actions)
-        bonus = 1000.0
+        attacker = bool(self._last_actions)
+        bonus = 100.0
         half_bonus = bonus / 2.0
         double_bonus = bonus * 2.0
 
@@ -608,13 +610,13 @@ class QLearningPlayer(RLPlayer):
                     combat_award = double_bonus
 
             result = battle.get_combat_result()
-            # TODO consider giving a results bonus
-            # if result == CombatResult.DEFENDER_ELIMINATED:
+            # results bonus
+            if result == CombatResult.EXCHANGE:
+                combat_award -= half_bonus
+            elif result == CombatResult.ATTACKER_ELIMINATED:
+                combat_award += -half_bonus if attacker else half_bonus
+            # elif result == CombatResult.DEFENDER_ELIMINATED:
             #     combat_award += double_bonus if attacker else -half_bonus
-            # elif result == CombatResult.ATTACKER_ELIMINATED:
-            #     combat_award += -half_bonus if attacker else half_bonus
-            # elif result == CombatResult.EXCHANGE:
-            #     combat_award += half_bonus
             # else:
             #     combat_award += half_bonus if attacker else 1.0
             logger.info(
@@ -633,6 +635,10 @@ class QLearningPlayer(RLPlayer):
             self.update_q(
                 unit, state, action, reward, next_state, next_actions
             )
+
+        logging.info("\nAgent state after combat results...")
+        self.print_agent_state(logging.INFO)
+        logging.info("")
 
         # Clear stored actions now that Q-values have been updated
         self._last_actions = {}
@@ -663,45 +669,14 @@ class QLearningPlayer(RLPlayer):
         return reward
 
     def end_game_cb(self) -> None:
-        self.print_q_table(logging.INFO)
-        pass
-
-    def print_last_actions(self) -> None:
-        """Print the last actions taken by the player."""
-        logger.info("Last actions for %s:", self.name)
-        for unit_id, (unit, state, action) in self._last_actions.items():
-            msg = (
-                f"  Unit ID: {unit_id}, Unit: {unit.get_name()}, "
-                f"State: {state}, Action: {action}"
-            )
-            logger.info(msg)
-
-    def print_q_table(self, level: int = logging.INFO) -> None:
-        """Print the Q-table for debugging purposes.
-
-        A logging level may be passed (default: logging.INFO). The messages
-        will be emitted using :py:meth:`logging.Logger.log` so callers can
-        choose a different severity (e.g. DEBUG).
         """
-        # Avoid expensive formatting/sorting when the logger won't emit at
-        # the requested level.
-        if not logger.isEnabledFor(level):
-            return
-
-        logger.log(
-            level, "Q1 size=%d, Q2 size=%d, legacy Q=%d for %s",
-            len(self._q1), len(self._q2), len(self._q_table), self.name
+        Called at the end of the game.
+        """
+        logger.info(
+            "\nGame over for %s after %d turns.",
+            self.name, self._turn_count
         )
-
-        logger.log(level, "Q-table for %s:", self.name)
-        items = sorted(
-            self._q_table.items(), key=lambda item: item[1], reverse=True
-        )
-        for (state, action), value in items:
-            logger.log(
-                level, "  State: %s, Action: %s, Q-value: %.4f", state, action,
-                value
-            )
+        self.print_agent_state(logging.INFO)
 
     def print_agent_state(self, level: int = logging.INFO) -> None:
         """
@@ -719,4 +694,19 @@ class QLearningPlayer(RLPlayer):
 
         logger.log(level, "  Last Actions [unit ID, (unit, state, action)]")
         for unit_id, action in self._last_actions.items():
-            print(f"{unit_id}={action}")
+            logger.log(level, f"    {unit_id}={action}")
+
+        logger.log(level, "  Last Pair Actions [unit ID, (ally_id, s_ij)]")
+        for unit_id, pair in self._pair_last.items():
+            logger.log(level, f"    {unit_id}={pair}")
+
+        logger.log(level, "  Q1 table [(s_i, a_i), q_value]")
+        for (state, action), q_value in self._q1.items():
+            logger.log(level, f"    ({state}, {action}) = {q_value:.4f}")
+
+        logger.log(level, "  Q2 table [(s_ij, a_i, a_j), q_value]")
+        for (state, action_i, action_j), q_value in self._q2.items():
+            logger.log(
+                level,
+                f"    ({state}, {action_i}, {action_j}) = {q_value:.4f}"
+            )
