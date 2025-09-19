@@ -248,9 +248,15 @@ class QLearningPlayer(RLPlayer):
 
         joint_actions: Dict[Unit, Tuple[ActionIntent, ActionMagnitude]] = {}
         for unit in units:
-            joint_actions[unit] = self.choose_action(
-                unit, unary_states[unit], action_lists[unit]
-            )
+            acts = action_lists[unit]
+            if self._explore and random.random() < self._epsilon:
+                joint_actions[unit] = random.choice(acts)
+            else:
+                qvals = [
+                    (self._q1_get(unary_states[unit], action), action)
+                    for action in acts
+                ]
+                joint_actions[unit] = max(qvals, key=lambda t: t[0])[1]
 
         for unit in units:
             current = joint_actions[unit]
