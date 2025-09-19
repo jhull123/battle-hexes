@@ -118,6 +118,126 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
         self.assertAlmostEqual(reward, 2.6666666666666665)
 
 
+class TestQLearningPlayerPairwiseSelection(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(5, 5)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+            epsilon=0.0,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+
+    def test_pairwise_selection_uses_pair_bonus(self):
+        friend_a = Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            4,
+            3,
+            3,
+        )
+        friend_b = Unit(
+            uuid.uuid4(),
+            "F2",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            4,
+            3,
+            3,
+        )
+        enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        self.board.add_unit(friend_a, 0, 0)
+        self.board.add_unit(friend_b, 1, 0)
+        self.board.add_unit(enemy, 2, 0)
+
+        state_a = self.player.encode_unit_state(friend_a)
+        state_b = self.player.encode_unit_state(friend_b)
+        pair_ab = self.player._encode_pair_state(friend_a, friend_b)
+        pair_ba = self.player._encode_pair_state(friend_b, friend_a)
+
+        hold = (ActionIntent.HOLD, ActionMagnitude.NONE)
+        advance_full = (ActionIntent.ADVANCE, ActionMagnitude.FULL)
+
+        self.player._q_table[(state_a, hold)] = 1.0
+        self.player._q_table[(state_b, hold)] = 1.0
+
+        self.player._q1[(state_a, hold)] = 0.0
+        self.player._q1[(state_a, advance_full)] = 0.0
+        self.player._q1[(state_b, hold)] = 0.0
+        self.player._q1[(state_b, advance_full)] = 0.0
+
+        self.player._q2[(pair_ab, advance_full, hold)] = 5.0
+        self.player._q2[(pair_ba, advance_full, advance_full)] = 4.0
+
+        joint = self.player._select_actions_pairwise([friend_a, friend_b])
+
+        self.assertEqual(joint[friend_a], advance_full)
+        self.assertEqual(joint[friend_b], advance_full)
+
+    def test_pairwise_selection_without_ally_falls_back_to_unary(self):
+        friend = Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            4,
+            3,
+            3,
+        )
+        enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        self.board.add_unit(friend, 0, 0)
+        self.board.add_unit(enemy, 4, 4)
+
+        hold = (ActionIntent.HOLD, ActionMagnitude.NONE)
+        retreat_half = (ActionIntent.RETREAT, ActionMagnitude.HALF)
+
+        state = self.player.encode_unit_state(friend)
+
+        self.player._q_table[(state, hold)] = 1.0
+
+        self.player._q1[(state, hold)] = 1.0
+        self.player._q1[(state, retreat_half)] = 3.0
+
+        joint = self.player._select_actions_pairwise([friend])
+
+        self.assertEqual(joint[friend], retreat_half)
+
+
 class TestQLearningPlayerQUpdates(unittest.TestCase):
     def setUp(self):
         self.board = Board(3, 3)

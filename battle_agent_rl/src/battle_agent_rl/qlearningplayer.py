@@ -3,7 +3,7 @@ import logging
 import math
 import pickle
 import random
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import PrivateAttr
 
@@ -211,27 +211,86 @@ class QLearningPlayer(RLPlayer):
         key = (s_ij, a_i, a_j)
         self._q2[key] = self._q2.get(key, 0.0) + delta
 
+    def _select_actions_pairwise(
+        self, units: List[Unit]
+    ) -> Dict[Unit, Tuple[ActionIntent, ActionMagnitude]]:
+        board = self._board
+        unary_states: Dict[Unit, Tuple[int, ...]] = {}
+        allies: Dict[Unit, Optional[Unit]] = {}
+        pair_states: Dict[Unit, Tuple[int, int]] = {}
+        action_lists: Dict[Unit, List[Tuple[ActionIntent, ActionMagnitude]]] = {}
+
+        for unit in units:
+            unary_states[unit] = self.encode_unit_state(unit)
+            allies[unit] = None
+            pair_states[unit] = (0, 0)
+            action_lists[unit] = self.available_actions(unit)
+
+        for unit in units:
+            ally = board.get_nearest_friendly_unit(unit)
+            if ally is None or ally is unit or ally not in unary_states:
+                continue
+            coords = unit.get_coords()
+            ally_coords = ally.get_coords()
+            if coords is None or ally_coords is None:
+                continue
+            unit_hex = board.get_hex(*coords)
+            ally_hex = board.get_hex(*ally_coords)
+            if unit_hex is None or ally_hex is None:
+                continue
+            distance = board.hex_distance(unit_hex, ally_hex)
+            if distance is None or distance > self._neighbor_radius:
+                continue
+            allies[unit] = ally
+            pair_states[unit] = self._encode_pair_state(unit, ally)
+
+        joint_actions: Dict[Unit, Tuple[ActionIntent, ActionMagnitude]] = {}
+        for unit in units:
+            joint_actions[unit] = self.choose_action(
+                unit, unary_states[unit], action_lists[unit]
+            )
+
+        for unit in units:
+            current = joint_actions[unit]
+            best_value = self._q1_get(unary_states[unit], current)
+            ally = allies[unit]
+            if ally is not None:
+                best_value += self._q2_get(
+                    pair_states[unit], current, joint_actions[ally]
+                )
+            for candidate in action_lists[unit]:
+                value = self._q1_get(unary_states[unit], candidate)
+                if ally is not None:
+                    value += self._q2_get(
+                        pair_states[unit], candidate, joint_actions[ally]
+                    )
+                if value > best_value:
+                    best_value = value
+                    current = candidate
+            joint_actions[unit] = current
+
+        return joint_actions
+
     def movement(self) -> List[UnitMovementPlan]:
         logger.info("")
         logger.info("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
 
-        # encode pairwise states for all friendly unit pairs
-        for unit in self.own_units(self._board.get_units()):
+        units = self.own_units(self._board.get_units())
+
+        for unit in units:
             ally = self._board.get_nearest_friendly_unit(unit)
             if ally is None:
                 continue
-            # TODO pick up here !
             pair_state = self._encode_pair_state(unit, ally)
             logger.info("%s, %s, %s", unit, ally, pair_state)
 
-        for unit in self.own_units(self._board.get_units()):
+        joint_actions = self._select_actions_pairwise(units)
+
+        for unit in units:
             state = self.encode_unit_state(unit)
-            actions = self.available_actions(unit)
-            chosen = self.choose_action(unit, state, actions)
-            # Store the unit reference so we can update after combat even if it
-            # was destroyed.
+            chosen = joint_actions[unit]
             self._last_actions[unit.get_id()] = (unit, state, chosen)
             plan = self.move_plan(unit, chosen[0], chosen[1])
             if plan is not None:
