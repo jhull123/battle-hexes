@@ -213,28 +213,62 @@ class QLearningPlayer(RLPlayer):
         for unit in units:
             current = joint_actions[unit]
             s_ij = pair_states[unit]
-            best_value = self._q1_get(unary_states[unit], current)
             ally = allies[unit]
+
+            logger.info(
+                "Pair sweep | unit=%s ally=%s s_ij=%s λ=%.2f",
+                getattr(unit, "name", unit), getattr(ally, "name", ally),
+                s_ij, lambda_q2
+            )
+
+            # baseline with current action
+            best_value = self._q1_get(unary_states[unit], current)
             if ally is not None:
-                (s_ij_c, ai_c, aj_c) = self._canon_pair_key(
+                s_ij_c, ai_c, aj_c = self._canon_pair_key(
                     s_ij, current, joint_actions[ally]
                 )
-                # Add the pairwise coordination value from _q2 to best_value
-                best_value += lambda_q2 * self._q2_get(s_ij_c, ai_c, aj_c)
-            # Score each candidate Q1+Q2 and keep the highest-scoring action
+                q2 = self._q2_get(s_ij_c, ai_c, aj_c)
+                logger.info(
+                    "  start: act=%s  Q1=%.3f  "
+                    "Q2[%s|%s,%s]=%.3f  total=%.3f",
+                    self._act_str(current), best_value,
+                    s_ij_c, self._act_str(ai_c), self._act_str(aj_c),
+                    q2, best_value + lambda_q2 * q2,
+                )
+                best_value += lambda_q2 * q2
+
+            # score candidates
             for candidate in action_lists[unit]:
                 value = self._q1_get(unary_states[unit], candidate)
                 if ally is not None:
-                    (s_ij_c, ai_c, aj_c) = self._canon_pair_key(
+                    s_ij_c, ai_c, aj_c = self._canon_pair_key(
                         s_ij, candidate, joint_actions[ally]
                     )
-                    value += lambda_q2 * self._q2_get(s_ij_c, ai_c, aj_c)
+                    q2 = self._q2_get(s_ij_c, ai_c, aj_c)
+                    total = value + lambda_q2 * q2
+                    logger.info(
+                        "  cand:  "
+                        "act=%s  Q1=%.3f + %.2f*Q2[%s|%s,%s]=%.3f  total=%.3f",
+                        self._act_str(candidate), value, lambda_q2,
+                        s_ij_c, self._act_str(ai_c), self._act_str(aj_c),
+                        q2, total,
+                    )
+                    value = total
                 if value > best_value:
                     best_value = value
                     current = candidate
+
+            logger.info(
+                "  chose:  act=%s  best_total=%.3f", self._act_str(current),
+                best_value
+            )
+
             joint_actions[unit] = current
 
         return joint_actions
+
+    def _act_str(self, a):  # (ActionIntent, ActionMagnitude) -> "ADVANCE/FULL"
+        return f"{a[0].value}/{a[1].value}"
 
     def movement(self) -> List[UnitMovementPlan]:
         """
