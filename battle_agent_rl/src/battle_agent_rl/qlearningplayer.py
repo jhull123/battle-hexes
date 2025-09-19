@@ -701,11 +701,15 @@ class QLearningPlayer(RLPlayer):
             logger.log(level, f"    {unit_id}={pair}")
 
         logger.log(level, "  Q1 table [(s_i, a_i), q_value]")
-        for (state, action), q_value in self._q1.items():
+        for (state, action), q_value in sorted(
+            self._q1.items(), key=lambda item: item[1], reverse=True
+        ):
             logger.log(level, f"    ({state}, {action}) = {q_value:.4f}")
 
         logger.log(level, "  Q2 table [(s_ij, a_i, a_j), q_value]")
-        for (state, action_i, action_j), q_value in self._q2.items():
+        for (state, action_i, action_j), q_value in sorted(
+            self._q2.items(), key=lambda item: item[1], reverse=True
+        ):
             logger.log(
                 level,
                 f"    ({state}, {action_i}, {action_j}) = {q_value:.4f}"
