@@ -51,7 +51,9 @@ class SampleGameCreator:
             epsilon=0.0,
         )
         q_table_path = repo_root / "battle_agent_rl" / "q_table.pkl"
-        player2.load_q_table(q_table_path)
+        # TODO replace with pairwise Q-table loading
+        if False:
+            player2.load_q_table(q_table_path)
 
         red_unit = Unit(
             UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
