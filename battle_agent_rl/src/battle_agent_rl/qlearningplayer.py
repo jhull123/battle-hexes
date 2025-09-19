@@ -712,5 +712,8 @@ class QLearningPlayer(RLPlayer):
         ):
             logger.log(
                 level,
-                f"    ({state}, {action_i}, {action_j}) = {q_value:.4f}"
+                f"    ({state}, "
+                f"({action_i[0].value}, {action_i[1].value}), "
+                f"({action_j[0].value}, {action_j[1].value})) "
+                f"= {q_value:.4f}"
             )
