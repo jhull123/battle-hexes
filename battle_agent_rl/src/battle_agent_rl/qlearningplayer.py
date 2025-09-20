@@ -1,14 +1,17 @@
+from collections import defaultdict
 from enum import Enum
 import logging
 import math
 import pickle
 import random
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import PrivateAttr
 
 from battle_hexes_core.combat.combatresults import CombatResults
+from battle_hexes_core.combat.combatresult import CombatResult
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.hex import Hex
 from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
@@ -22,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class ActionIntent(Enum):
     ADVANCE = "ADVANCE"
+    ATTACK = "ATTACK"
     RETREAT = "RETREAT"
     HOLD = "HOLD"
 
@@ -35,64 +39,24 @@ class ActionMagnitude(Enum):
 class QLearningPlayer(RLPlayer):
     """
     Simple Q-learning agent.
-
-    _last_actions
-    Temporary store for the most recent unit, state and action tuples used
-    when updating Q-values after movement or combat.
-    key: unit ID
-    value:
-        (unit, state, action)
-            unit: Unit object reference
-            state: see description below
-            action: (ActionIntent, ActionMagnitude)
-
-    actions ∈ { "ADVANCE", "RETREAT", "HOLD" }
-    magnitude ∈ { ``FULL``, ``HALF``, ``NONE`` }
-        ``NONE`` is only used with the ``HOLD`` intent
-
-    Unary state ``s_i`` (order matters!)
-    ``(my_str_bin, nearest_enemy_str_bin, eta_enemy_bin,``
-    `` nearest_ally_str_bin, eta_ally_bin, ally_density_bin)``
-    ``eta_enemy_bin`` is the estimated additional turns (0--3) the unit
-    would need to reach the nearest enemy based on its movement factor.
-    ``eta_ally_bin`` measures the turns the nearest ally would need to
-    reach that same enemy using the ally's movement factor.
-
-    Pairwise state ``s_ij`` (symmetric; order matters only in the action
-    pair)
-    ``(ally_dist_bin, strength_ratio_bin, enemy_bearing_align_bin,``
-    `` local_crowding_bin)``
-
-    _q_table
-    Q-value table that maps each (state, action) pair to a learned value
-    estimate.
-    key: Tuple[
-        state: Tuple[int, int, int, int, int, int],
-        action: Tuple[ActionIntent, ActionMagnitude]
-    ]
-    value: float  # Estimated Q-value for taking that action in that state
-
-    This table is updated using the standard Q-learning rule:
-        Q(s, a) ← Q(s, a) + α * [r + γ * max_a' Q(s', a') - Q(s, a)]
     """
 
     _alpha: float = PrivateAttr()
     _gamma: float = PrivateAttr()
     _epsilon: float = PrivateAttr()
     _turn_penalty: float = PrivateAttr()
+
+    # Agent state attributes
     _turn_count: int = PrivateAttr()
-
     _last_actions: dict = PrivateAttr()
-    _q_table: dict = PrivateAttr()  # TODO remove after pairwise Q implemented
+    _pair_last: dict = PrivateAttr()
+    _q1: dict = PrivateAttr()         # unary table (s_i, a_i) -> float
+    _q2: dict = PrivateAttr()         # pairwise tbl (s_ij, a_i, a_j) -> float
 
-    _q1: dict = PrivateAttr()         # (s_i, a_i) -> float
-    _q2: dict = PrivateAttr()         # (s_ij, a_i, a_j) -> float
     _alpha_u: float = PrivateAttr()   # unary LR
     _alpha_p: float = PrivateAttr()   # pairwise LR
-    _neighbor_radius: int = PrivateAttr()  # consider allies within 2 hexes
-    _neighbor_k: int = PrivateAttr()       # link to up to 2 nearest allies
-    _sweeps: int = PrivateAttr()           # best-response sweeps (2)
-
+    _neighbor_radius: int = PrivateAttr()  # how far to search for allies
+    _cohesion_kappa: float = PrivateAttr()
     _learn = PrivateAttr()
     _explore = PrivateAttr()
 
@@ -102,7 +66,7 @@ class QLearningPlayer(RLPlayer):
         type: PlayerType,
         factions: List[Faction],
         board: Board,
-        alpha: float = 0.1,
+        alpha: float = 0.09,
         gamma: float = 0.15,
         epsilon: float = 0.1,
         turn_penalty: float = 0.1,
@@ -119,7 +83,6 @@ class QLearningPlayer(RLPlayer):
                 with.
             alpha (float, optional): Learning rate ∈ [0, 1]. Higher values make
                 new rewards overwrite prior estimates more aggressively.
-                Default: 0.1.
             gamma (float, optional): Discount factor ∈ [0, 1] for future
                 rewards. 0 emphasizes immediate rewards; values near 1 value
                 long-term return. Default: 0.15.
@@ -139,7 +102,7 @@ class QLearningPlayer(RLPlayer):
         self._epsilon = epsilon
         self._turn_penalty = turn_penalty
         self._turn_count = 0
-        self._q_table = {}
+        self._pair_last = {}
         self._last_actions = {}
         self._learn = True
         self._explore = True
@@ -149,9 +112,8 @@ class QLearningPlayer(RLPlayer):
         self._q2 = {}
         self._alpha_u = alpha
         self._alpha_p = alpha * 0.25
-        self._neighbor_radius = 2
-        self._neighbor_k = 2
-        self._sweeps = 2
+        self._neighbor_radius = 12
+        self._cohesion_kappa = 2.0
 
     def disable_learning(self) -> None:
         """Disable learning for the agent."""
@@ -163,38 +125,15 @@ class QLearningPlayer(RLPlayer):
         self._explore = False
         self._epsilon = 0.0
 
-    def save_q_table(self, file_path: str) -> None:
-        """Save the internal Q-table to ``file_path`` using pickle."""
-        # TODO obsolete after pairwise Q implemented
-        with open(file_path, "wb") as f:
-            pickle.dump(self._q_table, f)
-
-    def load_q_table(self, file_path: str) -> None:
-        """Load a Q-table from ``file_path`` if the file exists."""
-        # TODO obsolete after pairwise Q implemented
-        try:
-            with open(file_path, "rb") as f:
-                self._q_table = pickle.load(f)
-        except FileNotFoundError:
-            logger.warning("Q-table file not found: %s", file_path)
-
     def save_q_tables(self, file_path: str) -> None:
         with open(file_path, "wb") as f:
             pickle.dump({"Q1": self._q1, "Q2": self._q2}, f)
 
     def load_q_tables(self, file_path: str) -> None:
-        try:
-            with open(file_path, "rb") as f:
-                data = pickle.load(f)
-            if isinstance(data, dict) and "Q1" in data and "Q2" in data:
-                self._q1 = data["Q1"]
-                self._q2 = data["Q2"]
-            else:
-                # backward-compat: old single-table dumps
-                self._q1 = data if isinstance(data, dict) else {}
-                self._q2 = {}
-        except FileNotFoundError:
-            pass
+        with open(file_path, "rb") as f:
+            data = pickle.load(f)
+            self._q1 = data["Q1"]
+            self._q2 = data["Q2"]
 
     # ----- Q1/Q2 getters -----
     def _q1_get(self, s_i, a_i) -> float:
@@ -211,33 +150,208 @@ class QLearningPlayer(RLPlayer):
         key = (s_ij, a_i, a_j)
         self._q2[key] = self._q2.get(key, 0.0) + delta
 
+    def _canon_pair_key(self, s_ij, a_i, a_j):
+        """Canonicalize pairwise state/action triple by arrival order."""
+
+        eta_gap, power_bin = s_ij
+        if eta_gap < 0:
+            return ((-eta_gap, power_bin), a_j, a_i)
+        return ((eta_gap, power_bin), a_i, a_j)
+
+    def _select_actions_pairwise(
+        self, units: List[Unit]
+    ) -> Dict[Unit, Tuple[ActionIntent, ActionMagnitude]]:
+        """
+        Select joint actions via nearest-ally Q: ε-greedy on Q1, then one-sweep
+        best response using Q1+Q2.
+        """
+
+        board = self._board
+        unary_states: Dict[Unit, Tuple[int, ...]] = {}
+        allies: Dict[Unit, Optional[Unit]] = {}
+        pair_states: Dict[Unit, Tuple[int, int]] = {}
+        action_lists: Dict[
+            Unit, List[Tuple[ActionIntent, ActionMagnitude]]
+        ] = {}
+        attack_context: Dict[Unit, Tuple[bool, bool]] = {}
+
+        # Precompute unary states, nearest allies, pair states, action lists
+        for unit in units:
+            unary_states[unit] = self.encode_unit_state(unit)
+            allies[unit] = None
+            pair_states[unit] = (0, 0)
+            actions = self.available_actions(unit)
+            action_lists[unit] = actions
+            has_attack = any(a[0] == ActionIntent.ATTACK for a in actions)
+            has_advance = any(a[0] == ActionIntent.ADVANCE for a in actions)
+            attack_context[unit] = (has_attack, has_advance)
+
+        # Link unit to nearest ally in range and cache pairwise state
+        for unit in units:
+            ally = board.get_nearest_friendly_unit(unit)
+            if ally is None or ally is unit or ally not in unary_states:
+                continue
+            coords = unit.get_coords()
+            ally_coords = ally.get_coords()
+            if coords is None or ally_coords is None:
+                continue
+            unit_hex = board.get_hex(*coords)
+            ally_hex = board.get_hex(*ally_coords)
+            if unit_hex is None or ally_hex is None:
+                continue
+            distance = Board.hex_distance(unit_hex, ally_hex)
+            if distance is None or distance > self._neighbor_radius:
+                continue
+            allies[unit] = ally
+            pair_states[unit] = self._encode_pair_state(unit, ally)
+
+        # Init per-unit actions: ε-greedy on Q1 (random or best unary action)
+        joint_actions: Dict[Unit, Tuple[ActionIntent, ActionMagnitude]] = {}
+        for unit in units:
+            acts = action_lists[unit]
+            if self._explore and random.random() < self._epsilon:
+                joint_actions[unit] = random.choice(acts)
+            else:
+                qvals = [
+                    (self._q1_get(unary_states[unit], action), action)
+                    for action in acts
+                ]
+                joint_actions[unit] = max(qvals, key=lambda t: t[0])[1]
+
+        # One-sweep best response: refine action using Q1+Q2 vs ally's action
+        lambda_q2 = 0.2
+        for unit in units:
+            current = joint_actions[unit]
+            s_ij = pair_states[unit]
+            ally = allies[unit]
+
+            logger.info(
+                "Pair sweep | unit=%s ally=%s s_ij=%s λ=%.2f",
+                getattr(unit, "name", unit), getattr(ally, "name", ally),
+                s_ij, lambda_q2
+            )
+
+            # baseline with current action
+            best_value = self._q1_get(unary_states[unit], current)
+            if ally is not None:
+                s_ij_c, ai_c, aj_c = self._canon_pair_key(
+                    s_ij, current, joint_actions[ally]
+                )
+                q2 = self._q2_get(s_ij_c, ai_c, aj_c)
+                logger.info(
+                    "  start: act=%s  Q1=%.3f  "
+                    "Q2[%s|%s,%s]=%.3f  total=%.3f",
+                    self._act_str(current), best_value,
+                    s_ij_c, self._act_str(ai_c), self._act_str(aj_c),
+                    q2, best_value + lambda_q2 * q2,
+                )
+                best_value += lambda_q2 * q2
+
+            # score candidates
+            for candidate in action_lists[unit]:
+                value = self._q1_get(unary_states[unit], candidate)
+                if ally is not None:
+                    s_ij_c, ai_c, aj_c = self._canon_pair_key(
+                        s_ij, candidate, joint_actions[ally]
+                    )
+                    q2 = self._q2_get(s_ij_c, ai_c, aj_c)
+                    total = value + lambda_q2 * q2
+                    logger.info(
+                        "  cand:  "
+                        "act=%s  Q1=%.3f + %.2f*Q2[%s|%s,%s]=%.3f  total=%.3f",
+                        self._act_str(candidate), value, lambda_q2,
+                        s_ij_c, self._act_str(ai_c), self._act_str(aj_c),
+                        q2, total,
+                    )
+                    value = total
+                if value > best_value:
+                    best_value = value
+                    current = candidate
+
+            logger.info(
+                "  chose:  act=%s  best_total=%.3f", self._act_str(current),
+                best_value
+            )
+
+            joint_actions[unit] = current
+
+            attack_available, advance_available = attack_context.get(
+                unit, (False, False)
+            )
+            if attack_available:
+                suppressed_adv = not advance_available
+                q1_current = self._q1_get(unary_states[unit], current)
+                lambda_term = 0.0
+                if ally is not None:
+                    s_ij_c, ai_c, aj_c = self._canon_pair_key(
+                        s_ij, current, joint_actions[ally]
+                    )
+                    lambda_term = lambda_q2 * self._q2_get(
+                        s_ij_c, ai_c, aj_c
+                    )
+                logger.info(
+                    "ATTACK summary | unit=%s ally=%s s_ij=%s Q1=%.3f "
+                    "λQ2=%.3f choice=%s suppressed_adv=%s",
+                    getattr(unit, "name", unit),
+                    getattr(ally, "name", ally),
+                    s_ij,
+                    q1_current,
+                    lambda_term,
+                    self._act_str(current),
+                    suppressed_adv,
+                )
+
+        return joint_actions
+
+    def _act_str(self, a):  # (ActionIntent, ActionMagnitude) -> "ADVANCE/FULL"
+        return f"{a[0].value}/{a[1].value}"
+
     def movement(self) -> List[UnitMovementPlan]:
+        """
+        Select pairwise-aware actions, snapshot pair states, and build
+        UnitMovementPlans for all friendly units.
+        """
+
         logger.info("")
         logger.info("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
+        units = self.own_units(self._board.get_units())
+        joint_actions = self._select_actions_pairwise(units)
+        self._pair_last = {}
 
-        # encode pairwise states for all friendly unit pairs
-        for unit in self.own_units(self._board.get_units()):
-            ally = self._board.get_nearest_friendly_unit(unit)
-            if ally is None:
+        # Snapshot in-range ally pair-state (s_ij) for learning updates
+        for u in units:
+            ally = self._board.get_nearest_friendly_unit(u)
+            if (
+                not ally
+                or ally is u
+                or ally.get_coords() is None
+                or u.get_coords() is None
+            ):
                 continue
-            # TODO pick up here !
-            pair_state = self._encode_pair_state(unit, ally)
-            logger.info("%s, %s, %s", unit, ally, pair_state)
+            u_hex = self._board.get_hex(*u.get_coords())
+            a_hex = self._board.get_hex(*ally.get_coords())
+            if not u_hex or not a_hex:
+                continue
+            d = Board.hex_distance(u_hex, a_hex)
+            if d is None or d > self._neighbor_radius:
+                continue
+            s_ij = self._encode_pair_state(u, ally)
+            self._pair_last[u.get_id()] = (ally.get_id(), s_ij)
 
-        for unit in self.own_units(self._board.get_units()):
+        # Store state/action, create movement plan, append to plans
+        for unit in units:
             state = self.encode_unit_state(unit)
-            actions = self.available_actions(unit)
-            chosen = self.choose_action(unit, state, actions)
-            # Store the unit reference so we can update after combat even if it
-            # was destroyed.
+            chosen = joint_actions[unit]
             self._last_actions[unit.get_id()] = (unit, state, chosen)
             plan = self.move_plan(unit, chosen[0], chosen[1])
             if plan is not None:
                 plans.append(plan)
 
-        # self.print_last_actions()
+        logging.info("\nAgent state after movement...")
+        self.print_agent_state(logging.INFO)
+        logging.info("")
         return plans
 
     def _encode_pair_state(self, ui: Unit, uj: Unit) -> tuple[int, int]:
@@ -245,13 +359,14 @@ class QLearningPlayer(RLPlayer):
         Returns a 2-tuple describing the pair (ui, uj) anchored on ui's nearest
         enemy:
 
-        - eta_diff_bin: abs ETA gap to ui’s nearest enemy, binned to {0,1,2}.
-            eta_diff_bin = min(2, abs(ETA(uj→E_ui) - ETA(ui→E_ui))) where
+        - eta_diff_bin: ETA gap to ui’s nearest enemy, binned to
+            {-2,-1,0,+1,+2}. eta_diff_bin = clamp_[-2,+2](ETA(uj→E_ui)
+            - ETA(ui→E_ui)) where
             ETA(x→E_ui) is the additional turns (0..3, with 3 = "3+ turns") for
             unit x to reach E_ui given its move factor.
-            Interpretation: 0 = arrive same turn, 1 = off by 1 turn,
-            2 = off by ≥2 turns. (Direction—who leads/lags—is intentionally
-            omitted; unary state carries that.)
+            Interpretation: 0 = arrive same turn, 1 = ally lags by 1 turn,
+            2 = ally lags by ≥2 turns. Negative values mean the ally arrives
+            earlier; callers canonicalize on use.
 
         - power_diff_bin: normalized power advantage of (ui+uj) vs E_ui,
             i.e., ((str_ui + str_uj) - str_enemy) / max(1, str_enemy),
@@ -275,12 +390,13 @@ class QLearningPlayer(RLPlayer):
         if ui_hex is None or uj_hex is None or enemy_hex is None:
             return (0, 0)
 
-        # --- ETA difference bin (absolute) ---
-        dist_ui = board.hex_distance(ui_hex, enemy_hex)
-        dist_uj = board.hex_distance(uj_hex, enemy_hex)
+        # --- ETA difference bin ---
+        dist_ui = Board.hex_distance(ui_hex, enemy_hex)
+        dist_uj = Board.hex_distance(uj_hex, enemy_hex)
         eta_ui = self._distance_to_eta_bin(dist_ui, ui.get_move())
         eta_uj = self._distance_to_eta_bin(dist_uj, uj.get_move())
-        eta_diff_bin = min(2, abs(eta_uj - eta_ui))
+        eta_gap = eta_uj - eta_ui               # + => uj lags, - => uj leads
+        eta_gap_bin = max(-2, min(2, eta_gap))  # [-2..+2], keeps direction
 
         # --- Power advantage bin ---
         str_enemy = enemy.get_strength()
@@ -295,7 +411,7 @@ class QLearningPlayer(RLPlayer):
             power_diff_bin = int(-math.floor(-power_diff + 0.5))
         power_diff_bin = max(-2, min(2, power_diff_bin))
 
-        return (eta_diff_bin, power_diff_bin)
+        return (eta_gap_bin, power_diff_bin)
 
     def move_plan(
             self,
@@ -308,6 +424,11 @@ class QLearningPlayer(RLPlayer):
         magnitude.
 
         ``ADVANCE``: move toward the nearest enemy hex.
+        ``ATTACK``: move toward a reachable enemy and stop in an
+            attack-capable hex. When an attack is possible the agent suppresses
+            ``ADVANCE`` magnitudes that would immediately engage to reduce
+            action aliasing while still allowing cautious ``ADVANCE``/``HALF``
+            repositioning when it keeps the unit out of contact.
         ``RETREAT``: move away from the nearest enemy hex.
         ``HOLD``: do not move.
 
@@ -323,13 +444,41 @@ class QLearningPlayer(RLPlayer):
         if start_hex is None:
             return UnitMovementPlan(unit, [])
 
-        move_points = unit.get_move()
-        if magnitude == ActionMagnitude.HALF:
-            move_points = move_points // 2
-        elif magnitude == ActionMagnitude.NONE:
-            move_points = 0
+        base_move_points = unit.get_move()
+        move_points = base_move_points
+        if action != ActionIntent.ATTACK:
+            if magnitude == ActionMagnitude.HALF:
+                move_points = base_move_points // 2
+            elif magnitude == ActionMagnitude.NONE:
+                move_points = 0
 
-        if action == ActionIntent.HOLD or move_points <= 0:
+        if action == ActionIntent.HOLD:
+            return UnitMovementPlan(unit, [start_hex])
+
+        if action == ActionIntent.ATTACK:
+            if base_move_points <= 0:
+                return UnitMovementPlan(unit, [start_hex])
+            target = self._pick_target_enemy(unit)
+            if target is not None:
+                attack_path = self._best_attack_path(
+                    unit, target, base_move_points
+                )
+                if not attack_path:
+                    target_coords = target.get_coords()
+                    target_hex = (
+                        board.get_hex(*target_coords)
+                        if target_coords is not None
+                        else None
+                    )
+                    if target_hex is not None:
+                        attack_path = board.path_towards(
+                            unit, target_hex, base_move_points
+                        )
+                if attack_path:
+                    return UnitMovementPlan(unit, attack_path)
+            return UnitMovementPlan(unit, [start_hex])
+
+        if move_points <= 0:
             return UnitMovementPlan(unit, [start_hex])
 
         enemy = board.get_nearest_enemy_unit(unit)
@@ -351,72 +500,216 @@ class QLearningPlayer(RLPlayer):
     def available_actions(
         self, unit: Unit
     ) -> List[Tuple[ActionIntent, ActionMagnitude]]:
+        """Return legal intent/magnitude pairs for ``unit`` this turn."""
+
         actions = [(ActionIntent.HOLD, ActionMagnitude.NONE)]
         move = unit.get_move()
-        if move > 0:
-            actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
-            actions.append((ActionIntent.ADVANCE, ActionMagnitude.FULL))
+        if move <= 0:
+            return actions
+
+        if self.can_attack_this_turn(unit):
+            actions.append((ActionIntent.ATTACK, ActionMagnitude.NONE))
+            if not self._advance_half_would_attack(unit):
+                actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
             actions.append((ActionIntent.RETREAT, ActionMagnitude.HALF))
             actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
+            return actions
+
+        actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
+        actions.append((ActionIntent.ADVANCE, ActionMagnitude.FULL))
+        actions.append((ActionIntent.RETREAT, ActionMagnitude.HALF))
+        actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
         return actions
 
-    def choose_action(
-        self,
-        unit: Unit,
-        state: Tuple[int, int, int],
-        actions: List[Tuple[ActionIntent, ActionMagnitude]],
-    ) -> Tuple[ActionIntent, ActionMagnitude]:
-        if not actions:
-            return (ActionIntent.HOLD, ActionMagnitude.NONE)
-        if random.random() < self._epsilon:
-            return random.choice(actions)
+    def _advance_half_would_attack(self, unit: Unit) -> bool:
+        """Return ``True`` if ``ADVANCE``/``HALF`` reaches an attack hex."""
 
-        logger.info("Current state for unit %s is: %s", str(unit), state)
-        logger.info("Available actions are:")
-        for a in actions:
-            logger.info("  Action: %s", a)
+        coords = unit.get_coords()
+        if coords is None:
+            return False
 
-        q_values = [self._q_table.get((state, a), 0.0) for a in actions]
+        move_points = unit.get_move() // 2
+        if move_points <= 0:
+            return False
 
-        # example_key = (state, (ActionIntent.HOLD, ActionMagnitude.NONE))
-        # logger.info("Example key is: %s", example_key)
+        board = self._board
+        enemy = board.get_nearest_enemy_unit(unit)
+        if enemy is None or enemy.get_coords() is None:
+            return False
 
-        # example_q = self._q_table.get(example_key)  # Example access to Q-val
-        # logger.info("Example Q-value is: %s", example_q)
+        enemy_hex = board.get_hex(*enemy.get_coords())
+        start_hex = board.get_hex(*coords)
+        if enemy_hex is None or start_hex is None:
+            return False
 
-        logger.info("Q-values are:")
-        for a, q in zip(actions, q_values):
-            # if q != 0.0:
-            logger.info("  Action: %s, Q-value: %.4f", a, q)
+        path = board.path_towards(unit, enemy_hex, move_points)
+        if not path:
+            return False
 
-        max_q = max(q_values)
-        best = [a for a, q in zip(actions, q_values) if q == max_q]
+        last_hex = path[-1]
+        try:
+            distance = Board.hex_distance(last_hex, enemy_hex)
+        except ValueError:
+            return False
 
-        logger.info("Best actions are:")
-        for a in best:
-            logger.info("  Action: %s", a)
+        return distance <= 1
 
-        return random.choice(best)
+    def can_attack_this_turn(self, unit: Unit) -> bool:
+        """Return ``True`` if the unit can enter an attack hex this turn."""
+
+        move_points = unit.get_move()
+        if move_points <= 0 or unit.get_coords() is None:
+            return False
+
+        board = self._board
+        for enemy in self._enemies_visible_to(unit):
+            coords = enemy.get_coords()
+            if coords is None:
+                continue
+            enemy_hex = board.get_hex(*coords)
+            if enemy_hex is None:
+                continue
+            path = board.path_towards(unit, enemy_hex, move_points)
+            if not path:
+                continue
+            last_hex = path[-1]
+            try:
+                distance = Board.hex_distance(last_hex, enemy_hex)
+            except ValueError:
+                continue
+            if distance <= 1:
+                return True
+        return False
+
+    def _enemies_visible_to(self, unit: Unit) -> List[Unit]:
+        board = self._board
+        faction = unit.get_faction()
+        enemies: List[Unit] = []
+        for other in board.get_units():
+            if other is unit:
+                continue
+            if other.get_faction() == faction:
+                continue
+            if other.get_coords() is None:
+                continue
+            enemies.append(other)
+        return enemies
+
+    def _pick_target_enemy(self, unit: Unit) -> Optional[Unit]:
+        enemies = self._enemies_visible_to(unit)
+        if not enemies or unit.get_coords() is None:
+            return None
+
+        board = self._board
+        start_hex = board.get_hex(*unit.get_coords())
+        if start_hex is None:
+            return None
+
+        best_enemy: Optional[Unit] = None
+        best_distance = float("inf")
+        for enemy in enemies:
+            coords = enemy.get_coords()
+            if coords is None:
+                continue
+            enemy_hex = board.get_hex(*coords)
+            if enemy_hex is None:
+                continue
+            try:
+                distance = Board.hex_distance(start_hex, enemy_hex)
+            except ValueError:
+                continue
+            if distance < best_distance:
+                best_distance = distance
+                best_enemy = enemy
+            elif distance == best_distance and best_enemy is not None:
+                if str(enemy.get_id()) < str(best_enemy.get_id()):
+                    best_enemy = enemy
+
+        return best_enemy
+
+    def _best_attack_path(
+        self, unit: Unit, target: Unit, move_points: int
+    ) -> List[Hex]:
+        if move_points <= 0 or unit.get_coords() is None:
+            return []
+        target_coords = target.get_coords()
+        if target_coords is None:
+            return []
+
+        board = self._board
+        start_hex = board.get_hex(*unit.get_coords())
+        target_hex = board.get_hex(*target_coords)
+        if start_hex is None or target_hex is None:
+            return []
+
+        reachable = board.get_reachable_hexes(unit, start_hex, move_points)
+        if not reachable:
+            return []
+
+        candidates: List[Tuple[int, int, int, List[Hex]]] = []
+        for hex_option in reachable:
+            try:
+                distance = Board.hex_distance(hex_option, target_hex)
+            except ValueError:
+                continue
+            if distance not in (0, 1):
+                continue
+            path = board.shortest_path(unit, start_hex, hex_option)
+            if path:
+                candidates.append(
+                    (len(path), hex_option.row, hex_option.column, path)
+                )
+
+        if not candidates:
+            return []
+
+        candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+        best_path = candidates[0][3]
+        return best_path[: move_points + 1]
 
     def update_q(
         self,
-        state: Tuple[int, int, int],
+        unit: Unit,
+        state: Tuple[int, int, int, int, int, int],
         action: Tuple[ActionIntent, ActionMagnitude],
         reward: float,
-        next_state: Tuple[int, int, int],
+        next_state: Tuple[int, int, int, int, int, int],
         next_actions: List[Tuple[ActionIntent, ActionMagnitude]],
     ) -> None:
+        """
+        TD update for factored Q: bootstrap from max Q1(s′,·); update Q1(s,a)
+        and Q2(s_ij,a,a_ally) using pre-move ally snapshot.
+        """
+
         if not self._learn:
             return
 
-        next_q_values = [
-            self._q_table.get((next_state, a), 0.0) for a in next_actions
-        ]
-        next_max = max(next_q_values) if next_q_values else 0.0
-        old_q = self._q_table.get((state, action), 0.0)
-        self._q_table[(state, action)] = old_q + self._alpha * (
-            reward + self._gamma * next_max - old_q
-        )
+        # --- Bootstrap using Q1 only (simple, stable) ---
+        q1_now = self._q1_get(state, action)
+        if next_actions:
+            next_max_q1 = max(
+                self._q1_get(next_state, a) for a in next_actions
+            )
+        else:
+            next_max_q1 = 0.0
+
+        td = reward + self._gamma * next_max_q1 - q1_now
+
+        # Update unary table
+        self._q1_add(state, action, self._alpha_u * td)
+
+        # --- Update pairwise table using pre-move snapshot (if available) ---
+        pair = self._pair_last.get(unit.get_id())
+        if pair:
+            ally_id, s_ij = pair
+            ally_rec = self._last_actions.get(ally_id)
+            if ally_rec:
+                ally_action = ally_rec[2]  # (ActionIntent, ActionMagnitude)
+                (s_ij_c, ai_c, aj_c) = self._canon_pair_key(
+                    s_ij, action, ally_action
+                )
+                if unit.get_id() < ally_id:  # update each pair once
+                    self._q2_add(s_ij_c, ai_c, aj_c, self._alpha_p * td)
 
     def _distance_to_eta_bin(self, distance: int, move: int) -> int:
         """Convert a hex distance to an ETA bin based on ``move``.
@@ -464,7 +757,7 @@ class QLearningPlayer(RLPlayer):
         else:
             enemy_hex = self._board.get_hex(*nearest_enemy.get_coords())
             enemy_strength = nearest_enemy.get_strength()
-            enemy_dist = self._board.hex_distance(own_hex, enemy_hex)
+            enemy_dist = Board.hex_distance(own_hex, enemy_hex)
             enemy_eta = self._distance_to_eta_bin(enemy_dist, move)
 
         nearest_friend = self._board.get_nearest_friendly_unit(unit)
@@ -477,7 +770,7 @@ class QLearningPlayer(RLPlayer):
                 friend_eta = 0
             else:
                 friend_hex = self._board.get_hex(*nearest_friend.get_coords())
-                friend_dist = self._board.hex_distance(friend_hex, enemy_hex)
+                friend_dist = Board.hex_distance(friend_hex, enemy_hex)
                 friend_eta = self._distance_to_eta_bin(
                     friend_dist, nearest_friend.get_move()
                 )
@@ -515,7 +808,7 @@ class QLearningPlayer(RLPlayer):
             if f is unit:
                 continue
             f_hex = self._board.get_hex(f.row, f.column)
-            d = self._board.hex_distance(me_hex, f_hex)
+            d = Board.hex_distance(me_hex, f_hex)
             if d is None or d > radius:
                 continue
 
@@ -549,20 +842,56 @@ class QLearningPlayer(RLPlayer):
         Called after the player's unit plan has been applied to the board.
         """
         self._turn_count += 1
-        reward = (
+        base_reward = (
             # self.calculate_reward() - self._turn_penalty * self._turn_count
             self._turn_count * -0.1
         )
-        for unit, state_action in [
-            (record[0], (record[1], record[2]))
-            for record in self._last_actions.values()
-        ]:
-            state, action = state_action
+
+        pair_bonus = defaultdict(float)
+        kappa = self._cohesion_kappa
+        for unit_id, pair in self._pair_last.items():
+            if not pair:
+                continue
+            ally_id, prev_state = pair
+            if ally_id is None or unit_id >= ally_id:
+                continue
+
+            unit_record = self._last_actions.get(unit_id)
+            ally_record = self._last_actions.get(ally_id)
+            if not unit_record or not ally_record:
+                continue
+
+            unit = unit_record[0]
+            ally = ally_record[0]
+            gap_prev = abs(prev_state[0])
+            gap_next = abs(self._encode_pair_state(unit, ally)[0])
+            bonus = kappa * (gap_prev - gap_next)
+            half_bonus = 0.5 * bonus
+            if half_bonus:
+                logger.info(
+                    "Awarding cohesion bonus %.3f to units %s and %s "
+                    "(gap %.3f->%.3f)",
+                    half_bonus,
+                    unit_id,
+                    ally_id,
+                    gap_prev,
+                    gap_next,
+                )
+                pair_bonus[unit_id] += half_bonus
+                pair_bonus[ally_id] += half_bonus
+
+        for record in self._last_actions.values():
+            unit, state, action = record
+            shaped_reward = base_reward + pair_bonus.get(unit.get_id(), 0.0)
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
-            self.update_q(state, action, reward, next_state, next_actions)
+            self.update_q(
+                unit, state, action, shaped_reward, next_state, next_actions
+            )
         # Do not clear _last_actions here so combat_results can also use them
-        self.print_q_table(logging.DEBUG)
+        logging.info("\nAgent state after movement callback...")
+        self.print_agent_state(logging.INFO)
+        logging.info("")
 
     def combat_results(self, combat_results: CombatResults) -> None:
         """
@@ -570,11 +899,8 @@ class QLearningPlayer(RLPlayer):
         The board object is also updated at this point with the results of the
         player's movement plan.
         """
-
-        # Determine if this player was the attacker.
-        # During the attacker's turn ``_last_actions`` stores the actions.
-        # attacker = bool(self._last_actions)
-        bonus = 1000.0
+        attacker = bool(self._last_actions)
+        bonus = 100.0
         half_bonus = bonus / 2.0
         double_bonus = bonus * 2.0
 
@@ -594,13 +920,13 @@ class QLearningPlayer(RLPlayer):
                     combat_award = double_bonus
 
             result = battle.get_combat_result()
-            # TODO consider giving a results bonus
-            # if result == CombatResult.DEFENDER_ELIMINATED:
+            # results bonus
+            if result == CombatResult.EXCHANGE:
+                combat_award -= half_bonus
+            elif result == CombatResult.ATTACKER_ELIMINATED:
+                combat_award += -half_bonus if attacker else half_bonus
+            # elif result == CombatResult.DEFENDER_ELIMINATED:
             #     combat_award += double_bonus if attacker else -half_bonus
-            # elif result == CombatResult.ATTACKER_ELIMINATED:
-            #     combat_award += -half_bonus if attacker else half_bonus
-            # elif result == CombatResult.EXCHANGE:
-            #     combat_award += half_bonus
             # else:
             #     combat_award += half_bonus if attacker else 1.0
             logger.info(
@@ -616,10 +942,17 @@ class QLearningPlayer(RLPlayer):
             state, action = state_action
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
-            self.update_q(state, action, reward, next_state, next_actions)
+            self.update_q(
+                unit, state, action, reward, next_state, next_actions
+            )
+
+        logging.info("\nAgent state after combat results...")
+        self.print_agent_state(logging.INFO)
+        logging.info("")
 
         # Clear stored actions now that Q-values have been updated
         self._last_actions = {}
+        self._pair_last = {}
 
     def calculate_reward(self) -> float:
         """Return a positional reward for the current board state."""
@@ -646,37 +979,51 @@ class QLearningPlayer(RLPlayer):
         return reward
 
     def end_game_cb(self) -> None:
-        self.print_q_table(logging.INFO)
-        pass
+        """
+        Called at the end of the game.
+        """
+        logger.info(
+            "\nGame over for %s after %d turns.",
+            self.name, self._turn_count
+        )
+        self.print_agent_state(logging.INFO)
 
-    def print_last_actions(self) -> None:
-        """Print the last actions taken by the player."""
-        logger.info("Last actions for %s:", self.name)
-        for unit_id, (unit, state, action) in self._last_actions.items():
-            msg = (
-                f"  Unit ID: {unit_id}, Unit: {unit.get_name()}, "
-                f"State: {state}, Action: {action}"
-            )
-            logger.info(msg)
-
-    def print_q_table(self, level: int = logging.INFO) -> None:
-        """Print the Q-table for debugging purposes.
+    def print_agent_state(self, level: int = logging.INFO) -> None:
+        """
+        Print the agent's internal state for debugging purposes.
 
         A logging level may be passed (default: logging.INFO). The messages
         will be emitted using :py:meth:`logging.Logger.log` so callers can
         choose a different severity (e.g. DEBUG).
         """
-        # Avoid expensive formatting/sorting when the logger won't emit at
-        # the requested level.
         if not logger.isEnabledFor(level):
             return
 
-        logger.log(level, "Q-table for %s:", self.name)
-        items = sorted(
-            self._q_table.items(), key=lambda item: item[1], reverse=True
-        )
-        for (state, action), value in items:
+        logger.log(level, "Agent state for %s:", self.name)
+        logger.log(level, "  Turn count: %d", self._turn_count)
+
+        logger.log(level, "  Last Actions [unit ID, (unit, state, action)]")
+        for unit_id, action in self._last_actions.items():
+            logger.log(level, f"    {unit_id}={action}")
+
+        logger.log(level, "  Last Pair Actions [unit ID, (ally_id, s_ij)]")
+        for unit_id, pair in self._pair_last.items():
+            logger.log(level, f"    {unit_id}={pair}")
+
+        logger.log(level, "  Q1 table [(s_i, a_i), q_value]")
+        for (state, action), q_value in sorted(
+            self._q1.items(), key=lambda item: item[1], reverse=True
+        ):
+            logger.log(level, f"    ({state}, {action}) = {q_value:.4f}")
+
+        logger.log(level, "  Q2 table [(s_ij, a_i, a_j), q_value]")
+        for (state, action_i, action_j), q_value in sorted(
+            self._q2.items(), key=lambda item: item[1], reverse=True
+        ):
             logger.log(
-                level, "  State: %s, Action: %s, Q-value: %.4f", state, action,
-                value
+                level,
+                f"    ({state}, "
+                f"({action_i[0].value}, {action_i[1].value}), "
+                f"({action_j[0].value}, {action_j[1].value})) "
+                f"= {q_value:.4f}"
             )
