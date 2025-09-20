@@ -184,6 +184,141 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         self.assertEqual(self.player._distance_to_eta_bin(20, move), 3)
 
 
+class TestQLearningPlayerAttackIntent(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(5, 5)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+            turn_penalty=0,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+
+    def _make_unit(self, move: int) -> Unit:
+        return Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            move,
+        )
+
+    def _make_enemy(self) -> Unit:
+        return Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            2,
+            2,
+            3,
+        )
+
+    def test_can_attack_this_turn_true_when_enemy_reachable(self):
+        friend = self._make_unit(move=2)
+        enemy = self._make_enemy()
+        self.board.add_unit(friend, 2, 1)
+        self.board.add_unit(enemy, 0, 1)
+
+        self.assertTrue(self.player.can_attack_this_turn(friend))
+
+    def test_can_attack_this_turn_false_without_targets(self):
+        friend = self._make_unit(move=3)
+        self.board.add_unit(friend, 2, 2)
+
+        self.assertFalse(self.player.can_attack_this_turn(friend))
+
+    def test_available_actions_attack_suppresses_contact_advance(self):
+        friend = self._make_unit(move=2)
+        enemy = self._make_enemy()
+        self.board.add_unit(friend, 2, 1)
+        self.board.add_unit(enemy, 0, 1)
+
+        actions = self.player.available_actions(friend)
+
+        self.assertEqual(
+            actions,
+            [
+                (ActionIntent.HOLD, ActionMagnitude.NONE),
+                (ActionIntent.ATTACK, ActionMagnitude.NONE),
+                (ActionIntent.RETREAT, ActionMagnitude.HALF),
+                (ActionIntent.RETREAT, ActionMagnitude.FULL),
+            ],
+        )
+
+    def test_available_actions_attack_keeps_non_contact_half(self):
+        friend = self._make_unit(move=4)
+        enemy = self._make_enemy()
+        self.board.add_unit(friend, 4, 0)
+        self.board.add_unit(enemy, 0, 0)
+
+        actions = self.player.available_actions(friend)
+
+        self.assertEqual(
+            actions,
+            [
+                (ActionIntent.HOLD, ActionMagnitude.NONE),
+                (ActionIntent.ATTACK, ActionMagnitude.NONE),
+                (ActionIntent.ADVANCE, ActionMagnitude.HALF),
+                (ActionIntent.RETREAT, ActionMagnitude.HALF),
+                (ActionIntent.RETREAT, ActionMagnitude.FULL),
+            ],
+        )
+
+    def test_best_attack_path_returns_adjacent_hex(self):
+        friend = self._make_unit(move=4)
+        enemy = self._make_enemy()
+        self.board.add_unit(friend, 4, 0)
+        self.board.add_unit(enemy, 0, 0)
+
+        path = self.player._best_attack_path(friend, enemy, friend.get_move())
+
+        self.assertTrue(path)
+        last_hex = path[-1]
+        enemy_hex = self.board.get_hex(*enemy.get_coords())
+        self.assertEqual(Board.hex_distance(last_hex, enemy_hex), 1)
+
+    def test_move_plan_attack_uses_attack_path(self):
+        friend = self._make_unit(move=3)
+        enemy = self._make_enemy()
+        self.board.add_unit(friend, 4, 1)
+        self.board.add_unit(enemy, 1, 1)
+
+        expected_path = self.player._best_attack_path(
+            friend, enemy, friend.get_move()
+        )
+        plan = self.player.move_plan(
+            friend, ActionIntent.ATTACK, ActionMagnitude.NONE
+        )
+        self.assertEqual(plan.path, expected_path)
+
+    def test_move_plan_attack_returns_start_when_no_target(self):
+        friend = self._make_unit(move=3)
+        self.board.add_unit(friend, 4, 1)
+
+        plan = self.player.move_plan(
+            friend, ActionIntent.ATTACK, ActionMagnitude.NONE
+        )
+        start_hex = self.board.get_hex(*friend.get_coords())
+        self.assertEqual(plan.path, [start_hex])
+
+
 class TestQLearningPlayerEncodePairState(unittest.TestCase):
     def setUp(self):
         self.board = Board(5, 5)

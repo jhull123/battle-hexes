@@ -11,6 +11,7 @@ from pydantic import PrivateAttr
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.combat.combatresult import CombatResult
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.hex import Hex
 from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class ActionIntent(Enum):
     ADVANCE = "ADVANCE"
+    ATTACK = "ATTACK"
     RETREAT = "RETREAT"
     HOLD = "HOLD"
 
@@ -171,13 +173,18 @@ class QLearningPlayer(RLPlayer):
         action_lists: Dict[
             Unit, List[Tuple[ActionIntent, ActionMagnitude]]
         ] = {}
+        attack_context: Dict[Unit, Tuple[bool, bool]] = {}
 
         # Precompute unary states, nearest allies, pair states, action lists
         for unit in units:
             unary_states[unit] = self.encode_unit_state(unit)
             allies[unit] = None
             pair_states[unit] = (0, 0)
-            action_lists[unit] = self.available_actions(unit)
+            actions = self.available_actions(unit)
+            action_lists[unit] = actions
+            has_attack = any(a[0] == ActionIntent.ATTACK for a in actions)
+            has_advance = any(a[0] == ActionIntent.ADVANCE for a in actions)
+            attack_context[unit] = (has_attack, has_advance)
 
         # Link unit to nearest ally in range and cache pairwise state
         for unit in units:
@@ -267,6 +274,32 @@ class QLearningPlayer(RLPlayer):
             )
 
             joint_actions[unit] = current
+
+            attack_available, advance_available = attack_context.get(
+                unit, (False, False)
+            )
+            if attack_available:
+                suppressed_adv = not advance_available
+                q1_current = self._q1_get(unary_states[unit], current)
+                lambda_term = 0.0
+                if ally is not None:
+                    s_ij_c, ai_c, aj_c = self._canon_pair_key(
+                        s_ij, current, joint_actions[ally]
+                    )
+                    lambda_term = lambda_q2 * self._q2_get(
+                        s_ij_c, ai_c, aj_c
+                    )
+                logger.info(
+                    "ATTACK summary | unit=%s ally=%s s_ij=%s Q1=%.3f "
+                    "λQ2=%.3f choice=%s suppressed_adv=%s",
+                    getattr(unit, "name", unit),
+                    getattr(ally, "name", ally),
+                    s_ij,
+                    q1_current,
+                    lambda_term,
+                    self._act_str(current),
+                    suppressed_adv,
+                )
 
         return joint_actions
 
@@ -391,6 +424,11 @@ class QLearningPlayer(RLPlayer):
         magnitude.
 
         ``ADVANCE``: move toward the nearest enemy hex.
+        ``ATTACK``: move toward a reachable enemy and stop in an
+            attack-capable hex. When an attack is possible the agent suppresses
+            ``ADVANCE`` magnitudes that would immediately engage to reduce
+            action aliasing while still allowing cautious ``ADVANCE``/``HALF``
+            repositioning when it keeps the unit out of contact.
         ``RETREAT``: move away from the nearest enemy hex.
         ``HOLD``: do not move.
 
@@ -406,13 +444,41 @@ class QLearningPlayer(RLPlayer):
         if start_hex is None:
             return UnitMovementPlan(unit, [])
 
-        move_points = unit.get_move()
-        if magnitude == ActionMagnitude.HALF:
-            move_points = move_points // 2
-        elif magnitude == ActionMagnitude.NONE:
-            move_points = 0
+        base_move_points = unit.get_move()
+        move_points = base_move_points
+        if action != ActionIntent.ATTACK:
+            if magnitude == ActionMagnitude.HALF:
+                move_points = base_move_points // 2
+            elif magnitude == ActionMagnitude.NONE:
+                move_points = 0
 
-        if action == ActionIntent.HOLD or move_points <= 0:
+        if action == ActionIntent.HOLD:
+            return UnitMovementPlan(unit, [start_hex])
+
+        if action == ActionIntent.ATTACK:
+            if base_move_points <= 0:
+                return UnitMovementPlan(unit, [start_hex])
+            target = self._pick_target_enemy(unit)
+            if target is not None:
+                attack_path = self._best_attack_path(
+                    unit, target, base_move_points
+                )
+                if not attack_path:
+                    target_coords = target.get_coords()
+                    target_hex = (
+                        board.get_hex(*target_coords)
+                        if target_coords is not None
+                        else None
+                    )
+                    if target_hex is not None:
+                        attack_path = board.path_towards(
+                            unit, target_hex, base_move_points
+                        )
+                if attack_path:
+                    return UnitMovementPlan(unit, attack_path)
+            return UnitMovementPlan(unit, [start_hex])
+
+        if move_points <= 0:
             return UnitMovementPlan(unit, [start_hex])
 
         enemy = board.get_nearest_enemy_unit(unit)
@@ -434,14 +500,172 @@ class QLearningPlayer(RLPlayer):
     def available_actions(
         self, unit: Unit
     ) -> List[Tuple[ActionIntent, ActionMagnitude]]:
+        """Return legal intent/magnitude pairs for ``unit`` this turn."""
+
         actions = [(ActionIntent.HOLD, ActionMagnitude.NONE)]
         move = unit.get_move()
-        if move > 0:
-            actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
-            actions.append((ActionIntent.ADVANCE, ActionMagnitude.FULL))
+        if move <= 0:
+            return actions
+
+        if self.can_attack_this_turn(unit):
+            actions.append((ActionIntent.ATTACK, ActionMagnitude.NONE))
+            if not self._advance_half_would_attack(unit):
+                actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
             actions.append((ActionIntent.RETREAT, ActionMagnitude.HALF))
             actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
+            return actions
+
+        actions.append((ActionIntent.ADVANCE, ActionMagnitude.HALF))
+        actions.append((ActionIntent.ADVANCE, ActionMagnitude.FULL))
+        actions.append((ActionIntent.RETREAT, ActionMagnitude.HALF))
+        actions.append((ActionIntent.RETREAT, ActionMagnitude.FULL))
         return actions
+
+    def _advance_half_would_attack(self, unit: Unit) -> bool:
+        """Return ``True`` if ``ADVANCE``/``HALF`` reaches an attack hex."""
+
+        coords = unit.get_coords()
+        if coords is None:
+            return False
+
+        move_points = unit.get_move() // 2
+        if move_points <= 0:
+            return False
+
+        board = self._board
+        enemy = board.get_nearest_enemy_unit(unit)
+        if enemy is None or enemy.get_coords() is None:
+            return False
+
+        enemy_hex = board.get_hex(*enemy.get_coords())
+        start_hex = board.get_hex(*coords)
+        if enemy_hex is None or start_hex is None:
+            return False
+
+        path = board.path_towards(unit, enemy_hex, move_points)
+        if not path:
+            return False
+
+        last_hex = path[-1]
+        try:
+            distance = Board.hex_distance(last_hex, enemy_hex)
+        except ValueError:
+            return False
+
+        return distance <= 1
+
+    def can_attack_this_turn(self, unit: Unit) -> bool:
+        """Return ``True`` if the unit can enter an attack hex this turn."""
+
+        move_points = unit.get_move()
+        if move_points <= 0 or unit.get_coords() is None:
+            return False
+
+        board = self._board
+        for enemy in self._enemies_visible_to(unit):
+            coords = enemy.get_coords()
+            if coords is None:
+                continue
+            enemy_hex = board.get_hex(*coords)
+            if enemy_hex is None:
+                continue
+            path = board.path_towards(unit, enemy_hex, move_points)
+            if not path:
+                continue
+            last_hex = path[-1]
+            try:
+                distance = Board.hex_distance(last_hex, enemy_hex)
+            except ValueError:
+                continue
+            if distance <= 1:
+                return True
+        return False
+
+    def _enemies_visible_to(self, unit: Unit) -> List[Unit]:
+        board = self._board
+        faction = unit.get_faction()
+        enemies: List[Unit] = []
+        for other in board.get_units():
+            if other is unit:
+                continue
+            if other.get_faction() == faction:
+                continue
+            if other.get_coords() is None:
+                continue
+            enemies.append(other)
+        return enemies
+
+    def _pick_target_enemy(self, unit: Unit) -> Optional[Unit]:
+        enemies = self._enemies_visible_to(unit)
+        if not enemies or unit.get_coords() is None:
+            return None
+
+        board = self._board
+        start_hex = board.get_hex(*unit.get_coords())
+        if start_hex is None:
+            return None
+
+        best_enemy: Optional[Unit] = None
+        best_distance = float("inf")
+        for enemy in enemies:
+            coords = enemy.get_coords()
+            if coords is None:
+                continue
+            enemy_hex = board.get_hex(*coords)
+            if enemy_hex is None:
+                continue
+            try:
+                distance = Board.hex_distance(start_hex, enemy_hex)
+            except ValueError:
+                continue
+            if distance < best_distance:
+                best_distance = distance
+                best_enemy = enemy
+            elif distance == best_distance and best_enemy is not None:
+                if str(enemy.get_id()) < str(best_enemy.get_id()):
+                    best_enemy = enemy
+
+        return best_enemy
+
+    def _best_attack_path(
+        self, unit: Unit, target: Unit, move_points: int
+    ) -> List[Hex]:
+        if move_points <= 0 or unit.get_coords() is None:
+            return []
+        target_coords = target.get_coords()
+        if target_coords is None:
+            return []
+
+        board = self._board
+        start_hex = board.get_hex(*unit.get_coords())
+        target_hex = board.get_hex(*target_coords)
+        if start_hex is None or target_hex is None:
+            return []
+
+        reachable = board.get_reachable_hexes(unit, start_hex, move_points)
+        if not reachable:
+            return []
+
+        candidates: List[Tuple[int, int, int, List[Hex]]] = []
+        for hex_option in reachable:
+            try:
+                distance = Board.hex_distance(hex_option, target_hex)
+            except ValueError:
+                continue
+            if distance not in (0, 1):
+                continue
+            path = board.shortest_path(unit, start_hex, hex_option)
+            if path:
+                candidates.append(
+                    (len(path), hex_option.row, hex_option.column, path)
+                )
+
+        if not candidates:
+            return []
+
+        candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+        best_path = candidates[0][3]
+        return best_path[: move_points + 1]
 
     def update_q(
         self,
