@@ -1,5 +1,8 @@
 from enum import Enum
-from typing import Tuple
+from typing import Optional, Sequence, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from battle_hexes_core.unit.unit import Unit
 from pydantic import BaseModel
 
 
@@ -16,10 +19,22 @@ class CombatResultData:
             self,
             odds: tuple,
             die_roll: int,
-            combat_result: CombatResult):
+            combat_result: CombatResult,
+            battle_participants: Optional[
+                Tuple[
+                    Sequence['Unit'],
+                    Sequence['Unit'],
+                ]
+            ] = None,
+    ):
         self.odds = odds
         self.die_roll = die_roll
         self.combat_result = combat_result
+        self._battle_participants: Optional[
+            Tuple[Tuple['Unit', ...], Tuple['Unit', ...]]
+        ] = None
+        if battle_participants is not None:
+            self.set_battle_participants(battle_participants)
 
     def get_odds(self) -> tuple:
         return self.odds
@@ -29,6 +44,24 @@ class CombatResultData:
 
     def get_combat_result(self) -> CombatResult:
         return self.combat_result
+
+    def set_battle_participants(
+            self,
+            battle_participants: Tuple[
+                Sequence['Unit'],
+                Sequence['Unit'],
+            ]
+    ) -> None:
+        attackers, defenders = battle_participants
+        self._battle_participants = (
+            tuple(attackers),
+            tuple(defenders),
+        )
+
+    def get_battle_participants(
+            self,
+    ) -> Optional[Tuple[Tuple['Unit', ...], Tuple['Unit', ...]]]:
+        return self._battle_participants
 
     def to_schema(self):
         return CombatResultSchema(

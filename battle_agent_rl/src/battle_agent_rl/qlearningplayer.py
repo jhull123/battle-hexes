@@ -3,7 +3,8 @@ import logging
 import math
 import pickle
 import random
-from typing import List, Tuple
+from uuid import UUID
+from typing import Dict, List, Tuple
 
 from pydantic import PrivateAttr
 
@@ -459,7 +460,7 @@ class QLearningPlayer(RLPlayer):
         half_bonus = bonus / 2.0
         double_bonus = bonus * 2.0
 
-        reward = 0.0
+        per_unit_rewards: Dict[UUID, float] = {}
         for battle in combat_results.get_battles():
             combat_award = 0.0
             match battle.get_odds():
@@ -488,13 +489,22 @@ class QLearningPlayer(RLPlayer):
                 "Combat award is %s for %s at %s odds",
                 combat_award, result, battle.get_odds()
             )
-            reward += combat_award
+            participants = battle.get_battle_participants()
+            if participants is None:
+                continue
+            attackers, defenders = participants
+            for unit in (*attackers, *defenders):
+                if not self.owns(unit):
+                    continue
+                unit_id = unit.get_id()
+                if unit_id not in per_unit_rewards:
+                    per_unit_rewards[unit_id] = 0.0
+                per_unit_rewards[unit_id] += combat_award
 
-        for unit, state_action in [
-            (record[0], (record[1], record[2]))
-            for record in self._last_actions.values()
-        ]:
-            state, action = state_action
+        for unit_id, (unit, state, action) in self._last_actions.items():
+            if unit_id not in per_unit_rewards:
+                continue
+            reward = per_unit_rewards[unit_id]
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
             self.update_q(state, action, reward, next_state, next_actions)
