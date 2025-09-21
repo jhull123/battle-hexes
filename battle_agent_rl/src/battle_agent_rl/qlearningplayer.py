@@ -81,6 +81,9 @@ class QLearningPlayer(RLPlayer):
     _gamma: float = PrivateAttr()
     _epsilon: float = PrivateAttr()
     _turn_penalty: float = PrivateAttr()
+    _combat_bonus: float = PrivateAttr()
+    _half_combat_bonus: float = PrivateAttr()
+    _double_combat_bonus: float = PrivateAttr()
     _turn_count: int = PrivateAttr()
 
     _last_actions: dict = PrivateAttr()
@@ -99,6 +102,7 @@ class QLearningPlayer(RLPlayer):
         gamma: float = 0.15,
         epsilon: float = 0.1,
         turn_penalty: float = 0.1,
+        combat_bonus: float = 1000.0,
     ) -> None:
         """
         Initialize a (Q-learning) player.
@@ -124,6 +128,10 @@ class QLearningPlayer(RLPlayer):
                 discourage stalling and incentivize faster resolution.
                 Typically a small positive number that is subtracted each turn.
                 Default: 0.1.
+            combat_bonus (float, optional): Base reward magnitude applied to
+                combat outcomes. Halved and doubled values derived from this
+                bonus determine penalties for unfavorable odds and rewards for
+                advantageous odds. Default: 1000.0.
         """
 
         super().__init__(name=name, type=type, factions=factions, board=board)
@@ -131,6 +139,9 @@ class QLearningPlayer(RLPlayer):
         self._gamma = gamma
         self._epsilon = epsilon
         self._turn_penalty = turn_penalty
+        self._combat_bonus = combat_bonus
+        self._half_combat_bonus = combat_bonus / 2.0
+        self._double_combat_bonus = combat_bonus * 2.0
         self._turn_count = 0
         self._q_table = {}
         self._last_actions = {}
@@ -456,24 +467,20 @@ class QLearningPlayer(RLPlayer):
         # Determine if this player was the attacker.
         # During the attacker's turn ``_last_actions`` stores the actions.
         # attacker = bool(self._last_actions)
-        bonus = 1000.0
-        half_bonus = bonus / 2.0
-        double_bonus = bonus * 2.0
-
         per_unit_rewards: Dict[UUID, float] = {}
         for battle in combat_results.get_battles():
             combat_award = 0.0
             match battle.get_odds():
                 case (1, 7) | (1, 6) | (1, 5) | (1, 4) | (1, 3):
-                    combat_award = -bonus
+                    combat_award = -self._combat_bonus
                 case (1, 2):
-                    combat_award = -half_bonus
+                    combat_award = -self._half_combat_bonus
                 case (1, 1):
                     combat_award = 0.0
                 case (2, 1):
-                    combat_award = bonus
+                    combat_award = self._combat_bonus
                 case (3, 1) | (4, 1) | (5, 1) | (6, 1) | (7, 1):
-                    combat_award = double_bonus
+                    combat_award = self._double_combat_bonus
 
             result = battle.get_combat_result()
             # TODO consider giving a results bonus
