@@ -21,22 +21,28 @@ update_best() {
     return
   fi
 
-  is_better=$(awk -v current="$TEST_SCORE" -v best="$BEST_SCORE" '
+  comparison=$(awk -v current="$TEST_SCORE" -v best="$BEST_SCORE" '
     BEGIN {
       if (best == "") {
-        print 1
+        print "better"
       } else if (current > best) {
-        print 1
+        print "better"
+      } else if (current < best) {
+        print "worse"
       } else {
-        print 0
+        print "equal"
       }
     }
   ')
 
-  if [ "$is_better" -eq 1 ]; then
+  if [ "$comparison" = "better" ]; then
     BEST_SCORE="$TEST_SCORE"
     if [ -f "q_table.pkl" ]; then
       cp "q_table.pkl" "$BEST_Q_TABLE"
+    fi
+  elif [ "$comparison" = "worse" ]; then
+    if [ -f "$BEST_Q_TABLE" ]; then
+      cp "$BEST_Q_TABLE" "q_table.pkl"
     fi
   fi
 }
