@@ -29,7 +29,8 @@ tests and linter across **all** Python packages. The script adjusts
 - Install dependencies using both requirement files from the repository root:
   `pip install -r requirements.txt -r requirements-test.txt`.
 - Keep code Flake8-compliant and run `./server-side-checks.sh` before sending a
-  PR to ensure tests and linting pass.
+  PR to ensure tests and linting pass. If `flake8` is missing from the
+  environment, install it before running the checks (e.g. `pip install flake8`).
 
 ### Working with the Web Frontend
 

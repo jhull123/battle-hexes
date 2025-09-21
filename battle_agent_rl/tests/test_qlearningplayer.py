@@ -186,13 +186,55 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
         results = CombatResults()
         results.add_battle(
-            CombatResultData((1, 1), 1, CombatResult.DEFENDER_ELIMINATED)
+            CombatResultData(
+                (1, 1),
+                1,
+                CombatResult.DEFENDER_ELIMINATED,
+                ((self.friend,), (self.enemy,)),
+            )
         )
         self.board.remove_units(self.enemy)
 
         self.player.combat_results(results)
 
         self.assertEqual(self.player._q_table[(state, action)], 0.0)
+
+    def test_combat_results_only_rewards_participants(self):
+        friend2 = Unit(
+            uuid.uuid4(),
+            "F2",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            1,
+            1,
+            3,
+        )
+        self.board.add_unit(friend2, 2, 0)
+
+        state1 = self.player.encode_unit_state(self.friend)
+        state2 = self.player.encode_unit_state(friend2)
+        action = (ActionIntent.HOLD, ActionMagnitude.NONE)
+        self.player._last_actions = {
+            self.friend.get_id(): (self.friend, state1, action),
+            friend2.get_id(): (friend2, state2, action),
+        }
+
+        results = CombatResults()
+        results.add_battle(
+            CombatResultData(
+                (2, 1),
+                4,
+                CombatResult.DEFENDER_ELIMINATED,
+                ((self.friend,), (self.enemy,)),
+            )
+        )
+
+        self.player.combat_results(results)
+
+        updated_value = self.player._q_table[(state1, action)]
+        self.assertGreater(updated_value, 0.0)
+        self.assertNotIn((state2, action), self.player._q_table)
 
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):
