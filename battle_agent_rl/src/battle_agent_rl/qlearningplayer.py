@@ -4,7 +4,7 @@ import math
 import pickle
 import random
 from uuid import UUID
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pydantic import PrivateAttr
 
@@ -135,13 +135,13 @@ class QLearningPlayer(RLPlayer):
         """
 
         super().__init__(name=name, type=type, factions=factions, board=board)
-        self._alpha = alpha
-        self._gamma = gamma
-        self._epsilon = epsilon
-        self._turn_penalty = turn_penalty
-        self._combat_bonus = combat_bonus
-        self._half_combat_bonus = combat_bonus / 2.0
-        self._double_combat_bonus = combat_bonus * 2.0
+        self._set_hyperparameters(
+            alpha=alpha,
+            gamma=gamma,
+            epsilon=epsilon,
+            turn_penalty=turn_penalty,
+            combat_bonus=combat_bonus,
+        )
         self._turn_count = 0
         self._q_table = {}
         self._last_actions = {}
@@ -159,17 +159,66 @@ class QLearningPlayer(RLPlayer):
         self._epsilon = 0.0
 
     def save_q_table(self, file_path: str) -> None:
-        """Save the internal Q-table to ``file_path`` using pickle."""
+        """Save the internal Q-table and hyperparameters to ``file_path``."""
+
+        payload = {
+            "q_table": self._q_table,
+            "settings": self._hyperparameters(),
+        }
         with open(file_path, "wb") as f:
-            pickle.dump(self._q_table, f)
+            pickle.dump(payload, f)
 
     def load_q_table(self, file_path: str) -> None:
         """Load a Q-table from ``file_path`` if the file exists."""
         try:
             with open(file_path, "rb") as f:
-                self._q_table = pickle.load(f)
+                payload = pickle.load(f)
         except FileNotFoundError:
             pass
+        else:
+            if isinstance(payload, dict) and "q_table" in payload:
+                self._q_table = payload["q_table"]
+                settings = payload.get("settings")
+                if isinstance(settings, dict):
+                    self._apply_hyperparameters(settings)
+            else:
+                # Legacy format stored only the Q-table dictionary.
+                self._q_table = payload
+
+    def _hyperparameters(self) -> Dict[str, float]:
+        return {
+            "alpha": self._alpha,
+            "gamma": self._gamma,
+            "epsilon": self._epsilon,
+            "turn_penalty": self._turn_penalty,
+            "combat_bonus": self._combat_bonus,
+        }
+
+    def _set_hyperparameters(
+        self,
+        *,
+        alpha: float,
+        gamma: float,
+        epsilon: float,
+        turn_penalty: float,
+        combat_bonus: float,
+    ) -> None:
+        self._alpha = alpha
+        self._gamma = gamma
+        self._epsilon = epsilon
+        self._turn_penalty = turn_penalty
+        self._combat_bonus = combat_bonus
+        self._half_combat_bonus = combat_bonus / 2.0
+        self._double_combat_bonus = combat_bonus * 2.0
+
+    def _apply_hyperparameters(self, settings: Dict[str, Any]) -> None:
+        self._set_hyperparameters(
+            alpha=settings.get("alpha", self._alpha),
+            gamma=settings.get("gamma", self._gamma),
+            epsilon=settings.get("epsilon", self._epsilon),
+            turn_penalty=settings.get("turn_penalty", self._turn_penalty),
+            combat_bonus=settings.get("combat_bonus", self._combat_bonus),
+        )
 
     def movement(self) -> List[UnitMovementPlan]:
         logger.info("")

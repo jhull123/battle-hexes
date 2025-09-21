@@ -1,6 +1,7 @@
+import os
+import pickle
 import unittest
 import uuid
-import os
 
 from battle_agent_rl.qlearningplayer import (
     QLearningPlayer,
@@ -319,25 +320,118 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
         if os.path.exists(self.file_path):
             os.remove(self.file_path)
 
-    def build_player(self) -> QLearningPlayer:
+    def build_player(
+        self,
+        *,
+        alpha: float = 0.1,
+        gamma: float = 0.15,
+        epsilon: float = 0.1,
+        turn_penalty: float = 0.0,
+        combat_bonus: float = 1000.0,
+    ) -> QLearningPlayer:
         return QLearningPlayer(
             name="AI",
             type=PlayerType.CPU,
             factions=[self.faction],
             board=self.board,
-            turn_penalty=0,
+            alpha=alpha,
+            gamma=gamma,
+            epsilon=epsilon,
+            turn_penalty=turn_penalty,
+            combat_bonus=combat_bonus,
         )
 
     def test_save_and_load(self):
-        player = self.build_player()
+        player = self.build_player(
+            alpha=0.25,
+            gamma=0.5,
+            epsilon=0.75,
+            turn_penalty=0.2,
+            combat_bonus=1500.0,
+        )
         state = (1, 2, 3)
         action = (ActionIntent.HOLD, ActionMagnitude.NONE)
         player._q_table[(state, action)] = 4.2
         player.save_q_table(self.file_path)
 
-        new_player = self.build_player()
+        with open(self.file_path, "rb") as saved_file:
+            payload = pickle.load(saved_file)
+
+        self.assertIn("q_table", payload)
+        self.assertIn("settings", payload)
+        self.assertEqual(payload["q_table"], player._q_table)
+        self.assertEqual(
+            payload["settings"],
+            {
+                "alpha": player._alpha,
+                "gamma": player._gamma,
+                "epsilon": player._epsilon,
+                "turn_penalty": player._turn_penalty,
+                "combat_bonus": player._combat_bonus,
+            },
+        )
+
+        new_player = self.build_player(
+            alpha=0.9,
+            gamma=0.8,
+            epsilon=0.7,
+            turn_penalty=0.6,
+            combat_bonus=500.0,
+        )
         new_player.load_q_table(self.file_path)
         self.assertEqual(new_player._q_table, player._q_table)
+        self.assertEqual(new_player._alpha, player._alpha)
+        self.assertEqual(new_player._gamma, player._gamma)
+        self.assertEqual(new_player._epsilon, player._epsilon)
+        self.assertEqual(new_player._turn_penalty, player._turn_penalty)
+        self.assertEqual(new_player._combat_bonus, player._combat_bonus)
+        self.assertEqual(
+            new_player._half_combat_bonus,
+            player._half_combat_bonus,
+        )
+        self.assertEqual(
+            new_player._double_combat_bonus,
+            player._double_combat_bonus,
+        )
+
+    def test_load_legacy_format(self):
+        q_table = {((1, 2, 3), (ActionIntent.HOLD, ActionMagnitude.NONE)): 9.9}
+        with open(self.file_path, "wb") as legacy_file:
+            pickle.dump(q_table, legacy_file)
+
+        player = self.build_player()
+        original_settings = {
+            "alpha": player._alpha,
+            "gamma": player._gamma,
+            "epsilon": player._epsilon,
+            "turn_penalty": player._turn_penalty,
+            "combat_bonus": player._combat_bonus,
+            "half": player._half_combat_bonus,
+            "double": player._double_combat_bonus,
+        }
+
+        player.load_q_table(self.file_path)
+
+        self.assertEqual(player._q_table, q_table)
+        self.assertEqual(player._alpha, original_settings["alpha"])
+        self.assertEqual(player._gamma, original_settings["gamma"])
+        self.assertEqual(player._epsilon, original_settings["epsilon"])
+        self.assertEqual(
+            player._turn_penalty,
+            original_settings["turn_penalty"],
+        )
+        self.assertEqual(
+            player._combat_bonus,
+            original_settings["combat_bonus"],
+        )
+        self.assertEqual(
+            player._half_combat_bonus,
+            original_settings["half"],
+        )
+        self.assertEqual(
+            player._double_combat_bonus,
+            original_settings["double"],
+        )
 
 
 class TestQLearningPlayerTurnPenalty(unittest.TestCase):
