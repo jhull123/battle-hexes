@@ -1,11 +1,17 @@
 import unittest
 import uuid
+from unittest.mock import patch
 
 from battle_agent_rl.qlearningplayer import (
     QLearningPlayer,
     ActionIntent,
     ActionMagnitude,
 )
+from battle_hexes_core.combat.combatresult import (
+    CombatResult,
+    CombatResultData,
+)
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
@@ -182,6 +188,94 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
         self.assertEqual(self.player._distance_to_eta_bin(8, move), 1)
         self.assertEqual(self.player._distance_to_eta_bin(9, move), 2)
         self.assertEqual(self.player._distance_to_eta_bin(20, move), 3)
+
+
+class TestQLearningPlayerCombatResults(unittest.TestCase):
+    def setUp(self):
+        self.board = Board(3, 3)
+        self.friendly_faction = Faction(
+            id=uuid.uuid4(), name="Friendly", color="red"
+        )
+        self.enemy_faction = Faction(
+            id=uuid.uuid4(), name="Enemy", color="blue"
+        )
+        self.player = QLearningPlayer(
+            name="AI",
+            type=PlayerType.CPU,
+            factions=[self.friendly_faction],
+            board=self.board,
+            turn_penalty=0,
+        )
+        self.enemy_player = Player(
+            name="Opponent",
+            type=PlayerType.CPU,
+            factions=[self.enemy_faction],
+        )
+
+    def test_rewards_only_battle_participants(self):
+        participant = Unit(
+            uuid.uuid4(),
+            "F1",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        non_participant = Unit(
+            uuid.uuid4(),
+            "F2",
+            self.friendly_faction,
+            self.player,
+            "Inf",
+            3,
+            3,
+            3,
+        )
+        enemy = Unit(
+            uuid.uuid4(),
+            "E1",
+            self.enemy_faction,
+            self.enemy_player,
+            "Inf",
+            2,
+            2,
+            3,
+        )
+
+        action = (ActionIntent.ADVANCE, ActionMagnitude.HALF)
+        state = (0, 0, 0, 0, 0, 0)
+        self.player._last_actions = {
+            participant.get_id(): (participant, state, action),
+            non_participant.get_id(): (non_participant, state, action),
+        }
+        self.player._pair_last = {}
+
+        combat_results = CombatResults()
+        combat_results.add_battle(
+            CombatResultData(
+                (2, 1),
+                4,
+                CombatResult.DEFENDER_ELIMINATED,
+                participants=((participant,), (enemy,)),
+            )
+        )
+
+        with patch.object(
+            QLearningPlayer, "encode_unit_state", return_value=state
+        ), patch.object(
+            QLearningPlayer, "available_actions", return_value=[action]
+        ), patch.object(QLearningPlayer, "update_q") as mock_update_q:
+            self.player.combat_results(combat_results)
+
+        self.assertEqual(mock_update_q.call_count, 2)
+        rewards = {
+            call.args[0].get_id(): call.args[3]
+            for call in mock_update_q.call_args_list
+        }
+        self.assertEqual(rewards[participant.get_id()], 100.0)
+        self.assertEqual(rewards[non_participant.get_id()], 0.0)
 
 
 class TestQLearningPlayerEncodePairState(unittest.TestCase):

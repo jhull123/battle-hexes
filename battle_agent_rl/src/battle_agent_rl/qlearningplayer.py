@@ -645,7 +645,7 @@ class QLearningPlayer(RLPlayer):
         half_bonus = bonus / 2.0
         double_bonus = bonus * 2.0
 
-        reward = 0.0
+        unit_rewards = {unit_id: 0.0 for unit_id in self._last_actions.keys()}
         for battle in combat_results.get_battles():
             combat_award = 0.0
             match battle.get_odds():
@@ -674,7 +674,17 @@ class QLearningPlayer(RLPlayer):
                 "Combat award is %s for %s at %s odds",
                 combat_award, result, battle.get_odds()
             )
-            reward += combat_award
+            participants = battle.get_participants()
+            if participants is None:
+                for unit_id in unit_rewards:
+                    unit_rewards[unit_id] += combat_award
+                continue
+
+            attackers, defenders = participants
+            for participant in attackers + defenders:
+                unit_id = participant.get_id()
+                if unit_id in unit_rewards:
+                    unit_rewards[unit_id] += combat_award
 
         for unit, state_action in [
             (record[0], (record[1], record[2]))
@@ -683,6 +693,7 @@ class QLearningPlayer(RLPlayer):
             state, action = state_action
             next_state = self.encode_unit_state(unit)
             next_actions = self.available_actions(unit)
+            reward = unit_rewards.get(unit.get_id(), 0.0)
             self.update_q(
                 unit, state, action, reward, next_state, next_actions
             )

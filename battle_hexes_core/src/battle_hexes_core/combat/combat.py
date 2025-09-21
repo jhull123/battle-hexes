@@ -42,6 +42,7 @@ class Combat:
             attack_factor,
             defense_factor
         )
+        combat_result.set_participants(attackers, defenders)
         self.__update_board_for_result((attackers, defenders), combat_result)
         return combat_result
 
