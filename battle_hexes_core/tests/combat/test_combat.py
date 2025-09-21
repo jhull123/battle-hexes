@@ -99,6 +99,19 @@ class TestCombat(unittest.TestCase):
             combat_result.get_combat_result()
         )
 
+    def test_combat_result_includes_participants(self):
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.combat.set_static_die_roll(6)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        participants = combat_result.get_participants()
+        self.assertIsNotNone(participants)
+        attackers, defenders = participants
+        self.assertCountEqual(attackers, [self.red_unit])
+        self.assertCountEqual(defenders, [self.blue_unit])
+
     def test_board_defender_elim_leaves_one_unit_on_the_board(self):
         self.board.add_unit(self.red_unit, 6, 4)
         self.board.add_unit(self.blue_unit, 5, 5)
