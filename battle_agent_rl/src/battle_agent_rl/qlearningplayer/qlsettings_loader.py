@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
-from battle_agent_rl.qlearningplayer import QLearningPlayer
+from .qlearningplayer import QLearningPlayer
 
 
 class QLearningSettingsLoader:
