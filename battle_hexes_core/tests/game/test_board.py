@@ -321,6 +321,18 @@ class TestBoard(unittest.TestCase):
         coords = [(h.row, h.column) for h in path]
         self.assertEqual(coords, [(2, 1), (3, 1)])
 
+    def test_path_towards_prefers_shortest_adjacent_path(self):
+        self.board.add_unit(self.red_unit, 0, 0)
+        self.board.add_unit(self.blue_unit, 1, 2)
+
+        enemy_hex = self.board.get_hex(1, 2)
+        path = self.board.path_towards(
+            self.red_unit, enemy_hex, self.red_unit.get_move()
+        )
+        coords = [(h.row, h.column) for h in path]
+
+        self.assertEqual(coords, [(0, 0), (0, 1)])
+
     def test_path_away_from_increases_distance(self):
         self.board.add_unit(self.red_unit, 2, 1)
         self.board.add_unit(self.blue_unit, 0, 1)
