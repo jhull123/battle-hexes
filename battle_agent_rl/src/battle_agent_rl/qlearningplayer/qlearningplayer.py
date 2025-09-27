@@ -15,7 +15,7 @@ from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
-from .rlplayer import RLPlayer
+from ..rlplayer import RLPlayer
 
 
 logger = logging.getLogger(__name__)

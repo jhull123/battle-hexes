@@ -1,14 +1,17 @@
 import json
 import logging
 
-from battle_agent_rl.qlsettings_loader import QLearningSettingsLoader
+from battle_agent_rl.qlearningplayer import QLearningSettingsLoader
+
+
+LOGGER_NAME = "battle_agent_rl.qlearningplayer.qlsettings_loader"
 
 
 def test_missing_settings_file_returns_defaults_and_logs(tmp_path, caplog):
     settings_path = tmp_path / "qlsettings.json"
     loader = QLearningSettingsLoader(settings_path=settings_path)
 
-    caplog.set_level(logging.INFO, logger="battle_agent_rl.qlsettings_loader")
+    caplog.set_level(logging.INFO, logger=LOGGER_NAME)
 
     settings = loader.load()
 
@@ -25,7 +28,7 @@ def test_partial_settings_override_defaults(tmp_path, caplog):
     )
     loader = QLearningSettingsLoader(settings_path=settings_path)
 
-    caplog.set_level(logging.INFO, logger="battle_agent_rl.qlsettings_loader")
+    caplog.set_level(logging.INFO, logger=LOGGER_NAME)
 
     settings = loader.load()
     defaults = loader.defaults
@@ -49,7 +52,7 @@ def test_invalid_json_uses_defaults(tmp_path, caplog):
     settings_path.write_text("{invalid", encoding="utf-8")
     loader = QLearningSettingsLoader(settings_path=settings_path)
 
-    caplog.set_level(logging.INFO, logger="battle_agent_rl.qlsettings_loader")
+    caplog.set_level(logging.INFO, logger=LOGGER_NAME)
 
     settings = loader.load()
 
@@ -62,7 +65,7 @@ def test_non_mapping_json_uses_defaults(tmp_path, caplog):
     settings_path.write_text(json.dumps([1, 2, 3]), encoding="utf-8")
     loader = QLearningSettingsLoader(settings_path=settings_path)
 
-    caplog.set_level(logging.INFO, logger="battle_agent_rl.qlsettings_loader")
+    caplog.set_level(logging.INFO, logger=LOGGER_NAME)
 
     settings = loader.load()
 

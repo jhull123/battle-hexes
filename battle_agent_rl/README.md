@@ -26,6 +26,6 @@ Each accepts the number of training episodes as an optional argument:
 You can also invoke the trainer modules directly:
 
 ```bash
-python -m battle_agent_rl.qlearningtrainer 10
+python -m battle_agent_rl.qlearningplayer.qlearningtrainer 10
 python -m battle_agent_rl.qmultiunittrainer 10
 ```

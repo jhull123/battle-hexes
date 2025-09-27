@@ -7,8 +7,10 @@ from uuid import UUID
 from pathlib import Path
 from typing import List
 
-from battle_agent_rl.qlearningplayer import QLearningPlayer
-from battle_agent_rl.qlsettings_loader import QLearningSettingsLoader
+from battle_agent_rl.qlearningplayer import (
+    QLearningPlayer,
+    QLearningSettingsLoader,
+)
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.game.player import PlayerType
