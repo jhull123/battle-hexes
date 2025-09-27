@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from collections import deque
 from pydantic import BaseModel
-from typing import List, Set
+from typing import List, Set, Tuple
 from uuid import UUID
 from battle_hexes_core.game.hex import Hex
 from battle_hexes_core.game.sparseboard import SparseBoard
@@ -214,23 +214,24 @@ class Board:
 
         return False
 
-    @staticmethod
-    def hex_distance(friendly_hex, enemy_hex) -> int:
+    @classmethod
+    def to_cube_coords(cls, hex_obj: Hex) -> Tuple[int, int, int]:
+        """Convert offset coordinates to cube coordinates (odd-q)."""
+        col = hex_obj.column
+        row = hex_obj.row
+        x_coord = col
+        z_coord = row - (col - (col & 1)) // 2
+        y_coord = -x_coord - z_coord
+        return x_coord, y_coord, z_coord
+
+    @classmethod
+    def hex_distance(cls, friendly_hex, enemy_hex) -> int:
         """Calculate the distance between two hexes on an even-r grid."""
         if friendly_hex is None or enemy_hex is None:
             raise ValueError("hex arguments must not be None")
 
-        def to_cube(hex_obj: Hex) -> tuple[int, int, int]:
-            """Convert offset coordinates to cube coordinates (odd-q)."""
-            col = hex_obj.column
-            row = hex_obj.row
-            x_coord = col
-            z_coord = row - (col - (col & 1)) // 2
-            y_coord = -x_coord - z_coord
-            return x_coord, y_coord, z_coord
-
-        ax, ay, az = to_cube(friendly_hex)
-        bx, by, bz = to_cube(enemy_hex)
+        ax, ay, az = cls.to_cube_coords(friendly_hex)
+        bx, by, bz = cls.to_cube_coords(enemy_hex)
 
         return max(abs(ax - bx), abs(ay - by), abs(az - bz))
 
@@ -302,15 +303,35 @@ class Board:
         if not reachable:
             return [start_hex]
 
-        best = min(
-            reachable, key=lambda h: self.hex_distance(h, target_hex)
+        start_cube = self.to_cube_coords(start_hex)
+        target_cube = self.to_cube_coords(target_hex)
+        target_vector = tuple(
+            tc - sc for sc, tc in zip(start_cube, target_cube)
         )
 
-        full_path = self.shortest_path(unit, start_hex, best)
-        if not full_path:
+        candidate_paths: List[Tuple[int, int, int, List[Hex]]] = []
+        for candidate in reachable:
+            path = self.shortest_path(unit, start_hex, candidate)
+            if not path:
+                continue
+            distance = self.hex_distance(candidate, target_hex)
+            candidate_cube = self.to_cube_coords(candidate)
+            candidate_vector = tuple(
+                cc - sc for sc, cc in zip(start_cube, candidate_cube)
+            )
+            dot_product = sum(
+                a * b for a, b in zip(candidate_vector, target_vector)
+            )
+            candidate_paths.append((distance, len(path), -dot_product, path))
+
+        if not candidate_paths:
             return [start_hex]
 
-        return full_path[: max_steps + 1]
+        _, _, _, best_path = min(
+            candidate_paths, key=lambda item: (item[0], item[1], item[2])
+        )
+
+        return best_path[: max_steps + 1]
 
     def path_away_from(
         self, unit: Unit, threat_hex: Hex, max_steps: int
