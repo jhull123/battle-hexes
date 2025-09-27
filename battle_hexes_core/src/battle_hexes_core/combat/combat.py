@@ -65,13 +65,12 @@ class Combat:
                 origin = defenders[0].get_coords()
                 removed = []
                 for attacker in attackers:
-                    attacker.forced_move(origin, 2)
-                    if not self.board.is_in_bounds(
-                            attacker.row, attacker.column
-                    ):
+                    success = attacker.forced_move(self.board, origin, 2)
+                    if not success:
                         removed.append(attacker)
                 if removed:
                     self.board.remove_units(removed)
+                    combat_result.add_no_retreat_units(removed)
                     if len(removed) == len(attackers):
                         combat_result.combat_result = (
                             CombatResult.ATTACKER_ELIMINATED
@@ -82,13 +81,12 @@ class Combat:
                 origin = attackers[0].get_coords()
                 removed = []
                 for defender in defenders:
-                    defender.forced_move(origin, 2)
-                    if not self.board.is_in_bounds(
-                            defender.row, defender.column
-                    ):
+                    success = defender.forced_move(self.board, origin, 2)
+                    if not success:
                         removed.append(defender)
                 if removed:
                     self.board.remove_units(removed)
+                    combat_result.add_no_retreat_units(removed)
                     if len(removed) == len(defenders):
                         combat_result.combat_result = (
                             CombatResult.DEFENDER_ELIMINATED

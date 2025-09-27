@@ -98,6 +98,7 @@ class TestCombat(unittest.TestCase):
             CombatResult.ATTACKER_ELIMINATED,
             combat_result.get_combat_result()
         )
+        self.assertEqual((), combat_result.get_no_retreat_units())
 
     def test_board_defender_elim_leaves_one_unit_on_the_board(self):
         self.board.add_unit(self.red_unit, 6, 4)
@@ -211,30 +212,33 @@ class TestCombat(unittest.TestCase):
         self.board.add_unit(self.blue_unit, 3, 5)
         self.combat.set_static_die_roll(4)
 
-        self.combat.resolve_combat()
+        combat_result = self.combat.resolve_combat().get_battles()[0]
 
         self.assertEqual(2, len(self.board.get_units()))
         self.assertEqual((5, 2), self.red_unit.get_coords())
+        self.assertEqual((), combat_result.get_no_retreat_units())
 
     def test_a_back_2_from_upper_right_moves_attacker(self):
         self.board.add_unit(self.red_unit, 3, 6)
         self.board.add_unit(self.blue_unit, 3, 5)
         self.combat.set_static_die_roll(4)
 
-        self.combat.resolve_combat()
+        combat_result = self.combat.resolve_combat().get_battles()[0]
 
         self.assertEqual(2, len(self.board.get_units()))
         self.assertEqual((2, 8), self.red_unit.get_coords())
+        self.assertEqual((), combat_result.get_no_retreat_units())
 
     def test_d_back_2_from_above_moves_defender(self):
         self.board.add_unit(self.red_unit, 2, 5)
         self.board.add_unit(self.blue_unit, 3, 5)
         self.combat.set_static_die_roll(3)
 
-        self.combat.resolve_combat()
+        combat_result = self.combat.resolve_combat().get_battles()[0]
 
         self.assertEqual(2, len(self.board.get_units()))
         self.assertEqual((5, 5), self.blue_unit.get_coords())
+        self.assertEqual((), combat_result.get_no_retreat_units())
 
     def test_defender_retreat_off_map_eliminates_unit(self):
         self.board.add_unit(self.red_unit, 0, 1)
@@ -247,6 +251,10 @@ class TestCombat(unittest.TestCase):
         self.assertEqual(
             CombatResult.DEFENDER_ELIMINATED,
             combat_result.get_battles()[0].get_combat_result(),
+        )
+        self.assertEqual(
+            (self.blue_unit,),
+            combat_result.get_battles()[0].get_no_retreat_units(),
         )
 
     def test_attacker_retreat_off_map_eliminates_unit(self):
@@ -261,4 +269,68 @@ class TestCombat(unittest.TestCase):
         self.assertEqual(
             CombatResult.ATTACKER_ELIMINATED,
             combat_result.get_battles()[0].get_combat_result(),
+        )
+        self.assertEqual(
+            (self.red_unit,),
+            combat_result.get_battles()[0].get_no_retreat_units(),
+        )
+
+    def test_attacker_retreat_blocked_by_enemy_eliminates_unit(self):
+        blue_blocker = Unit(
+            id=uuid.uuid4(),
+            name='Blue Blocker',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Infantry',
+            attack=2,
+            defense=2,
+            move=4,
+        )
+        self.board.add_unit(self.red_unit, 4, 4)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.board.add_unit(blue_blocker, 4, 3)
+        self.combat.set_static_die_roll(4)
+
+        combat_result = self.combat.resolve_combat()
+
+        units = self.board.get_units()
+        self.assertEqual(2, len(units))
+        self.assertCountEqual(units, [self.blue_unit, blue_blocker])
+        self.assertEqual(
+            CombatResult.ATTACKER_ELIMINATED,
+            combat_result.get_battles()[0].get_combat_result(),
+        )
+        self.assertEqual(
+            (self.red_unit,),
+            combat_result.get_battles()[0].get_no_retreat_units(),
+        )
+
+    def test_defender_retreat_blocked_by_enemy_eliminates_unit(self):
+        red_blocker = Unit(
+            id=uuid.uuid4(),
+            name='Red Blocker',
+            faction=self.red_faction,
+            player=self.red_player,
+            type='Infantry',
+            attack=3,
+            defense=3,
+            move=4,
+        )
+        self.board.add_unit(self.red_unit, 2, 5)
+        self.board.add_unit(red_blocker, 4, 5)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.combat.set_static_die_roll(3)
+
+        combat_result = self.combat.resolve_combat()
+
+        units = self.board.get_units()
+        self.assertEqual(2, len(units))
+        self.assertCountEqual(units, [self.red_unit, red_blocker])
+        self.assertEqual(
+            CombatResult.DEFENDER_ELIMINATED,
+            combat_result.get_battles()[0].get_combat_result(),
+        )
+        self.assertEqual(
+            (self.blue_unit,),
+            combat_result.get_battles()[0].get_no_retreat_units(),
         )

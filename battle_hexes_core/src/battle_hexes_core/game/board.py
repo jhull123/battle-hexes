@@ -81,6 +81,13 @@ class Board:
     def get_units(self) -> List[Unit]:
         return list(self.units.values())
 
+    def get_unit_at(self, row: int, column: int) -> Unit | None:
+        """Return the unit occupying ``(row, column)`` if one exists."""
+        for unit in self.units.values():
+            if unit.get_coords() == (row, column):
+                return unit
+        return None
+
     def get_unit_by_id(self, unit_id: UUID) -> Unit:
         if not isinstance(unit_id, UUID):
             unit_id = UUID(unit_id)

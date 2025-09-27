@@ -1,5 +1,6 @@
 import unittest
 import uuid
+from battle_hexes_core.game.board import Board
 from battle_hexes_core.unit.unit import Unit
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
@@ -64,3 +65,45 @@ class TestUnit(unittest.TestCase):
 
     def test_is_friendly_different_player(self):
         self.assertFalse(self.unit1.is_friendly(self.unit3))
+
+    def test_forced_move_success(self):
+        board = Board(6, 6)
+        board.add_unit(self.unit1, 2, 2)
+        board.add_unit(self.unit3, 2, 3)
+
+        result = self.unit1.forced_move(board, self.unit3.get_coords(), 2)
+
+        self.assertTrue(result)
+        self.assertEqual((1, 0), self.unit1.get_coords())
+
+    def test_forced_move_blocked_restores_position(self):
+        board = Board(6, 6)
+        board.add_unit(self.unit1, 2, 2)
+
+        enemy = Unit(
+            id=uuid.uuid4(),
+            name="Enemy",
+            player=self.player2,
+            faction=self.faction2,
+            type="Infantry",
+            attack=5,
+            defense=5,
+            move=3,
+        )
+        blocker = Unit(
+            id=uuid.uuid4(),
+            name="Blocker",
+            player=self.player2,
+            faction=self.faction2,
+            type="Infantry",
+            attack=5,
+            defense=5,
+            move=3,
+        )
+        board.add_unit(enemy, 2, 3)
+        board.add_unit(blocker, 1, 0)
+
+        result = self.unit1.forced_move(board, enemy.get_coords(), 2)
+
+        self.assertFalse(result)
+        self.assertEqual((2, 2), self.unit1.get_coords())

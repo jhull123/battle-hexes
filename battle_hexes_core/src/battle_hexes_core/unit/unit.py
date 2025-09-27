@@ -100,34 +100,73 @@ class Unit:
 
     def forced_move(
             self,
+            board,
             from_hex: tuple[int, int],
             distance: int
-    ) -> None:
-        """Move the unit away from ``from_hex`` using Even-r offset rules."""
+    ) -> bool:
+        """Move the unit away from ``from_hex``.
+
+        Returns ``True`` when the retreat completes successfully.
+
+        If the path is blocked by an enemy unit or leaves the board, the unit's
+        coordinates are restored and ``False`` is returned.
+        """
         if from_hex is None or self.row is None or self.column is None:
-            return
+            return True
 
-        from_row, from_col = from_hex
+        original_position = (self.row, self.column)
 
-        if self.column == from_col:
-            self.row += (self.row - from_row) * distance
-            return
+        def to_cube(row: int, col: int) -> tuple[int, int, int]:
+            x_coord = col
+            z_coord = row - (col - (col & 1)) // 2
+            y_coord = -x_coord - z_coord
+            return x_coord, y_coord, z_coord
 
-        delta_col = self.column - from_col
+        def to_offset(
+                x_coord: int,
+                y_coord: int,
+                z_coord: int,
+        ) -> tuple[int, int]:
+            column = x_coord
+            row = z_coord + (column - (column & 1)) // 2
+            return row, column
 
-        for i in range(0, distance):
-            # same row = change
-            # not same row, stay the same!
-            if self.row == from_row:
-                delta_row = - delta_col
-            else:
-                delta_row = 0
+        origin_cube = to_cube(*from_hex)
+        current_cube = to_cube(self.row, self.column)
+        direction = tuple(
+            current - origin
+            for current, origin in zip(current_cube, origin_cube)
+        )
 
-            from_row = self.row
-            from_col = self.column
+        step_magnitude = max(abs(component) for component in direction)
+        if step_magnitude == 0:
+            self.row, self.column = original_position
+            return False
 
-            self.row += delta_row
-            self.column += delta_col
+        direction = tuple(
+            component // step_magnitude for component in direction
+        )
+
+        for _ in range(distance):
+            next_cube = tuple(
+                current + delta
+                for current, delta in zip(current_cube, direction)
+            )
+            next_row, next_col = to_offset(*next_cube)
+
+            if not board.is_in_bounds(next_row, next_col):
+                self.row, self.column = original_position
+                return False
+
+            occupant = board.get_unit_at(next_row, next_col)
+            if occupant and not occupant.is_friendly(self):
+                self.row, self.column = original_position
+                return False
+
+            self.row, self.column = next_row, next_col
+            current_cube = next_cube
+
+        return True
 
     def to_unit_model(self) -> UnitModel:
         return UnitModel(id=self.id,
