@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battle Hexes</title>
+  <style>
+    body {
+      background-color: #5A5A5A;
+      font-family: 'Raleway', sans-serif; 
+      margin: 0;
+      display: flex;
+      flex-direction: row-reverse;
+      height: 100vh;
+    }
+
+    #menu {
+      width: 280px;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    #menu button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+    }
+
+    #canvas-container {
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    canvas {
+      display: block;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu" style="background-color: #F8F8F8;">
+    <h2>Battle Hexes</h2>
+    <div id="selHexContents"></div>
+    <div id="selHexCoord"></div>
+    <div id="unitMovesLeftDiv"></div>
+    <div id="gameStagesMenu">
+      <h3>Game Stages</h3>
+      <div id="phasesList">
+        <!-- phases list is created dynamically -->
+      </div>
+      <div>Current turn: <span id="currentTurnLabel"></span></div>
+    </div>
+    <br/>
+    <button id="endPhaseBtn"></button>
+    <h3 id="gameOverLabel" style="display: none;">Game Over</h3>
+    <label><input type="checkbox" id="autoNewGame"> Start new game automatically</label>
+    <button id="newGameBtn" style="display: none;">New Game</button>
+  </div>
+  <div id="canvas-container"></div>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet">
+</body>
+</html>

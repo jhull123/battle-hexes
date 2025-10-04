@@ -20,8 +20,13 @@ module.exports = (env = {}) => ({
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, 'src/index.html'), // Path to your HTML file
-      filename: 'index.html', // The name of the output file in the dist folder
+      template: path.resolve(__dirname, 'src/index.html'), // Placeholder landing page
+      filename: 'index.html',
+      inject: false,
+    }),
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, 'src/battle.html'), // Game boot page
+      filename: 'battle.html',
     }),
     new webpack.DefinePlugin({
       'process.env.API_URL': JSON.stringify(env.API_URL || 'http://localhost:8000'),
