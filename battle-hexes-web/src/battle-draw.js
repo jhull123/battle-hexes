@@ -39,7 +39,12 @@ new p5((p) => {
   const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
   const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
-  
+
+  eventBus.on('hexCoordsVisibilityChanged', (shouldShow) => {
+    hexDrawWithCoords.setShowHexCoords(shouldShow);
+    p.draw();
+  });
+
   let canvas;
 
   p.setup = function() {

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from './model/battle-api.js';
+import { eventBus } from './event-bus.js';
 
 export class Menu {
   #game;
@@ -9,7 +10,9 @@ export class Menu {
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
+  #showHexCoordsChk;
   #autoReloadScheduled = false;
+  static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
 
   constructor(game) {
     this.#game = game;
@@ -19,6 +22,7 @@ export class Menu {
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
+    this.#showHexCoordsChk = document.getElementById('showHexCoords');
 
     // Initialize checkbox state from URL param
     const params = new URLSearchParams(window.location.search);
@@ -39,6 +43,16 @@ export class Menu {
         this.#showGameOver();
       }
     });
+
+    const storedShowCoords = this.#getStoredShowHexCoords();
+    this.#showHexCoordsChk.checked = storedShowCoords ?? true;
+    this.#showHexCoordsChk.addEventListener('change', () => {
+      const shouldShowCoords = this.#showHexCoordsChk.checked;
+      this.#storeShowHexCoords(shouldShowCoords);
+      eventBus.emit('hexCoordsVisibilityChanged', shouldShowCoords);
+    });
+    this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
+    eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -154,6 +168,27 @@ export class Menu {
   #disableOrEnableActionButton() {
     const endPhaseBtn = document.getElementById('endPhaseBtn');
     endPhaseBtn.disabled = !this.#game.getCurrentPlayer().isHuman() || this.#game.isGameOver();
+  }
+
+  #getStoredShowHexCoords() {
+    try {
+      const storedValue = window.localStorage?.getItem(Menu.#SHOW_HEX_COORDS_STORAGE_KEY);
+      if (storedValue === null || storedValue === undefined) {
+        return null;
+      }
+      return storedValue === 'true';
+    } catch (err) {
+      console.warn('Failed to read showHexCoords preference from localStorage', err);
+      return null;
+    }
+  }
+
+  #storeShowHexCoords(shouldShow) {
+    try {
+      window.localStorage?.setItem(Menu.#SHOW_HEX_COORDS_STORAGE_KEY, shouldShow ? 'true' : 'false');
+    } catch (err) {
+      console.warn('Failed to persist showHexCoords preference to localStorage', err);
+    }
   }
 
   #postCombat() {
