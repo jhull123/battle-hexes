@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from './model/battle-api.js';
+import { eventBus } from './event-bus.js';
 
 export class Menu {
   #game;
@@ -9,6 +10,7 @@ export class Menu {
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
+  #showHexCoordsChk;
   #autoReloadScheduled = false;
 
   constructor(game) {
@@ -19,6 +21,7 @@ export class Menu {
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
+    this.#showHexCoordsChk = document.getElementById('showHexCoords');
 
     // Initialize checkbox state from URL param
     const params = new URLSearchParams(window.location.search);
@@ -39,6 +42,12 @@ export class Menu {
         this.#showGameOver();
       }
     });
+
+    this.#showHexCoordsChk.checked = true;
+    this.#showHexCoordsChk.addEventListener('change', () => {
+      eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
+    });
+    eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
