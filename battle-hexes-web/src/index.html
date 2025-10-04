@@ -8,25 +8,31 @@
     :root {
       color-scheme: dark light;
     }
+
     body {
       margin: 0;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, #1e2636, #111521 70%);
       font-family: 'Raleway', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #f4f6fb;
+      background: #0b1120;
+      overflow: hidden;
+      position: relative;
     }
 
     main {
       text-align: center;
       padding: 3rem 2rem;
-      background: rgba(12, 18, 32, 0.85);
+      background: rgba(12, 18, 32, 0.82);
       border-radius: 18px;
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
       max-width: 420px;
       width: calc(100% - 2rem);
+      position: relative;
+      z-index: 1;
+      backdrop-filter: blur(6px);
     }
 
     h1 {
@@ -58,16 +64,37 @@
 
     p {
       margin-bottom: 2rem;
-      color: rgba(244, 246, 251, 0.8);
+      color: rgba(244, 246, 251, 0.82);
       font-size: 1rem;
+    }
+
+    #title-background {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      background: radial-gradient(circle at 10% -20%, rgba(49, 73, 108, 0.4), transparent 55%),
+        radial-gradient(circle at 90% 20%, rgba(41, 65, 104, 0.35), transparent 60%),
+        linear-gradient(180deg, #0c1422 0%, #0b1120 45%, #070b13 100%);
+    }
+
+    #title-background canvas {
+      position: absolute !important;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
   </style>
 </head>
 <body>
+  <div id="title-background" aria-hidden="true"></div>
   <main>
     <h1>Battle Hexes</h1>
     <p>The strategy begins here. Enter the battlefield when you&apos;re ready.</p>
     <a href="battle.html">Enter Battle</a>
   </main>
+  <!-- Script injected by Webpack build -->
 </body>
 </html>
