@@ -51,8 +51,8 @@ export class ScrollingHexLandscape {
   }
 
   resize(width, height) {
-    this.#visibleColumnCount = Math.ceil((width + this.#horizontalSpacing) / this.#horizontalSpacing);
-    this.#visibleRowCount = Math.ceil((height + this.#hexHeight) / this.#hexHeight);
+    this.#visibleColumnCount = Math.ceil(width / this.#horizontalSpacing) + 2;
+    this.#visibleRowCount = Math.ceil(height / this.#hexHeight) + 2;
   }
 
   getVisibleGridSize() {
@@ -74,18 +74,11 @@ export class ScrollingHexLandscape {
     this.#totalScrollX += deltaX;
     this.#totalScrollY += deltaY;
 
-    if (this.#totalScrollX >= Number.MAX_SAFE_INTEGER / 2) {
-      this.#totalScrollX = 0;
-    }
-    if (this.#totalScrollY >= Number.MAX_SAFE_INTEGER / 2) {
-      this.#totalScrollY = 0;
-    }
-
     this.#baseColumnOffset = Math.floor(this.#totalScrollX / this.#horizontalSpacing);
     this.#baseRowOffset = Math.floor(this.#totalScrollY / this.#hexHeight);
 
-    const fractionalOffsetX = this.#totalScrollX - this.#baseColumnOffset * this.#horizontalSpacing;
-    const fractionalOffsetY = this.#totalScrollY - this.#baseRowOffset * this.#hexHeight;
+    const translateX = -(this.#totalScrollX);
+    const translateY = -(this.#totalScrollY);
 
     const startColumn = this.#baseColumnOffset - GRID_BUFFER;
     const endColumn = startColumn + this.#visibleColumnCount + GRID_BUFFER * 2;
@@ -93,7 +86,7 @@ export class ScrollingHexLandscape {
     const endRow = startRow + this.#visibleRowCount + GRID_BUFFER * 2;
 
     this.#p.push();
-    this.#p.translate(-fractionalOffsetX, -fractionalOffsetY);
+    this.#p.translate(translateX, translateY);
 
     for (let column = startColumn; column < endColumn; column++) {
       for (let row = startRow; row < endRow; row++) {

@@ -19,7 +19,7 @@ if (backgroundElement) {
       canvas.elt.style.height = '100%';
       p.pixelDensity(Math.min(window.devicePixelRatio || 1, 2));
 
-      landscape = new ScrollingHexLandscape(p, { hexRadius: 70, scrollSpeed: DEFAULT_SCROLL_SPEED });
+      landscape = new ScrollingHexLandscape(p, { hexRadius: 58, scrollSpeed: DEFAULT_SCROLL_SPEED });
       landscape.resize(p.width, p.height);
       p.frameRate(60);
     };
