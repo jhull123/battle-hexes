@@ -30,7 +30,7 @@ new p5((p) => {
   }
 
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
-  hexDrawWithCoords.setShowHexCoords(true);
+  hexDrawWithCoords.setShowHexCoords(menu.getShowHexCoordsPreference());
   const hexDraw = new HexDrawer(p, hexRadius);
   
   const unitDraw = new UnitDrawer(p, hexDraw);

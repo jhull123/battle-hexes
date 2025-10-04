@@ -60,6 +60,10 @@ export class Menu {
     this.#updateCombatIndicator();
   }
 
+  getShowHexCoordsPreference() {
+    return this.#showHexCoordsChk.checked;
+  }
+
   #initPhasesInMenu() {
     const phasesElem = document.getElementById('phasesList');
 

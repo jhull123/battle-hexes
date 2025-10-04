@@ -66,11 +66,12 @@ describe('auto new game persistence', () => {
   test('hex coordinate checkbox defaults to checked, persists, and emits initial state', () => {
     buildDom();
     history.replaceState(null, '', '/');
-    new Menu(fakeGame());
+    const menu = new Menu(fakeGame());
     const coordsCheckbox = document.getElementById('showHexCoords');
     expect(coordsCheckbox.checked).toBe(true);
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', true);
     expect(window.localStorage.getItem('battleHexes.showHexCoords')).toBe('true');
+    expect(menu.getShowHexCoordsPreference()).toBe(true);
   });
 
   test('changing hex coordinate checkbox emits visibility changes', () => {
@@ -95,10 +96,11 @@ describe('auto new game persistence', () => {
   test('hex coordinate checkbox restores state from localStorage', () => {
     buildDom();
     window.localStorage.setItem('battleHexes.showHexCoords', 'false');
-    new Menu(fakeGame());
+    const menu = new Menu(fakeGame());
 
     const coordsCheckbox = document.getElementById('showHexCoords');
     expect(coordsCheckbox.checked).toBe(false);
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', false);
+    expect(menu.getShowHexCoordsPreference()).toBe(false);
   });
 });
