@@ -12,6 +12,7 @@ export class Menu {
   #autoNewGameChk;
   #showHexCoordsChk;
   #autoReloadScheduled = false;
+  static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
 
   constructor(game) {
     this.#game = game;
@@ -43,16 +44,24 @@ export class Menu {
       }
     });
 
-    this.#showHexCoordsChk.checked = true;
+    const storedShowCoords = this.#getStoredShowHexCoords();
+    this.#showHexCoordsChk.checked = storedShowCoords ?? true;
     this.#showHexCoordsChk.addEventListener('change', () => {
-      eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
+      const shouldShowCoords = this.#showHexCoordsChk.checked;
+      this.#storeShowHexCoords(shouldShowCoords);
+      eventBus.emit('hexCoordsVisibilityChanged', shouldShowCoords);
     });
+    this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
     this.#setCurrentTurn();
     this.#updateCombatIndicator();
+  }
+
+  getShowHexCoordsPreference() {
+    return this.#showHexCoordsChk.checked;
   }
 
   #initPhasesInMenu() {
@@ -163,6 +172,27 @@ export class Menu {
   #disableOrEnableActionButton() {
     const endPhaseBtn = document.getElementById('endPhaseBtn');
     endPhaseBtn.disabled = !this.#game.getCurrentPlayer().isHuman() || this.#game.isGameOver();
+  }
+
+  #getStoredShowHexCoords() {
+    try {
+      const storedValue = window.localStorage?.getItem(Menu.#SHOW_HEX_COORDS_STORAGE_KEY);
+      if (storedValue === null || storedValue === undefined) {
+        return null;
+      }
+      return storedValue === 'true';
+    } catch (err) {
+      console.warn('Failed to read showHexCoords preference from localStorage', err);
+      return null;
+    }
+  }
+
+  #storeShowHexCoords(shouldShow) {
+    try {
+      window.localStorage?.setItem(Menu.#SHOW_HEX_COORDS_STORAGE_KEY, shouldShow ? 'true' : 'false');
+    } catch (err) {
+      console.warn('Failed to persist showHexCoords preference to localStorage', err);
+    }
   }
 
   #postCombat() {

@@ -40,6 +40,7 @@ describe('auto new game persistence', () => {
 
   beforeEach(() => {
     eventBus.emit.mockClear();
+    window.localStorage.clear();
   });
 
   test('checkbox reflects url parameter', () => {
@@ -62,13 +63,15 @@ describe('auto new game persistence', () => {
     expect(window.location.search).toBe('');
   });
 
-  test('hex coordinate checkbox defaults to checked and emits initial state', () => {
+  test('hex coordinate checkbox defaults to checked, persists, and emits initial state', () => {
     buildDom();
     history.replaceState(null, '', '/');
-    new Menu(fakeGame());
+    const menu = new Menu(fakeGame());
     const coordsCheckbox = document.getElementById('showHexCoords');
     expect(coordsCheckbox.checked).toBe(true);
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', true);
+    expect(window.localStorage.getItem('battleHexes.showHexCoords')).toBe('true');
+    expect(menu.getShowHexCoordsPreference()).toBe(true);
   });
 
   test('changing hex coordinate checkbox emits visibility changes', () => {
@@ -81,10 +84,23 @@ describe('auto new game persistence', () => {
     coordsCheckbox.checked = false;
     coordsCheckbox.dispatchEvent(new Event('change'));
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', false);
+    expect(window.localStorage.getItem('battleHexes.showHexCoords')).toBe('false');
 
     eventBus.emit.mockClear();
     coordsCheckbox.checked = true;
     coordsCheckbox.dispatchEvent(new Event('change'));
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', true);
+    expect(window.localStorage.getItem('battleHexes.showHexCoords')).toBe('true');
+  });
+
+  test('hex coordinate checkbox restores state from localStorage', () => {
+    buildDom();
+    window.localStorage.setItem('battleHexes.showHexCoords', 'false');
+    const menu = new Menu(fakeGame());
+
+    const coordsCheckbox = document.getElementById('showHexCoords');
+    expect(coordsCheckbox.checked).toBe(false);
+    expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', false);
+    expect(menu.getShowHexCoordsPreference()).toBe(false);
   });
 });
