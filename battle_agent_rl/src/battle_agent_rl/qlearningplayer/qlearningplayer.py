@@ -84,6 +84,7 @@ class QLearningPlayer(RLPlayer):
     _combat_bonus: float = PrivateAttr()
     _half_combat_bonus: float = PrivateAttr()
     _double_combat_bonus: float = PrivateAttr()
+    _ally_combat_bonus: float = PrivateAttr()
     _turn_count: int = PrivateAttr()
 
     _last_actions: dict = PrivateAttr()
@@ -103,6 +104,7 @@ class QLearningPlayer(RLPlayer):
         epsilon: float = 0.1,
         turn_penalty: float = 0.1,
         combat_bonus: float = 1000.0,
+        ally_combat_bonus: float = 500.0,
     ) -> None:
         """
         Initialize a (Q-learning) player.
@@ -132,6 +134,8 @@ class QLearningPlayer(RLPlayer):
                 combat outcomes. Halved and doubled values derived from this
                 bonus determine penalties for unfavorable odds and rewards for
                 advantageous odds. Default: 1000.0.
+            ally_combat_bonus (float, optional): Reward bonus for units
+                participating in combat with at least one ally. Default: 500.0.
         """
 
         super().__init__(name=name, type=type, factions=factions, board=board)
@@ -141,6 +145,7 @@ class QLearningPlayer(RLPlayer):
             epsilon=epsilon,
             turn_penalty=turn_penalty,
             combat_bonus=combat_bonus,
+            ally_combat_bonus=ally_combat_bonus,
         )
         self._turn_count = 0
         self._q_table = {}
@@ -192,6 +197,7 @@ class QLearningPlayer(RLPlayer):
             "epsilon": self._epsilon,
             "turn_penalty": self._turn_penalty,
             "combat_bonus": self._combat_bonus,
+            "ally_combat_bonus": self._ally_combat_bonus,
         }
 
     def _set_hyperparameters(
@@ -202,12 +208,14 @@ class QLearningPlayer(RLPlayer):
         epsilon: float,
         turn_penalty: float,
         combat_bonus: float,
+        ally_combat_bonus: float,
     ) -> None:
         self._alpha = alpha
         self._gamma = gamma
         self._epsilon = epsilon
         self._turn_penalty = turn_penalty
         self._combat_bonus = combat_bonus
+        self._ally_combat_bonus = ally_combat_bonus
         self._half_combat_bonus = combat_bonus / 2.0
         self._double_combat_bonus = combat_bonus * 2.0
 
@@ -218,6 +226,7 @@ class QLearningPlayer(RLPlayer):
             epsilon=settings.get("epsilon", self._epsilon),
             turn_penalty=settings.get("turn_penalty", self._turn_penalty),
             combat_bonus=settings.get("combat_bonus", self._combat_bonus),
+            ally_combat_bonus=settings.get("ally_combat_bonus", 500.0),
         )
 
     def movement(self) -> List[UnitMovementPlan]:
@@ -541,21 +550,31 @@ class QLearningPlayer(RLPlayer):
             #     combat_award += half_bonus
             # else:
             #     combat_award += half_bonus if attacker else 1.0
-            logger.info(
-                "Combat award is %s for %s at %s odds",
-                combat_award, result, battle.get_odds()
-            )
             participants = battle.get_battle_participants()
             if participants is None:
                 continue
             attackers, defenders = participants
-            for unit in (*attackers, *defenders):
-                if not self.owns(unit):
-                    continue
-                unit_id = unit.get_id()
-                if unit_id not in per_unit_rewards:
-                    per_unit_rewards[unit_id] = 0.0
-                per_unit_rewards[unit_id] += combat_award
+
+            groups = [
+                (attackers, len(attackers) > 1),
+                (defenders, len(defenders) > 1),
+            ]
+            for group, has_allies in groups:
+                for unit in group:
+                    if self.owns(unit):
+                        unit_id = unit.get_id()
+                        if unit_id not in per_unit_rewards:
+                            per_unit_rewards[unit_id] = 0.0
+                        per_unit_rewards[unit_id] += combat_award
+                        if has_allies:
+                            bonus = self._ally_combat_bonus
+                            per_unit_rewards[unit_id] += bonus
+                        logger.info(
+                            "Combat award for %s is %s for %s at %s odds "
+                            "(allies=%s)",
+                            unit.get_name(), combat_award, result,
+                            battle.get_odds(), has_allies
+                        )
 
         for unit_id, (unit, state, action) in self._last_actions.items():
             if unit_id not in per_unit_rewards:

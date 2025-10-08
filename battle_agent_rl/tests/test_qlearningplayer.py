@@ -328,6 +328,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
         epsilon: float = 0.1,
         turn_penalty: float = 0.0,
         combat_bonus: float = 1000.0,
+        ally_combat_bonus: float = 100.0,
     ) -> QLearningPlayer:
         return QLearningPlayer(
             name="AI",
@@ -339,6 +340,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
             epsilon=epsilon,
             turn_penalty=turn_penalty,
             combat_bonus=combat_bonus,
+            ally_combat_bonus=ally_combat_bonus,
         )
 
     def test_save_and_load(self):
@@ -348,6 +350,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
             epsilon=0.75,
             turn_penalty=0.2,
             combat_bonus=1500.0,
+            ally_combat_bonus=55.0,
         )
         state = (1, 2, 3)
         action = (ActionIntent.HOLD, ActionMagnitude.NONE)
@@ -368,6 +371,7 @@ class TestQLearningPlayerSaveLoad(unittest.TestCase):
                 "epsilon": player._epsilon,
                 "turn_penalty": player._turn_penalty,
                 "combat_bonus": player._combat_bonus,
+                "ally_combat_bonus": player._ally_combat_bonus,
             },
         )
 

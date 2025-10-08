@@ -1,3 +1,4 @@
 {
-  "combat_bonus": 0.0
+  "combat_bonus": 100.0,
+  "ally_combat_bonus": 25.0
 }
