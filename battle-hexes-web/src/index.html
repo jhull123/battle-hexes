@@ -68,6 +68,45 @@
       font-size: 1rem;
     }
 
+    .scenario-picker {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      text-align: left;
+    }
+
+    .scenario-picker label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(244, 246, 251, 0.9);
+    }
+
+    .scenario-picker select {
+      appearance: none;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(244, 246, 251, 0.2);
+      background: rgba(11, 17, 32, 0.85);
+      color: #f4f6fb;
+      font-size: 1rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .scenario-picker select:focus-visible {
+      border-color: rgba(240, 185, 77, 0.8);
+      box-shadow: 0 0 0 3px rgba(240, 185, 77, 0.25);
+      outline: none;
+    }
+
+    .scenario-picker__status {
+      font-size: 0.9rem;
+      color: rgba(244, 246, 251, 0.7);
+      min-height: 1.4rem;
+    }
+
     #title-background {
       position: fixed;
       inset: 0;
@@ -93,6 +132,13 @@
   <main>
     <h1>Battle Hexes</h1>
     <p>The strategy begins here. Enter the battlefield when you&apos;re ready.</p>
+    <div class="scenario-picker">
+      <label for="scenario-select">Scenario</label>
+      <select id="scenario-select" name="scenario" aria-describedby="scenario-status">
+        <option>Loading scenarios…</option>
+      </select>
+      <p id="scenario-status" class="scenario-picker__status" aria-live="polite">Choose a scenario to customize your battle.</p>
+    </div>
     <a href="battle.html">Enter Battle</a>
   </main>
   <!-- Script injected by Webpack build -->
