@@ -72,8 +72,10 @@ Resources:
           DefaultTTL: 0
           MinTTL: 0
           MaxTTL: 31536000
+        # HTML should be revalidated every request while hashed assets get long cache.
+        # Exposing the distribution ID lets GitHub Actions invalidate /index.html and /battle.html on demand.
         CacheBehaviors:
-          - PathPattern: 'index.html'
+          - PathPattern: '*.html'
             TargetOriginId: WebsiteOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD]
@@ -113,6 +115,9 @@ Outputs:
   CloudFrontURL:
     Description: "CloudFront distribution URL"
     Value: !Sub "https://${WebsiteDistribution.DomainName}"
+  CloudFrontDistributionId:
+    Description: "CloudFront distribution ID"
+    Value: !Ref WebsiteDistribution
   WebUrl:
     Description: Public URL for the website
     Value: !Sub "https://${WebDomainName}"
