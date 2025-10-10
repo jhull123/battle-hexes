@@ -19,7 +19,11 @@ logger.info("sys.path: %s", sys.path)
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
 from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
+from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
+    ScenarioRegistry,
+)
 from battle_hexes_api.samplegame import SampleGameCreator  # noqa: E402
+from battle_hexes_api.schemas import ScenarioModel  # noqa: E402
 
 app = FastAPI()
 
@@ -31,6 +35,7 @@ def health():
 
 
 game_repo = GameRepository()
+scenario_registry = ScenarioRegistry()
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,6 +52,14 @@ def create_game():
     new_game = SampleGameCreator.create_sample_game()
     game_repo.update_game(new_game)
     return new_game.to_game_model()
+
+
+@app.get("/scenarios", response_model=list[ScenarioModel])
+def list_scenarios() -> list[ScenarioModel]:
+    """Return the available scenarios registered in the core package."""
+
+    scenarios = scenario_registry.list_scenarios()
+    return [ScenarioModel.from_core(s) for s in scenarios]
 
 
 def _get_game_or_404(game_id: str):

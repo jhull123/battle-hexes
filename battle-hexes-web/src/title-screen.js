@@ -1,5 +1,6 @@
 import p5 from 'p5';
 import { ScrollingHexLandscape, DEFAULT_SCROLL_SPEED } from './animation/scrolling-hex-landscape.js';
+import { initializeScenarioPicker } from './title-screen-scenarios.js';
 
 const backgroundElement = document.getElementById('title-background');
 
@@ -39,3 +40,5 @@ if (backgroundElement) {
     };
   }, backgroundElement);
 }
+
+initializeScenarioPicker();

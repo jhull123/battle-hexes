@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from battle_hexes_api.main import app
 from battle_hexes_core.game.sparseboard import SparseBoard
+from battle_hexes_core.scenario.scenario import Scenario
 
 
 class TestFastAPI(unittest.TestCase):
@@ -32,6 +33,25 @@ class TestFastAPI(unittest.TestCase):
         missing_id = uuid4()
         response = self.client.get(f'/games/{missing_id}')
         self.assertEqual(response.status_code, 404)
+
+    @patch('battle_hexes_api.main.scenario_registry')
+    def test_list_scenarios(self, mock_registry):
+        mock_registry.list_scenarios.return_value = [
+            Scenario(id="test-1", name="Test Scenario"),
+            Scenario(id="test-2", name="Another Scenario"),
+        ]
+
+        response = self.client.get('/scenarios')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {"id": "test-1", "name": "Test Scenario"},
+                {"id": "test-2", "name": "Another Scenario"},
+            ],
+        )
+        mock_registry.list_scenarios.assert_called_once_with()
 
     @patch('battle_hexes_api.main.game_repo')
     def test_resolve_combat_placeholder(self, mock_game_repo):
