@@ -31,6 +31,19 @@
       margin: 8px 0;
     }
 
+    #menu a.back-link {
+      display: inline-block;
+      margin-top: 12px;
+      color: #1a73e8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    #menu a.back-link:hover,
+    #menu a.back-link:focus {
+      text-decoration: underline;
+    }
+
     #canvas-container {
       flex-grow: 1;
       overflow-y: auto;
@@ -61,6 +74,7 @@
     <label class="menu-toggle"><input type="checkbox" id="showHexCoords" checked> Show hex coordinates</label>
     <label class="menu-toggle"><input type="checkbox" id="autoNewGame"> Start new game automatically</label>
     <button id="newGameBtn" style="display: none;">New Game</button>
+    <a class="back-link" href="index.html">Back to title screen</a>
   </div>
   <div id="canvas-container"></div>
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet">
