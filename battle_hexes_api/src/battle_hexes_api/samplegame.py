@@ -2,23 +2,65 @@ from pathlib import Path
 from uuid import UUID
 import uuid
 
+from typing import Sequence
+
 from battle_agent_rl.qlearningplayer import QLearningPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.gamefactory import GameFactory
-from battle_hexes_core.game.player import PlayerType
+from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
+from pydantic import PrivateAttr
+
+
+class SampleHumanPlayer(Player):
+    """Minimal representation of a human-controlled player."""
+
+    _board: Board = PrivateAttr(default=None)
+
+    def __init__(
+        self,
+        name: str,
+        factions: list[Faction],
+        board: Board,
+    ) -> None:
+        super().__init__(name=name, type=PlayerType.HUMAN, factions=factions)
+        self._board = board
+
+    def movement(self):  # pragma: no cover
+        """Human players plan movement client-side."""
+        return []
+
+    def combat_results(self, combat_results):  # pragma: no cover
+        """Human players review combat results client-side."""
+        return None
 
 
 class SampleGameCreator:
     """Utility class for constructing game instances."""
 
     @staticmethod
-    def create_sample_game() -> Game:
-        """Create a simple two-player game with preset units."""
+    def create_sample_game(
+        scenario_id: str, player_type_ids: Sequence[str]
+    ) -> Game:
+        """Create a simple two-player game with preset units.
+
+        Parameters
+        ----------
+        scenario_id:
+            Currently unused placeholder that allows callers to select between
+            future sample scenarios.
+        player_type_ids:
+            Sequence of player identifiers (``human``, ``random``,
+            ``q-learning``) used to configure the players participating in the
+            game.
+        """
         board_size = (10, 10)
+
+        if len(player_type_ids) != 2:
+            raise ValueError("Exactly two player types must be provided")
 
         red_faction = Faction(
             id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
@@ -33,31 +75,25 @@ class SampleGameCreator:
         )
 
         board = Board(*board_size)
+        factions = [red_faction, blue_faction]
 
-        player1 = RandomPlayer(
-            name="Player 1",
-            type=PlayerType.CPU,
-            factions=[red_faction],
-            board=board,
-        )
-
-        repo_root = Path(__file__).resolve().parents[3]
-
-        player2 = QLearningPlayer(
-            name="Player 2",
-            type=PlayerType.CPU,
-            factions=[blue_faction],
-            board=board,
-            epsilon=0.0,
-        )
-        q_table_path = repo_root / "battle_agent_rl" / "q_table.pkl"
-        player2.load_q_table(q_table_path)
+        players = [
+            SampleGameCreator._create_player(
+                type_id,
+                name=f"Player {index + 1}",
+                faction=faction,
+                board=board,
+            )
+            for index, (type_id, faction) in enumerate(
+                zip(player_type_ids, factions)
+            )
+        ]
 
         red_unit = Unit(
             UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
             "Red Unit",
             red_faction,
-            player1,
+            players[0],
             "Infantry",
             2,
             2,
@@ -69,7 +105,7 @@ class SampleGameCreator:
             UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
             "Blue Unit",
             blue_faction,
-            player2,
+            players[1],
             "Infantry",
             4,
             4,
@@ -81,7 +117,7 @@ class SampleGameCreator:
             uuid.uuid4(),
             "Blue Two",
             blue_faction,
-            player2,
+            players[1],
             "Scout",
             2,
             2,
@@ -91,6 +127,45 @@ class SampleGameCreator:
 
         return GameFactory(
             board_size,
-            [player1, player2],
+            players,
             [red_unit, blue_unit, blue_two],
         ).create_game()
+
+    @staticmethod
+    def _create_player(
+        type_id: str,
+        name: str,
+        faction: Faction,
+        board: Board,
+    ) -> Player:
+        """Instantiate a player for ``type_id``."""
+
+        if type_id == "human":
+            return SampleHumanPlayer(
+                name=name,
+                factions=[faction],
+                board=board,
+            )
+
+        if type_id == "random":
+            return RandomPlayer(
+                name=name,
+                type=PlayerType.CPU,
+                factions=[faction],
+                board=board,
+            )
+
+        if type_id == "q-learning":
+            repo_root = Path(__file__).resolve().parents[3]
+            player = QLearningPlayer(
+                name=name,
+                type=PlayerType.CPU,
+                factions=[faction],
+                board=board,
+                epsilon=0.0,
+            )
+            q_table_path = repo_root / "battle_agent_rl" / "q_table.pkl"
+            player.load_q_table(q_table_path)
+            return player
+
+        raise ValueError(f"Unsupported player type '{type_id}'")

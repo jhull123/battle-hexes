@@ -7,8 +7,16 @@ class ScenarioRegistry:
         s2 = Scenario(id="elem_2", name="Elimination Demo 2")
         self._scenarios = {
             s1.id: s1,
-            s2.id: s2
+            s2.id: s2,
         }
 
     def list_scenarios(self):
         return list(self._scenarios.values())
+
+    def get_scenario(self, scenario_id: str) -> Scenario:
+        """Return the scenario registered for ``scenario_id``."""
+
+        try:
+            return self._scenarios[scenario_id]
+        except KeyError as exc:  # pragma: no cover - defensive branch
+            raise KeyError(f"Scenario '{scenario_id}' not found") from exc

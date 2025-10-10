@@ -11,7 +11,41 @@ import { Menu } from './menu.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
 
-const gameData = await Game.newGameFromServer();
+const extractGameIdFromLocation = () => {
+  const pathMatch = window.location.pathname.match(/battle(?:\.html)?\/([^/?#]+)/);
+  if (pathMatch && pathMatch[1]) {
+    return pathMatch[1];
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get('gameId');
+};
+
+const updateHistoryWithGameId = (gameId) => {
+  const params = new URLSearchParams(window.location.search);
+  const query = params.toString();
+  const basePath = window.location.pathname.replace(/[^/]*$/, '');
+  const targetPath = `${basePath}battle/${gameId}${query ? `?${query}` : ''}`;
+  window.history.replaceState(null, '', targetPath);
+};
+
+const loadGameData = async () => {
+  const existingGameId = extractGameIdFromLocation();
+  if (existingGameId) {
+    const gameData = await Game.fetchGameFromServer(existingGameId);
+    updateHistoryWithGameId(gameData.id);
+    return gameData;
+  }
+
+  const defaultGame = await Game.newGameFromServer();
+  const params = new URLSearchParams(window.location.search);
+  const query = params.toString();
+  const targetUrl = `battle.html?gameId=${encodeURIComponent(defaultGame.id)}${query ? `&${query}` : ''}`;
+  window.location.replace(targetUrl);
+  return defaultGame;
+};
+
+const gameData = await loadGameData();
 console.log('game data: ' + JSON.stringify(gameData));
 
 new p5((p) => {

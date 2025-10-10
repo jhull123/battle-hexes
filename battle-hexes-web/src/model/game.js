@@ -81,8 +81,19 @@ export class Game {
     });
   }
   
-  static async newGameFromServer() {
-    const response = await axios.post(`${API_URL}/games`, {});
+  static async newGameFromServer({
+    scenarioId = 'elem_1',
+    playerTypes = ['human', 'random'],
+  } = {}) {
+    const response = await axios.post(`${API_URL}/games`, {
+      scenarioId,
+      playerTypes,
+    });
+    return response.data;
+  }
+
+  static async fetchGameFromServer(gameId) {
+    const response = await axios.get(`${API_URL}/games/${gameId}`);
     return response.data;
   }
 }

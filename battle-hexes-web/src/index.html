@@ -43,7 +43,7 @@
       text-transform: uppercase;
     }
 
-    a {
+    .primary-action {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -55,10 +55,12 @@
       background: linear-gradient(135deg, #f7d774, #f0b94d);
       border-radius: 999px;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: none;
+      cursor: pointer;
     }
 
-    a:hover,
-    a:focus-visible {
+    .primary-action:hover,
+    .primary-action:focus-visible {
       transform: translateY(-2px);
       box-shadow: 0 12px 24px rgba(240, 185, 77, 0.4);
     }
@@ -179,7 +181,7 @@
       </div>
       <p id="player-type-status" class="player-type-picker__status" aria-live="polite">Choose who commands each side.</p>
     </div>
-    <a href="battle.html">Enter Battle</a>
+    <button id="enter-battle-button" class="primary-action" type="button">Enter Battle</button>
   </main>
   <!-- Script injected by Webpack build -->
 </body>

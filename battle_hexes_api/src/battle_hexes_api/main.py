@@ -25,6 +25,7 @@ from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
 from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.samplegame import SampleGameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
+    CreateGameRequest,
     PlayerTypeModel,
     ScenarioModel,
 )
@@ -51,9 +52,27 @@ app.add_middleware(
 
 
 @app.post('/games')
-def create_game():
+def create_game(payload: CreateGameRequest):
     """Create a new sample game and store it in the repository."""
-    new_game = SampleGameCreator.create_sample_game()
+
+    try:
+        scenario_registry.get_scenario(payload.scenario_id)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="Scenario not found",
+        ) from exc
+
+    try:
+        new_game = SampleGameCreator.create_sample_game(
+            payload.scenario_id, payload.player_types
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
     game_repo.update_game(new_game)
     return new_game.to_game_model()
 

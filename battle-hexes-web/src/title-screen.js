@@ -3,6 +3,73 @@ import { ScrollingHexLandscape, DEFAULT_SCROLL_SPEED } from './animation/scrolli
 import { initializePlayerTypePicker } from './title-screen-player-types.js';
 import { initializeScenarioPicker } from './title-screen-scenarios.js';
 
+export const initializeTitleScreen = ({
+  documentRef = document,
+  fetchImpl = fetch,
+  apiUrl = process.env.API_URL,
+  locationRef = window.location,
+} = {}) => {
+  const scenarioPicker = initializeScenarioPicker({
+    documentRef,
+    fetchImpl,
+    apiUrl,
+  });
+  const playerPicker = initializePlayerTypePicker({
+    documentRef,
+    fetchImpl,
+    apiUrl,
+  });
+
+  const enterBattleButton = documentRef?.getElementById?.('enter-battle-button');
+  const playerTypeStatus = documentRef?.getElementById?.('player-type-status');
+
+  if (enterBattleButton) {
+    const defaultLabel = enterBattleButton.textContent;
+
+    enterBattleButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+
+      const scenarioId = scenarioPicker?.selectElement?.value;
+      const selectElements = playerPicker?.selectElements ?? [];
+      const playerTypes = selectElements.map((select) => select.value).filter(Boolean);
+
+      if (!scenarioId || playerTypes.length !== selectElements.length) {
+        return;
+      }
+
+      enterBattleButton.disabled = true;
+      enterBattleButton.textContent = 'Preparing battle…';
+
+      try {
+        const response = await fetchImpl(`${apiUrl}/games`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scenarioId,
+            playerTypes,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Unexpected status ${response.status}`);
+        }
+
+        const game = await response.json();
+        locationRef.assign(`battle.html?gameId=${encodeURIComponent(game.id)}`);
+      } catch (error) {
+        console.error('Failed to create game', error);
+        enterBattleButton.disabled = false;
+        enterBattleButton.textContent = defaultLabel;
+        if (playerTypeStatus) {
+          playerTypeStatus.textContent = 'Failed to start game. Please try again.';
+        }
+      }
+    });
+  }
+
+  return { scenarioPicker, playerPicker };
+};
+
 const backgroundElement = document.getElementById('title-background');
 
 if (backgroundElement) {
@@ -42,5 +109,4 @@ if (backgroundElement) {
   }, backgroundElement);
 }
 
-initializeScenarioPicker();
-initializePlayerTypePicker();
+initializeTitleScreen();
