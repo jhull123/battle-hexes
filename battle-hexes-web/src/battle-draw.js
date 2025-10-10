@@ -26,7 +26,12 @@ const updateHistoryWithGameId = (gameId) => {
   const query = params.toString();
   const basePath = window.location.pathname.replace(/[^/]*$/, '');
   const targetPath = `${basePath}battle/${gameId}${query ? `?${query}` : ''}`;
-  window.history.replaceState(null, '', targetPath);
+  const canReplace =
+    window.location.protocol === 'http:' || window.location.protocol === 'https:';
+
+  if (canReplace && 'replaceState' in history) {
+    history.replaceState(null, '', targetPath);
+  }
 };
 
 const loadGameData = async () => {

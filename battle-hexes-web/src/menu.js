@@ -37,8 +37,13 @@ export class Menu {
         params.delete('autoNewGame');
       }
       const qs = params.toString();
-      history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+      const canReplace =
+          window.location.protocol === 'http:' || window.location.protocol === 'https:';
 
+      if (canReplace) {
+        history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+      }
+      
       if (this.#game.isGameOver()) {
         this.#showGameOver();
       }
