@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from battle_hexes_api.main import app
+from battle_hexes_api.player_types import PlayerTypeDefinition
 from battle_hexes_core.game.sparseboard import SparseBoard
 from battle_hexes_core.scenario.scenario import Scenario
 
@@ -182,3 +183,22 @@ class TestFastAPI(unittest.TestCase):
 
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
+
+    @patch('battle_hexes_api.main.list_player_types')
+    def test_get_player_types(self, mock_list_player_types):
+        mock_list_player_types.return_value = (
+            PlayerTypeDefinition(id="human", name="Human"),
+            PlayerTypeDefinition(id="random", name="Random"),
+        )
+
+        response = self.client.get('/player-types')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {"id": "human", "name": "Human"},
+                {"id": "random", "name": "Random"},
+            ],
+        )
+        mock_list_player_types.assert_called_once_with()
