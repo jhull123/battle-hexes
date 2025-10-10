@@ -22,8 +22,12 @@ from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
 from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
     ScenarioRegistry,
 )
+from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.samplegame import SampleGameCreator  # noqa: E402
-from battle_hexes_api.schemas import ScenarioModel  # noqa: E402
+from battle_hexes_api.schemas import (  # noqa: E402
+    PlayerTypeModel,
+    ScenarioModel,
+)
 
 app = FastAPI()
 
@@ -60,6 +64,16 @@ def list_scenarios() -> list[ScenarioModel]:
 
     scenarios = scenario_registry.list_scenarios()
     return [ScenarioModel.from_core(s) for s in scenarios]
+
+
+@app.get("/player-types", response_model=list[PlayerTypeModel])
+def get_player_types() -> list[PlayerTypeModel]:
+    """Return the supported player types available on the platform."""
+
+    return [
+        PlayerTypeModel.from_definition(definition)
+        for definition in list_player_types()
+    ]
 
 
 def _get_game_or_404(game_id: str):

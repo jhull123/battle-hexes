@@ -68,7 +68,8 @@
       font-size: 1rem;
     }
 
-    .scenario-picker {
+    .scenario-picker,
+    .player-type-picker {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
@@ -76,7 +77,8 @@
       text-align: left;
     }
 
-    .scenario-picker label {
+    .scenario-picker label,
+    .player-type-picker label {
       font-size: 0.95rem;
       font-weight: 600;
       letter-spacing: 0.04em;
@@ -84,7 +86,8 @@
       color: rgba(244, 246, 251, 0.9);
     }
 
-    .scenario-picker select {
+    .scenario-picker select,
+    .player-type-picker select {
       appearance: none;
       padding: 0.75rem 1rem;
       border-radius: 12px;
@@ -95,16 +98,36 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .scenario-picker select:focus-visible {
+    .scenario-picker select:focus-visible,
+    .player-type-picker select:focus-visible {
       border-color: rgba(240, 185, 77, 0.8);
       box-shadow: 0 0 0 3px rgba(240, 185, 77, 0.25);
       outline: none;
     }
 
-    .scenario-picker__status {
+    .scenario-picker__status,
+    .player-type-picker__status {
       font-size: 0.9rem;
       color: rgba(244, 246, 251, 0.7);
       min-height: 1.4rem;
+    }
+
+    .player-type-picker {
+      gap: 1rem;
+    }
+
+    .player-type-picker__heading {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(244, 246, 251, 0.9);
+    }
+
+    .player-type-picker__group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
     }
 
     #title-background {
@@ -138,6 +161,22 @@
         <option>Loading scenarios…</option>
       </select>
       <p id="scenario-status" class="scenario-picker__status" aria-live="polite">Choose a scenario to customize your battle.</p>
+    </div>
+    <div class="player-type-picker" aria-labelledby="player-type-heading">
+      <h2 id="player-type-heading" class="player-type-picker__heading">Player Types</h2>
+      <div class="player-type-picker__group">
+        <label for="player1-type">Player 1</label>
+        <select id="player1-type" name="player1" aria-describedby="player-type-status">
+          <option>Loading player types…</option>
+        </select>
+      </div>
+      <div class="player-type-picker__group">
+        <label for="player2-type">Player 2</label>
+        <select id="player2-type" name="player2" aria-describedby="player-type-status">
+          <option>Loading player types…</option>
+        </select>
+      </div>
+      <p id="player-type-status" class="player-type-picker__status" aria-live="polite">Choose who commands each side.</p>
     </div>
     <a href="battle.html">Enter Battle</a>
   </main>
