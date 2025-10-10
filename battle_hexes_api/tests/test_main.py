@@ -20,11 +20,38 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(response.json(), {"status": "ok"})
 
     def test_create_game(self):
-        post_response = self.client.post('/games')
+        payload = {
+            "scenarioId": "elem_1",
+            "playerTypes": ["human", "random"],
+        }
+        post_response = self.client.post('/games', json=payload)
         new_game_id = post_response.json().get('id')
 
         get_response = self.client.get(f'/games/{new_game_id}')
         self.assertEqual(new_game_id, get_response.json().get('id'))
+        self.assertEqual(post_response.status_code, 200)
+
+    def test_create_game_invalid_scenario_returns_404(self):
+        payload = {
+            "scenarioId": "not-real",
+            "playerTypes": ["human", "random"],
+        }
+
+        response = self.client.post('/games', json=payload)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["detail"], "Scenario not found")
+
+    def test_create_game_invalid_player_type_returns_422(self):
+        payload = {
+            "scenarioId": "elem_1",
+            "playerTypes": ["human", "unknown"],
+        }
+
+        response = self.client.post('/games', json=payload)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("Unsupported player type", response.json()["detail"])
 
     def test_get_game_invalid_uuid_returns_404(self):
         response = self.client.get('/games/not-a-uuid')
