@@ -27,11 +27,13 @@ module.exports = (env = {}) => ({
       filename: 'index.html',
       chunks: ['title'],
       inject: 'body',
+      favicon: path.resolve(__dirname, '../favicon.ico'),
     }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'src/battle.html'), // Game boot page
       filename: 'battle.html',
       chunks: ['battle'],
+      favicon: path.resolve(__dirname, '../favicon.ico'),
     }),
     new webpack.DefinePlugin({
       'process.env.API_URL': JSON.stringify(env.API_URL || 'http://localhost:8000'),
