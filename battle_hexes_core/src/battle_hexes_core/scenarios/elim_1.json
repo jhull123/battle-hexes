@@ -8,16 +8,19 @@
     {
       "id": "red faction",
       "name": "Red Faction",
+      "color": "#C81010",
       "player": "Player 1"
     },
     {
       "id": "blue faction",
       "name": "Blue Faction",
+      "color": "#4682B4",
       "player": "Player 2"
     }
   ],
   "units": [
     {
+      "id": "red_unit_1",
       "name": "Red Unit",
       "faction": "red faction", 
       "type": "Infantry",
@@ -27,6 +30,7 @@
       "starting_coords": [2, 2]
     },
     {
+      "id": "blue_unit_1",
       "name": "Blue Unit",
       "faction": "blue faction", 
       "type": "Infantry",
@@ -36,6 +40,7 @@
       "starting_coords": [8, 9]
     },
     {
+      "id": "blue_unit_2",
       "name": "Blue Two",
       "faction": "blue faction", 
       "type": "Scout",
