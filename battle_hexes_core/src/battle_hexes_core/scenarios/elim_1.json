@@ -1,0 +1,7 @@
+{
+  "version": "1",
+  "id": "elim_1",
+  "name": "Elimination Demo 1",
+  "description": "A simple elimination scenario.",
+  "board_size": [10, 10]
+}
