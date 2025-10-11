@@ -12,10 +12,20 @@ export class UnitDrawer {
   }
 
   draw(aHex) {
-    let hexCenter = this.#hexDrawer.hexCenter(aHex);
-    for (let aUnit of aHex.getUnits()) {
-      this.drawCounter(aUnit, hexCenter.x, hexCenter.y);
+    const units = aHex.getUnits();
+    if (units.length === 0) {
+      return;
     }
+
+    const hexCenter = this.#hexDrawer.hexCenter(aHex);
+    const stackOffsetX = this.#counterSide * 0.2;
+    const stackOffsetY = this.#counterSide * 0.2;
+
+    units.forEach((unit, index) => {
+      const offsetX = hexCenter.x + index * stackOffsetX;
+      const offsetY = hexCenter.y - index * stackOffsetY;
+      this.drawCounter(unit, offsetX, offsetY);
+    });
   }
 
   /* x and y are the center of the square. side is the square side length. */
