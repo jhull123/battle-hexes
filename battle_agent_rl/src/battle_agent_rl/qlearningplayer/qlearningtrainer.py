@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 def _build_q_learning_factory(
     settings: dict,
 ) -> Callable[[str, str, list[Faction], Board], QLearningPlayer]:
-    """Return a factory that creates configured ``QLearningPlayer`` instances."""
+    """Return a factory that creates configured ``QLearningPlayer``
+    instances."""
 
     def _factory(
         _type_id: str,
@@ -54,7 +55,9 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     game_factory = GameCreator.create_sample_game_factory(
         DEFAULT_SCENARIO_ID,
         PLAYER_TYPE_IDS,
-        player_factories={"q-learning": _build_q_learning_factory(settings)},
+        player_factories={
+            "q-learning": _build_q_learning_factory(settings)
+        },
     )
 
     rl_player = next(
