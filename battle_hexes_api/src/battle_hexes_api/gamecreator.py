@@ -1,3 +1,4 @@
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Sequence
 
@@ -36,12 +37,18 @@ class SampleHumanPlayer(Player):
         return None
 
 
+PlayerFactory = Callable[[str, str, list[Faction], Board], Player]
+
+
 class GameCreator:
     """Utility class for constructing game instances."""
 
     @staticmethod
     def create_sample_game(
-        scenario_id: str, player_type_ids: Sequence[str]
+        scenario_id: str,
+        player_type_ids: Sequence[str],
+        *,
+        player_factories: Mapping[str, PlayerFactory] | None = None,
     ) -> Game:
         """Create a simple two-player game with preset units.
 
@@ -54,68 +61,18 @@ class GameCreator:
             Sequence of player identifiers (``human``, ``random``,
             ``q-learning``) used to configure the players participating in the
             game.
+        player_factories:
+            Optional mapping that overrides how players are created for a
+            given type.  When provided, the callable associated with
+            ``type_id`` receives ``(type_id, name, factions, board)`` and must
+            return a :class:`~battle_hexes_core.game.player.Player`
+            implementation.
         """
-        scenario = load_scenario_data(scenario_id)
-        board_size = scenario.board_size
-        board = Board(*board_size)
-
-        factions_by_player: dict[str, list[Faction]] = {}
-        factions_by_id: dict[str, Faction] = {}
-        player_order: list[str] = []
-
-        for faction_data in scenario.factions:
-            faction = Faction(
-                id=faction_data.id,
-                name=faction_data.name,
-                color=faction_data.color,
-            )
-            factions_by_id[faction.id] = faction
-            factions_by_player.setdefault(
-                faction_data.player, []
-            ).append(faction)
-            if faction_data.player not in player_order:
-                player_order.append(faction_data.player)
-
-        if len(player_order) != len(player_type_ids):
-            raise ValueError(
-                "Number of player types does not match scenario configuration"
-            )
-
-        players = []
-        for index, player_name in enumerate(player_order):
-            type_id = player_type_ids[index]
-            factions = factions_by_player[player_name]
-            player = GameCreator._create_player(
-                type_id,
-                name=player_name,
-                factions=factions,
-                board=board,
-            )
-            players.append(player)
-
-        player_by_faction: dict[str, Player] = {
-            faction.id: player
-            for player in players
-            for faction in player.factions
-        }
-
-        units: list[Unit] = []
-        for unit_data in scenario.units:
-            faction = factions_by_id[unit_data.faction]
-            owner = player_by_faction[faction.id]
-            unit = Unit(
-                unit_data.id,
-                unit_data.name,
-                faction,
-                owner,
-                unit_data.type,
-                unit_data.attack,
-                unit_data.defense,
-                unit_data.movement,
-            )
-            start_row, start_col = unit_data.starting_coords
-            unit.set_coords(start_row, start_col)
-            units.append(unit)
+        board_size, players, units = GameCreator._prepare_sample_game(
+            scenario_id,
+            player_type_ids,
+            player_factories=player_factories,
+        )
 
         game = GameFactory(
             board_size,
@@ -131,6 +88,33 @@ class GameCreator:
         game.player_type_ids = list(player_type_ids)
 
         return game
+
+    @staticmethod
+    def create_sample_game_factory(
+        scenario_id: str,
+        player_type_ids: Sequence[str],
+        *,
+        player_factories: Mapping[str, PlayerFactory] | None = None,
+        randomize_positions: bool = False,
+    ) -> GameFactory:
+        """Return a ``GameFactory`` configured like :meth:`create_sample_game`.
+
+        Parameters mirror :meth:`create_sample_game`; ``player_factories``
+        allows callers to customize player instantiation while reusing the
+        scenario loading and unit construction logic provided by this class.
+        """
+
+        board_size, players, units = GameCreator._prepare_sample_game(
+            scenario_id,
+            player_type_ids,
+            player_factories=player_factories,
+        )
+        return GameFactory(
+            board_size,
+            players,
+            units,
+            randomize_positions=randomize_positions,
+        )
 
     @staticmethod
     def _create_player(
@@ -170,3 +154,81 @@ class GameCreator:
             return player
 
         raise ValueError(f"Unsupported player type '{type_id}'")
+
+    @staticmethod
+    def _prepare_sample_game(
+        scenario_id: str,
+        player_type_ids: Sequence[str],
+        *,
+        player_factories: Mapping[str, PlayerFactory] | None = None,
+    ) -> tuple[tuple[int, int], list[Player], list[Unit]]:
+        """Collect the shared game components used for sample matches."""
+
+        scenario = load_scenario_data(scenario_id)
+        board_size = scenario.board_size
+        board = Board(*board_size)
+
+        factions_by_player: dict[str, list[Faction]] = {}
+        factions_by_id: dict[str, Faction] = {}
+        player_order: list[str] = []
+
+        for faction_data in scenario.factions:
+            faction = Faction(
+                id=faction_data.id,
+                name=faction_data.name,
+                color=faction_data.color,
+            )
+            factions_by_id[faction.id] = faction
+            factions_by_player.setdefault(
+                faction_data.player, []
+            ).append(faction)
+            if faction_data.player not in player_order:
+                player_order.append(faction_data.player)
+
+        if len(player_order) != len(player_type_ids):
+            raise ValueError(
+                "Number of player types does not match scenario configuration"
+            )
+
+        factories = dict(player_factories or {})
+        players: list[Player] = []
+        for index, player_name in enumerate(player_order):
+            type_id = player_type_ids[index]
+            factions = factions_by_player[player_name]
+            factory = factories.get(type_id)
+            if factory is not None:
+                player = factory(type_id, player_name, factions, board)
+            else:
+                player = GameCreator._create_player(
+                    type_id,
+                    name=player_name,
+                    factions=factions,
+                    board=board,
+                )
+            players.append(player)
+
+        player_by_faction: dict[str, Player] = {
+            faction.id: player
+            for player in players
+            for faction in player.factions
+        }
+
+        units: list[Unit] = []
+        for unit_data in scenario.units:
+            faction = factions_by_id[unit_data.faction]
+            owner = player_by_faction[faction.id]
+            unit = Unit(
+                unit_data.id,
+                unit_data.name,
+                faction,
+                owner,
+                unit_data.type,
+                unit_data.attack,
+                unit_data.defense,
+                unit_data.movement,
+            )
+            start_row, start_col = unit_data.starting_coords
+            unit.set_coords(start_row, start_col)
+            units.append(unit)
+
+        return board_size, players, units

@@ -1,101 +1,66 @@
-"""Train a multi-unit Q-learning agent on the SampleGame scenario."""
+"""Evaluate a trained Q-learning agent against the SampleGame scenario."""
 
 import argparse
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import List
 
 from battle_agent_rl.qlearningplayer import (
     QLearningPlayer,
     QLearningSettingsLoader,
 )
-from battle_hexes_core.game.gamefactory import GameFactory
-from battle_hexes_core.game.randomplayer import RandomPlayer
+from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.training.agenttrainer import AgentTrainer
 from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.unit.unit import Unit
-from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 
-
-# module logger
-logger = logging.getLogger(__name__)
 
 DEFAULT_SCENARIO_ID = "elim_1"
+PLAYER_TYPE_IDS = ("random", "q-learning")
 
 
-def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
-    """Create players and units matching ``GameCreator``."""
-    scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
+logger = logging.getLogger(__name__)
 
-    factions_by_player: dict[str, list[Faction]] = {}
-    factions_by_id: dict[str, Faction] = {}
-    player_order: list[str] = []
 
-    for faction_data in scenario.factions:
-        faction = Faction(
-            id=faction_data.id,
-            name=faction_data.name,
-            color=faction_data.color,
+def _build_q_learning_factory(
+    settings: dict,
+) -> Callable[[str, str, list[Faction], Board], QLearningPlayer]:
+    """Return a factory for evaluation-mode Q-learning players."""
+
+    def _factory(
+        _type_id: str,
+        name: str,
+        factions: list[Faction],
+        board: Board,
+    ) -> QLearningPlayer:
+        return QLearningPlayer(
+            name=name,
+            type=PlayerType.CPU,
+            factions=factions,
+            board=board,
+            **settings,
         )
-        factions_by_id[faction.id] = faction
-        factions_by_player.setdefault(faction_data.player, []).append(faction)
-        if faction_data.player not in player_order:
-            player_order.append(faction_data.player)
 
-    if len(player_order) < 2:
-        raise ValueError("Scenario must define at least two players")
-
-    random_player = RandomPlayer(
-        name=player_order[0],
-        type=PlayerType.CPU,
-        factions=factions_by_player[player_order[0]],
-        board=None,
-    )
-
-    rl_settings = QLearningSettingsLoader(logger=logger).load()
-    rl_player = QLearningPlayer(
-        name=player_order[1],
-        type=PlayerType.CPU,
-        factions=factions_by_player[player_order[1]],
-        board=None,
-        **rl_settings,
-    )
-    rl_player.disable_exploration()
-    rl_player.disable_learning()
-
-    players = [random_player, rl_player]
-    player_by_faction = {
-        faction.id: player
-        for player in players
-        for faction in player.factions
-    }
-
-    units: list[Unit] = []
-    for unit_data in scenario.units:
-        faction = factions_by_id[unit_data.faction]
-        owner = player_by_faction[faction.id]
-        unit = Unit(
-            unit_data.id,
-            unit_data.name,
-            faction,
-            owner,
-            unit_data.type,
-            unit_data.attack,
-            unit_data.defense,
-            unit_data.movement,
-        )
-        start_row, start_col = unit_data.starting_coords
-        unit.set_coords(start_row, start_col)
-        units.append(unit)
-
-    return random_player, rl_player, units
+    return _factory
 
 
 def main(episodes: int = 5, max_turns: int = 5) -> None:
-    """Train the MultiUnit Q-learning player."""
-    random_player, rl_player, units = build_players()
-    scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
+    """Evaluate the Q-learning player against a random opponent."""
+
+    from battle_hexes_api.gamecreator import GameCreator
+
+    settings = QLearningSettingsLoader(logger=logger).load()
+    game_factory = GameCreator.create_sample_game_factory(
+        DEFAULT_SCENARIO_ID,
+        PLAYER_TYPE_IDS,
+        player_factories={"q-learning": _build_q_learning_factory(settings)},
+    )
+
+    rl_player = next(
+        player
+        for player in game_factory.players
+        if isinstance(player, QLearningPlayer)
+    )
 
     q_table_path = Path("q_table.pkl")
     if q_table_path.exists():
@@ -103,14 +68,12 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
         logger.info("Loaded existing Q-table from %s", q_table_path)
     else:
         logger.info(
-            "No existing Q-table found at %s, starting fresh", q_table_path
+            "No existing Q-table found at %s, using default weights",
+            q_table_path,
         )
 
-    game_factory = GameFactory(
-        board_size=scenario.board_size,
-        players=[random_player, rl_player],
-        units=units,
-    )
+    rl_player.disable_exploration()
+    rl_player.disable_learning()
 
     agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
     game_results = agent_trainer.train()
@@ -120,7 +83,6 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
     exchanges = game_results.count_exchanges()
     total = wins + losses + draws + exchanges
     pct = (lambda c: (c / total * 100) if total else 0.0)
-    # numeric percentage values and formatted strings for score calculation
     wins_pct = pct(wins)
     losses_pct = pct(losses)
     draws_pct = pct(draws)
@@ -131,7 +93,7 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
         "Draws": f"{draws_pct:.1f}%",
         "Exchanges": f"{exchanges_pct:.1f}%",
     }
-    pct_width = max(len(s) for s in pct_strs.values())
+    pct_width = max(len(s) for s in pct_strs.values()) if pct_strs else 0
     print(f"{'Wins':<9}: {wins:>3} ({pct_strs['Wins']:>{pct_width}})")
     print(f"{'Losses':<9}: {losses:>3} ({pct_strs['Losses']:>{pct_width}})")
     print(f"{'Draws':<9}: {draws:>3} ({pct_strs['Draws']:>{pct_width}})")
@@ -140,9 +102,6 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
         f"({pct_strs['Exchanges']:>{pct_width}})"
     )
 
-    # score based on percentage points:
-    # +2 points per win percentage point, -2 per loss percentage point,
-    #  0 for exchanges, -1 per draw percentage point
     score = 2 * wins_pct - 2 * losses_pct - 1 * draws_pct
     print(f"{'Score':<9}: {score:>6.1f}")
 
@@ -172,5 +131,5 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    logger.info("Training with args %s", args)
+    logger.info("Testing with args %s", args)
     main(args.episodes, args.max_turns)
