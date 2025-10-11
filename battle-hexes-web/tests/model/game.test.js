@@ -21,6 +21,58 @@ describe('constructor', () => {
   });
 });
 
+describe('configuration metadata', () => {
+  test('exposes scenario and player type identifiers when provided', () => {
+    const configuredGame = new Game(
+      'configured-id',
+      phases,
+      players,
+      new Board(10, 10),
+      {
+        scenarioId: 'elem_9',
+        playerTypeIds: ['human', 'q-learning'],
+      },
+    );
+
+    expect(configuredGame.getScenarioId()).toBe('elem_9');
+    expect(configuredGame.getPlayerTypeIds()).toEqual(['human', 'q-learning']);
+  });
+
+  test('returns null when configuration metadata is missing or invalid', () => {
+    const configuredGame = new Game(
+      'configured-id',
+      phases,
+      players,
+      new Board(10, 10),
+      {
+        scenarioId: '   ',
+        playerTypeIds: ['human', ''],
+      },
+    );
+
+    expect(configuredGame.getScenarioId()).toBeNull();
+    expect(configuredGame.getPlayerTypeIds()).toBeNull();
+  });
+
+  test('player type identifiers are defensively copied', () => {
+    const configuredGame = new Game(
+      'configured-id',
+      phases,
+      players,
+      new Board(10, 10),
+      {
+        scenarioId: 'elem_1',
+        playerTypeIds: ['human', 'random'],
+      },
+    );
+
+    const ids = configuredGame.getPlayerTypeIds();
+    ids.push('extra');
+
+    expect(configuredGame.getPlayerTypeIds()).toEqual(['human', 'random']);
+  });
+});
+
 describe('endPhase', () => {
   test('moves to combat when there is combat', () => {
     jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(true);

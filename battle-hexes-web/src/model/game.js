@@ -9,8 +9,13 @@ export class Game {
   #players
   #board
   #combatResolver;
+  #scenarioId;
+  #playerTypeIds;
 
-  constructor(id, phases, players, board) {
+  constructor(id, phases, players, board, {
+    scenarioId = null,
+    playerTypeIds = null,
+  } = {}) {
     this.#id = id;
     this.#phases = phases;
     this.#currentPhase = phases[0];
@@ -20,6 +25,12 @@ export class Game {
     this.#board.setPlayers(players);
 
     this.#combatResolver = new CombatResolver(id, board);
+    this.#scenarioId = typeof scenarioId === 'string' && scenarioId.trim().length > 0
+      ? scenarioId
+      : null;
+    this.#playerTypeIds = Array.isArray(playerTypeIds) && playerTypeIds.every((value) => typeof value === 'string' && value.trim().length > 0)
+      ? [...playerTypeIds]
+      : null;
   }
 
   endPhase() {
@@ -61,6 +72,14 @@ export class Game {
 
   getBoard() {
     return this.#board;
+  }
+
+  getScenarioId() {
+    return this.#scenarioId;
+  }
+
+  getPlayerTypeIds() {
+    return this.#playerTypeIds ? [...this.#playerTypeIds] : null;
   }
 
   isGameOver() {

@@ -51,6 +51,22 @@ app.add_middleware(
 )
 
 
+def _serialize_game(game) -> dict:
+    """Return a JSON-serialisable representation of ``game``."""
+
+    model = game.to_game_model().model_dump()
+
+    scenario_id = getattr(game, "scenario_id", None)
+    if scenario_id is not None:
+        model["scenarioId"] = scenario_id
+
+    player_type_ids = getattr(game, "player_type_ids", None)
+    if player_type_ids is not None:
+        model["playerTypeIds"] = list(player_type_ids)
+
+    return model
+
+
 @app.post('/games')
 def create_game(payload: CreateGameRequest):
     """Create a new sample game and store it in the repository."""
@@ -74,7 +90,7 @@ def create_game(payload: CreateGameRequest):
         ) from exc
 
     game_repo.update_game(new_game)
-    return new_game.to_game_model()
+    return _serialize_game(new_game)
 
 
 @app.get("/scenarios", response_model=list[ScenarioModel])
@@ -112,7 +128,7 @@ def _call_end_game_callbacks(game) -> None:
 
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
-    return _get_game_or_404(game_id).to_game_model()
+    return _serialize_game(_get_game_or_404(game_id))
 
 
 @app.post('/games/{game_id}/combat')
