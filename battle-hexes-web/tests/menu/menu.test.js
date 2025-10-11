@@ -24,8 +24,8 @@ describe('auto new game persistence', () => {
     `;
   }
 
-  function fakeGame() {
-    return {
+  function fakeGame(overrides = {}) {
+    const baseGame = {
       getBoard: () => ({
         getSelectedHex: () => null,
         isOwnHexSelected: () => false,
@@ -33,9 +33,16 @@ describe('auto new game persistence', () => {
       }),
       getPhases: () => ['Movement', 'Combat'],
       getCurrentPhase: () => 'Movement',
-      getCurrentPlayer: () => ({ getName: () => 'P1' }),
+      getCurrentPlayer: () => ({
+        getName: () => 'P1',
+        isHuman: () => true,
+        play: jest.fn(),
+      }),
       isGameOver: () => false,
+      getId: () => 'game-id',
     };
+
+    return { ...baseGame, ...overrides };
   }
 
   beforeEach(() => {
@@ -102,5 +109,60 @@ describe('auto new game persistence', () => {
     expect(coordsCheckbox.checked).toBe(false);
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', false);
     expect(menu.getShowHexCoordsPreference()).toBe(false);
+  });
+
+  describe('new game button behaviour', () => {
+    const flushPromises = () => new Promise((resolve) => queueMicrotask(resolve));
+
+    test('disables button during request and re-enables afterwards', async () => {
+      buildDom();
+      history.replaceState(null, '', '/');
+
+      const onNewGameRequested = jest.fn(() => Promise.resolve());
+      new Menu(fakeGame(), { onNewGameRequested });
+
+      const newGameBtn = document.getElementById('newGameBtn');
+      expect(newGameBtn.disabled).toBe(false);
+
+      newGameBtn.click();
+
+      expect(onNewGameRequested).toHaveBeenCalledTimes(1);
+      expect(newGameBtn.disabled).toBe(true);
+
+      await flushPromises();
+
+      expect(newGameBtn.disabled).toBe(false);
+    });
+
+    test('schedules auto new game when request fails', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(() => 0);
+
+      try {
+        buildDom();
+        history.replaceState(null, '', '/');
+
+        const onNewGameRequested = jest.fn(() => Promise.reject(new Error('boom')));
+        new Menu(fakeGame(), { onNewGameRequested });
+
+        const autoCheckbox = document.getElementById('autoNewGame');
+        autoCheckbox.checked = true;
+
+        const newGameBtn = document.getElementById('newGameBtn');
+        newGameBtn.click();
+
+        expect(onNewGameRequested).toHaveBeenCalledTimes(1);
+        expect(newGameBtn.disabled).toBe(true);
+
+        await flushPromises();
+
+        expect(newGameBtn.disabled).toBe(false);
+        expect(setTimeoutSpy).toHaveBeenCalledTimes(1);
+        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 2000);
+      } finally {
+        setTimeoutSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+      }
+    });
   });
 });

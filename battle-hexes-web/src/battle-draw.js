@@ -10,45 +10,7 @@ import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
-
-const extractGameIdFromLocation = () => {
-  const pathMatch = window.location.pathname.match(/battle(?:\.html)?\/([^/?#]+)/);
-  if (pathMatch && pathMatch[1]) {
-    return pathMatch[1];
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  return params.get('gameId');
-};
-
-const updateHistoryWithGameId = (gameId) => {
-  const params = new URLSearchParams(window.location.search);
-  const query = params.toString();
-  const basePath = window.location.pathname.replace(/[^/]*$/, '');
-  const targetPath = `${basePath}battle/${gameId}${query ? `?${query}` : ''}`;
-  const canReplace =
-    window.location.protocol === 'http:' || window.location.protocol === 'https:';
-
-  if (canReplace && 'replaceState' in history) {
-    history.replaceState(null, '', targetPath);
-  }
-};
-
-const loadGameData = async () => {
-  const existingGameId = extractGameIdFromLocation();
-  if (existingGameId) {
-    const gameData = await Game.fetchGameFromServer(existingGameId);
-    updateHistoryWithGameId(gameData.id);
-    return gameData;
-  }
-
-  const defaultGame = await Game.newGameFromServer();
-  const params = new URLSearchParams(window.location.search);
-  const query = params.toString();
-  const targetUrl = `battle.html?gameId=${encodeURIComponent(defaultGame.id)}${query ? `&${query}` : ''}`;
-  window.location.replace(targetUrl);
-  return defaultGame;
-};
+import { loadGameData, updateUrlWithGameId } from './model/game-loader.js';
 
 const gameData = await loadGameData();
 console.log('game data: ' + JSON.stringify(gameData));
@@ -61,8 +23,25 @@ new p5((p) => {
   const hexRows = 10;
   const canvasMargin = 20;
   
-  const game = new GameCreator().createGame(gameData);
-  const menu = new Menu(game);
+  let game = new GameCreator().createGame(gameData);
+  let menu;
+
+  const createNewGameAndLoad = async () => {
+    const newGameData = await Game.newGameFromServer();
+    updateUrlWithGameId(newGameData.id);
+    game = new GameCreator().createGame(newGameData);
+    menu.setGame(game);
+
+    if (!game.getCurrentPlayer().isHuman()) {
+      game.getCurrentPlayer().play(game);
+    }
+
+    hexDrawWithCoords.setShowHexCoords(menu.getShowHexCoordsPreference());
+    eventBus.emit('menuUpdate');
+    eventBus.emit('redraw');
+  };
+
+  menu = new Menu(game, { onNewGameRequested: createNewGameAndLoad });
 
   if (!game.getCurrentPlayer().isHuman()) {
     game.getCurrentPlayer().play(game);

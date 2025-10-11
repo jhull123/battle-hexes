@@ -12,9 +12,10 @@ export class Menu {
   #autoNewGameChk;
   #showHexCoordsChk;
   #autoReloadScheduled = false;
+  #onNewGameRequested;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
 
-  constructor(game) {
+  constructor(game, { onNewGameRequested } = {}) {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
@@ -23,12 +24,13 @@ export class Menu {
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
     this.#showHexCoordsChk = document.getElementById('showHexCoords');
+    this.#onNewGameRequested = onNewGameRequested;
 
     // Initialize checkbox state from URL param
     const params = new URLSearchParams(window.location.search);
     this.#autoNewGameChk.checked = params.get('autoNewGame') === '1';
 
-    this.#newGameBtn.addEventListener('click', () => location.reload());
+    this.#newGameBtn.addEventListener('click', () => this.#handleNewGameRequest());
     this.#autoNewGameChk.addEventListener('change', () => {
       const params = new URLSearchParams(window.location.search);
       if (this.#autoNewGameChk.checked) {
@@ -227,10 +229,7 @@ export class Menu {
     this.#gameOverLabel.style.display = 'block';
     if (this.#autoNewGameChk.checked) {
       this.#newGameBtn.style.display = 'none';
-      if (!this.#autoReloadScheduled) {
-        this.#autoReloadScheduled = true;
-        setTimeout(() => location.reload(), 2000);
-      }
+      this.#scheduleAutoNewGame();
     } else {
       this.#newGameBtn.style.display = 'block';
     }
@@ -239,5 +238,44 @@ export class Menu {
   #hideGameOver() {
     this.#gameOverLabel.style.display = 'none';
     this.#newGameBtn.style.display = 'none';
+  }
+
+  setGame(game) {
+    this.#game = game;
+    this.#autoReloadScheduled = false;
+    this.#hideGameOver();
+    this.updateMenu();
+  }
+
+  #handleNewGameRequest() {
+    if (!this.#onNewGameRequested) {
+      return;
+    }
+
+    this.#autoReloadScheduled = false;
+    this.#newGameBtn.disabled = true;
+
+    Promise.resolve(this.#onNewGameRequested())
+      .catch((err) => {
+        console.error('Failed to start new game', err);
+        if (this.#autoNewGameChk.checked) {
+          this.#scheduleAutoNewGame();
+        }
+      })
+      .finally(() => {
+        this.#newGameBtn.disabled = false;
+      });
+  }
+
+  #scheduleAutoNewGame() {
+    if (this.#autoReloadScheduled) {
+      return;
+    }
+
+    this.#autoReloadScheduled = true;
+    setTimeout(() => {
+      this.#autoReloadScheduled = false;
+      this.#handleNewGameRequest();
+    }, 2000);
   }
 }
