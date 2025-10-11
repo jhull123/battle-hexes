@@ -8,11 +8,47 @@ import { Unit } from "./unit";
 export class GameCreator {
   createGame(gameData) {
     const board = new Board(gameData.board.rows, gameData.board.columns);
+    const scenarioId = this.#extractScenarioId(gameData);
+    const playerTypeIds = this.#extractPlayerTypeIds(gameData);
+
     const game = new Game(
-      gameData.id, ['Movement', 'Combat', 'End Turn'], 
-      this.#getPlayers(gameData), board);
+      gameData.id,
+      ['Movement', 'Combat', 'End Turn'],
+      this.#getPlayers(gameData),
+      board,
+      {
+        scenarioId,
+        playerTypeIds,
+      },
+    );
     this.#addUnits(board, game.getPlayers(), gameData.board);
     return game;
+  }
+
+  #extractScenarioId(gameData) {
+    const candidates = [
+      gameData?.scenarioId,
+      gameData?.scenario_id,
+    ];
+
+    return candidates.find((value) => typeof value === 'string' && value.trim().length > 0) ?? null;
+  }
+
+  #extractPlayerTypeIds(gameData) {
+    const candidates = [
+      gameData?.playerTypeIds,
+      gameData?.playerTypes,
+      gameData?.player_type_ids,
+      gameData?.player_types,
+    ];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate) && candidate.every((value) => typeof value === 'string' && value.trim().length > 0)) {
+        return [...candidate];
+      }
+    }
+
+    return null;
   }
 
   #getPlayers(gameData) {

@@ -32,7 +32,9 @@ new p5((p) => {
   let menu;
 
   const createNewGameAndLoad = async () => {
-    const { scenarioId, playerTypes } = getLastLoadedConfig();
+    const cachedConfig = getLastLoadedConfig();
+    const scenarioId = game.getScenarioId() ?? cachedConfig.scenarioId;
+    const playerTypes = game.getPlayerTypeIds() ?? cachedConfig.playerTypes;
     const newGameData = await Game.newGameFromServer({
       scenarioId,
       playerTypes,
