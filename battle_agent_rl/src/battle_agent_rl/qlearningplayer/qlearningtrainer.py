@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
-    """Create players and units matching ``SampleGameCreator``."""
+    """Create players and units matching ``GameCreator``."""
 
     scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
 

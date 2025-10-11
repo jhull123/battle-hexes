@@ -1,11 +1,11 @@
 import unittest
 
-from battle_hexes_api.samplegame import SampleGameCreator
+from battle_hexes_api.gamecreator import GameCreator
 
 
-class TestSampleGameCreator(unittest.TestCase):
+class TestGameCreator(unittest.TestCase):
     def test_create_sample_game_uses_scenario_data(self):
-        game = SampleGameCreator.create_sample_game(
+        game = GameCreator.create_sample_game(
             "elim_1", ["human", "random"]
         )
 
@@ -41,7 +41,7 @@ class TestSampleGameCreator(unittest.TestCase):
 
     def test_create_sample_game_requires_matching_player_count(self):
         with self.assertRaises(ValueError):
-            SampleGameCreator.create_sample_game("elim_1", ["human"])
+            GameCreator.create_sample_game("elim_1", ["human"])
 
 
 if __name__ == "__main__":  # pragma: no cover - convenience

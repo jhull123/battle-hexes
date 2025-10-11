@@ -23,7 +23,7 @@ from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
     ScenarioRegistry,
 )
 from battle_hexes_api.player_types import list_player_types  # noqa: E402
-from battle_hexes_api.samplegame import SampleGameCreator  # noqa: E402
+from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
     CreateGameRequest,
     PlayerTypeModel,
@@ -80,7 +80,7 @@ def create_game(payload: CreateGameRequest):
         ) from exc
 
     try:
-        new_game = SampleGameCreator.create_sample_game(
+        new_game = GameCreator.create_sample_game(
             payload.scenario_id, payload.player_types
         )
     except ValueError as exc:

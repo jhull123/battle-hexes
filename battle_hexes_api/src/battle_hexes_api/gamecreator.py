@@ -36,7 +36,7 @@ class SampleHumanPlayer(Player):
         return None
 
 
-class SampleGameCreator:
+class GameCreator:
     """Utility class for constructing game instances."""
 
     @staticmethod
@@ -85,7 +85,7 @@ class SampleGameCreator:
         for index, player_name in enumerate(player_order):
             type_id = player_type_ids[index]
             factions = factions_by_player[player_name]
-            player = SampleGameCreator._create_player(
+            player = GameCreator._create_player(
                 type_id,
                 name=player_name,
                 factions=factions,
