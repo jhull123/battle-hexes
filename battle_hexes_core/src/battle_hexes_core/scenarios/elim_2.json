@@ -1,9 +1,9 @@
 {
   "version": "1",
-  "id": "elim_1",
-  "name": "Elimination Demo 1",
+  "id": "elim_2",
+  "name": "Elimination Demo 2",
   "description": "A simple elimination scenario.",
-  "board_size": [10, 10],
+  "board_size": [10, 20],
   "factions": [
     {
       "id": "red faction",
