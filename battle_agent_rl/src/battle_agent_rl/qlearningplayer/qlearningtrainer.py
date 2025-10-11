@@ -2,8 +2,6 @@
 
 import argparse
 import logging
-import uuid
-from uuid import UUID
 from pathlib import Path
 from typing import List
 
@@ -17,6 +15,10 @@ from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.training.agenttrainer import AgentTrainer
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
+from battle_hexes_core.scenario.scenario_loader import load_scenario_data
+
+
+DEFAULT_SCENARIO_ID = "elim_1"
 
 
 # module logger
@@ -25,78 +27,76 @@ logger = logging.getLogger(__name__)
 
 def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
     """Create players and units matching ``SampleGameCreator``."""
-    red_faction = Faction(
-        id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
-        name="Red Faction",
-        color="#C81010",
-    )
 
-    blue_faction = Faction(
-        id=UUID("38400000-8cf0-11bd-b23e-10b96e4ef00d", version=4),
-        name="Blue Faction",
-        color="#4682B4",
-    )
+    scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
+
+    factions_by_player: dict[str, list[Faction]] = {}
+    factions_by_id: dict[str, Faction] = {}
+    player_order: list[str] = []
+
+    for faction_data in scenario.factions:
+        faction = Faction(
+            id=faction_data.id,
+            name=faction_data.name,
+            color=faction_data.color,
+        )
+        factions_by_id[faction.id] = faction
+        factions_by_player.setdefault(faction_data.player, []).append(faction)
+        if faction_data.player not in player_order:
+            player_order.append(faction_data.player)
+
+    if len(player_order) < 2:
+        raise ValueError("Scenario must define at least two players")
 
     random_player = RandomPlayer(
-        name="Player 1",
+        name=player_order[0],
         type=PlayerType.CPU,
-        factions=[red_faction],
+        factions=factions_by_player[player_order[0]],
         board=None,
     )
 
     rl_settings = QLearningSettingsLoader(logger=logger).load()
     rl_player = QLearningPlayer(
-        name="Player 2",
+        name=player_order[1],
         type=PlayerType.CPU,
-        factions=[blue_faction],
+        factions=factions_by_player[player_order[1]],
         board=None,
         **rl_settings,
     )
 
-    red_unit = Unit(
-        UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
-        "Red Unit",
-        red_faction,
-        random_player,
-        "Infantry",
-        2,
-        2,
-        6,
-    )
-    red_unit.set_coords(2, 2)
+    players = [random_player, rl_player]
+    player_by_faction = {
+        faction.id: player
+        for player in players
+        for faction in player.factions
+    }
 
-    blue_unit = Unit(
-        UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
-        "Blue Unit",
-        blue_faction,
-        rl_player,
-        "Infantry",
-        4,
-        4,
-        4,
-    )
-    blue_unit.set_coords(8, 9)
-
-    blue_two = Unit(
-        uuid.uuid4(),
-        "Blue Two",
-        blue_faction,
-        rl_player,
-        "Scout",
-        2,
-        2,
-        6,
-    )
-    blue_two.set_coords(9, 5)
-
-    units = [red_unit, blue_unit, blue_two]
+    units: list[Unit] = []
+    for unit_data in scenario.units:
+        faction = factions_by_id[unit_data.faction]
+        owner = player_by_faction[faction.id]
+        unit = Unit(
+            unit_data.id,
+            unit_data.name,
+            faction,
+            owner,
+            unit_data.type,
+            unit_data.attack,
+            unit_data.defense,
+            unit_data.movement,
+        )
+        start_row, start_col = unit_data.starting_coords
+        unit.set_coords(start_row, start_col)
+        units.append(unit)
 
     return random_player, rl_player, units
 
 
 def main(episodes: int = 5, max_turns: int = 5) -> None:
     """Train the MultiUnit Q-learning player."""
+
     random_player, rl_player, units = build_players()
+    scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
 
     q_table_path = Path("q_table.pkl")
     if q_table_path.exists():
@@ -108,14 +108,13 @@ def main(episodes: int = 5, max_turns: int = 5) -> None:
         )
 
     game_factory = GameFactory(
-        board_size=(10, 10),
+        board_size=scenario.board_size,
         players=[random_player, rl_player],
         units=units,
     )
 
     agent_trainer = AgentTrainer(game_factory, episodes, max_turns=max_turns)
     agent_trainer.train()
-    # rl_player.print_q_table()
     rl_player.save_q_table(str(q_table_path))
 
 

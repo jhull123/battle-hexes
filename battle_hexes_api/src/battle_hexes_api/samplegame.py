@@ -1,7 +1,4 @@
 from pathlib import Path
-from uuid import UUID
-import uuid
-
 from typing import Sequence
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer
@@ -10,6 +7,7 @@ from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.gamefactory import GameFactory
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.randomplayer import RandomPlayer
+from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 from pydantic import PrivateAttr
@@ -57,78 +55,72 @@ class SampleGameCreator:
             ``q-learning``) used to configure the players participating in the
             game.
         """
-        board_size = (10, 10)
-
-        if len(player_type_ids) != 2:
-            raise ValueError("Exactly two player types must be provided")
-
-        red_faction = Faction(
-            id=UUID("f47ac10b-58cc-4372-a567-0e02b2c3d479", version=4),
-            name="Red Faction",
-            color="#C81010",
-        )
-
-        blue_faction = Faction(
-            id=UUID("38400000-8cf0-11bd-b23e-10b96e4ef00d", version=4),
-            name="Blue Faction",
-            color="#4682B4",
-        )
-
+        scenario = load_scenario_data(scenario_id)
+        board_size = scenario.board_size
         board = Board(*board_size)
-        factions = [red_faction, blue_faction]
 
-        players = [
-            SampleGameCreator._create_player(
+        factions_by_player: dict[str, list[Faction]] = {}
+        factions_by_id: dict[str, Faction] = {}
+        player_order: list[str] = []
+
+        for faction_data in scenario.factions:
+            faction = Faction(
+                id=faction_data.id,
+                name=faction_data.name,
+                color=faction_data.color,
+            )
+            factions_by_id[faction.id] = faction
+            factions_by_player.setdefault(
+                faction_data.player, []
+            ).append(faction)
+            if faction_data.player not in player_order:
+                player_order.append(faction_data.player)
+
+        if len(player_order) != len(player_type_ids):
+            raise ValueError(
+                "Number of player types does not match scenario configuration"
+            )
+
+        players = []
+        for index, player_name in enumerate(player_order):
+            type_id = player_type_ids[index]
+            factions = factions_by_player[player_name]
+            player = SampleGameCreator._create_player(
                 type_id,
-                name=f"Player {index + 1}",
-                faction=faction,
+                name=player_name,
+                factions=factions,
                 board=board,
             )
-            for index, (type_id, faction) in enumerate(
-                zip(player_type_ids, factions)
+            players.append(player)
+
+        player_by_faction: dict[str, Player] = {
+            faction.id: player
+            for player in players
+            for faction in player.factions
+        }
+
+        units: list[Unit] = []
+        for unit_data in scenario.units:
+            faction = factions_by_id[unit_data.faction]
+            owner = player_by_faction[faction.id]
+            unit = Unit(
+                unit_data.id,
+                unit_data.name,
+                faction,
+                owner,
+                unit_data.type,
+                unit_data.attack,
+                unit_data.defense,
+                unit_data.movement,
             )
-        ]
-
-        red_unit = Unit(
-            UUID("a22c90d0-db87-11d0-8c3a-00c04fd708be", version=4),
-            "Red Unit",
-            red_faction,
-            players[0],
-            "Infantry",
-            2,
-            2,
-            6,
-        )
-        red_unit.set_coords(2, 2)
-
-        blue_unit = Unit(
-            UUID("c9a440d2-2b0a-4730-b4c6-da394b642c61", version=4),
-            "Blue Unit",
-            blue_faction,
-            players[1],
-            "Infantry",
-            4,
-            4,
-            4,
-        )
-        blue_unit.set_coords(8, 9)
-
-        blue_two = Unit(
-            uuid.uuid4(),
-            "Blue Two",
-            blue_faction,
-            players[1],
-            "Scout",
-            2,
-            2,
-            6,
-        )
-        blue_two.set_coords(9, 5)
+            start_row, start_col = unit_data.starting_coords
+            unit.set_coords(start_row, start_col)
+            units.append(unit)
 
         game = GameFactory(
             board_size,
             players,
-            [red_unit, blue_unit, blue_two],
+            units,
         ).create_game()
 
         # Persist the original configuration on the ``Game`` instance so the
@@ -144,7 +136,7 @@ class SampleGameCreator:
     def _create_player(
         type_id: str,
         name: str,
-        faction: Faction,
+        factions: list[Faction],
         board: Board,
     ) -> Player:
         """Instantiate a player for ``type_id``."""
@@ -152,7 +144,7 @@ class SampleGameCreator:
         if type_id == "human":
             return SampleHumanPlayer(
                 name=name,
-                factions=[faction],
+                factions=factions,
                 board=board,
             )
 
@@ -160,7 +152,7 @@ class SampleGameCreator:
             return RandomPlayer(
                 name=name,
                 type=PlayerType.CPU,
-                factions=[faction],
+                factions=factions,
                 board=board,
             )
 
@@ -169,7 +161,7 @@ class SampleGameCreator:
             player = QLearningPlayer(
                 name=name,
                 type=PlayerType.CPU,
-                factions=[faction],
+                factions=factions,
                 board=board,
                 epsilon=0.0,
             )

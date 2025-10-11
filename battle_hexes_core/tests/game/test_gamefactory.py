@@ -11,14 +11,14 @@ from battle_hexes_core.unit.unit import Unit
 class TestGameFactory(unittest.TestCase):
     def setUp(self):
         self.board_size = (3, 3)
-        self.faction = Faction(id=uuid.uuid4(), name="F", color="red")
+        self.faction = Faction(id=str(uuid.uuid4()), name="F", color="red")
         self.player = Player(
             name="P",
             type=PlayerType.CPU,
             factions=[self.faction],
         )
         self.unit1 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "U1",
             self.faction,
             self.player,
@@ -30,7 +30,7 @@ class TestGameFactory(unittest.TestCase):
             column=0,
         )
         self.unit2 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "U2",
             self.faction,
             self.player,

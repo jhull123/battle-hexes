@@ -37,7 +37,7 @@ describe('title screen interactions', () => {
       if (url.endsWith('/scenarios')) {
         return Promise.resolve({
           ok: true,
-          json: async () => [{ id: 'elem_1', name: 'Scenario 1' }],
+          json: async () => [{ id: 'elim_1', name: 'Scenario 1' }],
         });
       }
       if (url.endsWith('/player-types')) {
@@ -69,7 +69,7 @@ describe('title screen interactions', () => {
 
     await flushPromises();
 
-    document.getElementById('scenario-select').value = 'elem_1';
+    document.getElementById('scenario-select').value = 'elim_1';
     document.getElementById('player1-type').value = 'human';
     document.getElementById('player2-type').value = 'random';
 
@@ -80,7 +80,7 @@ describe('title screen interactions', () => {
     expect(createGameCall).toBeTruthy();
     const [, options] = createGameCall;
     expect(JSON.parse(options.body)).toEqual({
-      scenarioId: 'elem_1',
+      scenarioId: 'elim_1',
       playerTypes: ['human', 'random'],
     });
     expect(window.location.assign).toHaveBeenCalledWith('battle.html?gameId=game-123');
@@ -89,7 +89,7 @@ describe('title screen interactions', () => {
   test('shows error message when game creation fails', async () => {
     const fetchImpl = jest.fn((url) => {
       if (url.endsWith('/scenarios')) {
-        return Promise.resolve({ ok: true, json: async () => [{ id: 'elem_1', name: 'Scenario' }] });
+        return Promise.resolve({ ok: true, json: async () => [{ id: 'elim_1', name: 'Scenario' }] });
       }
       if (url.endsWith('/player-types')) {
         return Promise.resolve({
@@ -117,7 +117,7 @@ describe('title screen interactions', () => {
 
     await flushPromises();
 
-    document.getElementById('scenario-select').value = 'elem_1';
+    document.getElementById('scenario-select').value = 'elim_1';
     document.getElementById('player1-type').value = 'human';
     document.getElementById('player2-type').value = 'random';
 

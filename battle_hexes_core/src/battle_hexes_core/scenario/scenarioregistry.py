@@ -1,14 +1,13 @@
 from .scenario import Scenario
+from .scenario_loader import iter_scenario_data
 
 
 class ScenarioRegistry:
     def __init__(self):
-        s1 = Scenario(id="elem_1", name="Elimination Demo 1")
-        s2 = Scenario(id="elem_2", name="Elimination Demo 2")
-        self._scenarios = {
-            s1.id: s1,
-            s2.id: s2,
-        }
+        self._scenarios = {}
+        for scenario_data in iter_scenario_data():
+            scenario = Scenario(id=scenario_data.id, name=scenario_data.name)
+            self._scenarios[scenario.id] = scenario
 
     def list_scenarios(self):
         return list(self._scenarios.values())

@@ -12,7 +12,7 @@ from battle_hexes_core.unit.unit import Unit
 class TestRLPlayer(unittest.TestCase):
     def setUp(self):
         self.board = Board(8, 8)
-        self.faction = Faction(id=uuid.uuid4(), name="Red", color="red")
+        self.faction = Faction(id=str(uuid.uuid4()), name="Red", color="red")
         player = Player(
             name="Red Player",
             type=PlayerType.CPU,
@@ -26,7 +26,7 @@ class TestRLPlayer(unittest.TestCase):
         )
         self.game = Game(players=[player], board=self.board)
         self.unit = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "Red Unit",
             self.faction,
             player,

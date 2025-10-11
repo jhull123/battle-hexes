@@ -21,7 +21,7 @@ class TestFastAPI(unittest.TestCase):
 
     def test_create_game(self):
         payload = {
-            "scenarioId": "elem_1",
+            "scenarioId": "elim_1",
             "playerTypes": ["human", "random"],
         }
         post_response = self.client.post('/games', json=payload)
@@ -30,14 +30,14 @@ class TestFastAPI(unittest.TestCase):
 
         self.assertEqual(post_response.status_code, 200)
         self.assertEqual(post_body.get('playerTypeIds'), ['human', 'random'])
-        self.assertEqual(post_body.get('scenarioId'), 'elem_1')
+        self.assertEqual(post_body.get('scenarioId'), 'elim_1')
 
         get_response = self.client.get(f'/games/{new_game_id}')
         get_body = get_response.json()
 
         self.assertEqual(new_game_id, get_body.get('id'))
         self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
-        self.assertEqual(get_body.get('scenarioId'), 'elem_1')
+        self.assertEqual(get_body.get('scenarioId'), 'elim_1')
 
     def test_create_game_invalid_scenario_returns_404(self):
         payload = {
@@ -52,7 +52,7 @@ class TestFastAPI(unittest.TestCase):
 
     def test_create_game_invalid_player_type_returns_422(self):
         payload = {
-            "scenarioId": "elem_1",
+            "scenarioId": "elim_1",
             "playerTypes": ["human", "unknown"],
         }
 

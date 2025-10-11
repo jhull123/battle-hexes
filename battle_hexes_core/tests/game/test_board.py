@@ -12,7 +12,7 @@ class TestBoard(unittest.TestCase):
         self.board = Board(5, 5)
 
         self.red_faction = Faction(
-            id=uuid.uuid4(), name="Red Faction", color="#FF0000"
+            id=str(uuid.uuid4()), name="Red Faction", color="#FF0000"
         )
         self.red_player = Player(
             name='Red Player',
@@ -20,13 +20,13 @@ class TestBoard(unittest.TestCase):
             factions=[self.red_faction]
         )
         self.red_unit = Unit(
-            id=uuid.uuid4(), name="Red Unit", faction=self.red_faction,
+            id=str(uuid.uuid4()), name="Red Unit", faction=self.red_faction,
             player=self.red_player,
             type="Infantry", attack=2, defense=2, move=6
         )
 
         self.blue_faction = Faction(
-            id=uuid.uuid4(), name="Blue Faction", color="#0000FF"
+            id=str(uuid.uuid4()), name="Blue Faction", color="#0000FF"
         )
         self.blue_player = Player(
             name='Blue Player',
@@ -34,7 +34,7 @@ class TestBoard(unittest.TestCase):
             factions=[self.blue_faction]
         )
         self.blue_unit = Unit(
-            id=uuid.uuid4(), name="Blue Unit",
+            id=str(uuid.uuid4()), name="Blue Unit",
             faction=self.blue_faction,
             player=self.blue_player,
             type="Infantry", attack=4, defense=4, move=4

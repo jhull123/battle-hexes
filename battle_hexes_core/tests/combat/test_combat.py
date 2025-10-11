@@ -16,8 +16,12 @@ class MyTestPlayer(Player):
 
 class TestCombat(unittest.TestCase):
     def setUp(self):
-        self.red_faction = Faction(id=uuid.uuid4(), name='Red', color='red')
-        self.blue_faction = Faction(id=uuid.uuid4(), name='Blue', color='blue')
+        self.red_faction = Faction(
+            id=str(uuid.uuid4()), name='Red', color='red'
+        )
+        self.blue_faction = Faction(
+            id=str(uuid.uuid4()), name='Blue', color='blue'
+        )
 
         self.red_player = MyTestPlayer(
             name='Red Player',
@@ -35,12 +39,12 @@ class TestCombat(unittest.TestCase):
         self.game = Game([self.red_player, self.blue_player], self.board)
         self.combat = Combat(self.game)
 
-        self.red_unit = Unit(id=uuid.uuid4(), name='Red Unit',
+        self.red_unit = Unit(id=str(uuid.uuid4()), name='Red Unit',
                              faction=self.red_faction,
                              player=self.red_player,
                              type='Infantry',
                              attack=4, defense=4, move=4)
-        self.blue_unit = Unit(id=uuid.uuid4(), name='Blue Unit',
+        self.blue_unit = Unit(id=str(uuid.uuid4()), name='Blue Unit',
                               faction=self.blue_faction,
                               player=self.blue_player,
                               type='Recon',
@@ -121,7 +125,7 @@ class TestCombat(unittest.TestCase):
 
     def test_exchange_only_eliminates_needed_attackers(self):
         red_unit2 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Red Unit 2',
             faction=self.red_faction,
             player=self.red_player,
@@ -143,7 +147,7 @@ class TestCombat(unittest.TestCase):
 
     def test_find_combat_includes_all_adjacent_units(self):
         red_unit2 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Red Unit 2',
             faction=self.red_faction,
             player=self.red_player,
@@ -153,7 +157,7 @@ class TestCombat(unittest.TestCase):
             move=4,
         )
         blue_unit2 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Blue Unit 2',
             faction=self.blue_faction,
             player=self.blue_player,
@@ -176,7 +180,7 @@ class TestCombat(unittest.TestCase):
 
     def test_find_combat_excludes_units_not_adjacent_to_enemy(self):
         red_unit2 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Red Unit 2',
             faction=self.red_faction,
             player=self.red_player,
@@ -186,7 +190,7 @@ class TestCombat(unittest.TestCase):
             move=4,
         )
         blue_unit2 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Blue Unit 2',
             faction=self.blue_faction,
             player=self.blue_player,
@@ -277,7 +281,7 @@ class TestCombat(unittest.TestCase):
 
     def test_attacker_retreat_blocked_by_enemy_eliminates_unit(self):
         blue_blocker = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Blue Blocker',
             faction=self.blue_faction,
             player=self.blue_player,
@@ -307,7 +311,7 @@ class TestCombat(unittest.TestCase):
 
     def test_defender_retreat_blocked_by_enemy_eliminates_unit(self):
         red_blocker = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name='Red Blocker',
             faction=self.red_faction,
             player=self.red_player,

@@ -23,10 +23,10 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
     def setUp(self):
         self.board = Board(5, 5)
         self.friendly_faction = Faction(
-            id=uuid.uuid4(), name="Friendly", color="red"
+            id=str(uuid.uuid4()), name="Friendly", color="red"
         )
         self.enemy_faction = Faction(
-            id=uuid.uuid4(), name="Enemy", color="blue"
+            id=str(uuid.uuid4()), name="Enemy", color="blue"
         )
         self.player = QLearningPlayer(
             name="AI",
@@ -43,7 +43,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
 
     def test_single_pair_reward(self):
         friend = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F1",
             self.friendly_faction,
             self.player,
@@ -53,7 +53,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
             3,
         )
         enemy = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "E1",
             self.enemy_faction,
             self.enemy_player,
@@ -70,7 +70,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
 
     def test_multiple_units_reward(self):
         f1 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F1",
             self.friendly_faction,
             self.player,
@@ -80,7 +80,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
             3,
         )
         f2 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F2",
             self.friendly_faction,
             self.player,
@@ -90,7 +90,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
             3,
         )
         e1 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "E1",
             self.enemy_faction,
             self.enemy_player,
@@ -100,7 +100,7 @@ class TestQLearningPlayerCalculateReward(unittest.TestCase):
             3,
         )
         e2 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "E2",
             self.enemy_faction,
             self.enemy_player,
@@ -123,10 +123,10 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
     def setUp(self):
         self.board = Board(3, 3)
         self.friendly_faction = Faction(
-            id=uuid.uuid4(), name="Friendly", color="red"
+            id=str(uuid.uuid4()), name="Friendly", color="red"
         )
         self.enemy_faction = Faction(
-            id=uuid.uuid4(), name="Enemy", color="blue"
+            id=str(uuid.uuid4()), name="Enemy", color="blue"
         )
         self.player = QLearningPlayer(
             name="AI",
@@ -144,7 +144,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
             factions=[self.enemy_faction],
         )
         self.friend = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F1",
             self.friendly_faction,
             self.player,
@@ -154,7 +154,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
             3,
         )
         self.enemy = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "E1",
             self.enemy_faction,
             self.enemy_player,
@@ -202,7 +202,7 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
 
     def test_combat_results_only_rewards_participants(self):
         friend2 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F2",
             self.friendly_faction,
             self.player,
@@ -242,10 +242,10 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
     def setUp(self):
         self.board = Board(3, 3)
         self.friendly_faction = Faction(
-            id=uuid.uuid4(), name="Friendly", color="red"
+            id=str(uuid.uuid4()), name="Friendly", color="red"
         )
         self.enemy_faction = Faction(
-            id=uuid.uuid4(), name="Enemy", color="blue"
+            id=str(uuid.uuid4()), name="Enemy", color="blue"
         )
         self.player = QLearningPlayer(
             name="AI",
@@ -260,7 +260,7 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
             factions=[self.enemy_faction],
         )
         self.friend = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F1",
             self.friendly_faction,
             self.player,
@@ -270,7 +270,7 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
             3,
         )
         self.enemy = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "E1",
             self.enemy_faction,
             self.enemy_player,
@@ -313,7 +313,7 @@ class TestQLearningPlayerMovePlan(unittest.TestCase):
 class TestQLearningPlayerSaveLoad(unittest.TestCase):
     def setUp(self):
         self.board = Board(1, 1)
-        self.faction = Faction(id=uuid.uuid4(), name="F", color="red")
+        self.faction = Faction(id=str(uuid.uuid4()), name="F", color="red")
         self.file_path = "qtable_test.pkl"
 
     def tearDown(self):
@@ -442,10 +442,10 @@ class TestQLearningPlayerTurnPenalty(unittest.TestCase):
     def setUp(self):
         self.board = Board(3, 3)
         self.friendly_faction = Faction(
-            id=uuid.uuid4(), name="Friendly", color="red"
+            id=str(uuid.uuid4()), name="Friendly", color="red"
         )
         self.enemy_faction = Faction(
-            id=uuid.uuid4(), name="Enemy", color="blue"
+            id=str(uuid.uuid4()), name="Enemy", color="blue"
         )
         self.player = QLearningPlayer(
             name="AI",
@@ -463,7 +463,7 @@ class TestQLearningPlayerTurnPenalty(unittest.TestCase):
             factions=[self.enemy_faction],
         )
         self.friend = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "F1",
             self.friendly_faction,
             self.player,
@@ -473,7 +473,7 @@ class TestQLearningPlayerTurnPenalty(unittest.TestCase):
             0,
         )
         self.enemy = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             "E1",
             self.enemy_faction,
             self.enemy_player,

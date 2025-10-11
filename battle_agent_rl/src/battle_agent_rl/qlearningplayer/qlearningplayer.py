@@ -3,7 +3,6 @@ import logging
 import math
 import pickle
 import random
-from uuid import UUID
 from typing import Any, Dict, List, Tuple
 
 from pydantic import PrivateAttr
@@ -525,7 +524,7 @@ class QLearningPlayer(RLPlayer):
         # Determine if this player was the attacker.
         # During the attacker's turn ``_last_actions`` stores the actions.
         # attacker = bool(self._last_actions)
-        per_unit_rewards: Dict[UUID, float] = {}
+        per_unit_rewards: Dict[str, float] = {}
         for battle in combat_results.get_battles():
             combat_award = 0.0
             match battle.get_odds():

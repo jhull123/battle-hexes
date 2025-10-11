@@ -64,7 +64,7 @@ class TestGame(unittest.TestCase):
     def test_apply_movement_plans_updates_unit_coordinates(self):
         board = Board(5, 5)
         import uuid
-        faction = Faction(id=uuid.uuid4(), name="f", color="#fff")
+        faction = Faction(id=str(uuid.uuid4()), name="f", color="#fff")
         player = Player(name="P", type=PlayerType.HUMAN, factions=[faction])
         unit = Unit(id=2, name="U", faction=faction, player=player,
                     type="Infantry", attack=1, defense=1, move=1)

@@ -1,6 +1,6 @@
 import { Game } from './game.js';
 
-const DEFAULT_SCENARIO_ID = 'elem_1';
+const DEFAULT_SCENARIO_ID = 'elim_1';
 const DEFAULT_PLAYER_TYPES = ['human', 'random'];
 
 let lastLoadedConfig = {
