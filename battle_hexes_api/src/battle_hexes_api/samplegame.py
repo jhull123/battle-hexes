@@ -125,11 +125,20 @@ class SampleGameCreator:
         )
         blue_two.set_coords(9, 5)
 
-        return GameFactory(
+        game = GameFactory(
             board_size,
             players,
             [red_unit, blue_unit, blue_two],
         ).create_game()
+
+        # Persist the original configuration on the ``Game`` instance so the
+        # API can expose it when clients fetch the game later.  This allows the
+        # frontend to recreate new matches using the same scenario and player
+        # types that were originally requested.
+        game.scenario_id = scenario_id
+        game.player_type_ids = list(player_type_ids)
+
+        return game
 
     @staticmethod
     def _create_player(
