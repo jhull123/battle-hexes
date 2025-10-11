@@ -10,7 +10,12 @@ import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
 import { Menu } from './menu.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
-import { loadGameData, updateUrlWithGameId } from './model/game-loader.js';
+import {
+  getLastLoadedConfig,
+  loadGameData,
+  rememberLoadedGameData,
+  updateUrlWithGameId,
+} from './model/game-loader.js';
 
 const gameData = await loadGameData();
 console.log('game data: ' + JSON.stringify(gameData));
@@ -27,8 +32,13 @@ new p5((p) => {
   let menu;
 
   const createNewGameAndLoad = async () => {
-    const newGameData = await Game.newGameFromServer();
+    const { scenarioId, playerTypes } = getLastLoadedConfig();
+    const newGameData = await Game.newGameFromServer({
+      scenarioId,
+      playerTypes,
+    });
     updateUrlWithGameId(newGameData.id);
+    rememberLoadedGameData(newGameData);
     game = new GameCreator().createGame(newGameData);
     menu.setGame(game);
 
