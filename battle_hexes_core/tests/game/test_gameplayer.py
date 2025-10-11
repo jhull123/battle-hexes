@@ -33,7 +33,7 @@ class DummyCPUPlayer(Player):
 class TestGamePlayer(unittest.TestCase):
     def test_play_requires_cpu_players(self):
         board = Board(2, 2)
-        fac = Faction(id=uuid.uuid4(), name="F", color="red")
+        fac = Faction(id=str(uuid.uuid4()), name="F", color="red")
         player = Player(name="P", type=PlayerType.HUMAN, factions=[fac])
         game = Game([player], board)
         gp = GamePlayer(game)
@@ -42,17 +42,17 @@ class TestGamePlayer(unittest.TestCase):
 
     def test_play_until_one_player_left(self):
         board = Board(2, 2)
-        red_faction = Faction(id=uuid.uuid4(), name="Red", color="red")
-        blue_faction = Faction(id=uuid.uuid4(), name="Blue", color="blue")
+        red_faction = Faction(id=str(uuid.uuid4()), name="Red", color="red")
+        blue_faction = Faction(id=str(uuid.uuid4()), name="Blue", color="blue")
 
         red_player = DummyCPUPlayer("Red", [red_faction])
         blue_player = DummyCPUPlayer("Blue", [blue_faction])
 
         red_unit = Unit(
-            uuid.uuid4(), "R", red_faction, red_player, "I", 1, 1, 1
+            str(uuid.uuid4()), "R", red_faction, red_player, "I", 1, 1, 1
         )
         blue_unit = Unit(
-            uuid.uuid4(), "B", blue_faction, blue_player, "I", 1, 1, 1
+            str(uuid.uuid4()), "B", blue_faction, blue_player, "I", 1, 1, 1
         )
         board.add_unit(red_unit, 0, 0)
         board.add_unit(blue_unit, 0, 1)
@@ -87,17 +87,17 @@ class TestGamePlayer(unittest.TestCase):
 
     def test_play_respects_max_turns(self):
         board = Board(2, 2)
-        red_faction = Faction(id=uuid.uuid4(), name="Red", color="red")
-        blue_faction = Faction(id=uuid.uuid4(), name="Blue", color="blue")
+        red_faction = Faction(id=str(uuid.uuid4()), name="Red", color="red")
+        blue_faction = Faction(id=str(uuid.uuid4()), name="Blue", color="blue")
 
         red_player = DummyCPUPlayer("Red", [red_faction])
         blue_player = DummyCPUPlayer("Blue", [blue_faction])
 
         red_unit = Unit(
-            uuid.uuid4(), "R", red_faction, red_player, "I", 1, 1, 1
+            str(uuid.uuid4()), "R", red_faction, red_player, "I", 1, 1, 1
         )
         blue_unit = Unit(
-            uuid.uuid4(), "B", blue_faction, blue_player, "I", 1, 1, 1
+            str(uuid.uuid4()), "B", blue_faction, blue_player, "I", 1, 1, 1
         )
         board.add_unit(red_unit, 0, 0)
         board.add_unit(blue_unit, 0, 1)

@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from collections import deque
 from pydantic import BaseModel
 from typing import List, Set, Tuple
-from uuid import UUID
 from battle_hexes_core.game.hex import Hex
 from battle_hexes_core.game.sparseboard import SparseBoard
 from battle_hexes_core.unit.unit import Unit, UnitModel
@@ -38,7 +37,7 @@ class Board:
     def __init__(self, rows: int, columns: int):
         self.rows = rows
         self.columns = columns
-        self.units: dict[UUID, Unit] = {}
+        self.units: dict[str, Unit] = {}
         self.hexes = []
         for row in range(rows):
             for column in range(columns):
@@ -88,9 +87,9 @@ class Board:
                 return unit
         return None
 
-    def get_unit_by_id(self, unit_id: UUID) -> Unit:
-        if not isinstance(unit_id, UUID):
-            unit_id = UUID(unit_id)
+    def get_unit_by_id(self, unit_id: str) -> Unit:
+        if not isinstance(unit_id, str):
+            unit_id = str(unit_id)
         unit = self.units.get(unit_id)
         if not unit:
             raise KeyError(f"No unit found with ID {unit_id}")
@@ -98,9 +97,7 @@ class Board:
 
     def update(self, sparse_board: SparseBoard) -> None:
         for unit_data in sparse_board.units:
-            unit_id = unit_data.id
-            if isinstance(unit_id, str):
-                unit_id = UUID(unit_id)
+            unit_id = str(unit_data.id)
             unit = self.get_unit_by_id(unit_id)
             unit.set_coords(unit_data.row, unit_data.column)
 

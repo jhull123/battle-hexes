@@ -8,8 +8,12 @@ from battle_hexes_core.unit.faction import Faction
 
 class TestUnit(unittest.TestCase):
     def setUp(self):
-        self.faction1 = Faction(id=uuid.uuid4(), name="Faction1", color="Red")
-        self.faction2 = Faction(id=uuid.uuid4(), name="Faction2", color="Blue")
+        self.faction1 = Faction(
+            id=str(uuid.uuid4()), name="Faction1", color="Red"
+        )
+        self.faction2 = Faction(
+            id=str(uuid.uuid4()), name="Faction2", color="Blue"
+        )
         self.player1 = Player(
             name="Player1",
             type=PlayerType.CPU,
@@ -22,7 +26,7 @@ class TestUnit(unittest.TestCase):
         )
 
         self.unit1 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name="Unit1",
             player=self.player1,
             faction=self.faction1,
@@ -35,7 +39,7 @@ class TestUnit(unittest.TestCase):
         )
 
         self.unit2 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name="Unit2",
             player=self.player1,
             faction=self.faction1,
@@ -48,7 +52,7 @@ class TestUnit(unittest.TestCase):
         )
 
         self.unit3 = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name="Unit3",
             player=self.player2,
             faction=self.faction2,
@@ -81,7 +85,7 @@ class TestUnit(unittest.TestCase):
         board.add_unit(self.unit1, 2, 2)
 
         enemy = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name="Enemy",
             player=self.player2,
             faction=self.faction2,
@@ -91,7 +95,7 @@ class TestUnit(unittest.TestCase):
             move=3,
         )
         blocker = Unit(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             name="Blocker",
             player=self.player2,
             faction=self.faction2,

@@ -61,7 +61,7 @@ describe('configuration metadata', () => {
       players,
       new Board(10, 10),
       {
-        scenarioId: 'elem_1',
+        scenarioId: 'elim_1',
         playerTypeIds: ['human', 'random'],
       },
     );

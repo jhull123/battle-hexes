@@ -1,14 +1,13 @@
 from pydantic import BaseModel
-import uuid
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.sparseunit import SparseUnit
 
 
 class UnitModel(BaseModel):
-    id: uuid.UUID
+    id: str
     name: str
-    faction_id: uuid.UUID
+    faction_id: str
     type: str
     attack: int
     defense: int
@@ -20,7 +19,7 @@ class UnitModel(BaseModel):
 class Unit:
     def __init__(
             self,
-            id: uuid.UUID,
+            id: str,
             name: str,
             faction: Faction,
             player: Player,

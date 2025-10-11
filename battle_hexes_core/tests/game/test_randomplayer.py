@@ -15,7 +15,9 @@ class TestRandomPlayer(unittest.TestCase):
         random.seed(44)
 
         self.board = Board(10, 10)
-        self.blue_faction = Faction(id=uuid.uuid4(), name='Blue', color='blue')
+        self.blue_faction = Faction(
+            id=str(uuid.uuid4()), name='Blue', color='blue'
+        )
         blue_player = Player(
             name='Blue Player',
             type=PlayerType.CPU,
@@ -29,7 +31,7 @@ class TestRandomPlayer(unittest.TestCase):
         )
         self.game = Game(players=[blue_player], board=self.board)
         self.blue1 = Unit(
-            uuid.uuid4(),
+            str(uuid.uuid4()),
             'Blue Unit 1',
             self.blue_faction,
             blue_player,

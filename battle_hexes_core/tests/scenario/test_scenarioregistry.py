@@ -8,11 +8,10 @@ class TestScenarioRegistry(unittest.TestCase):
         registry = ScenarioRegistry()
         scenarios = registry.list_scenarios()
         self.assertEqual(len(scenarios), 2)
-        self.assertIsInstance(scenarios[0], Scenario)
-        self.assertIsInstance(scenarios[1], Scenario)
+        self.assertTrue(all(isinstance(s, Scenario) for s in scenarios))
 
         # Check for specific scenarios, order might not be guaranteed
-        expected_ids = {"elem_1", "elem_2"}
+        expected_ids = {"elim_1", "elim_2"}
         actual_ids = {s.id for s in scenarios}
         self.assertEqual(expected_ids, actual_ids)
 

@@ -1,9 +1,8 @@
 from pydantic import BaseModel
-from uuid import UUID
 
 
 class Faction(BaseModel):
-    id: UUID
+    id: str
     name: str
     color: str
 

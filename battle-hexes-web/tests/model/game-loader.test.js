@@ -24,7 +24,7 @@ describe('game loader helpers', () => {
     Game.newGameFromServer.mockReset();
     history.replaceState(null, '', '/battle.html');
     rememberLoadedGameData({
-      scenarioId: 'elem_1',
+      scenarioId: 'elim_1',
       playerTypeIds: ['human', 'random'],
     });
   });
@@ -78,7 +78,7 @@ describe('game loader helpers', () => {
     expect(updatedUrl.pathname).toBe('/battle.html/fetched-game');
     expect(updatedUrl.searchParams.get('gameId')).toBe('fetched-game');
     expect(getLastLoadedConfig()).toEqual({
-      scenarioId: 'elem_1',
+      scenarioId: 'elim_1',
       playerTypes: ['human', 'q-learning'],
     });
 
@@ -108,7 +108,7 @@ describe('game loader helpers', () => {
     expect(updatedUrl.pathname).toBe('/battle.html');
     expect(updatedUrl.searchParams.get('gameId')).toBe('new-game');
     expect(getLastLoadedConfig()).toEqual({
-      scenarioId: 'elem_1',
+      scenarioId: 'elim_1',
       playerTypes: ['random', 'q-learning'],
     });
 
@@ -117,19 +117,19 @@ describe('game loader helpers', () => {
 
   test('rememberLoadedGameData prefers explicit playerTypeIds arrays', () => {
     rememberLoadedGameData({
-      scenarioId: 'elem_2',
+      scenarioId: 'elim_2',
       playerTypeIds: ['human', 'q-learning'],
     });
 
     expect(getLastLoadedConfig()).toEqual({
-      scenarioId: 'elem_2',
+      scenarioId: 'elim_2',
       playerTypes: ['human', 'q-learning'],
     });
   });
 
   test('rememberLoadedGameData derives type ids from players when available', () => {
     rememberLoadedGameData({
-      scenarioId: 'elem_3',
+      scenarioId: 'elim_3',
       players: [
         { typeId: 'human' },
         { metadata: { typeId: 'random' } },
@@ -137,7 +137,7 @@ describe('game loader helpers', () => {
     });
 
     expect(getLastLoadedConfig()).toEqual({
-      scenarioId: 'elem_3',
+      scenarioId: 'elim_3',
       playerTypes: ['human', 'random'],
     });
   });
@@ -147,7 +147,7 @@ describe('game loader helpers', () => {
     config.playerTypes.push('extra');
 
     expect(getLastLoadedConfig()).toEqual({
-      scenarioId: 'elem_1',
+      scenarioId: 'elim_1',
       playerTypes: ['human', 'random'],
     });
   });
