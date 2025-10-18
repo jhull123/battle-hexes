@@ -22,6 +22,7 @@ class TestGameCreator(unittest.TestCase):
         """Test that created game's board size matches the scenario spec."""
         # Set up mock scenario with specific board size
         mock_scenario = Mock(spec=Scenario)
+        mock_scenario.id = "s1"
         mock_scenario.board_size = (10, 20)
         mock_scenario.factions = ()
         mock_scenario.units = ()
@@ -45,6 +46,7 @@ class TestGameCreator(unittest.TestCase):
         """Test that players are correctly set in the created game."""
         # Set up test fixtures
         mock_scenario = Mock(spec=Scenario)
+        mock_scenario.id = "s1"
         mock_scenario.board_size = (8, 8)
         mock_scenario.factions = ()
         mock_scenario.units = ()

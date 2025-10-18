@@ -42,10 +42,22 @@ class GameCreator:
             faction_by_id,
             player_by_faction_id,
         )
-        return Game(
+        game = Game(
             players=[player1, player2],
             board=board
         )
+
+        # Persist the original configuration on the ``Game`` instance so the
+        # API can expose it when clients fetch the game later.  This allows
+        # frontend to recreate new matches using the same scenario and player
+        # the types that were originally requested.
+        game.scenario_id = scenario.id
+        game.player_type_ids = (
+            type(player1).__name__,
+            type(player2).__name__
+        )
+
+        return game
 
     def assign_factions(
             self,
