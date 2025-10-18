@@ -45,15 +45,26 @@ class GameCreator:
             player1: Player,
             player2: Player
     ) -> None:
+        if not scenario.factions:
+            return
+
+        player_map = {
+            "Player 1": player1,
+            "Player 2": player2,
+            getattr(player1, "name", None): player1,
+            getattr(player2, "name", None): player2,
+        }
+
         for faction_data in scenario.factions:
             faction = Faction(
                 id=faction_data.id,
                 name=faction_data.name,
                 color=faction_data.color,
             )
-            if faction_data.player == 'Player 1':
-                player1.add_faction(faction)
-            elif faction_data.player == 'Player 2':
-                player2.add_faction(faction)
-            else:
-                raise NameError("Unknown player: " + faction_data.player)
+            try:
+                player = player_map[faction_data.player]
+            except KeyError as exc:
+                message = f"Unknown player: {faction_data.player}"
+                raise NameError(message) from exc
+
+            player.add_faction(faction)

@@ -9,6 +9,8 @@ from typing import Iterator
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from .scenario import Scenario, ScenarioFaction, ScenarioUnit
+
 
 @dataclass(frozen=True)
 class ScenarioPaths:
@@ -61,6 +63,38 @@ class ScenarioData(BaseModel):
     factions: list[ScenarioFactionData]
     units: list[ScenarioUnitData]
 
+    def to_core(self) -> Scenario:
+        """Convert the validated payload into a core :class:`Scenario`."""
+
+        return Scenario(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            board_size=self.board_size,
+            factions=tuple(
+                ScenarioFaction(
+                    id=faction.id,
+                    name=faction.name,
+                    color=faction.color,
+                    player=faction.player,
+                )
+                for faction in self.factions
+            ),
+            units=tuple(
+                ScenarioUnit(
+                    id=unit.id,
+                    name=unit.name,
+                    faction=unit.faction,
+                    type=unit.type,
+                    attack=unit.attack,
+                    defense=unit.defense,
+                    movement=unit.movement,
+                    starting_coords=unit.starting_coords,
+                )
+                for unit in self.units
+            ),
+        )
+
 
 def _load_json(path: Path) -> dict:
     try:
@@ -107,6 +141,18 @@ def load_scenario_data(
     return scenario
 
 
+def load_scenario(
+    scenario_id: str, *,
+    scenario_dir: Path | None = None,
+) -> Scenario:
+    """Load ``scenario_id`` and return a core :class:`Scenario`."""
+
+    scenario_data = load_scenario_data(
+        scenario_id, scenario_dir=scenario_dir
+    )
+    return scenario_data.to_core()
+
+
 def iter_scenario_data(
     *, scenario_dir: Path | None = None
 ) -> Iterator[ScenarioData]:
@@ -129,3 +175,12 @@ def iter_scenario_data(
                 f"Scenario file '{path}' is not a valid scenario definition"
             ) from exc
         yield scenario
+
+
+def iter_scenarios(
+    *, scenario_dir: Path | None = None
+) -> Iterator[Scenario]:
+    """Yield core :class:`Scenario` instances for all scenario files."""
+
+    for scenario_data in iter_scenario_data(scenario_dir=scenario_dir):
+        yield scenario_data.to_core()
