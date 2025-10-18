@@ -20,6 +20,7 @@ class TestGameCreator(unittest.TestCase):
         mock_scenario = Mock(spec=Scenario)
         mock_scenario.board_size = (10, 20)
         mock_scenario.factions = ()
+        mock_scenario.units = ()
 
         # Set up mock players
         mock_player1 = Mock(spec=Player)
@@ -42,6 +43,7 @@ class TestGameCreator(unittest.TestCase):
         mock_scenario = Mock(spec=Scenario)
         mock_scenario.board_size = (8, 8)
         mock_scenario.factions = ()
+        mock_scenario.units = ()
         mock_player1 = Mock(spec=Player)
         mock_player2 = Mock(spec=Player)
 

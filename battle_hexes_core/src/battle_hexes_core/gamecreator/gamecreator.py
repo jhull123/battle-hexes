@@ -33,10 +33,12 @@ class GameCreator:
         Returns:
             Game: A new game instance with the specified configuration.
         """
+        board = Board(*scenario.board_size)
         self.assign_factions(scenario, player1, player2)
+        self.add_units(board, scenario.units)
         return Game(
             players=[player1, player2],
-            board=Board(*scenario.board_size)
+            board=board
         )
 
     def assign_factions(
@@ -68,3 +70,7 @@ class GameCreator:
                 raise NameError(message) from exc
 
             player.add_faction(faction)
+
+    def add_units(self, board: Board, units):
+        # TODO implement me and add a type hint to the units parameter
+        pass
