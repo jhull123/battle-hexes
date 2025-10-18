@@ -3,8 +3,8 @@ import unittest
 from unittest.mock import Mock
 
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
-from battle_hexes_core.scenario.scenario import Scenario
-from battle_hexes_core.game.player import Player
+from battle_hexes_core.scenario.scenario import Scenario, ScenarioFaction
+from battle_hexes_core.game.player import Player, PlayerType
 
 
 class TestGameCreator(unittest.TestCase):
@@ -19,6 +19,7 @@ class TestGameCreator(unittest.TestCase):
         # Set up mock scenario with specific board size
         mock_scenario = Mock(spec=Scenario)
         mock_scenario.board_size = (10, 20)
+        mock_scenario.factions = ()
 
         # Set up mock players
         mock_player1 = Mock(spec=Player)
@@ -40,6 +41,7 @@ class TestGameCreator(unittest.TestCase):
         # Set up test fixtures
         mock_scenario = Mock(spec=Scenario)
         mock_scenario.board_size = (8, 8)
+        mock_scenario.factions = ()
         mock_player1 = Mock(spec=Player)
         mock_player2 = Mock(spec=Player)
 
@@ -57,3 +59,53 @@ class TestGameCreator(unittest.TestCase):
 
         # Verify first player is set as current player
         self.assertEqual(game.current_player, mock_player1)
+
+    def test_assign_factions_adds_factions_to_players(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            factions=(
+                ScenarioFaction(
+                    id="faction-1",
+                    name="Faction One",
+                    color="#FF0000",
+                    player="Player 1",
+                ),
+                ScenarioFaction(
+                    id="faction-2",
+                    name="Faction Two",
+                    color="#0000FF",
+                    player="Player 2",
+                ),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        self.creator.assign_factions(scenario, player1, player2)
+
+        self.assertEqual(len(player1.factions), 1)
+        self.assertEqual(len(player2.factions), 1)
+        self.assertEqual(player1.factions[0].id, "faction-1")
+        self.assertEqual(player2.factions[0].id, "faction-2")
+
+    def test_assign_factions_raises_for_unknown_player(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            factions=(
+                ScenarioFaction(
+                    id="faction-1",
+                    name="Faction One",
+                    color="#FF0000",
+                    player="Player 3",
+                ),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        with self.assertRaises(NameError):
+            self.creator.assign_factions(scenario, player1, player2)
