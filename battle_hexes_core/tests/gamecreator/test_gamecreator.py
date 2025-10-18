@@ -3,7 +3,11 @@ import unittest
 from unittest.mock import Mock
 
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
-from battle_hexes_core.scenario.scenario import Scenario, ScenarioFaction
+from battle_hexes_core.scenario.scenario import (
+    Scenario,
+    ScenarioFaction,
+    ScenarioUnit,
+)
 from battle_hexes_core.game.player import Player, PlayerType
 
 
@@ -85,12 +89,20 @@ class TestGameCreator(unittest.TestCase):
         player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
         player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
 
-        self.creator.assign_factions(scenario, player1, player2)
+        faction_by_id, player_by_faction_id = self.creator.assign_factions(
+            scenario,
+            player1,
+            player2,
+        )
 
         self.assertEqual(len(player1.factions), 1)
         self.assertEqual(len(player2.factions), 1)
         self.assertEqual(player1.factions[0].id, "faction-1")
         self.assertEqual(player2.factions[0].id, "faction-2")
+        self.assertIn("faction-1", faction_by_id)
+        self.assertIn("faction-2", faction_by_id)
+        self.assertIs(faction_by_id["faction-1"], player1.factions[0])
+        self.assertIs(player_by_faction_id["faction-1"], player1)
 
     def test_assign_factions_raises_for_unknown_player(self):
         scenario = Scenario(
@@ -111,3 +123,77 @@ class TestGameCreator(unittest.TestCase):
 
         with self.assertRaises(NameError):
             self.creator.assign_factions(scenario, player1, player2)
+
+    def test_add_units_creates_units_on_board(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(5, 5),
+            factions=(
+                ScenarioFaction(
+                    id="faction-1",
+                    name="Faction One",
+                    color="#FF0000",
+                    player="Player 1",
+                ),
+            ),
+            units=(
+                ScenarioUnit(
+                    id="unit-1",
+                    name="Infantry",
+                    faction="faction-1",
+                    type="Infantry",
+                    attack=3,
+                    defense=2,
+                    movement=5,
+                    starting_coords=(1, 2),
+                ),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        game = self.creator.create_game(scenario, player1, player2)
+        board_units = game.board.get_units()
+
+        self.assertEqual(len(board_units), 1)
+        unit = board_units[0]
+        self.assertEqual(unit.get_id(), "unit-1")
+        self.assertEqual(unit.get_name(), "Infantry")
+        self.assertEqual(unit.get_coords(), (1, 2))
+        self.assertIs(unit.player, player1)
+        self.assertEqual(player1.factions[0].id, unit.get_faction().id)
+
+    def test_add_units_raises_for_unknown_faction(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(5, 5),
+            factions=(
+                ScenarioFaction(
+                    id="faction-1",
+                    name="Faction One",
+                    color="#FF0000",
+                    player="Player 1",
+                ),
+            ),
+            units=(
+                ScenarioUnit(
+                    id="unit-1",
+                    name="Infantry",
+                    faction="unknown-faction",
+                    type="Infantry",
+                    attack=3,
+                    defense=2,
+                    movement=5,
+                    starting_coords=(1, 2),
+                ),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        with self.assertRaises(NameError):
+            self.creator.create_game(scenario, player1, player2)
