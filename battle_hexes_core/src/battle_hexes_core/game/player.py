@@ -16,6 +16,9 @@ class Player(BaseModel):
     type: PlayerType
     factions: List[Faction]
 
+    def add_faction(self, faction: Faction) -> None:
+        self.factions.append(faction)
+
     def has_faction(self, faction: Faction) -> bool:
         return faction in self.factions
 
