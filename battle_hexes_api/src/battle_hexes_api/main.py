@@ -26,6 +26,7 @@ from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
     CreateGameRequest,
+    FactionModel,
     PlayerTypeModel,
     ScenarioModel,
 )
@@ -54,7 +55,15 @@ app.add_middleware(
 def _serialize_game(game) -> dict:
     """Return a JSON-serialisable representation of ``game``."""
 
-    model = game.to_game_model().model_dump()
+    game_model = game.to_game_model()
+    model = game_model.model_dump()
+
+    players = model.get("players", [])
+    for player_model, serialized_player in zip(game_model.players, players):
+        serialized_player["factions"] = [
+            FactionModel.from_core(faction).model_dump()
+            for faction in player_model.factions
+        ]
 
     scenario_id = getattr(game, "scenario_id", None)
     if scenario_id is not None:
