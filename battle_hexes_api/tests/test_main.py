@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from battle_hexes_api.main import app, _serialize_game
 from battle_hexes_api.player_types import PlayerTypeDefinition
+from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.sparseboard import SparseBoard
 from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.unit.faction import Faction
@@ -243,14 +244,17 @@ class TestFastAPI(unittest.TestCase):
         faction_alpha = Faction(id="alpha", name="Alpha", color="#ff0000")
         faction_beta = Faction(id="beta", name="Beta", color="#00ff00")
 
-        class DummyPlayer:
-            def __init__(self, name, factions):
-                self.name = name
-                self.factions = factions
-
         players = [
-            DummyPlayer("Alice", [faction_alpha]),
-            DummyPlayer("Bob", [faction_beta]),
+            Player(
+                name="Alice",
+                type=PlayerType.HUMAN,
+                factions=[faction_alpha],
+            ),
+            Player(
+                name="Bob",
+                type=PlayerType.CPU,
+                factions=[faction_beta],
+            ),
         ]
 
         class DummyGameModel:
@@ -261,10 +265,7 @@ class TestFastAPI(unittest.TestCase):
                 return {
                     "id": "game-123",
                     "board": {"hexes": []},
-                    "players": [
-                        {"name": player.name, "factions": ["placeholder"]}
-                        for player in self.players
-                    ],
+                    "players": [{} for _ in self.players],
                 }
 
         class DummyGame:
@@ -290,12 +291,14 @@ class TestFastAPI(unittest.TestCase):
             [
                 {
                     "name": "Alice",
+                    "type": PlayerType.HUMAN.value,
                     "factions": [
                         {"id": "alpha", "name": "Alpha", "color": "#ff0000"}
                     ],
                 },
                 {
                     "name": "Bob",
+                    "type": PlayerType.CPU.value,
                     "factions": [
                         {"id": "beta", "name": "Beta", "color": "#00ff00"}
                     ],

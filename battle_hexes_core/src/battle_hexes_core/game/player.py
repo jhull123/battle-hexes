@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import List
+from typing import Iterable, List
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
@@ -11,12 +11,15 @@ class PlayerType(Enum):
     CPU = "Computer"
 
 
-class Player(BaseModel):
+@dataclass
+class Player:
     name: str
     type: PlayerType
-    factions: List[Faction]
+    factions: List[Faction] = field(default_factory=list)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __post_init__(self) -> None:
+        # Store factions as a concrete list to match the previous behaviour.
+        self.factions = list(self.factions)
 
     def add_faction(self, faction: Faction) -> None:
         self.factions.append(faction)
@@ -27,7 +30,7 @@ class Player(BaseModel):
     def owns(self, unit) -> bool:
         return unit.faction in self.factions
 
-    def own_units(self, units) -> List:
+    def own_units(self, units: Iterable) -> List:
         return [unit for unit in units if self.owns(unit)]
 
     def movement(self) -> List[UnitMovementPlan]:
