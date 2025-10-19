@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from enum import Enum
 from typing import List
 from battle_hexes_core.combat.combatresults import CombatResults
@@ -15,6 +15,8 @@ class Player(BaseModel):
     name: str
     type: PlayerType
     factions: List[Faction]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def add_faction(self, faction: Faction) -> None:
         self.factions.append(faction)
