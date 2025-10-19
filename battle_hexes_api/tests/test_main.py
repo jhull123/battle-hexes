@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 
 from battle_hexes_api.main import app, _serialize_game
 from battle_hexes_api.player_types import PlayerTypeDefinition
+from battle_hexes_api.schemas import SparseBoard
 from battle_hexes_core.game.player import Player, PlayerType
-from battle_hexes_core.game.sparseboard import SparseBoard
 from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.unit.faction import Faction
 

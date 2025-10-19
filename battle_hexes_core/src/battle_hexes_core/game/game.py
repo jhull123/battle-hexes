@@ -1,19 +1,12 @@
-from battle_hexes_core.game.board import Board, BoardModel
-from battle_hexes_core.game.player import Player
-from battle_hexes_core.game.sparseboard import SparseBoard
-from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
-from pydantic import BaseModel, ConfigDict
-from typing import List
 import uuid
+from typing import List
 
-
-class GameModel(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    id: uuid.UUID
-    players: List[Player]
-    board: BoardModel
+from battle_hexes_api.schemas.game import GameModel
+from battle_hexes_api.schemas.sparseboard import SparseBoard
+from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.player import Player
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
+from battle_hexes_core.unit.faction import Faction
 
 
 class Game:
