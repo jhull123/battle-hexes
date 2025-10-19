@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from battle_hexes_core.combat.combatresult import CombatResultSchema
-from battle_hexes_core.unit.sparseunit import SparseUnit
+from battle_hexes_api.schemas.unit import SparseUnit
 
 
 class SparseBoard(BaseModel):

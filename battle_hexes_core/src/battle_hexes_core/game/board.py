@@ -4,7 +4,8 @@ from pydantic import BaseModel
 from typing import List, Set, Tuple
 from battle_hexes_core.game.hex import Hex
 from battle_hexes_core.game.sparseboard import SparseBoard
-from battle_hexes_core.unit.unit import Unit, UnitModel
+from battle_hexes_core.unit.unit import Unit
+from battle_hexes_api.schemas.unit import UnitModel
 
 
 class BoardModel(BaseModel):

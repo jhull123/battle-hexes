@@ -1,19 +1,6 @@
-from pydantic import BaseModel
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.unit.sparseunit import SparseUnit
-
-
-class UnitModel(BaseModel):
-    id: str
-    name: str
-    faction_id: str
-    type: str
-    attack: int
-    defense: int
-    move: int
-    row: int
-    column: int
+from battle_hexes_api.schemas.unit import UnitModel, SparseUnit
 
 
 class Unit:
