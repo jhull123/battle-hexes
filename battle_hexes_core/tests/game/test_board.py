@@ -2,9 +2,10 @@ import unittest
 import uuid
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player, PlayerType
-from battle_hexes_core.game.sparseboard import SparseBoard
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
+from battle_hexes_api.schemas.board import BoardModel
+from battle_hexes_api.schemas.sparseboard import SparseBoard
 
 
 class TestBoard(unittest.TestCase):
@@ -159,6 +160,15 @@ class TestBoard(unittest.TestCase):
             actual_coords, expected_coords,
             "Neighboring hexes should match expected coordinates"
         )
+
+    def test_to_board_model_returns_schema(self):
+        self.board.add_unit(self.red_unit, 0, 0)
+
+        board_model = self.board.to_board_model()
+
+        self.assertIsInstance(board_model, BoardModel)
+        self.assertEqual(board_model.rows, self.board.get_rows())
+        self.assertEqual(board_model.columns, self.board.get_columns())
 
     def test_get_reachable_hexes_within_move_points(self):
         self.board.add_unit(self.red_unit, 2, 2)

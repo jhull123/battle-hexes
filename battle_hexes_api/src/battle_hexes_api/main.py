@@ -18,7 +18,6 @@ logger.info("sys.path: %s", sys.path)
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
-from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
 from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
     ScenarioRegistry,
 )
@@ -26,6 +25,7 @@ from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
     CreateGameRequest,
+    SparseBoard,
     PlayerModel,
     PlayerTypeModel,
     ScenarioModel,

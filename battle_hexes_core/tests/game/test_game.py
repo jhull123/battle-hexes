@@ -1,10 +1,12 @@
 import unittest
+
+from battle_hexes_api.schemas.game import GameModel
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
 
 class TestGame(unittest.TestCase):
@@ -78,3 +80,16 @@ class TestGame(unittest.TestCase):
         game.apply_movement_plans([plan])
 
         self.assertEqual(unit.get_coords(), (0, 1))
+
+    def test_to_game_model_returns_schema(self):
+        board = Board(3, 3)
+        import uuid
+        faction = Faction(id=str(uuid.uuid4()), name="f", color="#fff")
+        player = Player(name="P", type=PlayerType.HUMAN, factions=[faction])
+        game = Game([player], board)
+
+        model = game.to_game_model()
+
+        self.assertIsInstance(model, GameModel)
+        self.assertEqual(model.board.rows, board.get_rows())
+        self.assertEqual(model.board.columns, board.get_columns())
