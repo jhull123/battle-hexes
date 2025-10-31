@@ -70,7 +70,7 @@ class TestBoard(unittest.TestCase):
                 {"id": str(self.blue_unit.get_id()), "row": 3, "column": 2},
             ]
         }
-        self.board.update(SparseBoard(**sparse_board_data))
+        SparseBoard(**sparse_board_data).apply_to_board(self.board)
 
         self.assertEqual(self.red_unit.get_coords(), (2, 3))
         self.assertEqual(self.blue_unit.get_coords(), (3, 2))
@@ -164,7 +164,7 @@ class TestBoard(unittest.TestCase):
     def test_to_board_model_returns_schema(self):
         self.board.add_unit(self.red_unit, 0, 0)
 
-        board_model = self.board.to_board_model()
+        board_model = BoardModel.from_board(self.board)
 
         self.assertIsInstance(board_model, BoardModel)
         self.assertEqual(board_model.rows, self.board.get_rows())

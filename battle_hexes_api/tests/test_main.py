@@ -91,8 +91,9 @@ class TestFastAPI(unittest.TestCase):
         )
         mock_registry.list_scenarios.assert_called_once_with()
 
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.game_repo')
-    def test_resolve_combat_placeholder(self, mock_game_repo):
+    def test_resolve_combat_placeholder(self, mock_game_repo, mock_from_board):
         mock_board = MagicMock()
         sparse_board_data = {
             "units": []
@@ -103,6 +104,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game.id = game_id
         mock_game_repo.get_game.return_value = mock_game
         mock_game.get_board.return_value = mock_board
+        mock_from_board.return_value = MagicMock()
 
         self.client.post(
             f"/games/{game_id}/combat", json=sparse_board_data)
@@ -110,12 +112,13 @@ class TestFastAPI(unittest.TestCase):
         mock_game.update.assert_called_once_with(
             SparseBoard(**sparse_board_data))
         mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_board.to_sparse_board.assert_called_once()
+        mock_from_board.assert_called_once_with(mock_board)
 
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.Combat')
     @patch('battle_hexes_api.main.game_repo')
     def test_resolve_combat_calls_end_game_callback_when_game_over(
-        self, mock_game_repo, mock_combat
+        self, mock_game_repo, mock_combat, mock_from_board
     ):
         mock_board = MagicMock()
         mock_game = MagicMock()
@@ -129,6 +132,8 @@ class TestFastAPI(unittest.TestCase):
 
         game_id = "game-123"
         sparse_board_data = {"units": []}
+
+        mock_from_board.return_value = MagicMock()
 
         self.client.post(
             f"/games/{game_id}/combat", json=sparse_board_data
