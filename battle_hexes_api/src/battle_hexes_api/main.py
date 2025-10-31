@@ -25,6 +25,7 @@ from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
     CreateGameRequest,
+    GameModel,
     SparseBoard,
     PlayerModel,
     PlayerTypeModel,
@@ -55,7 +56,7 @@ app.add_middleware(
 def _serialize_game(game) -> dict:
     """Return a JSON-serialisable representation of ``game``."""
 
-    game_model = game.to_game_model()
+    game_model = GameModel.from_game(game)
     model = game_model.model_dump()
     model["players"] = [
         PlayerModel.from_core(player).model_dump()
@@ -167,7 +168,7 @@ def generate_movement(game_id: str):
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
     return {
-        "game": game.to_game_model(),
+        "game": GameModel.from_game(game),
         "plans": [p.to_dict() for p in plans],
     }
 
@@ -190,4 +191,4 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return game.to_game_model()
+    return GameModel.from_game(game)

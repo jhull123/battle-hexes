@@ -142,16 +142,17 @@ class TestFastAPI(unittest.TestCase):
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
 
+    @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
-    def test_generate_movement(self, mock_game_repo):
+    def test_generate_movement(self, mock_game_repo, mock_from_game):
         mock_plan = MagicMock()
         mock_player = MagicMock()
         mock_player.movement.return_value = [mock_plan]
         mock_plan.to_dict.return_value = {"plan": 1}
         mock_game = MagicMock()
         mock_game.get_current_player.return_value = mock_player
-        mock_game.to_game_model.return_value = {"id": "game-456"}
         mock_game_repo.get_game.return_value = mock_game
+        mock_from_game.return_value = {"id": "game-456"}
 
         game_id = "game-456"
         response = self.client.post(f"/games/{game_id}/movement")
@@ -159,16 +160,17 @@ class TestFastAPI(unittest.TestCase):
         mock_player.movement.assert_called_once_with()
         mock_game.apply_movement_plans.assert_called_once_with([mock_plan])
         mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_game.to_game_model.assert_called_once_with()
+        mock_from_game.assert_called_once_with(mock_game)
         mock_plan.to_dict.assert_called_once_with()
         self.assertEqual(
             response.json(),
             {"game": {"id": "game-456"}, "plans": [{"plan": 1}]},
         )
 
+    @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_updates_game_and_returns_game_model(
-        self, mock_game_repo
+        self, mock_game_repo, mock_from_game
     ):
         mock_game = MagicMock()
         mock_old_player = MagicMock()
@@ -177,11 +179,11 @@ class TestFastAPI(unittest.TestCase):
         mock_new_player.name = "Bob"
         mock_game.get_current_player.return_value = mock_old_player
         mock_game.next_player.return_value = mock_new_player
-        mock_game.to_game_model.return_value = {
+        mock_game_repo.get_game.return_value = mock_game
+        mock_from_game.return_value = {
             "id": "game-789",
             "current_player": "Bob"
         }
-        mock_game_repo.get_game.return_value = mock_game
 
         game_id = "game-789"
         sparse_board_data = {"units": []}
@@ -197,16 +199,17 @@ class TestFastAPI(unittest.TestCase):
         mock_game.get_current_player.assert_called_once_with()
         mock_game.next_player.assert_called_once_with()
         mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_game.to_game_model.assert_called_once_with()
+        mock_from_game.assert_called_once_with(mock_game)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
             {"id": "game-789", "current_player": "Bob"}
         )
 
+    @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_calls_end_game_callback_when_game_over(
-        self, mock_game_repo
+        self, mock_game_repo, mock_from_game
     ):
         mock_player1 = MagicMock()
         mock_player2 = MagicMock()
@@ -215,8 +218,8 @@ class TestFastAPI(unittest.TestCase):
         mock_game.next_player.return_value = MagicMock()
         mock_game.get_players.return_value = [mock_player1, mock_player2]
         mock_game.is_game_over.return_value = True
-        mock_game.to_game_model.return_value = {}
         mock_game_repo.get_game.return_value = mock_game
+        mock_from_game.return_value = {}
 
         game_id = "game-789"
         self.client.post(
@@ -225,6 +228,7 @@ class TestFastAPI(unittest.TestCase):
 
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
+        mock_from_game.assert_called_once_with(mock_game)
 
     @patch('battle_hexes_api.main.list_player_types')
     def test_get_player_types(self, mock_list_player_types):
@@ -274,17 +278,18 @@ class TestFastAPI(unittest.TestCase):
                 }
 
         class DummyGame:
-            def __init__(self, model):
-                self._model = model
+            def __init__(self):
                 self.scenario_id = "elim_1"
                 self.player_type_ids = ("human", "cpu")
 
-            def to_game_model(self):
-                return self._model
+        game = DummyGame()
 
-        game = DummyGame(DummyGameModel(players))
-
-        serialized = _serialize_game(game)
+        with patch(
+            'battle_hexes_api.main.GameModel.from_game'
+        ) as mock_from_game:
+            mock_from_game.return_value = DummyGameModel(players)
+            serialized = _serialize_game(game)
+            mock_from_game.assert_called_once_with(game)
 
         self.assertEqual(serialized["id"], "game-123")
         self.assertEqual(serialized["board"], {"hexes": []})
