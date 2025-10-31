@@ -151,7 +151,7 @@ def resolve_combat(
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    sparse_board = game.get_board().to_sparse_board()
+    sparse_board = SparseBoard.from_board(game.get_board())
     sparse_board.last_combat_results = results.battles_as_result_schema()
     return sparse_board
 
