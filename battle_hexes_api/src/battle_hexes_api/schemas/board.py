@@ -21,7 +21,7 @@ class BoardModel(BaseModel):
     def from_board(cls, board: "Board") -> "BoardModel":
         """Create a ``BoardModel`` from the core ``Board`` instance."""
 
-        units = [unit.to_unit_model() for unit in board.get_units()]
+        units = [UnitModel.from_unit(unit) for unit in board.get_units()]
         return cls(
             rows=board.get_rows(),
             columns=board.get_columns(),

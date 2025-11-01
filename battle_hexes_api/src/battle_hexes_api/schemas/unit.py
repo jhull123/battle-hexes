@@ -20,6 +20,22 @@ class UnitModel(BaseModel):
     row: int
     column: int
 
+    @classmethod
+    def from_unit(cls, unit: "Unit") -> "UnitModel":
+        """Create a unit model from a core :class:`Unit`."""
+
+        return cls(
+            id=str(unit.id),
+            name=unit.name,
+            faction_id=unit.faction.id,
+            type=unit.type,
+            attack=unit.attack,
+            defense=unit.defense,
+            move=unit.move,
+            row=unit.row,
+            column=unit.column,
+        )
+
 
 class SparseUnit(BaseModel):
     """Model representing a unit's minimal state for position updates."""
