@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from battle_hexes_api.main import app, _serialize_game
 from battle_hexes_api.player_types import PlayerTypeDefinition
-from battle_hexes_api.schemas import SparseBoard
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.unit.faction import Faction
@@ -91,9 +90,15 @@ class TestFastAPI(unittest.TestCase):
         )
         mock_registry.list_scenarios.assert_called_once_with()
 
+    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
     @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.game_repo')
-    def test_resolve_combat_placeholder(self, mock_game_repo, mock_from_board):
+    def test_resolve_combat_placeholder(
+        self,
+        mock_game_repo,
+        mock_from_board,
+        mock_apply_to_board,
+    ):
         mock_board = MagicMock()
         sparse_board_data = {
             "units": []
@@ -109,8 +114,7 @@ class TestFastAPI(unittest.TestCase):
         self.client.post(
             f"/games/{game_id}/combat", json=sparse_board_data)
 
-        mock_game.update.assert_called_once_with(
-            SparseBoard(**sparse_board_data))
+        mock_apply_to_board.assert_called_once_with(mock_board)
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_from_board.assert_called_once_with(mock_board)
 
@@ -167,10 +171,14 @@ class TestFastAPI(unittest.TestCase):
             {"game": {"id": "game-456"}, "plans": [{"plan": 1}]},
         )
 
+    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_updates_game_and_returns_game_model(
-        self, mock_game_repo, mock_from_game
+        self,
+        mock_game_repo,
+        mock_from_game,
+        mock_apply_to_board,
     ):
         mock_game = MagicMock()
         mock_old_player = MagicMock()
@@ -184,6 +192,8 @@ class TestFastAPI(unittest.TestCase):
             "id": "game-789",
             "current_player": "Bob"
         }
+        mock_board = MagicMock()
+        mock_game.get_board.return_value = mock_board
 
         game_id = "game-789"
         sparse_board_data = {"units": []}
@@ -193,9 +203,7 @@ class TestFastAPI(unittest.TestCase):
             json=sparse_board_data
         )
 
-        mock_game.update.assert_called_once_with(
-            SparseBoard(**sparse_board_data)
-        )
+        mock_apply_to_board.assert_called_once_with(mock_board)
         mock_game.get_current_player.assert_called_once_with()
         mock_game.next_player.assert_called_once_with()
         mock_game_repo.update_game.assert_called_once_with(mock_game)

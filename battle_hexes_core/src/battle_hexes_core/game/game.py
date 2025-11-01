@@ -1,7 +1,6 @@
 import uuid
 from typing import List
 
-from battle_hexes_api.schemas.sparseboard import SparseBoard
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
@@ -24,9 +23,6 @@ class Game:
 
     def get_board(self):
         return self.board
-
-    def update(self, sparse_board: SparseBoard) -> None:
-        sparse_board.apply_to_board(self.board)
 
     def get_current_player(self) -> Player:
         return self.current_player
