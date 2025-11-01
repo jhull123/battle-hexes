@@ -1,6 +1,6 @@
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.unit.faction import Faction
-from battle_hexes_api.schemas.unit import UnitModel, SparseUnit
+from battle_hexes_api.schemas.unit import UnitModel
 
 
 class Unit:
@@ -164,9 +164,6 @@ class Unit:
                          move=self.move,
                          row=self.row,
                          column=self.column)
-
-    def to_sparse_unit(self) -> SparseUnit:
-        return SparseUnit(id=str(self.id), row=self.row, column=self.column)
 
     def __str__(self):
         return f"{self.name} ({self.faction.name}) " + \

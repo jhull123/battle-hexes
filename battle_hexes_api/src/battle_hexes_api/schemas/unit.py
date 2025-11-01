@@ -1,6 +1,11 @@
 """Pydantic models for unit entities."""
 
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel
+
+if TYPE_CHECKING:  # pragma: no cover - imported for typing only
+    from battle_hexes_core.unit.unit import Unit
 
 
 class UnitModel(BaseModel):
@@ -21,3 +26,9 @@ class SparseUnit(BaseModel):
     id: str
     row: int
     column: int
+
+    @classmethod
+    def from_unit(cls, unit: "Unit") -> "SparseUnit":
+        """Create a sparse unit model from a core :class:`Unit`."""
+
+        return cls(id=str(unit.id), row=unit.row, column=unit.column)

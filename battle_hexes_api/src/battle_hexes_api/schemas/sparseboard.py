@@ -28,7 +28,7 @@ class SparseBoard(BaseModel):
     def from_board(cls, board: "Board") -> "SparseBoard":
         """Create a ``SparseBoard`` from the provided ``Board``."""
 
-        units = [unit.to_sparse_unit() for unit in board.get_units()]
+        units = [SparseUnit.from_unit(unit) for unit in board.get_units()]
         return cls(units=units)
 
     def apply_to_board(self, board: "Board") -> None:
