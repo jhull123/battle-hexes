@@ -1,6 +1,5 @@
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.unit.faction import Faction
-from battle_hexes_api.schemas.unit import UnitModel
 
 
 class Unit:
@@ -153,17 +152,6 @@ class Unit:
             current_cube = next_cube
 
         return True
-
-    def to_unit_model(self) -> UnitModel:
-        return UnitModel(id=self.id,
-                         name=self.name,
-                         faction_id=self.faction.id,
-                         type=self.type,
-                         attack=self.attack,
-                         defense=self.defense,
-                         move=self.move,
-                         row=self.row,
-                         column=self.column)
 
     def __str__(self):
         return f"{self.name} ({self.faction.name}) " + \

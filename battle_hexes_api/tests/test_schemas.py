@@ -1,6 +1,11 @@
 import unittest
 
-from battle_hexes_api.schemas import GameModel, ScenarioModel, SparseUnit
+from battle_hexes_api.schemas import (
+    GameModel,
+    ScenarioModel,
+    SparseUnit,
+    UnitModel,
+)
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
@@ -82,3 +87,37 @@ class TestSparseUnit(unittest.TestCase):
         self.assertEqual(sparse_unit.id, "u2")
         self.assertEqual(sparse_unit.row, 5)
         self.assertEqual(sparse_unit.column, 7)
+
+
+class TestUnitModel(unittest.TestCase):
+    def test_from_unit(self):
+        faction = Faction(id="f3", name="Faction 3", color="#ff0000")
+        player = Player(
+            name="Charlie",
+            type=PlayerType.HUMAN,
+            factions=[faction],
+        )
+        unit = Unit(
+            id="u3",
+            name="Unit 3",
+            faction=faction,
+            player=player,
+            type="Cavalry",
+            attack=6,
+            defense=4,
+            move=3,
+            row=2,
+            column=4,
+        )
+
+        unit_model = UnitModel.from_unit(unit)
+
+        self.assertEqual(unit_model.id, "u3")
+        self.assertEqual(unit_model.name, "Unit 3")
+        self.assertEqual(unit_model.faction_id, "f3")
+        self.assertEqual(unit_model.type, "Cavalry")
+        self.assertEqual(unit_model.attack, 6)
+        self.assertEqual(unit_model.defense, 4)
+        self.assertEqual(unit_model.move, 3)
+        self.assertEqual(unit_model.row, 2)
+        self.assertEqual(unit_model.column, 4)
