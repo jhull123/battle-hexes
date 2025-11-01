@@ -145,7 +145,7 @@ def resolve_combat(
 ) -> SparseBoard:
     logger.info("We got game: %s", game_id)
     game = _get_game_or_404(game_id)
-    game.update(sparse_board)
+    sparse_board.apply_to_board(game.get_board())
 
     results = Combat(game).resolve_combat()
     logger.info('Combat results: %s', results)
@@ -179,7 +179,7 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     game = _get_game_or_404(game_id)
 
     # sync the server-side board state with the client provided one
-    game.update(sparse_board)
+    sparse_board.apply_to_board(game.get_board())
 
     old_player = game.get_current_player()
     new_player = game.next_player()
