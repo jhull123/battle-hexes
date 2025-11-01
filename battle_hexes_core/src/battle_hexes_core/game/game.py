@@ -1,8 +1,6 @@
 import uuid
 from typing import List
 
-from battle_hexes_api.schemas.board import BoardModel
-from battle_hexes_api.schemas.game import GameModel
 from battle_hexes_api.schemas.sparseboard import SparseBoard
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player
@@ -49,13 +47,6 @@ class Game:
         idx = self.players.index(self.current_player)
         self.current_player = self.players[(idx + 1) % len(self.players)]
         return self.current_player
-
-    def to_game_model(self) -> GameModel:
-        return GameModel(
-            id=self.id,
-            players=self.players,
-            board=BoardModel.from_board(self.board)
-        )
 
     def get_opposing_factions(self, faction: Faction) -> List[Faction]:
         owning_player = self.get_player_for_faction(faction)
