@@ -132,7 +132,9 @@ class TestFastAPI(unittest.TestCase):
         mock_player2 = MagicMock()
         mock_game.get_players.return_value = [mock_player1, mock_player2]
         mock_game_repo.get_game.return_value = mock_game
-        mock_combat.return_value.resolve_combat.return_value = MagicMock()
+        mock_results = MagicMock()
+        mock_results.get_battles.return_value = []
+        mock_combat.return_value.resolve_combat.return_value = mock_results
 
         game_id = "game-123"
         sparse_board_data = {"units": []}
