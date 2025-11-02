@@ -1,6 +1,7 @@
 """Pydantic schemas for the Battle Hexes API."""
 
 from .board import BoardModel
+from .combat import CombatResultSchema
 from .create_game import CreateGameRequest
 from .faction import FactionModel
 from .game_model import GameModel
@@ -12,6 +13,7 @@ from .unit import UnitModel, SparseUnit
 
 __all__ = [
     "BoardModel",
+    "CombatResultSchema",
     "CreateGameRequest",
     "FactionModel",
     "GameModel",
@@ -20,5 +22,5 @@ __all__ = [
     "ScenarioModel",
     "SparseBoard",
     "UnitModel",
-    "SparseUnit"
+    "SparseUnit",
 ]

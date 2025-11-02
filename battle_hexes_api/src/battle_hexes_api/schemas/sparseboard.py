@@ -4,7 +4,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from battle_hexes_core.combat.combatresult import CombatResultSchema
+from .combat import CombatResultSchema
 
 from .unit import SparseUnit
 

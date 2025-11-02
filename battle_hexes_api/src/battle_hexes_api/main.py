@@ -24,6 +24,7 @@ from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
 from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
+    CombatResultSchema,
     CreateGameRequest,
     GameModel,
     SparseBoard,
@@ -153,7 +154,10 @@ def resolve_combat(
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
     sparse_board = SparseBoard.from_board(game.get_board())
-    sparse_board.last_combat_results = results.battles_as_result_schema()
+    sparse_board.last_combat_results = [
+        CombatResultSchema.from_combat_result_data(battle)
+        for battle in results.get_battles()
+    ]
     return sparse_board
 
 

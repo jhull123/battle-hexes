@@ -12,9 +12,6 @@ class CombatResults:
     def get_battles(self) -> List[CombatResultData]:
         return self.battles
 
-    def battles_as_result_schema(self):
-        return [battle.to_schema() for battle in self.battles]
-
     def __str__(self) -> str:
         s = f'{len(self.battles)} Battles\n'
         for battle in self.battles:
