@@ -1,7 +1,6 @@
 import unittest
 import uuid
 from unittest.mock import patch, MagicMock
-from pydantic import PrivateAttr
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
@@ -12,7 +11,7 @@ from battle_hexes_core.unit.unit import Unit
 
 
 class DummyCPUPlayer(Player):
-    _ended: bool = PrivateAttr(False)
+    _ended: bool = False
 
     def __init__(self, name, factions):
         super().__init__(name=name, type=PlayerType.CPU, factions=factions)
