@@ -1,6 +1,5 @@
 from random import choice
 from typing import List, Set
-from pydantic import PrivateAttr
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.hex import Hex
@@ -9,7 +8,7 @@ from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
 
 class RandomPlayer(Player):
-    _board: Board = PrivateAttr()
+    _board: Board
 
     def __init__(self, name: str, type, factions, board: Board):
         super().__init__(name=name, type=type, factions=factions)

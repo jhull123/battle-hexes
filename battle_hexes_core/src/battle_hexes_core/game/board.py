@@ -1,16 +1,9 @@
 from collections.abc import Iterable
 from collections import deque
-from pydantic import BaseModel
 from typing import List, Set, Tuple
+
 from battle_hexes_core.game.hex import Hex
-from battle_hexes_core.game.sparseboard import SparseBoard
-from battle_hexes_core.unit.unit import Unit, UnitModel
-
-
-class BoardModel(BaseModel):
-    rows: int
-    columns: int
-    units: List[UnitModel]
+from battle_hexes_core.unit.unit import Unit
 
 
 class Board:
@@ -94,12 +87,6 @@ class Board:
         if not unit:
             raise KeyError(f"No unit found with ID {unit_id}")
         return unit
-
-    def update(self, sparse_board: SparseBoard) -> None:
-        for unit_data in sparse_board.units:
-            unit_id = str(unit_data.id)
-            unit = self.get_unit_by_id(unit_id)
-            unit.set_coords(unit_data.row, unit_data.column)
 
     def find_units(self, factions) -> List[Unit]:
         if isinstance(factions, Iterable):
@@ -363,11 +350,3 @@ class Board:
             if unit.get_coords() in hexes:
                 units.append(unit)
         return units
-
-    def to_board_model(self) -> BoardModel:
-        units = [unit.to_unit_model() for unit in self.get_units()]
-        return BoardModel(rows=self.rows, columns=self.columns, units=units)
-
-    def to_sparse_board(self) -> SparseBoard:
-        units = [unit.to_sparse_unit() for unit in self.get_units()]
-        return SparseBoard(units=units)

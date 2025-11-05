@@ -18,14 +18,17 @@ logger.info("sys.path: %s", sys.path)
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
-from battle_hexes_core.game.sparseboard import SparseBoard  # noqa: E402
 from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
     ScenarioRegistry,
 )
 from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
+    CombatResultSchema,
     CreateGameRequest,
+    GameModel,
+    SparseBoard,
+    PlayerModel,
     PlayerTypeModel,
     ScenarioModel,
 )
@@ -54,7 +57,12 @@ app.add_middleware(
 def _serialize_game(game) -> dict:
     """Return a JSON-serialisable representation of ``game``."""
 
-    model = game.to_game_model().model_dump()
+    game_model = GameModel.from_game(game)
+    model = game_model.model_dump()
+    model["players"] = [
+        PlayerModel.from_core(player).model_dump()
+        for player in game_model.players
+    ]
 
     scenario_id = getattr(game, "scenario_id", None)
     if scenario_id is not None:
@@ -138,15 +146,18 @@ def resolve_combat(
 ) -> SparseBoard:
     logger.info("We got game: %s", game_id)
     game = _get_game_or_404(game_id)
-    game.update(sparse_board)
+    sparse_board.apply_to_board(game.get_board())
 
     results = Combat(game).resolve_combat()
     logger.info('Combat results: %s', results)
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    sparse_board = game.get_board().to_sparse_board()
-    sparse_board.last_combat_results = results.battles_as_result_schema()
+    sparse_board = SparseBoard.from_board(game.get_board())
+    sparse_board.last_combat_results = [
+        CombatResultSchema.from_combat_result_data(battle)
+        for battle in results.get_battles()
+    ]
     return sparse_board
 
 
@@ -161,7 +172,7 @@ def generate_movement(game_id: str):
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
     return {
-        "game": game.to_game_model(),
+        "game": GameModel.from_game(game),
         "plans": [p.to_dict() for p in plans],
     }
 
@@ -172,7 +183,7 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     game = _get_game_or_404(game_id)
 
     # sync the server-side board state with the client provided one
-    game.update(sparse_board)
+    sparse_board.apply_to_board(game.get_board())
 
     old_player = game.get_current_player()
     new_player = game.next_player()
@@ -184,4 +195,4 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return game.to_game_model()
+    return GameModel.from_game(game)

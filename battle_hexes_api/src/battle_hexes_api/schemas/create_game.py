@@ -19,11 +19,10 @@ class CreateGameRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     @field_validator("player_types")
-    @classmethod
-    def _validate_player_types(cls, values: List[str]) -> List[str]:
+    def _validate_player_types(cls, value: List[str]) -> List[str]:
         """Ensure each player type identifier is a non-empty string."""
 
-        cleaned = [value.strip() for value in values if isinstance(value, str)]
-        if len(cleaned) != len(values) or any(not value for value in cleaned):
+        cleaned = [v.strip() for v in value if isinstance(v, str)]
+        if len(cleaned) != len(value) or any(not v for v in cleaned):
             raise ValueError("Player types must be non-empty strings")
         return cleaned

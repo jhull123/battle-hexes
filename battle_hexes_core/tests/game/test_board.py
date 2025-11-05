@@ -2,7 +2,6 @@ import unittest
 import uuid
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player, PlayerType
-from battle_hexes_core.game.sparseboard import SparseBoard
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -58,21 +57,6 @@ class TestBoard(unittest.TestCase):
         self.board.add_unit(self.red_unit, 2, 3)
         actual_units = self.board.get_units()
         self.assertEqual(actual_units[0].get_coords(), (2, 3))
-
-    def test_update_board(self):
-        self.board.add_unit(self.red_unit, 0, 4)
-        self.board.add_unit(self.blue_unit, 4, 0)
-
-        sparse_board_data = {
-            "units": [
-                {"id": str(self.red_unit.get_id()), "row": 2, "column": 3},
-                {"id": str(self.blue_unit.get_id()), "row": 3, "column": 2},
-            ]
-        }
-        self.board.update(SparseBoard(**sparse_board_data))
-
-        self.assertEqual(self.red_unit.get_coords(), (2, 3))
-        self.assertEqual(self.blue_unit.get_coords(), (3, 2))
 
     def test_get_neighboring_hexes_center_hex_even(self):
         self.board.add_unit(self.red_unit, 2, 2)

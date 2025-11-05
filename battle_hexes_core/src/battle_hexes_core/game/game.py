@@ -1,17 +1,10 @@
-from battle_hexes_core.game.board import Board, BoardModel
-from battle_hexes_core.game.player import Player
-from battle_hexes_core.game.sparseboard import SparseBoard
-from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
-from pydantic import BaseModel
-from typing import List
 import uuid
+from typing import List
 
-
-class GameModel(BaseModel):
-    id: uuid.UUID
-    players: List[Player]
-    board: BoardModel
+from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.player import Player
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
+from battle_hexes_core.unit.faction import Faction
 
 
 class Game:
@@ -30,9 +23,6 @@ class Game:
 
     def get_board(self):
         return self.board
-
-    def update(self, sparse_board: SparseBoard) -> None:
-        self.board.update(sparse_board)
 
     def get_current_player(self) -> Player:
         return self.current_player
@@ -53,13 +43,6 @@ class Game:
         idx = self.players.index(self.current_player)
         self.current_player = self.players[(idx + 1) % len(self.players)]
         return self.current_player
-
-    def to_game_model(self) -> GameModel:
-        return GameModel(
-            id=self.id,
-            players=self.players,
-            board=self.board.to_board_model()
-        )
 
     def get_opposing_factions(self, faction: Faction) -> List[Faction]:
         owning_player = self.get_player_for_faction(faction)
