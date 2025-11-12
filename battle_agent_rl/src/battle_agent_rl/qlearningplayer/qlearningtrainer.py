@@ -21,7 +21,6 @@ from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 DEFAULT_SCENARIO_ID = "elim_1"
 
 
-# module logger
 logger = logging.getLogger(__name__)
 
 
