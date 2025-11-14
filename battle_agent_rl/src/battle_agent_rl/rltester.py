@@ -3,19 +3,18 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List
 
 from battle_agent_rl.qlearningplayer import (
     QLearningPlayer,
     QLearningSettingsLoader,
 )
 from battle_hexes_core.game.gamefactory import GameFactory
-from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.game.player import PlayerType
+from battle_hexes_core.game.randomplayer import RandomPlayer
+from battle_hexes_core.gamecreator.gamecreator import GameCreator
+from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.training.agenttrainer import AgentTrainer
-from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
-from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 
 
 # module logger
@@ -24,78 +23,48 @@ logger = logging.getLogger(__name__)
 DEFAULT_SCENARIO_ID = "elim_1"
 
 
-def build_players() -> tuple[RandomPlayer, QLearningPlayer, List[Unit]]:
-    """Create players and units matching ``GameCreator``."""
-    scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
-
-    factions_by_player: dict[str, list[Faction]] = {}
-    factions_by_id: dict[str, Faction] = {}
-    player_order: list[str] = []
-
-    for faction_data in scenario.factions:
-        faction = Faction(
-            id=faction_data.id,
-            name=faction_data.name,
-            color=faction_data.color,
-        )
-        factions_by_id[faction.id] = faction
-        factions_by_player.setdefault(faction_data.player, []).append(faction)
-        if faction_data.player not in player_order:
-            player_order.append(faction_data.player)
-
-    if len(player_order) < 2:
-        raise ValueError("Scenario must define at least two players")
-
-    random_player = RandomPlayer(
-        name=player_order[0],
-        type=PlayerType.CPU,
-        factions=factions_by_player[player_order[0]],
-        board=None,
-    )
+def build_players() -> tuple[
+    Scenario,
+    RandomPlayer,
+    QLearningPlayer,
+    list[Unit],
+]:
+    """Create players and units matching ``GameCreator`` configuration."""
 
     rl_settings = QLearningSettingsLoader(logger=logger).load()
-    rl_player = QLearningPlayer(
-        name=player_order[1],
-        type=PlayerType.CPU,
-        factions=factions_by_player[player_order[1]],
-        board=None,
-        **rl_settings,
+
+    players = [
+        RandomPlayer(
+            name="Player 1",
+            type=PlayerType.CPU,
+            factions=[],
+            board=None,
+        ),
+        QLearningPlayer(
+            name="Player 2",
+            type=PlayerType.CPU,
+            factions=[],
+            board=None,
+            **rl_settings,
+        ),
+    ]
+
+    creator = GameCreator()
+    scenario, players, units, _ = creator.build_game_components(
+        DEFAULT_SCENARIO_ID,
+        players,
     )
+
+    random_player, rl_player = players
     rl_player.disable_exploration()
     rl_player.disable_learning()
 
-    players = [random_player, rl_player]
-    player_by_faction = {
-        faction.id: player
-        for player in players
-        for faction in player.factions
-    }
-
-    units: list[Unit] = []
-    for unit_data in scenario.units:
-        faction = factions_by_id[unit_data.faction]
-        owner = player_by_faction[faction.id]
-        unit = Unit(
-            unit_data.id,
-            unit_data.name,
-            faction,
-            owner,
-            unit_data.type,
-            unit_data.attack,
-            unit_data.defense,
-            unit_data.movement,
-        )
-        start_row, start_col = unit_data.starting_coords
-        unit.set_coords(start_row, start_col)
-        units.append(unit)
-
-    return random_player, rl_player, units
+    return scenario, random_player, rl_player, units
 
 
 def main(episodes: int = 5, max_turns: int = 5) -> None:
     """Train the MultiUnit Q-learning player."""
-    random_player, rl_player, units = build_players()
-    scenario = load_scenario_data(DEFAULT_SCENARIO_ID)
+    scenario, random_player, rl_player, units = build_players()
 
     q_table_path = Path("q_table.pkl")
     if q_table_path.exists():
