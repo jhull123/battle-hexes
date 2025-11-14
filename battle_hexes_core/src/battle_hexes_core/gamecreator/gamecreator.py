@@ -1,9 +1,12 @@
+from collections.abc import Sequence
+
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioUnit
+from battle_hexes_core.scenario.scenario_loader import load_scenario
 
 
 class GameCreator:
@@ -30,34 +33,67 @@ class GameCreator:
         Returns:
             Game: A new game instance with the specified configuration.
         """
-        board = Board(*scenario.board_size)
-        faction_by_id, player_by_faction_id = self.assign_factions(
+        _, _, _, game = self.build_game_components(
             scenario,
+            (player1, player2),
+        )
+        return game
+
+    def build_game_components(
+        self,
+        scenario: Scenario | str,
+        players: Sequence[Player],
+    ) -> tuple[Scenario, list[Player], list[Unit], Game]:
+        """Return the scenario, players, units and a ready ``Game``."""
+
+        if len(players) != 2:
+            raise ValueError(
+                "GameCreator currently supports exactly two players"
+            )
+
+        scenario_obj = (
+            load_scenario(scenario)
+            if isinstance(scenario, str)
+            else scenario
+        )
+
+        board = Board(*scenario_obj.board_size)
+
+        players_list = list(players)
+        for player in players_list:
+            if hasattr(player, "_board"):
+                player._board = board
+
+        player1, player2 = players_list
+        faction_by_id, player_by_faction_id = self.assign_factions(
+            scenario_obj,
             player1,
             player2,
         )
         self.add_units(
             board,
-            scenario.units,
+            scenario_obj.units,
             faction_by_id,
             player_by_faction_id,
         )
+
         game = Game(
-            players=[player1, player2],
-            board=board
+            players=players_list,
+            board=board,
         )
 
         # Persist the original configuration on the ``Game`` instance so the
         # API can expose it when clients fetch the game later.  This allows
         # frontend to recreate new matches using the same scenario and player
         # the types that were originally requested.
-        game.scenario_id = scenario.id
-        game.player_type_ids = (
-            type(player1).__name__,
-            type(player2).__name__
+        game.scenario_id = scenario_obj.id
+        game.player_type_ids = tuple(
+            type(player).__name__ for player in players_list
         )
 
-        return game
+        units = board.get_units()
+
+        return scenario_obj, players_list, units, game
 
     def assign_factions(
             self,
