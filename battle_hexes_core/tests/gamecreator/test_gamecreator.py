@@ -1,6 +1,6 @@
 """Unit tests for the GameCreator class."""
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
 from battle_hexes_core.scenario.scenario import (
@@ -199,3 +199,87 @@ class TestGameCreator(unittest.TestCase):
 
         with self.assertRaises(NameError):
             self.creator.create_game(scenario, player1, player2)
+
+    @patch("battle_hexes_core.gamecreator.gamecreator.load_scenario")
+    def test_build_game_components_from_scenario_id(self, mock_load_scenario):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(3, 3),
+            factions=(
+                ScenarioFaction(
+                    id="faction-1",
+                    name="Faction One",
+                    color="#FF0000",
+                    player="Player 1",
+                ),
+                ScenarioFaction(
+                    id="faction-2",
+                    name="Faction Two",
+                    color="#0000FF",
+                    player="Player 2",
+                ),
+            ),
+            units=(
+                ScenarioUnit(
+                    id="unit-1",
+                    name="Infantry",
+                    faction="faction-1",
+                    type="Infantry",
+                    attack=3,
+                    defense=2,
+                    movement=5,
+                    starting_coords=(0, 1),
+                ),
+                ScenarioUnit(
+                    id="unit-2",
+                    name="Scout",
+                    faction="faction-2",
+                    type="Scout",
+                    attack=2,
+                    defense=1,
+                    movement=6,
+                    starting_coords=(2, 1),
+                ),
+            ),
+        )
+        mock_load_scenario.return_value = scenario
+
+        player1 = Player(name="Alpha", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Beta", type=PlayerType.CPU, factions=[])
+
+        result = self.creator.build_game_components(
+            "scenario-1",
+            (player1, player2),
+        )
+        scenario_result, players, units, game = result
+
+        mock_load_scenario.assert_called_once_with("scenario-1")
+        self.assertIs(scenario_result, scenario)
+        self.assertEqual(players[0], player1)
+        self.assertEqual(players[1], player2)
+        self.assertEqual(len(player1.factions), 1)
+        self.assertEqual(len(player2.factions), 1)
+        unit_ids = {unit.get_id() for unit in units}
+        self.assertEqual(unit_ids, {"unit-1", "unit-2"})
+        self.assertEqual(game.board.get_rows(), 3)
+        self.assertEqual(game.board.get_columns(), 3)
+        self.assertEqual(game.scenario_id, "scenario-1")
+        self.assertEqual(
+            game.player_type_ids,
+            (type(player1).__name__, type(player2).__name__),
+        )
+
+    def test_build_game_components_requires_two_players(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(3, 3),
+            factions=(),
+            units=(),
+        )
+
+        player = Player(name="Solo", type=PlayerType.HUMAN, factions=[])
+
+        with self.assertRaises(ValueError):
+            self.creator.build_game_components(scenario, (player,))
