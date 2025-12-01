@@ -346,7 +346,9 @@ class QLearningPlayer(RLPlayer):
         for a in best:
             logger.info("  Action: %s", a)
 
-        return random.choice(best)
+        selected_action = random.choice(best)
+        logger.info("Chose action %s", selected_action)
+        return selected_action
 
     def update_q(
         self,
