@@ -7,6 +7,7 @@ module.exports = (env = {}) => ({
   entry: {
     battle: './src/battle-draw.js',
     title: './src/title-screen.js',
+    hexDemo: './src/hex-demo.js',
   },
   output: {
     filename: '[name].[contenthash:8].js',
@@ -33,6 +34,12 @@ module.exports = (env = {}) => ({
       template: path.resolve(__dirname, 'src/battle.html'), // Game boot page
       filename: 'battle.html',
       chunks: ['battle'],
+      favicon: path.resolve(__dirname, '../favicon.ico'),
+    }),
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, 'src/hex-demo.html'),
+      filename: 'hex-demo.html',
+      chunks: ['hexDemo'],
       favicon: path.resolve(__dirname, '../favicon.ico'),
     }),
     new webpack.DefinePlugin({
