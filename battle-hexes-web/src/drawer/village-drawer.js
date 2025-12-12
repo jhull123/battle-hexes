@@ -15,32 +15,27 @@ export class VillageDrawer {
 
     const center = this.#hexDrawer.hexCenter(aHex);
     const radius = this.#hexDrawer.getHexRadius();
-    const buildingWidth = radius * 0.35;
-    const buildingHeight = radius * 0.22;
-    const clusterSpacing = radius * 0.12;
-    const roofHeight = buildingHeight * 0.55;
+    const blockSize = radius * 0.22;
 
     this.#p.rectMode(this.#p.CENTER);
-    this.#p.stroke('#2b2926');
-    this.#p.strokeWeight(2);
-    this.#p.fill('#f3ecdd');
+    this.#p.stroke('#b2a897');
+    this.#p.strokeWeight(1.5);
 
-    const buildings = [
-      { x: center.x - buildingWidth * 0.8, y: center.y + clusterSpacing * 0.2, w: buildingWidth, h: buildingHeight },
-      { x: center.x + buildingWidth * 0.8, y: center.y + clusterSpacing * 0.1, w: buildingWidth * 0.95, h: buildingHeight },
-      { x: center.x, y: center.y - buildingHeight * 0.8, w: buildingWidth * 1.1, h: buildingHeight },
+    const blockFills = ['#e4dfd2', '#ddd6c7', '#e2d9c6'];
+    let fillIndex = 0;
+
+    const blocks = [
+      { x: center.x - radius * 0.32, y: center.y - radius * 0.18, w: blockSize * 1.05, h: blockSize * 0.9 },
+      { x: center.x + radius * 0.14, y: center.y - radius * 0.22, w: blockSize * 0.95, h: blockSize * 1.05 },
+      { x: center.x - radius * 0.28, y: center.y + radius * 0.16, w: blockSize * 0.9, h: blockSize * 1.1 },
+      { x: center.x + radius * 0.18, y: center.y + radius * 0.06, w: blockSize * 1.15, h: blockSize * 0.8 },
+      { x: center.x - radius * 0.02, y: center.y + radius * 0.3, w: blockSize * 1.25, h: blockSize * 0.95 },
     ];
 
-    buildings.forEach(({ x, y, w, h }) => {
-      this.#p.rect(x, y, w, h, 3);
-
-      const roofLeftX = x - w / 2;
-      const roofRightX = x + w / 2;
-      const roofBaseY = y - h / 2;
-      const roofPeakY = roofBaseY - roofHeight;
-
-      this.#p.line(roofLeftX, roofBaseY, x, roofPeakY);
-      this.#p.line(x, roofPeakY, roofRightX, roofBaseY);
+    blocks.forEach(({ x, y, w, h }) => {
+      this.#p.fill(blockFills[fillIndex % blockFills.length]);
+      fillIndex += 1;
+      this.#p.rect(x, y, w, h, 2);
     });
   }
 }
