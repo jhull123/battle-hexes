@@ -15,29 +15,45 @@ export class VillageDrawer {
 
     const center = this.#hexDrawer.hexCenter(aHex);
     const radius = this.#hexDrawer.getHexRadius();
-    const blockSize = radius * 0.3;
+    const blockSize = radius * 0.23;
 
     this.#p.rectMode(this.#p.CENTER);
-    this.#p.stroke('#b2a897');
-    this.#p.strokeWeight(1.5);
+    this.#p.stroke('#7f705b');
+    this.#p.strokeWeight(1.25);
 
-    const blockFills = ['#e5dfcf', '#ded7c6', '#e2dccd', '#d8d2c4'];
+    const blockFills = ['#c9ba9e', '#c3b79f', '#cdbfa4'];
     let fillIndex = 0;
 
     const blocks = [
-      { x: center.x - radius * 0.55, y: center.y - radius * 0.18, w: blockSize * 1.35, h: blockSize * 0.95 },
-      { x: center.x - radius * 0.16, y: center.y - radius * 0.42, w: blockSize * 1.15, h: blockSize * 0.85 },
-      { x: center.x + radius * 0.38, y: center.y - radius * 0.28, w: blockSize * 1.35, h: blockSize * 1.1 },
-      { x: center.x - radius * 0.36, y: center.y + radius * 0.08, w: blockSize * 1.05, h: blockSize * 1.35 },
-      { x: center.x + radius * 0.08, y: center.y + radius * 0.02, w: blockSize * 1.55, h: blockSize * 1.05 },
-      { x: center.x + radius * 0.44, y: center.y + radius * 0.22, w: blockSize * 1.15, h: blockSize * 1.3 },
-      { x: center.x - radius * 0.02, y: center.y + radius * 0.5, w: blockSize * 1.4, h: blockSize * 0.95 },
+      { dx: -0.56, dy: -0.52, w: 1.0, h: 0.9789 },
+      { dx: -0.26, dy: -0.52, w: 1.0667, h: 0.9752 },
+      { dx: 0.04, dy: -0.52, w: 1.1496, h: 1.0314 },
+      { dx: 0.34, dy: -0.52, w: 1.0353, h: 0.9073 },
+      { dx: -0.6, dy: -0.26, w: 1.0095, h: 1.0608 },
+      { dx: -0.32, dy: -0.26, w: 1.0376, h: 1.0116 },
+      { dx: -0.02, dy: -0.26, w: 1.1232, h: 0.9207 },
+      { dx: 0.28, dy: -0.26, w: 1.0401, h: 1.0178 },
+      { dx: 0.56, dy: -0.26, w: 1.0034, h: 0.9046 },
+      { dx: -0.5, dy: 0, w: 1.0376, h: 0.9401 },
+      { dx: -0.2, dy: 0, w: 1.0631, h: 0.9121 },
+      { dx: 0.1, dy: 0, w: 1.1917, h: 1.0583 },
+      { dx: 0.4, dy: 0, w: 1.1346, h: 1.0162 },
+      { dx: 0.72, dy: 0, w: 1.069, h: 1.0924 },
+      { dx: -0.36, dy: 0.26, w: 1.062, h: 0.9207 },
+      { dx: -0.08, dy: 0.26, w: 1.1827, h: 0.9573 },
+      { dx: 0.22, dy: 0.26, w: 1.1968, h: 0.9285 },
+      { dx: 0.5, dy: 0.26, w: 1.0521, h: 1.0969 },
+      { dx: -0.06, dy: 0.52, w: 1.2245, h: 0.9538 },
+      { dx: 0.24, dy: 0.52, w: 1.2433, h: 0.9192 },
+      { dx: 0.52, dy: 0.52, w: 1.1853, h: 1.0895 },
     ];
 
-    blocks.forEach(({ x, y, w, h }) => {
+    blocks.forEach(({ dx, dy, w, h }) => {
       this.#p.fill(blockFills[fillIndex % blockFills.length]);
       fillIndex += 1;
-      this.#p.rect(x, y, w, h, 2);
+      const x = center.x + radius * dx;
+      const y = center.y + radius * dy;
+      this.#p.rect(x, y, blockSize * w, blockSize * h, 2.2);
     });
   }
 }

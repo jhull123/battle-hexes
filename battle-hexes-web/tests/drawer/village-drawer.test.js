@@ -29,57 +29,52 @@ describe('VillageDrawer.draw', () => {
     expect(hexDrawer.drawHex).toHaveBeenCalledWith(hex, '#2f3c2f', 2, '#d6e7c7');
     expect(p.rectMode).toHaveBeenCalledWith(p.CENTER);
 
-    expect(p.stroke).toHaveBeenCalledWith('#b2a897');
-    expect(p.strokeWeight).toHaveBeenCalledWith(1.5);
+    expect(p.stroke).toHaveBeenCalledWith('#7f705b');
+    expect(p.strokeWeight).toHaveBeenCalledWith(1.25);
 
-    expect(p.rect).toHaveBeenCalledTimes(7);
+    expect(p.rect).toHaveBeenCalledTimes(21);
     expect(p.line).not.toHaveBeenCalled();
-    expect(p.fill).toHaveBeenCalledTimes(7);
+    expect(p.fill).toHaveBeenCalledTimes(21);
 
     const calls = p.rect.mock.calls;
-    const [firstBuilding, secondBuilding, thirdBuilding, fourthBuilding, fifthBuilding, sixthBuilding, seventhBuilding] = calls;
+    const sampled = calls.map(([x, y, w, h]) => ({ x, y, w, h }));
 
-    expect(firstBuilding[0]).toBeCloseTo(98, 1); // x
-    expect(firstBuilding[1]).toBeCloseTo(152.8, 1); // y
-    expect(firstBuilding[2]).toBeCloseTo(16.2, 1); // width
-    expect(firstBuilding[3]).toBeCloseTo(11.4, 1); // height
+    expect(sampled[0].x).toBeCloseTo(97.6, 1);
+    expect(sampled[0].y).toBeCloseTo(139.2, 1);
+    expect(sampled[0].w).toBeCloseTo(9.2, 1);
+    expect(sampled[0].h).toBeCloseTo(9.0, 1);
 
-    expect(secondBuilding[0]).toBeCloseTo(113.6, 1);
-    expect(secondBuilding[1]).toBeCloseTo(143.2, 1);
-    expect(secondBuilding[2]).toBeCloseTo(13.8, 1);
-    expect(secondBuilding[3]).toBeCloseTo(10.2, 1);
+    expect(sampled[10].x).toBeCloseTo(112, 1);
+    expect(sampled[10].y).toBeCloseTo(160, 1);
+    expect(sampled[10].w).toBeCloseTo(9.8, 1);
+    expect(sampled[10].h).toBeCloseTo(8.4, 1);
 
-    expect(thirdBuilding[0]).toBeCloseTo(135.2, 1);
-    expect(thirdBuilding[1]).toBeCloseTo(148.8, 1);
-    expect(thirdBuilding[2]).toBeCloseTo(16.2, 1);
-    expect(thirdBuilding[3]).toBeCloseTo(13.2, 1);
-
-    expect(fourthBuilding[0]).toBeCloseTo(105.6, 1);
-    expect(fourthBuilding[1]).toBeCloseTo(163.2, 1);
-    expect(fourthBuilding[2]).toBeCloseTo(12.6, 1);
-    expect(fourthBuilding[3]).toBeCloseTo(16.2, 1);
-
-    expect(fifthBuilding[0]).toBeCloseTo(123.2, 1);
-    expect(fifthBuilding[1]).toBeCloseTo(160.8, 1);
-    expect(fifthBuilding[2]).toBeCloseTo(18.6, 1);
-    expect(fifthBuilding[3]).toBeCloseTo(12.6, 1);
-
-    expect(sixthBuilding[0]).toBeCloseTo(137.6, 1);
-    expect(sixthBuilding[1]).toBeCloseTo(168.8, 1);
-    expect(sixthBuilding[2]).toBeCloseTo(13.8, 1);
-    expect(sixthBuilding[3]).toBeCloseTo(15.6, 1);
-
-    expect(seventhBuilding[0]).toBeCloseTo(119.2, 1);
-    expect(seventhBuilding[1]).toBeCloseTo(180, 1);
-    expect(seventhBuilding[2]).toBeCloseTo(16.8, 1);
-    expect(seventhBuilding[3]).toBeCloseTo(11.4, 1);
+    expect(sampled[20].x).toBeCloseTo(140.8, 1);
+    expect(sampled[20].y).toBeCloseTo(180.8, 1);
+    expect(sampled[20].w).toBeCloseTo(10.9, 1);
+    expect(sampled[20].h).toBeCloseTo(10, 1);
 
     const minX = Math.min(...calls.map(([x, , w]) => x - w / 2));
     const maxX = Math.max(...calls.map(([x, , w]) => x + w / 2));
     const minY = Math.min(...calls.map(([ , y, , h]) => y - h / 2));
     const maxY = Math.max(...calls.map(([ , y, , h]) => y + h / 2));
 
-    expect(maxX - minX).toBeGreaterThan(50);
-    expect(maxY - minY).toBeGreaterThan(45);
+    expect(maxX - minX).toBeGreaterThan(60);
+    expect(maxY - minY).toBeGreaterThan(50);
+
+    const overlaps = [];
+    for (let i = 0; i < sampled.length; i += 1) {
+      for (let j = i + 1; j < sampled.length; j += 1) {
+        const a = sampled[i];
+        const b = sampled[j];
+        const dx = Math.abs(a.x - b.x);
+        const dy = Math.abs(a.y - b.y);
+        if (dx < (a.w + b.w) / 2 && dy < (a.h + b.h) / 2) {
+          overlaps.push([i, j]);
+        }
+      }
+    }
+
+    expect(overlaps).toHaveLength(0);
   });
 });
