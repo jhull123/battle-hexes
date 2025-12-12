@@ -7,6 +7,10 @@ describe('VillageDrawer.draw', () => {
     fill: jest.fn(),
     rectMode: jest.fn(),
     rect: jest.fn(),
+    push: jest.fn(),
+    pop: jest.fn(),
+    translate: jest.fn(),
+    rotate: jest.fn(),
     line: jest.fn(),
     CENTER: 'center',
   });
@@ -35,31 +39,45 @@ describe('VillageDrawer.draw', () => {
     expect(p.rect).toHaveBeenCalledTimes(21);
     expect(p.line).not.toHaveBeenCalled();
     expect(p.fill).toHaveBeenCalledTimes(21);
+    expect(p.push).toHaveBeenCalledTimes(21);
+    expect(p.pop).toHaveBeenCalledTimes(21);
+    expect(p.translate).toHaveBeenCalledTimes(21);
+    expect(p.rotate).toHaveBeenCalledTimes(21);
+
+    const angles = p.rotate.mock.calls.map(([angle]) => angle);
+    const uniqueAngles = [...new Set(angles.map((value) => Math.round(value * 100)))];
+    expect(uniqueAngles.length).toBeGreaterThanOrEqual(11);
+    expect(angles.some((angle) => Math.abs(angle) > 0.15)).toBe(true);
 
     const calls = p.rect.mock.calls;
-    const sampled = calls.map(([x, y, w, h]) => ({ x, y, w, h }));
+    const translations = p.translate.mock.calls;
+    const sampled = translations.map((coords, index) => {
+      const [x, y] = coords;
+      const [, , w, h] = calls[index];
+      return { x, y, w, h };
+    });
 
-    expect(sampled[0].x).toBeCloseTo(97.6, 1);
-    expect(sampled[0].y).toBeCloseTo(139.2, 1);
-    expect(sampled[0].w).toBeCloseTo(9.2, 1);
-    expect(sampled[0].h).toBeCloseTo(9.0, 1);
+    expect(sampled[0].x).toBeCloseTo(98.0, 1);
+    expect(sampled[0].y).toBeCloseTo(140.0, 1);
+    expect(sampled[0].w).toBeCloseTo(10.1, 1);
+    expect(sampled[0].h).toBeCloseTo(6.9, 1);
 
-    expect(sampled[10].x).toBeCloseTo(112, 1);
-    expect(sampled[10].y).toBeCloseTo(160, 1);
-    expect(sampled[10].w).toBeCloseTo(9.8, 1);
-    expect(sampled[10].h).toBeCloseTo(8.4, 1);
+    expect(sampled[11].x).toBeCloseTo(112.8, 1);
+    expect(sampled[11].y).toBeCloseTo(162.4, 1);
+    expect(sampled[11].w).toBeCloseTo(11.6, 1);
+    expect(sampled[11].h).toBeCloseTo(7.7, 1);
 
-    expect(sampled[20].x).toBeCloseTo(140.8, 1);
-    expect(sampled[20].y).toBeCloseTo(180.8, 1);
-    expect(sampled[20].w).toBeCloseTo(10.9, 1);
-    expect(sampled[20].h).toBeCloseTo(10, 1);
+    expect(sampled[20].x).toBeCloseTo(136.0, 1);
+    expect(sampled[20].y).toBeCloseTo(184.0, 1);
+    expect(sampled[20].w).toBeCloseTo(8.8, 1);
+    expect(sampled[20].h).toBeCloseTo(7.2, 1);
 
-    const minX = Math.min(...calls.map(([x, , w]) => x - w / 2));
-    const maxX = Math.max(...calls.map(([x, , w]) => x + w / 2));
-    const minY = Math.min(...calls.map(([ , y, , h]) => y - h / 2));
-    const maxY = Math.max(...calls.map(([ , y, , h]) => y + h / 2));
+    const minX = Math.min(...sampled.map(({ x, w }) => x - w / 2));
+    const maxX = Math.max(...sampled.map(({ x, w }) => x + w / 2));
+    const minY = Math.min(...sampled.map(({ y, h }) => y - h / 2));
+    const maxY = Math.max(...sampled.map(({ y, h }) => y + h / 2));
 
-    expect(maxX - minX).toBeGreaterThan(60);
+    expect(maxX - minX).toBeGreaterThan(55);
     expect(maxY - minY).toBeGreaterThan(50);
 
     const overlaps = [];

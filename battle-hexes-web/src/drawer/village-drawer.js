@@ -15,7 +15,7 @@ export class VillageDrawer {
 
     const center = this.#hexDrawer.hexCenter(aHex);
     const radius = this.#hexDrawer.getHexRadius();
-    const blockSize = radius * 0.23;
+    const blockSize = radius * 0.22;
 
     this.#p.rectMode(this.#p.CENTER);
     this.#p.stroke('#7f705b');
@@ -25,35 +25,43 @@ export class VillageDrawer {
     let fillIndex = 0;
 
     const blocks = [
-      { dx: -0.56, dy: -0.52, w: 1.0, h: 0.9789 },
-      { dx: -0.26, dy: -0.52, w: 1.0667, h: 0.9752 },
-      { dx: 0.04, dy: -0.52, w: 1.1496, h: 1.0314 },
-      { dx: 0.34, dy: -0.52, w: 1.0353, h: 0.9073 },
-      { dx: -0.6, dy: -0.26, w: 1.0095, h: 1.0608 },
-      { dx: -0.32, dy: -0.26, w: 1.0376, h: 1.0116 },
-      { dx: -0.02, dy: -0.26, w: 1.1232, h: 0.9207 },
-      { dx: 0.28, dy: -0.26, w: 1.0401, h: 1.0178 },
-      { dx: 0.56, dy: -0.26, w: 1.0034, h: 0.9046 },
-      { dx: -0.5, dy: 0, w: 1.0376, h: 0.9401 },
-      { dx: -0.2, dy: 0, w: 1.0631, h: 0.9121 },
-      { dx: 0.1, dy: 0, w: 1.1917, h: 1.0583 },
-      { dx: 0.4, dy: 0, w: 1.1346, h: 1.0162 },
-      { dx: 0.72, dy: 0, w: 1.069, h: 1.0924 },
-      { dx: -0.36, dy: 0.26, w: 1.062, h: 0.9207 },
-      { dx: -0.08, dy: 0.26, w: 1.1827, h: 0.9573 },
-      { dx: 0.22, dy: 0.26, w: 1.1968, h: 0.9285 },
-      { dx: 0.5, dy: 0.26, w: 1.0521, h: 1.0969 },
-      { dx: -0.06, dy: 0.52, w: 1.2245, h: 0.9538 },
-      { dx: 0.24, dy: 0.52, w: 1.2433, h: 0.9192 },
-      { dx: 0.52, dy: 0.52, w: 1.1853, h: 1.0895 },
+      { dx: -0.55, dy: -0.5, w: 1.15, h: 0.78, angle: -0.28 },
+      { dx: -0.25, dy: -0.55, w: 1.35, h: 0.82, angle: -0.07 },
+      { dx: 0.05, dy: -0.52, w: 1.05, h: 0.96, angle: 0.18 },
+      { dx: 0.37, dy: -0.46, w: 1.28, h: 0.74, angle: 0.09 },
+      { dx: 0.65, dy: -0.42, w: 1.12, h: 0.86, angle: -0.22 },
+
+      { dx: -0.62, dy: -0.22, w: 1.05, h: 1.04, angle: 0.12 },
+      { dx: -0.32, dy: -0.2, w: 1.28, h: 0.92, angle: -0.18 },
+      { dx: 0.0, dy: -0.2, w: 1.14, h: 0.82, angle: 0.14 },
+      { dx: 0.32, dy: -0.22, w: 1.16, h: 1.02, angle: -0.12 },
+      { dx: 0.64, dy: -0.18, w: 1.08, h: 0.9, angle: 0.21 },
+
+      { dx: -0.5, dy: 0.08, w: 1.22, h: 0.9, angle: -0.09 },
+      { dx: -0.18, dy: 0.06, w: 1.32, h: 0.88, angle: 0.24 },
+      { dx: 0.14, dy: 0.04, w: 1.18, h: 0.98, angle: -0.16 },
+      { dx: 0.44, dy: 0.06, w: 1.1, h: 0.94, angle: 0.08 },
+      { dx: 0.74, dy: 0.06, w: 1.04, h: 0.92, angle: -0.2 },
+
+      { dx: -0.36, dy: 0.38, w: 1.26, h: 0.92, angle: 0.18 },
+      { dx: -0.04, dy: 0.36, w: 1.18, h: 0.88, angle: -0.11 },
+      { dx: 0.28, dy: 0.36, w: 1.16, h: 0.86, angle: 0.17 },
+      { dx: 0.58, dy: 0.34, w: 1.08, h: 0.92, angle: -0.2 },
+
+      { dx: 0.12, dy: 0.64, w: 1.2, h: 0.9, angle: 0.1 },
+      { dx: 0.4, dy: 0.6, w: 1.0, h: 0.82, angle: -0.12 },
     ];
 
-    blocks.forEach(({ dx, dy, w, h }) => {
+    blocks.forEach(({ dx, dy, w, h, angle }) => {
       this.#p.fill(blockFills[fillIndex % blockFills.length]);
       fillIndex += 1;
       const x = center.x + radius * dx;
       const y = center.y + radius * dy;
-      this.#p.rect(x, y, blockSize * w, blockSize * h, 2.2);
+      this.#p.push();
+      this.#p.translate(x, y);
+      this.#p.rotate(angle);
+      this.#p.rect(0, 0, blockSize * w, blockSize * h, 2.2);
+      this.#p.pop();
     });
   }
 }
