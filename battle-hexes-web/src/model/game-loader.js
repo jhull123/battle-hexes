@@ -102,13 +102,8 @@ export const getLastLoadedConfig = () => cloneConfig(lastLoadedConfig);
 export const rememberLoadedGameData = (gameData) => updateLastLoadedConfig(gameData);
 
 export const extractGameIdFromLocation = () => {
-  const pathMatch = window.location.pathname.match(/battle(?:\.html)?\/([^/?#]+)/);
-  if (pathMatch && pathMatch[1]) {
-    return pathMatch[1];
-  }
-
   const params = new URLSearchParams(window.location.search);
-  return params.get('gameId');
+  return params.get("gameId");
 };
 
 export const updateUrlWithGameId = (gameId) => {

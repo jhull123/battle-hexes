@@ -29,14 +29,14 @@ describe('game loader helpers', () => {
     });
   });
 
-  test('extracts game id from battle path', () => {
-    history.replaceState(null, '', '/battle.html/existing-game');
-    expect(extractGameIdFromLocation()).toBe('existing-game');
-  });
-
   test('extracts game id from query string', () => {
     history.replaceState(null, '', '/battle.html?gameId=query-game');
     expect(extractGameIdFromLocation()).toBe('query-game');
+  });
+
+  test('returns null when no gameId query parameter is present', () => {
+    history.replaceState(null, '', '/battle.html');
+    expect(extractGameIdFromLocation()).toBeNull();
   });
 
   test('updateUrlWithGameId replaces path segment and query string', () => {
@@ -56,7 +56,7 @@ describe('game loader helpers', () => {
   });
 
   test('loadGameData fetches existing game and updates url', async () => {
-    history.replaceState(null, '', '/battle.html/existing-game');
+    history.replaceState(null, '', '/battle.html?gameId=existing-game');
     Game.fetchGameFromServer.mockResolvedValue({
       id: 'fetched-game',
       playerTypeIds: ['human', 'q-learning'],
@@ -75,7 +75,7 @@ describe('game loader helpers', () => {
 
     const urlArg = replaceSpy.mock.calls[0][2];
     const updatedUrl = new URL(`http://localhost${urlArg}`);
-    expect(updatedUrl.pathname).toBe('/battle.html/fetched-game');
+    expect(updatedUrl.pathname).toBe('/battle.html');
     expect(updatedUrl.searchParams.get('gameId')).toBe('fetched-game');
     expect(getLastLoadedConfig()).toEqual({
       scenarioId: 'elim_1',
