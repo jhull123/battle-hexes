@@ -27,7 +27,24 @@ class ScenarioUnit:
     attack: int
     defense: int
     movement: int
-    starting_coords: Tuple[int, int]
+
+
+@dataclass(frozen=True)
+class ScenarioHexData:
+    """
+    Sparse description of hexes, such as terrain type and occupying units.
+    """
+
+    coords: tuple[int, int]
+    terrain: str | None = None
+    units: Tuple[str, ...] | None = None
+
+
+@dataclass(frozen=True)
+class ScenarioTerrainType:
+    """Representation of a terrain type as defined in a scenario."""
+
+    color: str
 
 
 @dataclass(frozen=True)
@@ -40,3 +57,6 @@ class Scenario:
     board_size: Tuple[int, int] | None = None
     factions: tuple[ScenarioFaction, ...] = field(default_factory=tuple)
     units: tuple[ScenarioUnit, ...] = field(default_factory=tuple)
+    terrain_default: str | None = None
+    terrain_types: dict[str, ScenarioTerrainType] = field(default_factory=dict)
+    hex_data: tuple[ScenarioHexData, ...] = field(default_factory=tuple)

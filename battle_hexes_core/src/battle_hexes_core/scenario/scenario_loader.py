@@ -7,9 +7,21 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+)
 
-from .scenario import Scenario, ScenarioFaction, ScenarioUnit
+from .scenario import (
+    Scenario,
+    ScenarioFaction,
+    ScenarioHexData,
+    ScenarioTerrainType,
+    ScenarioUnit,
+)
 
 
 @dataclass(frozen=True)
@@ -47,7 +59,27 @@ class ScenarioUnitData(BaseModel):
     attack: int
     defense: int
     movement: int
-    starting_coords: tuple[int, int]
+
+
+class ScenarioTerrainTypeData(BaseModel):
+    """Terrain type configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    color: str
+
+
+class ScenarioHexDataEntry(BaseModel):
+    """Hex configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    coords: tuple[int, int]
+    terrain: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("terrain", "type"),
+    )
+    units: list[str] | None = None
 
 
 class ScenarioData(BaseModel):
@@ -62,6 +94,9 @@ class ScenarioData(BaseModel):
     board_size: tuple[int, int]
     factions: list[ScenarioFactionData]
     units: list[ScenarioUnitData]
+    terrain_default: str | None = None
+    terrain_types: dict[str, ScenarioTerrainTypeData] | None = None
+    hex_data: list[ScenarioHexDataEntry] | None = None
 
     def to_core(self) -> Scenario:
         """Convert the validated payload into a core :class:`Scenario`."""
@@ -88,10 +123,30 @@ class ScenarioData(BaseModel):
                     type=unit.type,
                     attack=unit.attack,
                     defense=unit.defense,
-                    movement=unit.movement,
-                    starting_coords=unit.starting_coords,
+                    movement=unit.movement
                 )
                 for unit in self.units
+            ),
+            terrain_default=self.terrain_default,
+            terrain_types=(
+                {
+                    key: ScenarioTerrainType(color=terrain_type.color)
+                    for key, terrain_type in self.terrain_types.items()
+                }
+                if self.terrain_types
+                else {}
+            ),
+            hex_data=(
+                tuple(
+                    ScenarioHexData(
+                        coords=entry.coords,
+                        terrain=entry.terrain,
+                        units=tuple(entry.units) if entry.units else None,
+                    )
+                    for entry in self.hex_data
+                )
+                if self.hex_data
+                else ()
             ),
         )
 

@@ -26,8 +26,7 @@
       "type": "Infantry",
       "attack": 2,
       "defense": 2,
-      "movement": 6,
-      "starting_coords": [2, 2]
+      "movement": 6
     },
     {
       "id": "blue_unit_1",
@@ -36,8 +35,7 @@
       "type": "Infantry",
       "attack": 4,
       "defense": 4,
-      "movement": 4,
-      "starting_coords": [8, 9]
+      "movement": 4
     },
     {
       "id": "blue_unit_2",
@@ -46,8 +44,18 @@
       "type": "Scout",
       "attack": 2,
       "defense": 2,
-      "movement": 6,
-      "starting_coords": [9, 5]
+      "movement": 6
     }
+  ],
+  "terrain_default": "open",
+  "terrain_types": {
+    "open": { "color": "#C6AA5C" },
+    "village": { "color": "#9A8F7A" }
+  },
+  "hex_data": [
+    { "coords": [3, 3], "type": "village" },
+    { "coords": [2, 2], "units": ["red_unit_1"] },
+    { "coords": [8, 9], "units": ["blue_unit_1"] },
+    { "coords": [9, 5], "units": ["blue_unit_2"] }
   ]
 }

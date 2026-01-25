@@ -6,6 +6,7 @@ from battle_hexes_core.gamecreator.gamecreator import GameCreator
 from battle_hexes_core.scenario.scenario import (
     Scenario,
     ScenarioFaction,
+    ScenarioHexData,
     ScenarioUnit,
 )
 from battle_hexes_core.game.player import Player, PlayerType
@@ -148,7 +149,12 @@ class TestGameCreator(unittest.TestCase):
                     attack=3,
                     defense=2,
                     movement=5,
-                    starting_coords=(1, 2),
+                ),
+            ),
+            hex_data=(
+                ScenarioHexData(
+                    coords=(1, 2),
+                    units=("unit-1",),
                 ),
             ),
         )
@@ -188,8 +194,13 @@ class TestGameCreator(unittest.TestCase):
                     type="Infantry",
                     attack=3,
                     defense=2,
-                    movement=5,
-                    starting_coords=(1, 2),
+                    movement=5
+                ),
+            ),
+            hex_data=(
+                ScenarioHexData(
+                    coords=(0, 0),
+                    units=("unit-1",),
                 ),
             ),
         )
@@ -228,8 +239,7 @@ class TestGameCreator(unittest.TestCase):
                     type="Infantry",
                     attack=3,
                     defense=2,
-                    movement=5,
-                    starting_coords=(0, 1),
+                    movement=5
                 ),
                 ScenarioUnit(
                     id="unit-2",
@@ -238,8 +248,17 @@ class TestGameCreator(unittest.TestCase):
                     type="Scout",
                     attack=2,
                     defense=1,
-                    movement=6,
-                    starting_coords=(2, 1),
+                    movement=6
+                ),
+            ),
+            hex_data=(
+                ScenarioHexData(
+                    coords=(0, 0),
+                    units=("unit-1",),
+                ),
+                ScenarioHexData(
+                    coords=(1, 2),
+                    units=("unit-2",),
                 ),
             ),
         )
