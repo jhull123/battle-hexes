@@ -5,7 +5,7 @@ from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
-from battle_hexes_core.scenario.scenario import Scenario, ScenarioUnit
+from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.scenario.scenario_loader import load_scenario
 
 
@@ -72,7 +72,7 @@ class GameCreator:
         )
         self.add_units(
             board,
-            scenario_obj.units,
+            scenario_obj,
             faction_by_id,
             player_by_faction_id,
         )
@@ -134,28 +134,40 @@ class GameCreator:
     def add_units(
         self,
         board: Board,
-        units: tuple[ScenarioUnit, ...],
+        scenario: Scenario,
         faction_by_id: dict[str, Faction],
         player_by_faction_id: dict[str, Player],
     ) -> None:
-        for unit_data in units:
-            try:
-                faction = faction_by_id[unit_data.faction]
-                owner = player_by_faction_id[unit_data.faction]
-            except KeyError as exc:
-                message = f"Unknown faction: {unit_data.faction}"
-                raise NameError(message) from exc
+        if not scenario.units:
+            return
 
-            unit = Unit(
-                unit_data.id,
-                unit_data.name,
-                faction,
-                owner,
-                unit_data.type,
-                unit_data.attack,
-                unit_data.defense,
-                unit_data.movement,
-            )
+        unit_by_id = {unit.id: unit for unit in scenario.units}
+        for hex_entry in scenario.hex_data:
+            if not hex_entry.units:
+                continue
 
-            row, column = unit_data.starting_coords
-            board.add_unit(unit, row, column)
+            row, column = hex_entry.coords
+            for unit_id in hex_entry.units:
+                unit_data = unit_by_id.get(unit_id)
+                if unit_data is None:
+                    raise NameError(f"Unknown unit: {unit_id}")
+
+                try:
+                    faction = faction_by_id[unit_data.faction]
+                    owner = player_by_faction_id[unit_data.faction]
+                except KeyError as exc:
+                    message = f"Unknown faction: {unit_data.faction}"
+                    raise NameError(message) from exc
+
+                unit = Unit(
+                    unit_data.id,
+                    unit_data.name,
+                    faction,
+                    owner,
+                    unit_data.type,
+                    unit_data.attack,
+                    unit_data.defense,
+                    unit_data.movement,
+                )
+
+                board.add_unit(unit, row, column)

@@ -7,7 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+)
 
 from .scenario import (
     Scenario,
@@ -69,7 +75,10 @@ class ScenarioHexDataEntry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     coords: tuple[int, int]
-    terrain: str | None = None
+    terrain: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("terrain", "type"),
+    )
     units: list[str] | None = None
 
 
@@ -130,6 +139,7 @@ class ScenarioData(BaseModel):
             hex_data=(
                 tuple(
                     ScenarioHexData(
+                        coords=entry.coords,
                         terrain=entry.terrain,
                         units=tuple(entry.units) if entry.units else None,
                     )

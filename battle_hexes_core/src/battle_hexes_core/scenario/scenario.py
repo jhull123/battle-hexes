@@ -35,8 +35,9 @@ class ScenarioHexData:
     Sparse description of hexes, such as terrain type and occupying units.
     """
 
-    terrain: ScenarioTerrainType | None = None
-    units: Tuple[ScenarioUnit] | None = None
+    coords: tuple[int, int]
+    terrain: str | None = None
+    units: Tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
