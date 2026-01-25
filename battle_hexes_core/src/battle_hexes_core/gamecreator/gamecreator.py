@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player
+from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 from battle_hexes_core.scenario.scenario import Scenario
@@ -70,6 +71,7 @@ class GameCreator:
             player1,
             player2,
         )
+        self.add_terrain(board, scenario_obj)
         self.add_units(
             board,
             scenario_obj,
@@ -94,6 +96,77 @@ class GameCreator:
         units = board.get_units()
 
         return scenario_obj, players_list, units, game
+
+    def add_terrain(self, board: Board, scenario: Scenario) -> None:
+        if not scenario.terrain_types:
+            return
+
+        terrain_by_name = self._build_terrain_by_name(scenario)
+        default_terrain = self._get_default_terrain(
+            scenario,
+            terrain_by_name,
+        )
+        self._apply_default_terrain(board, default_terrain)
+        self._apply_hex_terrain(board, scenario, terrain_by_name)
+
+    def _build_terrain_by_name(
+        self,
+        scenario: Scenario,
+    ) -> dict[str, Terrain]:
+        """Build Terrain instances keyed by their scenario terrain name."""
+        return {
+            name: Terrain(name, terrain.color)
+            for name, terrain in scenario.terrain_types.items()
+        }
+
+    def _get_default_terrain(
+        self,
+        scenario: Scenario,
+        terrain_by_name: dict[str, Terrain],
+    ) -> Terrain | None:
+        """Resolve the default terrain from the scenario, if configured."""
+        if not scenario.terrain_default:
+            return None
+        try:
+            return terrain_by_name[scenario.terrain_default]
+        except KeyError as exc:
+            message = f"Unknown terrain: {scenario.terrain_default}"
+            raise NameError(message) from exc
+
+    def _apply_default_terrain(
+        self,
+        board: Board,
+        default_terrain: Terrain | None,
+    ) -> None:
+        """Assign the default terrain to every hex on the board."""
+        if default_terrain is None:
+            return
+        for hex_tile in board.hexes:
+            hex_tile.set_terrain(default_terrain)
+
+    def _apply_hex_terrain(
+        self,
+        board: Board,
+        scenario: Scenario,
+        terrain_by_name: dict[str, Terrain],
+    ) -> None:
+        """Apply per-hex terrain overrides from the scenario data."""
+        for hex_entry in scenario.hex_data:
+            if not hex_entry.terrain:
+                continue
+            try:
+                terrain = terrain_by_name[hex_entry.terrain]
+            except KeyError as exc:
+                message = f"Unknown terrain: {hex_entry.terrain}"
+                raise NameError(message) from exc
+
+            row, column = hex_entry.coords
+            hex_tile = board.get_hex(row, column)
+            if hex_tile is None:
+                raise ValueError(
+                    f"Hex coords out of bounds: {hex_entry.coords}"
+                )
+            hex_tile.set_terrain(terrain)
 
     def assign_factions(
             self,
