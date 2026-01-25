@@ -57,14 +57,21 @@ app.add_middleware(
 def _serialize_game(game) -> dict:
     """Return a JSON-serialisable representation of ``game``."""
 
-    game_model = GameModel.from_game(game)
+    scenario = None
+    scenario_id = getattr(game, "scenario_id", None)
+    if scenario_id is not None:
+        try:
+            scenario = scenario_registry.get_scenario(scenario_id)
+        except KeyError:
+            scenario = None
+
+    game_model = GameModel.from_game(game, scenario)
     model = game_model.model_dump()
     model["players"] = [
         PlayerModel.from_core(player).model_dump()
         for player in game_model.players
     ]
 
-    scenario_id = getattr(game, "scenario_id", None)
     if scenario_id is not None:
         model["scenarioId"] = scenario_id
 
