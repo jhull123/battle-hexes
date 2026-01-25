@@ -11,6 +11,7 @@ from .board import BoardModel
 
 if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.game.game import Game
+    from battle_hexes_core.scenario.scenario import Scenario
 
 
 class GameModel(BaseModel):
@@ -23,11 +24,13 @@ class GameModel(BaseModel):
     board: BoardModel
 
     @classmethod
-    def from_game(cls, game: "Game") -> "GameModel":
+    def from_game(
+        cls, game: "Game", scenario: "Scenario | None" = None
+    ) -> "GameModel":
         """Create a ``GameModel`` instance from the core ``Game`` object."""
 
         return cls(
             id=game.get_id(),
             players=list(game.get_players()),
-            board=BoardModel.from_board(game.get_board()),
+            board=BoardModel.from_board(game.get_board(), scenario),
         )

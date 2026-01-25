@@ -6,6 +6,8 @@ from battle_hexes_api.schemas import (
 )
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.terrain import Terrain
+from battle_hexes_core.scenario.scenario import Scenario, ScenarioTerrainType
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -115,3 +117,28 @@ class TestBoardModel(unittest.TestCase):
         self.assertIsInstance(board_model, BoardModel)
         self.assertEqual(board_model.rows, self.board.get_rows())
         self.assertEqual(board_model.columns, self.board.get_columns())
+
+    def test_to_board_model_includes_terrain_summary(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario 1",
+            terrain_default="open",
+            terrain_types={
+                "open": ScenarioTerrainType(color="#C6AA5C"),
+                "village": ScenarioTerrainType(color="#9A8F7A"),
+            },
+        )
+        self.board.get_hex(0, 0).set_terrain(Terrain("open", "#C6AA5C"))
+        self.board.get_hex(1, 1).set_terrain(Terrain("village", "#9A8F7A"))
+
+        board_model = BoardModel.from_board(self.board, scenario)
+
+        self.assertEqual(board_model.terrain.default, "open")
+        self.assertEqual(board_model.terrain.types["open"].color, "#C6AA5C")
+        self.assertEqual(
+            board_model.terrain.types["village"].color, "#9A8F7A"
+        )
+        self.assertEqual(len(board_model.terrain.hexes), 1)
+        self.assertEqual(board_model.terrain.hexes[0].row, 1)
+        self.assertEqual(board_model.terrain.hexes[0].column, 1)
+        self.assertEqual(board_model.terrain.hexes[0].terrain, "village")

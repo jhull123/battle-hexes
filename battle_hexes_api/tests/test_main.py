@@ -32,6 +32,18 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(post_response.status_code, 200)
         self.assertEqual(post_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(post_body.get('scenarioId'), 'elim_1')
+        terrain = post_body.get("board", {}).get("terrain", {})
+        self.assertEqual(terrain.get("default"), "open")
+        self.assertIn("open", terrain.get("types", {}))
+        self.assertIn("village", terrain.get("types", {}))
+        self.assertEqual(
+            terrain.get("types", {}).get("open", {}).get("color"),
+            "#C6AA5C",
+        )
+        self.assertEqual(
+            terrain.get("hexes"),
+            [{"row": 5, "column": 5, "terrain": "village"}],
+        )
 
         get_response = self.client.get(f'/games/{new_game_id}')
         get_body = get_response.json()
@@ -39,6 +51,10 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(new_game_id, get_body.get('id'))
         self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(get_body.get('scenarioId'), 'elim_1')
+        self.assertEqual(
+            get_body.get("board", {}).get("terrain", {}).get("hexes"),
+            [{"row": 5, "column": 5, "terrain": "village"}],
+        )
 
     def test_create_game_invalid_scenario_returns_404(self):
         payload = {
