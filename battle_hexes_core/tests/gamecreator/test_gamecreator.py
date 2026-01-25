@@ -148,7 +148,6 @@ class TestGameCreator(unittest.TestCase):
                     attack=3,
                     defense=2,
                     movement=5,
-                    starting_coords=(1, 2),
                 ),
             ),
         )
@@ -188,8 +187,7 @@ class TestGameCreator(unittest.TestCase):
                     type="Infantry",
                     attack=3,
                     defense=2,
-                    movement=5,
-                    starting_coords=(1, 2),
+                    movement=5
                 ),
             ),
         )
@@ -228,8 +226,7 @@ class TestGameCreator(unittest.TestCase):
                     type="Infantry",
                     attack=3,
                     defense=2,
-                    movement=5,
-                    starting_coords=(0, 1),
+                    movement=5
                 ),
                 ScenarioUnit(
                     id="unit-2",
@@ -238,8 +235,7 @@ class TestGameCreator(unittest.TestCase):
                     type="Scout",
                     attack=2,
                     defense=1,
-                    movement=6,
-                    starting_coords=(2, 1),
+                    movement=6
                 ),
             ),
         )
