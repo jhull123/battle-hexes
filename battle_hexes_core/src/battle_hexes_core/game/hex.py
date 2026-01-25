@@ -2,7 +2,12 @@ from battle_hexes_core.game.terrain import Terrain
 
 
 class Hex:
-    def __init__(self, row: int, column: int, terrain: Terrain | None = None):
+    def __init__(
+        self,
+        row: int,
+        column: int,
+        terrain: Terrain | None = None,
+    ):
         self._row = row
         self._column = column
         self._terrain = terrain
@@ -16,8 +21,11 @@ class Hex:
         return self._column
 
     @property
-    def terrain(self) -> Terrain:
+    def terrain(self) -> Terrain | None:
         return self._terrain
+
+    def set_terrain(self, terrain: Terrain | None) -> None:
+        self._terrain = terrain
 
     def __eq__(self, other):
         if isinstance(other, tuple):
