@@ -315,7 +315,10 @@ class TestFastAPI(unittest.TestCase):
         ) as mock_from_game:
             mock_from_game.return_value = DummyGameModel(players)
             serialized = _serialize_game(game)
-            mock_from_game.assert_called_once_with(game)
+            mock_from_game.assert_called_once()
+            args, _ = mock_from_game.call_args
+            self.assertEqual(args[0], game)
+            self.assertEqual(args[1].id, "elim_1")
 
         self.assertEqual(serialized["id"], "game-123")
         self.assertEqual(serialized["board"], {"hexes": []})
