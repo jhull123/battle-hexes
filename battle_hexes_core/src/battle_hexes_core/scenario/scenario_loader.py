@@ -8,10 +8,8 @@ from pathlib import Path
 from typing import Iterator
 
 from pydantic import (
-    AliasChoices,
     BaseModel,
     ConfigDict,
-    Field,
     ValidationError,
 )
 
@@ -75,10 +73,7 @@ class ScenarioHexDataEntry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     coords: tuple[int, int]
-    terrain: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("terrain", "type"),
-    )
+    terrain: str | None = None
     units: list[str] | None = None
 
 

@@ -53,7 +53,7 @@
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
-    { "coords": [3, 3], "type": "village" },
+    { "coords": [3, 3], "terrain": "village" },
     { "coords": [2, 2], "units": ["red_unit_1"] },
     { "coords": [8, 9], "units": ["blue_unit_1"] },
     { "coords": [9, 5], "units": ["blue_unit_2"] }
