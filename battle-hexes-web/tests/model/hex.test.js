@@ -1,4 +1,5 @@
 import { Hex } from '../../src/model/hex.js';
+import { Terrain } from '../../src/model/terrain.js';
 import { Unit } from '../../src/model/unit.js';
 
 let hex;
@@ -27,5 +28,15 @@ describe('hasCombat', () => {
     hex.addUnit(mockUnit);
 
     expect(hex.hasCombat()).toBe(true);
+  });
+});
+
+describe('terrain', () => {
+  test('stores terrain reference', () => {
+    const terrain = new Terrain('open', '#C6AA5C');
+
+    hex.setTerrain(terrain);
+
+    expect(hex.getTerrain()).toBe(terrain);
   });
 });
