@@ -2,6 +2,18 @@ import { HexDrawer } from '../../src/drawer/hex-drawer.js';
 import { Hex } from '../../src/model/hex.js';
 import { Terrain } from '../../src/model/terrain.js';
 
+let mockResolve;
+let mockTerrainDrawerResolverConstructor;
+
+jest.mock('../../src/terraindraw/terrain-drawer-resolver.js', () => {
+  mockTerrainDrawerResolverConstructor = jest.fn();
+  mockResolve = jest.fn();
+  mockTerrainDrawerResolverConstructor.mockImplementation(() => ({
+    resolve: mockResolve
+  }));
+  return { TerrainDrawerResolver: mockTerrainDrawerResolverConstructor };
+});
+
 class TestHexDrawer extends HexDrawer {
   constructor(...args) {
     super(...args);
@@ -39,6 +51,8 @@ describe('HexDrawer.draw', () => {
   beforeEach(() => {
     p5 = createMockP5();
     hexDrawer = new TestHexDrawer(p5, 30);
+    mockResolve.mockReset();
+    mockTerrainDrawerResolverConstructor.mockClear();
   });
 
   test('uses terrain color when hex has terrain', () => {
@@ -59,5 +73,31 @@ describe('HexDrawer.draw', () => {
 
     expect(hexDrawer.drawnHexes).toHaveLength(1);
     expect(hexDrawer.drawnHexes[0].fillColor).toBe('#fffdd0');
+  });
+
+  test('draws terrain overlay when resolver returns a drawer', () => {
+    const hex = new Hex(1, 2);
+    const terrain = new Terrain('village', '#9b8f7a');
+    hex.setTerrain(terrain);
+
+    const terrainDrawer = { draw: jest.fn() };
+    mockResolve.mockReturnValue(terrainDrawer);
+
+    hexDrawer.draw(hex);
+
+    expect(mockResolve).toHaveBeenCalledWith(hex);
+    expect(terrainDrawer.draw).toHaveBeenCalledWith(hex);
+  });
+
+  test('skips terrain overlay when resolver returns null', () => {
+    const hex = new Hex(3, 4);
+    const terrain = new Terrain('village', '#9b8f7a');
+    hex.setTerrain(terrain);
+
+    mockResolve.mockReturnValue(null);
+
+    hexDrawer.draw(hex);
+
+    expect(mockResolve).toHaveBeenCalledWith(hex);
   });
 });
