@@ -15,7 +15,9 @@ export class HexDrawer {
   }
 
   draw(hexToDraw) {
-    this.drawHex(hexToDraw, '#202020', 2, '#fffdd0');
+    const terrain = hexToDraw.getTerrain();
+    const fillColor = terrain ? terrain.getColor() : '#fffdd0';
+    this.drawHex(hexToDraw, '#202020', 2, fillColor);
   }
 
   drawHex(hexToDraw, strokeColor, strokeSize, fillColor) {
