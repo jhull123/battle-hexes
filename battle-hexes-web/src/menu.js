@@ -116,7 +116,7 @@ export class Menu {
 
     if (selectedHex) {
       const terrain = selectedHex.getTerrain();
-      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.getName()}` : '';
+      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.name}` : '';
     }
 
     if (this.#game.getBoard().isOwnHexSelected()) {

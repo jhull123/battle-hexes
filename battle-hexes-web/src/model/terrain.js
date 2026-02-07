@@ -7,11 +7,11 @@ export class Terrain {
     this.#color = color;
   }
 
-  getName() {
+  get name() {
     return this.#name;
   }
 
-  getColor() {
+  get color() {
     return this.#color;
   }
 }
