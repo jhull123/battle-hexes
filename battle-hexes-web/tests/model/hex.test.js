@@ -1,4 +1,5 @@
 import { Hex } from '../../src/model/hex.js';
+import { Objective } from '../../src/model/objective.js';
 import { Terrain } from '../../src/model/terrain.js';
 import { Unit } from '../../src/model/unit.js';
 
@@ -38,5 +39,25 @@ describe('terrain', () => {
     hex.setTerrain(terrain);
 
     expect(hex.getTerrain()).toBe(terrain);
+  });
+});
+
+describe('objectives', () => {
+  test('stores objectives assigned to the hex', () => {
+    const objective = new Objective('hold', 3);
+
+    hex.addObjective(objective);
+
+    expect(hex.getObjectives()).toEqual([objective]);
+  });
+
+  test('returns a copy of objectives', () => {
+    const objective = new Objective('hold', 3);
+    hex.addObjective(objective);
+
+    const objectives = hex.getObjectives();
+    objectives.push(new Objective('hold', 1));
+
+    expect(hex.getObjectives()).toEqual([objective]);
   });
 });

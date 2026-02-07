@@ -14,6 +14,7 @@ describe('auto new game persistence', () => {
       <div id="selHexContents"></div>
       <div id="selHexCoord"></div>
       <div id="selHexTerrain"></div>
+      <div id="selHexObjectives"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
       <div id="gameOverLabel"></div>
@@ -191,5 +192,36 @@ describe('auto new game persistence', () => {
     menu.updateMenu();
 
     expect(document.getElementById('selHexTerrain').innerHTML).toBe('Terrain: open');
+  });
+
+  test('shows objective details when present on selected hex', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 4,
+      column: 7,
+      isEmpty: () => true,
+      getTerrain: () => null,
+      hasObjectives: () => true,
+      getObjectives: () => [
+        {
+          points: 3,
+          displayName: 'Hold',
+        },
+      ],
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    expect(document.getElementById('selHexObjectives').innerHTML).toBe('🚩 Hold (3 pts/turn)');
   });
 });
