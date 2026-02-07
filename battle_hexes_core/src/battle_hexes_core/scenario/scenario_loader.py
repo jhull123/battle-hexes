@@ -14,6 +14,7 @@ from pydantic import (
 )
 
 from .scenario import (
+    Objective,
     Scenario,
     ScenarioFaction,
     ScenarioHexData,
@@ -77,6 +78,16 @@ class ScenarioHexDataEntry(BaseModel):
     units: list[str] | None = None
 
 
+class ScenarioObjectiveEntry(BaseModel):
+    """Objective configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    coords: tuple[int, int]
+    points: int
+    type: str
+
+
 class ScenarioData(BaseModel):
     """Full scenario definition parsed from a JSON file."""
 
@@ -92,9 +103,44 @@ class ScenarioData(BaseModel):
     terrain_default: str | None = None
     terrain_types: dict[str, ScenarioTerrainTypeData] | None = None
     hex_data: list[ScenarioHexDataEntry] | None = None
+    objectives: list[ScenarioObjectiveEntry] | None = None
 
     def to_core(self) -> Scenario:
         """Convert the validated payload into a core :class:`Scenario`."""
+
+        objective_map: dict[tuple[int, int], list[Objective]] = {}
+        if self.objectives:
+            for entry in self.objectives:
+                objective_map.setdefault(entry.coords, []).append(
+                    Objective(
+                        coords=entry.coords,
+                        points=entry.points,
+                        type=entry.type,
+                    )
+                )
+
+        hex_entries: list[ScenarioHexData] = []
+        if self.hex_data:
+            for entry in self.hex_data:
+                hex_entries.append(
+                    ScenarioHexData(
+                        coords=entry.coords,
+                        terrain=entry.terrain,
+                        units=tuple(entry.units) if entry.units else None,
+                        objectives=tuple(
+                            objective_map.pop(entry.coords, [])
+                        ),
+                    )
+                )
+
+        if objective_map:
+            for coords, objectives in sorted(objective_map.items()):
+                hex_entries.append(
+                    ScenarioHexData(
+                        coords=coords,
+                        objectives=tuple(objectives),
+                    )
+                )
 
         return Scenario(
             id=self.id,
@@ -131,18 +177,7 @@ class ScenarioData(BaseModel):
                 if self.terrain_types
                 else {}
             ),
-            hex_data=(
-                tuple(
-                    ScenarioHexData(
-                        coords=entry.coords,
-                        terrain=entry.terrain,
-                        units=tuple(entry.units) if entry.units else None,
-                    )
-                    for entry in self.hex_data
-                )
-                if self.hex_data
-                else ()
-            ),
+            hex_data=tuple(hex_entries),
         )
 
 
