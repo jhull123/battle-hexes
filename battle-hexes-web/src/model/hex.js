@@ -4,6 +4,7 @@ export class Hex {
   #selected;
   #moveHoverFromHex;
   #terrain;
+  #objectives;
 
   constructor(row, column) {
     this.row = row;
@@ -12,6 +13,7 @@ export class Hex {
     this.#selected = false;
     this.#moveHoverFromHex = undefined;
     this.#terrain = undefined;
+    this.#objectives = [];
 
     if (column % 2 === 0) {
       this.#adjacentHexCoords = new Set([
@@ -100,6 +102,18 @@ export class Hex {
 
   getTerrain() {
     return this.#terrain;
+  }
+
+  addObjective(objective) {
+    this.#objectives.push(objective);
+  }
+
+  getObjectives() {
+    return [...this.#objectives];
+  }
+
+  hasObjectives() {
+    return this.#objectives.length > 0;
   }
 
   hasUnitMoves() {

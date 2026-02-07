@@ -1,0 +1,99 @@
+{
+  "id": "3f521258-9e10-4d71-9c39-8e49c9774f11",
+  "players": [
+    {
+      "name": "Player 1",
+      "type": "Human",
+      "factions": [
+        {
+          "id": "red faction",
+          "name": "Red Faction",
+          "color": "#C81010"
+        }
+      ]
+    },
+    {
+      "name": "Player 2",
+      "type": "Computer",
+      "factions": [
+        {
+          "id": "blue faction",
+          "name": "Blue Faction",
+          "color": "#4682B4"
+        }
+      ]
+    }
+  ],
+  "board": {
+    "rows": 10,
+    "columns": 10,
+    "units": [
+      {
+        "id": "red_unit_1",
+        "name": "Red Unit",
+        "faction_id": "red faction",
+        "type": "Infantry",
+        "attack": 2,
+        "defense": 2,
+        "move": 6,
+        "row": 2,
+        "column": 2
+      },
+      {
+        "id": "blue_unit_1",
+        "name": "Blue Unit",
+        "faction_id": "blue faction",
+        "type": "Infantry",
+        "attack": 4,
+        "defense": 4,
+        "move": 4,
+        "row": 8,
+        "column": 9
+      },
+      {
+        "id": "blue_unit_2",
+        "name": "Blue Two",
+        "faction_id": "blue faction",
+        "type": "Scout",
+        "attack": 2,
+        "defense": 2,
+        "move": 6,
+        "row": 9,
+        "column": 5
+      }
+    ],
+    "terrain": {
+      "default": "open",
+      "types": {
+        "open": {
+          "name": "open",
+          "color": "#C6AA5C"
+        },
+        "village": {
+          "name": "village",
+          "color": "#9A8F7A"
+        }
+      },
+      "hexes": [
+        {
+          "row": 5,
+          "column": 5,
+          "terrain": "village"
+        }
+      ]
+    }
+  },
+  "objectives": [
+    {
+      "row": 5,
+      "column": 5,
+      "points": 3,
+      "type": "hold"
+    }
+  ],
+  "scenarioId": "elim_1",
+  "playerTypeIds": [
+    "human",
+    "q-learning"
+  ]
+}

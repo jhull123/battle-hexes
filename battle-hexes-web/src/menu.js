@@ -7,6 +7,7 @@ export class Menu {
   #selHexContentsDiv;
   #selHexCoordDiv;
   #selHexTerrainDiv;
+  #selHexObjectivesDiv;
   #unitMovesLeftDiv;
   #newGameBtn;
   #gameOverLabel;
@@ -21,6 +22,7 @@ export class Menu {
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
     this.#selHexTerrainDiv = document.getElementById('selHexTerrain');
+    this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
@@ -106,6 +108,7 @@ export class Menu {
       this.#selHexContentsDiv.innerHTML = '';
       this.#selHexCoordDiv.innerHTML = '';
       this.#selHexTerrainDiv.innerHTML = '';
+      this.#selHexObjectivesDiv.innerHTML = '';
     } else if (selectedHex.isEmpty()) {
       this.#selHexContentsDiv.innerHTML = 'Empty Hex';
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
@@ -116,7 +119,8 @@ export class Menu {
 
     if (selectedHex) {
       const terrain = selectedHex.getTerrain();
-      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.getName()}` : '';
+      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.name}` : '';
+      this.#selHexObjectivesDiv.innerHTML = this.#formatObjectives(selectedHex);
     }
 
     if (this.#game.getBoard().isOwnHexSelected()) {
@@ -137,6 +141,20 @@ export class Menu {
     } else {
       this.#hideGameOver();
     }
+  }
+
+  #formatObjectives(selectedHex) {
+    if (!selectedHex?.hasObjectives?.() || selectedHex.getObjectives().length === 0) {
+      return '';
+    }
+
+    return selectedHex.getObjectives()
+      .map((objective) => {
+        const points = objective.points;
+        const pointsLabel = points === 1 ? 'pt/turn' : 'pts/turn';
+        return `🚩 ${objective.displayName} (${points} ${pointsLabel})`;
+      })
+      .join('<br/>');
   }
 
   #updateCombatIndicator() {

@@ -1,6 +1,7 @@
 import unittest
 import uuid
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
@@ -75,6 +76,16 @@ class TestBoard(unittest.TestCase):
             actual_coords, expected_coords,
             "Neighboring hexes should match expected coordinates"
         )
+
+    def test_get_objectives(self):
+        objective_one = Objective(coords=(0, 1), points=1, type="hold")
+        objective_two = Objective(coords=(2, 3), points=3, type="hold")
+        self.board.get_hex(0, 1).objectives.append(objective_one)
+        self.board.get_hex(2, 3).objectives.append(objective_two)
+
+        objectives = self.board.get_objectives()
+
+        self.assertCountEqual(objectives, [objective_one, objective_two])
 
     def test_get_neighboring_hexes_center_hex_odd(self):
         self.board.add_unit(self.red_unit, 1, 3)

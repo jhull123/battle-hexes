@@ -52,6 +52,24 @@ def test_load_scenario_converts_core_types():
     assert scenario.terrain_types["open"].color == "#C6AA5C"
     assert scenario.hex_data[0].coords == (5, 5)
     assert scenario.hex_data[1].units == ("red_unit_1",)
+    assert scenario.hex_data[0].objectives[0].type == "hold"
+    assert scenario.hex_data[0].objectives[0].points == 3
+
+
+def test_load_scenario_assigns_objectives_to_hexes():
+    scenario = load_scenario(
+        "elim_2", scenario_dir=_scenario_dir()
+    )
+
+    objective_hex = next(
+        hex_entry
+        for hex_entry in scenario.hex_data
+        if hex_entry.coords == (2, 3)
+    )
+    assert objective_hex.terrain is None
+    assert objective_hex.units is None
+    assert objective_hex.objectives[0].type == "hold"
+    assert objective_hex.objectives[0].points == 1
 
 
 def test_iterators_yield_all_scenarios():

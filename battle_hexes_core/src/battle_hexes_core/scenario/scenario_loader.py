@@ -14,6 +14,7 @@ from pydantic import (
 )
 
 from .scenario import (
+    Objective,
     Scenario,
     ScenarioFaction,
     ScenarioHexData,
@@ -77,6 +78,16 @@ class ScenarioHexDataEntry(BaseModel):
     units: list[str] | None = None
 
 
+class ScenarioObjectiveEntry(BaseModel):
+    """Objective configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    coords: tuple[int, int]
+    points: int
+    type: str
+
+
 class ScenarioData(BaseModel):
     """Full scenario definition parsed from a JSON file."""
 
@@ -92,57 +103,116 @@ class ScenarioData(BaseModel):
     terrain_default: str | None = None
     terrain_types: dict[str, ScenarioTerrainTypeData] | None = None
     hex_data: list[ScenarioHexDataEntry] | None = None
+    objectives: list[ScenarioObjectiveEntry] | None = None
+
+    def _build_objective_map(
+        self,
+    ) -> dict[tuple[int, int], list[Objective]]:
+        """Build an index of objectives keyed by hex coordinates."""
+
+        objective_map: dict[tuple[int, int], list[Objective]] = {}
+        if not self.objectives:
+            return objective_map
+
+        for entry in self.objectives:
+            objective_map.setdefault(entry.coords, []).append(
+                Objective(
+                    coords=entry.coords,
+                    points=entry.points,
+                    type=entry.type,
+                )
+            )
+
+        return objective_map
+
+    def _build_hex_entries(
+        self,
+        objective_map: dict[tuple[int, int], list[Objective]],
+    ) -> list[ScenarioHexData]:
+        """Build the hex data entries for a scenario."""
+
+        hex_entries: list[ScenarioHexData] = []
+        if self.hex_data:
+            for entry in self.hex_data:
+                hex_entries.append(
+                    ScenarioHexData(
+                        coords=entry.coords,
+                        terrain=entry.terrain,
+                        units=tuple(entry.units) if entry.units else None,
+                        objectives=tuple(
+                            objective_map.pop(entry.coords, [])
+                        ),
+                    )
+                )
+
+        if objective_map:
+            for coords, objectives in sorted(objective_map.items()):
+                hex_entries.append(
+                    ScenarioHexData(
+                        coords=coords,
+                        objectives=tuple(objectives),
+                    )
+                )
+
+        return hex_entries
+
+    def _build_factions(self) -> tuple[ScenarioFaction, ...]:
+        """Convert faction definitions into core data."""
+
+        return tuple(
+            ScenarioFaction(
+                id=faction.id,
+                name=faction.name,
+                color=faction.color,
+                player=faction.player,
+            )
+            for faction in self.factions
+        )
+
+    def _build_units(self) -> tuple[ScenarioUnit, ...]:
+        """Convert unit definitions into core data."""
+
+        return tuple(
+            ScenarioUnit(
+                id=unit.id,
+                name=unit.name,
+                faction=unit.faction,
+                type=unit.type,
+                attack=unit.attack,
+                defense=unit.defense,
+                movement=unit.movement,
+            )
+            for unit in self.units
+        )
+
+    def _build_terrain_types(self) -> dict[str, ScenarioTerrainType]:
+        """Convert terrain type definitions into core data."""
+
+        return (
+            {
+                key: ScenarioTerrainType(color=terrain_type.color)
+                for key, terrain_type in self.terrain_types.items()
+            }
+            if self.terrain_types
+            else {}
+        )
 
     def to_core(self) -> Scenario:
         """Convert the validated payload into a core :class:`Scenario`."""
+
+        objective_map = self._build_objective_map()
+        hex_entries = self._build_hex_entries(objective_map)
 
         return Scenario(
             id=self.id,
             name=self.name,
             description=self.description,
             board_size=self.board_size,
-            factions=tuple(
-                ScenarioFaction(
-                    id=faction.id,
-                    name=faction.name,
-                    color=faction.color,
-                    player=faction.player,
-                )
-                for faction in self.factions
-            ),
-            units=tuple(
-                ScenarioUnit(
-                    id=unit.id,
-                    name=unit.name,
-                    faction=unit.faction,
-                    type=unit.type,
-                    attack=unit.attack,
-                    defense=unit.defense,
-                    movement=unit.movement
-                )
-                for unit in self.units
-            ),
+            factions=self._build_factions(),
+            units=self._build_units(),
             terrain_default=self.terrain_default,
-            terrain_types=(
-                {
-                    key: ScenarioTerrainType(color=terrain_type.color)
-                    for key, terrain_type in self.terrain_types.items()
-                }
-                if self.terrain_types
-                else {}
-            ),
-            hex_data=(
-                tuple(
-                    ScenarioHexData(
-                        coords=entry.coords,
-                        terrain=entry.terrain,
-                        units=tuple(entry.units) if entry.units else None,
-                    )
-                    for entry in self.hex_data
-                )
-                if self.hex_data
-                else ()
-            ),
+            terrain_types=self._build_terrain_types(),
+            hex_data=tuple(hex_entries),
         )
 
 

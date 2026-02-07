@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
+from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.scenario.scenario import (
     Scenario,
     ScenarioFaction,
@@ -250,6 +251,28 @@ class TestGameCreator(unittest.TestCase):
         self.assertEqual(default_hex.terrain.hex_color, "#C6AA5C")
         self.assertEqual(override_hex.terrain.name, "village")
         self.assertEqual(override_hex.terrain.hex_color, "#9A8F7A")
+
+    def test_add_objectives_populates_board_hexes(self):
+        objective = Objective(coords=(0, 1), points=2, type="hold")
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(2, 2),
+            hex_data=(
+                ScenarioHexData(
+                    coords=(0, 1),
+                    objectives=(objective,),
+                ),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        game = self.creator.create_game(scenario, player1, player2)
+
+        target_hex = game.board.get_hex(0, 1)
+        self.assertEqual(target_hex.objectives, [objective])
 
     @patch("battle_hexes_core.gamecreator.gamecreator.load_scenario")
     def test_build_game_components_from_scenario_id(self, mock_load_scenario):

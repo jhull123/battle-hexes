@@ -5,6 +5,7 @@ from .combat import CombatResultSchema
 from .create_game import CreateGameRequest
 from .faction import FactionModel
 from .game_model import GameModel
+from .objective import ObjectiveModel
 from .player import PlayerModel
 from .player_type import PlayerTypeModel
 from .scenario import ScenarioModel
@@ -18,6 +19,7 @@ __all__ = [
     "CreateGameRequest",
     "FactionModel",
     "GameModel",
+    "ObjectiveModel",
     "PlayerModel",
     "PlayerTypeModel",
     "ScenarioModel",
