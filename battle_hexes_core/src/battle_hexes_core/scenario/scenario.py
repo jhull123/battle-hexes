@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Tuple
 
+from battle_hexes_core.game.objective import Objective
+
 
 @dataclass(frozen=True)
 class ScenarioFaction:
@@ -38,6 +40,7 @@ class ScenarioHexData:
     coords: tuple[int, int]
     terrain: str | None = None
     units: Tuple[str, ...] | None = None
+    objectives: tuple[Objective, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

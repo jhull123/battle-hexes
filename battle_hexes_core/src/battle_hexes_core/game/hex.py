@@ -1,4 +1,5 @@
 from battle_hexes_core.game.terrain import Terrain
+from battle_hexes_core.game.objective import Objective
 
 
 class Hex:
@@ -7,10 +8,12 @@ class Hex:
         row: int,
         column: int,
         terrain: Terrain | None = None,
+        objectives: list[Objective] | None = None,
     ):
         self._row = row
         self._column = column
         self._terrain = terrain
+        self._objectives = list(objectives) if objectives else []
 
     @property
     def row(self) -> int:
@@ -23,6 +26,10 @@ class Hex:
     @property
     def terrain(self) -> Terrain | None:
         return self._terrain
+
+    @property
+    def objectives(self) -> list[Objective]:
+        return self._objectives
 
     def set_terrain(self, terrain: Terrain | None) -> None:
         self._terrain = terrain
