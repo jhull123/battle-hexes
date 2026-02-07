@@ -4,6 +4,7 @@ import { Game } from "./game";
 import { Players } from "../player/player";
 import { PlayerFactory } from "../player/player-factory";
 import { Unit } from "./unit";
+import { Terrain } from "./terrain";
 
 export class GameCreator {
   createGame(gameData) {
@@ -21,6 +22,7 @@ export class GameCreator {
         playerTypeIds,
       },
     );
+    this.#addTerrain(board, gameData.board);
     this.#addUnits(board, game.getPlayers(), gameData.board);
     return game;
   }
@@ -80,6 +82,42 @@ export class GameCreator {
         unitData.id, unitData.name, faction, unitData.type, unitData.attack, 
         unitData.defense, unitData.move);
       board.addUnit(unit, unitData.row, unitData.column);
+    }
+  }
+
+  #addTerrain(board, boardData) {
+    const terrainData = boardData?.terrain;
+    const terrainTypes = new Map();
+
+    if (terrainData?.types) {
+      for (const [key, value] of Object.entries(terrainData.types)) {
+        const name = value?.name ?? key;
+        const color = value?.color ?? '#F0F0F0';
+        terrainTypes.set(key, new Terrain(name, color));
+      }
+    }
+
+    const defaultTerrainId = typeof terrainData?.default === 'string' ? terrainData.default : null;
+    const defaultTerrain =
+      (defaultTerrainId ? terrainTypes.get(defaultTerrainId) : null)
+      ?? (defaultTerrainId ? new Terrain(defaultTerrainId, '#F0F0F0') : new Terrain('default', '#F0F0F0'));
+
+    for (const hex of board.getAllHexes()) {
+      hex.setTerrain(defaultTerrain);
+    }
+
+    if (!Array.isArray(terrainData?.hexes)) {
+      return;
+    }
+
+    for (const hexData of terrainData.hexes) {
+      const targetHex = board.getHex(hexData.row, hexData.column);
+      if (!targetHex) {
+        continue;
+      }
+      const terrainId = typeof hexData.terrain === 'string' ? hexData.terrain : null;
+      const terrain = terrainId ? terrainTypes.get(terrainId) ?? defaultTerrain : defaultTerrain;
+      targetHex.setTerrain(terrain);
     }
   }
 

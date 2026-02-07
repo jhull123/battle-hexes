@@ -1,7 +1,16 @@
+from battle_hexes_core.game.terrain import Terrain
+
+
 class Hex:
-    def __init__(self, row: int, column: int):
+    def __init__(
+        self,
+        row: int,
+        column: int,
+        terrain: Terrain | None = None,
+    ):
         self._row = row
         self._column = column
+        self._terrain = terrain
 
     @property
     def row(self) -> int:
@@ -10,6 +19,13 @@ class Hex:
     @property
     def column(self) -> int:
         return self._column
+
+    @property
+    def terrain(self) -> Terrain | None:
+        return self._terrain
+
+    def set_terrain(self, terrain: Terrain | None) -> None:
+        self._terrain = terrain
 
     def __eq__(self, other):
         if isinstance(other, tuple):
@@ -22,7 +38,7 @@ class Hex:
         return hash((self.row, self.column))
 
     def __str__(self):
-        return f"({self.row}, {self.column})"
+        return f"({self.row}, {self.column}, {self.terrain})"
 
     def __repr__(self):
-        return f"Hex({self.row}, {self.column})"
+        return f"Hex({self.row}, {self.column}, {self.terrain})"

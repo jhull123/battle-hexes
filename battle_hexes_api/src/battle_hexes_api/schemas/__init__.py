@@ -9,6 +9,7 @@ from .player import PlayerModel
 from .player_type import PlayerTypeModel
 from .scenario import ScenarioModel
 from .sparseboard import SparseBoard
+from .terrain import TerrainHexModel, TerrainSummaryModel, TerrainTypeModel
 from .unit import UnitModel, SparseUnit
 
 __all__ = [
@@ -21,6 +22,9 @@ __all__ = [
     "PlayerTypeModel",
     "ScenarioModel",
     "SparseBoard",
+    "TerrainHexModel",
+    "TerrainSummaryModel",
+    "TerrainTypeModel",
     "UnitModel",
     "SparseUnit",
 ]

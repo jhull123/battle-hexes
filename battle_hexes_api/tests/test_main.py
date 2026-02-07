@@ -32,6 +32,18 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(post_response.status_code, 200)
         self.assertEqual(post_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(post_body.get('scenarioId'), 'elim_1')
+        terrain = post_body.get("board", {}).get("terrain", {})
+        self.assertEqual(terrain.get("default"), "open")
+        self.assertIn("open", terrain.get("types", {}))
+        self.assertIn("village", terrain.get("types", {}))
+        self.assertEqual(
+            terrain.get("types", {}).get("open", {}).get("color"),
+            "#C6AA5C",
+        )
+        self.assertEqual(
+            terrain.get("hexes"),
+            [{"row": 5, "column": 5, "terrain": "village"}],
+        )
 
         get_response = self.client.get(f'/games/{new_game_id}')
         get_body = get_response.json()
@@ -39,6 +51,10 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(new_game_id, get_body.get('id'))
         self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(get_body.get('scenarioId'), 'elim_1')
+        self.assertEqual(
+            get_body.get("board", {}).get("terrain", {}).get("hexes"),
+            [{"row": 5, "column": 5, "terrain": "village"}],
+        )
 
     def test_create_game_invalid_scenario_returns_404(self):
         payload = {
@@ -299,7 +315,10 @@ class TestFastAPI(unittest.TestCase):
         ) as mock_from_game:
             mock_from_game.return_value = DummyGameModel(players)
             serialized = _serialize_game(game)
-            mock_from_game.assert_called_once_with(game)
+            mock_from_game.assert_called_once()
+            args, _ = mock_from_game.call_args
+            self.assertEqual(args[0], game)
+            self.assertEqual(args[1].id, "elim_1")
 
         self.assertEqual(serialized["id"], "game-123")
         self.assertEqual(serialized["board"], {"hexes": []})

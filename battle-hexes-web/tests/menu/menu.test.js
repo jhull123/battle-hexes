@@ -13,6 +13,7 @@ describe('auto new game persistence', () => {
     document.body.innerHTML = `
       <div id="selHexContents"></div>
       <div id="selHexCoord"></div>
+      <div id="selHexTerrain"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
       <div id="gameOverLabel"></div>
@@ -164,5 +165,31 @@ describe('auto new game persistence', () => {
         consoleErrorSpy.mockRestore();
       }
     });
+  });
+
+  test('updates terrain label when a hex is selected', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 1,
+      column: 2,
+      isEmpty: () => true,
+      getTerrain: () => ({
+        getName: () => 'open',
+      }),
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Terrain: open');
   });
 });

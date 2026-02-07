@@ -6,6 +6,7 @@ export class Menu {
   #game;
   #selHexContentsDiv;
   #selHexCoordDiv;
+  #selHexTerrainDiv;
   #unitMovesLeftDiv;
   #newGameBtn;
   #gameOverLabel;
@@ -19,6 +20,7 @@ export class Menu {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
+    this.#selHexTerrainDiv = document.getElementById('selHexTerrain');
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
@@ -101,13 +103,20 @@ export class Menu {
     const selectedHex = this.#game.getBoard().getSelectedHex();
 
     if (!selectedHex) {
-      // nothing here!
+      this.#selHexContentsDiv.innerHTML = '';
+      this.#selHexCoordDiv.innerHTML = '';
+      this.#selHexTerrainDiv.innerHTML = '';
     } else if (selectedHex.isEmpty()) {
       this.#selHexContentsDiv.innerHTML = 'Empty Hex';
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
     } else {
       this.#selHexContentsDiv.innerHTML = 'Hex contains a unit.';
       this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
+    }
+
+    if (selectedHex) {
+      const terrain = selectedHex.getTerrain();
+      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.getName()}` : '';
     }
 
     if (this.#game.getBoard().isOwnHexSelected()) {

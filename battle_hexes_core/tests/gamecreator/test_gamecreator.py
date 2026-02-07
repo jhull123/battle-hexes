@@ -7,6 +7,7 @@ from battle_hexes_core.scenario.scenario import (
     Scenario,
     ScenarioFaction,
     ScenarioHexData,
+    ScenarioTerrainType,
     ScenarioUnit,
 )
 from battle_hexes_core.game.player import Player, PlayerType
@@ -27,6 +28,9 @@ class TestGameCreator(unittest.TestCase):
         mock_scenario.board_size = (10, 20)
         mock_scenario.factions = ()
         mock_scenario.units = ()
+        mock_scenario.terrain_default = None
+        mock_scenario.terrain_types = {}
+        mock_scenario.hex_data = ()
 
         # Set up mock players
         mock_player1 = Mock(spec=Player)
@@ -51,6 +55,9 @@ class TestGameCreator(unittest.TestCase):
         mock_scenario.board_size = (8, 8)
         mock_scenario.factions = ()
         mock_scenario.units = ()
+        mock_scenario.terrain_default = None
+        mock_scenario.terrain_types = {}
+        mock_scenario.hex_data = ()
         mock_player1 = Mock(spec=Player)
         mock_player2 = Mock(spec=Player)
 
@@ -210,6 +217,39 @@ class TestGameCreator(unittest.TestCase):
 
         with self.assertRaises(NameError):
             self.creator.create_game(scenario, player1, player2)
+
+    def test_add_terrain_populates_board_hexes(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(2, 2),
+            terrain_default="open",
+            terrain_types={
+                "open": ScenarioTerrainType(color="#C6AA5C"),
+                "village": ScenarioTerrainType(color="#9A8F7A"),
+            },
+            hex_data=(
+                ScenarioHexData(
+                    coords=(1, 1),
+                    terrain="village",
+                ),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        game = self.creator.create_game(scenario, player1, player2)
+
+        default_hex = game.board.get_hex(0, 0)
+        override_hex = game.board.get_hex(1, 1)
+
+        self.assertIsNotNone(default_hex)
+        self.assertIsNotNone(override_hex)
+        self.assertEqual(default_hex.terrain.name, "open")
+        self.assertEqual(default_hex.terrain.hex_color, "#C6AA5C")
+        self.assertEqual(override_hex.terrain.name, "village")
+        self.assertEqual(override_hex.terrain.hex_color, "#9A8F7A")
 
     @patch("battle_hexes_core.gamecreator.gamecreator.load_scenario")
     def test_build_game_components_from_scenario_id(self, mock_load_scenario):

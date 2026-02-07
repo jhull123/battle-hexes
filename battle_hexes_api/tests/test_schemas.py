@@ -9,6 +9,7 @@ from battle_hexes_api.schemas import (
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
@@ -46,15 +47,22 @@ class TestGameModel(unittest.TestCase):
             move=1,
         )
         board.add_unit(unit, 0, 1)
+        board.get_hex(0, 0).set_terrain(Terrain("open", "#C6AA5C"))
         game = Game([player], board)
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario 1",
+            terrain_default="open",
+        )
 
-        model = GameModel.from_game(game)
+        model = GameModel.from_game(game, scenario)
 
         self.assertEqual(model.id, game.get_id())
         self.assertEqual(model.players, [player])
         self.assertEqual(model.board.rows, 2)
         self.assertEqual(model.board.columns, 2)
         self.assertEqual(len(model.board.units), 1)
+        self.assertEqual(model.board.terrain.default, "open")
         unit_model = model.board.units[0]
         self.assertEqual(unit_model.id, "u1")
         self.assertEqual(unit_model.row, 0)

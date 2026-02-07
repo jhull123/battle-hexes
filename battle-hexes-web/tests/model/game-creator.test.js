@@ -13,7 +13,8 @@ beforeEach(() => {
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
     '"board":{"rows":10,"columns":10,"units":[' +
     '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","faction_id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","attack":2,"defense":2,"move":6,"row":6,"column":4},' +
-    '{"id":"c9a440d2-2b0a-4730-b4c6-da394b642c61","name":"Blue Unit","faction_id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","type":"Infantry","attack":4,"defense":4,"move":4,"row":3,"column":5}]}}'
+    '{"id":"c9a440d2-2b0a-4730-b4c6-da394b642c61","name":"Blue Unit","faction_id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","type":"Infantry","attack":4,"defense":4,"move":4,"row":3,"column":5}],' +
+    '"terrain":{"default":"open","types":{"open":{"name":"open","color":"#C6AA5C"},"village":{"name":"village","color":"#9A8F7A"}},"hexes":[{"row":6,"column":4,"terrain":"village"}]}}}'
   );
   game = gameCreator.createGame(gameData);
 });
@@ -83,5 +84,47 @@ describe("createGame", () => {
   test('game exposes configuration metadata from payload', () => {
     expect(game.getScenarioId()).toBe('elem_test');
     expect(game.getPlayerTypeIds()).toEqual(['human', 'q-learning']);
+  });
+
+  test('creates fallback default terrain when none specified', () => {
+    const gameCreator = new GameCreator();
+    const gameData = {
+      id: 'terrain-default',
+      players: [
+        { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#C81010' }] },
+        { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#4682B4' }] },
+      ],
+      board: {
+        rows: 1,
+        columns: 1,
+        units: [],
+        terrain: {
+          types: {
+            open: { name: 'open', color: '#C6AA5C' },
+          },
+          hexes: [],
+        },
+      },
+    };
+
+    const terrainGame = gameCreator.createGame(gameData);
+    const terrainHex = terrainGame.getBoard().getHex(0, 0);
+
+    expect(terrainHex.getTerrain().getName()).toBe('default');
+    expect(terrainHex.getTerrain().getColor()).toBe('#F0F0F0');
+  });
+
+  test('board assigns default terrain to unspecified hexes', () => {
+    const defaultHex = game.getBoard().getHex(0, 0);
+
+    expect(defaultHex.getTerrain().getName()).toBe('open');
+    expect(defaultHex.getTerrain().getColor()).toBe('#C6AA5C');
+  });
+
+  test('board assigns terrain overrides to specified hexes', () => {
+    const terrainHex = game.getBoard().getHex(6, 4);
+
+    expect(terrainHex.getTerrain().getName()).toBe('village');
+    expect(terrainHex.getTerrain().getColor()).toBe('#9A8F7A');
   });
 });
