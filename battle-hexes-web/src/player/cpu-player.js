@@ -45,6 +45,11 @@ export class CpuPlayer extends Player {
           response.data.game.board.units
         );
 
+        await axios.post(
+          `${API_URL}/games/${game.getId()}/end-movement`,
+          game.getBoard().sparseBoard()
+        );
+
         game.endPhase();
         eventBus.emit('menuUpdate');
 

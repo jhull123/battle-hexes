@@ -18,6 +18,9 @@ logger.info("sys.path: %s", sys.path)
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
+from battle_hexes_core.scoring.objective_scorer import (  # noqa: E402
+    ObjectiveScorer,
+)
 from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
     ScenarioRegistry,
 )
@@ -182,6 +185,21 @@ def generate_movement(game_id: str):
         "game": GameModel.from_game(game),
         "plans": [p.to_dict() for p in plans],
     }
+
+
+@app.post('/games/{game_id}/end-movement')
+def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
+    """Update game state at the end of a player's movement phase."""
+    game = _get_game_or_404(game_id)
+
+    sparse_board.apply_to_board(game.get_board())
+
+    scorer = ObjectiveScorer()
+    scorer.award_hold_objectives(game)
+
+    game_repo.update_game(game)
+    _call_end_game_callbacks(game)
+    return GameModel.from_game(game)
 
 
 @app.post('/games/{game_id}/end-turn')
