@@ -3,6 +3,7 @@ from collections import deque
 from typing import List, Set, Tuple
 
 from battle_hexes_core.game.hex import Hex
+from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.unit.unit import Unit
 
 
@@ -350,3 +351,10 @@ class Board:
             if unit.get_coords() in hexes:
                 units.append(unit)
         return units
+
+    def get_objectives(self) -> list[Objective]:
+        """Return all objectives currently stored on the board."""
+        objectives: list[Objective] = []
+        for hex_tile in self.hexes:
+            objectives.extend(hex_tile.objectives)
+        return objectives
