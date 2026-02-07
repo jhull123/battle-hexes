@@ -78,6 +78,7 @@ class GameCreator:
             faction_by_id,
             player_by_faction_id,
         )
+        self.add_objectives(board, scenario_obj)
 
         game = Game(
             players=players_list,
@@ -244,3 +245,20 @@ class GameCreator:
                 )
 
                 board.add_unit(unit, row, column)
+
+    def add_objectives(self, board: Board, scenario: Scenario) -> None:
+        """Apply scenario objectives to the board hexes."""
+        if not scenario.hex_data:
+            return
+
+        for hex_entry in scenario.hex_data:
+            if not hex_entry.objectives:
+                continue
+
+            row, column = hex_entry.coords
+            hex_tile = board.get_hex(row, column)
+            if hex_tile is None:
+                raise ValueError(
+                    f"Hex coords out of bounds: {hex_entry.coords}"
+                )
+            hex_tile.objectives.extend(hex_entry.objectives)
