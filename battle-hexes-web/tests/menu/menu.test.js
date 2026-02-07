@@ -176,7 +176,7 @@ describe('auto new game persistence', () => {
       column: 2,
       isEmpty: () => true,
       getTerrain: () => ({
-        getName: () => 'open',
+        name: 'open',
       }),
     };
 
