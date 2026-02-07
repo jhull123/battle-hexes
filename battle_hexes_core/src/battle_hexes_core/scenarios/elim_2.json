@@ -59,7 +59,7 @@
     { "coords": [9, 5], "units": ["blue_unit_2"] }
   ],
   "objectives": [
-    { "coords": [2, 3], "points": 1, "type": "hold" }
+    { "coords": [2, 3], "points": 1, "type": "hold" },
     { "coords": [3, 3], "points": 3, "type": "hold" }
   ]
 }
