@@ -110,21 +110,21 @@ describe("createGame", () => {
     const terrainGame = gameCreator.createGame(gameData);
     const terrainHex = terrainGame.getBoard().getHex(0, 0);
 
-    expect(terrainHex.getTerrain().getName()).toBe('default');
-    expect(terrainHex.getTerrain().getColor()).toBe('#F0F0F0');
+    expect(terrainHex.getTerrain().name).toBe('default');
+    expect(terrainHex.getTerrain().color).toBe('#F0F0F0');
   });
 
   test('board assigns default terrain to unspecified hexes', () => {
     const defaultHex = game.getBoard().getHex(0, 0);
 
-    expect(defaultHex.getTerrain().getName()).toBe('open');
-    expect(defaultHex.getTerrain().getColor()).toBe('#C6AA5C');
+    expect(defaultHex.getTerrain().name).toBe('open');
+    expect(defaultHex.getTerrain().color).toBe('#C6AA5C');
   });
 
   test('board assigns terrain overrides to specified hexes', () => {
     const terrainHex = game.getBoard().getHex(6, 4);
 
-    expect(terrainHex.getTerrain().getName()).toBe('village');
-    expect(terrainHex.getTerrain().getColor()).toBe('#9A8F7A');
+    expect(terrainHex.getTerrain().name).toBe('village');
+    expect(terrainHex.getTerrain().color).toBe('#9A8F7A');
   });
 });

@@ -10,7 +10,7 @@ export class TerrainDrawerResolver {
   }
 
   resolve(aHex) {
-    const terrainName = aHex.getTerrain()?.getName();
+    const terrainName = aHex.getTerrain()?.name;
     return this.#terrainMap.get(terrainName) ?? null;
   }
 }
