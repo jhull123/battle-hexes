@@ -190,6 +190,40 @@ class TestFastAPI(unittest.TestCase):
         )
 
     @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
+    @patch('battle_hexes_api.main.ObjectiveScorer')
+    @patch('battle_hexes_api.main.GameModel.from_game')
+    @patch('battle_hexes_api.main.game_repo')
+    def test_end_movement_updates_game_and_scores(
+        self,
+        mock_game_repo,
+        mock_from_game,
+        mock_scorer,
+        mock_apply_to_board,
+    ):
+        mock_game = MagicMock()
+        mock_board = MagicMock()
+        mock_game.get_board.return_value = mock_board
+        mock_game_repo.get_game.return_value = mock_game
+        mock_from_game.return_value = {"id": "game-101"}
+
+        game_id = "game-101"
+        sparse_board_data = {"units": []}
+
+        response = self.client.post(
+            f"/games/{game_id}/end-movement",
+            json=sparse_board_data,
+        )
+
+        mock_apply_to_board.assert_called_once_with(mock_board)
+        mock_scorer.return_value.award_hold_objectives.assert_called_once_with(
+            mock_game
+        )
+        mock_game_repo.update_game.assert_called_once_with(mock_game)
+        mock_from_game.assert_called_once_with(mock_game)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"id": "game-101"})
+
+    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_updates_game_and_returns_game_model(

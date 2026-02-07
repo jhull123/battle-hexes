@@ -24,6 +24,7 @@ class GameModel(BaseModel):
     players: List[Player]
     board: BoardModel
     objectives: List[ObjectiveModel]
+    scores: dict[str, int]
 
     @classmethod
     def from_game(
@@ -39,4 +40,5 @@ class GameModel(BaseModel):
                 ObjectiveModel.from_objective(objective)
                 for objective in game.get_board().get_objectives()
             ],
+            scores=game.get_score_tracker().get_scores(),
         )

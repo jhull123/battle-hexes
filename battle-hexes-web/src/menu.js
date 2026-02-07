@@ -186,6 +186,12 @@ export class Menu {
 
   #finishPhase() {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+    if (this.#game.getCurrentPhase().toLowerCase() === 'movement') {
+      axios.post(
+        `${API_URL}/games/${this.#game.getId()}/end-movement`,
+        this.#game.getBoard().sparseBoard()
+      ).catch(err => console.error('Failed to update movement state', err));
+    }
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
     this.#disableOrEnableActionButton();

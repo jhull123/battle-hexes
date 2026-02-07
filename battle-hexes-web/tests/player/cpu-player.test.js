@@ -49,6 +49,10 @@ describe('CpuPlayer', () => {
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
     expect(axios.post).toHaveBeenCalledWith(`${API_URL}/games/${game.getId()}/movement`);
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/end-movement`,
+      game.getBoard().sparseBoard()
+    );
     expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), []);
 
     // Combat phase: after 2s, resolveCombat
@@ -82,7 +86,11 @@ describe('CpuPlayer', () => {
     expect(axios.post).toHaveBeenCalledWith(
       `${API_URL}/games/${game.getId()}/movement`
     );
-    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/end-movement`,
+      game.getBoard().sparseBoard()
+    );
+    expect(axios.post).toHaveBeenCalledTimes(2);
 
     // End Turn phase: after 2s, axios.post for end-turn
     await jest.runOnlyPendingTimersAsync();
@@ -177,12 +185,16 @@ describe('CpuPlayer', () => {
     expect(axios.post).toHaveBeenCalledWith(
       `${API_URL}/games/${game.getId()}/movement`
     );
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/end-movement`,
+      game.getBoard().sparseBoard()
+    );
 
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
 
     await playPromise;
 
-    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(axios.post).toHaveBeenCalledTimes(2);
   });
 });

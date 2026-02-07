@@ -3,6 +3,7 @@ from typing import List
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player
+from battle_hexes_core.game.scoretracker import ScoreTracker
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
 
@@ -14,6 +15,7 @@ class Game:
         if players:
             self.current_player = players[0]
         self.board = board
+        self.score_tracker = ScoreTracker(players)
 
     def get_id(self):
         return self.id
@@ -26,6 +28,9 @@ class Game:
 
     def get_current_player(self) -> Player:
         return self.current_player
+
+    def get_score_tracker(self) -> ScoreTracker:
+        return self.score_tracker
 
     def apply_movement_plans(self, plans: List["UnitMovementPlan"]) -> None:
         """Apply a collection of movement plans to update unit positions."""
