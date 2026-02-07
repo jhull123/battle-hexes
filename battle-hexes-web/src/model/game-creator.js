@@ -5,6 +5,7 @@ import { Players } from "../player/player";
 import { PlayerFactory } from "../player/player-factory";
 import { Unit } from "./unit";
 import { Terrain } from "./terrain";
+import { Objective } from "./objective";
 
 export class GameCreator {
   createGame(gameData) {
@@ -24,6 +25,7 @@ export class GameCreator {
     );
     this.#addTerrain(board, gameData.board);
     this.#addUnits(board, game.getPlayers(), gameData.board);
+    this.#addObjectives(board, gameData);
     return game;
   }
 
@@ -129,5 +131,22 @@ export class GameCreator {
       }
     }
     return factionMap;
+  }
+
+  #addObjectives(board, gameData) {
+    const objectivesData = gameData?.objectives;
+    if (!Array.isArray(objectivesData)) {
+      return;
+    }
+
+    for (const objectiveData of objectivesData) {
+      const targetHex = board.getHex(objectiveData.row, objectiveData.column);
+      if (!targetHex) {
+        continue;
+      }
+      const type = typeof objectiveData.type === 'string' ? objectiveData.type : '';
+      const points = Number.isFinite(objectiveData.points) ? objectiveData.points : 0;
+      targetHex.addObjective(new Objective(type, points));
+    }
   }
 }
