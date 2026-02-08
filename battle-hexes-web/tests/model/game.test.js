@@ -71,6 +71,27 @@ describe('configuration metadata', () => {
 
     expect(configuredGame.getPlayerTypeIds()).toEqual(['human', 'random']);
   });
+
+  test('scores are exposed and defensively copied', () => {
+    const configuredGame = new Game(
+      'configured-id',
+      phases,
+      players,
+      new Board(10, 10),
+      {
+        scores: {
+          'Player 1': 4,
+        },
+      },
+    );
+
+    expect(configuredGame.getScores()).toEqual({ 'Player 1': 4 });
+
+    const scores = configuredGame.getScores();
+    scores['Player 2'] = 2;
+
+    expect(configuredGame.getScores()).toEqual({ 'Player 1': 4 });
+  });
 });
 
 describe('endPhase', () => {

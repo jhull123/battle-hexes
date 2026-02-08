@@ -21,6 +21,7 @@ export class GameCreator {
       {
         scenarioId,
         playerTypeIds,
+        scores: this.#getScores(gameData),
       },
     );
     this.#addTerrain(board, gameData.board);
@@ -148,5 +149,19 @@ export class GameCreator {
       const points = Number.isFinite(objectiveData.points) ? objectiveData.points : 0;
       targetHex.addObjective(new Objective(type, points));
     }
+  }
+
+  #getScores(gameData) {
+    const scores = gameData?.scores;
+    if (!scores || typeof scores !== 'object') {
+      return {};
+    }
+
+    const entries = Object.entries(scores).map(([playerName, value]) => {
+      const safeValue = Number.isFinite(value) ? value : 0;
+      return [playerName, safeValue];
+    });
+
+    return Object.fromEntries(entries);
   }
 }

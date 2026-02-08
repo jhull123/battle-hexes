@@ -23,6 +23,7 @@ describe('auto new game persistence', () => {
       <div id="phasesList"></div>
       <button id="endPhaseBtn"></button>
       <div id="currentTurnLabel"></div>
+      <div id="victoryPointsList"></div>
     `;
   }
 
@@ -40,6 +41,10 @@ describe('auto new game persistence', () => {
         isHuman: () => true,
         play: jest.fn(),
       }),
+      getPlayers: () => ({
+        getAllPlayers: () => [],
+      }),
+      getScores: () => ({}),
       isGameOver: () => false,
       getId: () => 'game-id',
     };
@@ -223,5 +228,70 @@ describe('auto new game persistence', () => {
     menu.updateMenu();
 
     expect(document.getElementById('selHexObjectives').innerHTML).toBe('🚩 Hold (3 pts/turn)');
+  });
+
+  test('renders victory points with faction colors and scores', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const players = [
+      {
+        getName: () => 'Player 1',
+        getFactions: () => [{ getCounterColor: () => '#ff0000' }],
+      },
+      {
+        getName: () => 'Player 2',
+        getFactions: () => [{ getCounterColor: () => '#0000ff' }],
+      },
+    ];
+
+    const menu = new Menu(fakeGame({
+      getPlayers: () => ({
+        getAllPlayers: () => players,
+      }),
+      getScores: () => ({
+        'Player 1': 3,
+        'Player 2': 1,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    const rows = document.querySelectorAll('.victory-row');
+    expect(rows).toHaveLength(2);
+
+    expect(rows[0].querySelector('.victory-name').textContent).toBe('Player 1');
+    expect(rows[0].querySelector('.victory-score').textContent).toBe('3');
+    expect(rows[0].querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(255, 0, 0)');
+
+    expect(rows[1].querySelector('.victory-name').textContent).toBe('Player 2');
+    expect(rows[1].querySelector('.victory-score').textContent).toBe('1');
+    expect(rows[1].querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(0, 0, 255)');
+  });
+
+  test('falls back to neutral swatch and zero score when missing data', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const players = [
+      {
+        getName: () => 'Player 3',
+        getFactions: () => [],
+      },
+    ];
+
+    const menu = new Menu(fakeGame({
+      getPlayers: () => ({
+        getAllPlayers: () => players,
+      }),
+      getScores: () => ({}),
+    }));
+
+    menu.updateMenu();
+
+    const row = document.querySelector('.victory-row');
+    expect(row.querySelector('.victory-name').textContent).toBe('Player 3');
+    expect(row.querySelector('.victory-score').textContent).toBe('0');
+    expect(row.querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
   });
 });
