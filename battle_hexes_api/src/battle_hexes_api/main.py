@@ -161,6 +161,14 @@ def resolve_combat(
     results = Combat(game).resolve_combat()
     logger.info('Combat results: %s', results)
 
+    scorer = ObjectiveScorer()
+    post_combat_pts = scorer.award_hold_objectives_after_combat(game, results)
+    if post_combat_pts > 0:
+        logger.info(
+            'Awarded %d pts for objectvies after combat.',
+            post_combat_pts
+        )
+
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
     sparse_board = SparseBoard.from_board(game.get_board())

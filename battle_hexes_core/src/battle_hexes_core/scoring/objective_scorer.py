@@ -1,6 +1,7 @@
 import logging
 
 from battle_hexes_core.combat.combat import Combat
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.game import Game
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,18 @@ class ObjectiveScorer:
             )
 
         return total_points
+
+    def award_hold_objectives_after_combat(
+        self, game: Game, combat_results: CombatResults
+    ) -> int:
+        """Award points for surviving attackers on objectives."""
+        # TODO! Use combat results to examine the attacking units.
+        # For attacking units that did not retreat and occupy an objective
+        # hex then award the points for holding that hex. The points are
+        # awarded per hex and not per unit so be sure not to over-award.
+        game
+        combat_results
+        return 0
 
     def _get_engaged_unit_ids(self, game: Game, current_player) -> set[str]:
         """Return IDs for the current player's units engaged in combat."""
