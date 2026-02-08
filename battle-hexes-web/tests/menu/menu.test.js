@@ -199,6 +199,15 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('selHexTerrain').innerHTML).toBe('Terrain: open');
   });
 
+  test('shows no selection message when no hex is selected', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame());
+
+    expect(document.getElementById('selHexContents').innerHTML).toBe('<em>No selection</em>');
+  });
+
   test('shows objective details when present on selected hex', () => {
     buildDom();
     history.replaceState(null, '', '/');
@@ -230,7 +239,7 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('selHexObjectives').innerHTML).toBe('🚩 Hold (3 pts/turn)');
   });
 
-  test('renders victory points with faction colors and scores', () => {
+  test('renders victory points with faction colors and scores on initialization', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
@@ -245,7 +254,7 @@ describe('auto new game persistence', () => {
       },
     ];
 
-    const menu = new Menu(fakeGame({
+    new Menu(fakeGame({
       getPlayers: () => ({
         getAllPlayers: () => players,
       }),
@@ -254,8 +263,6 @@ describe('auto new game persistence', () => {
         'Player 2': 1,
       }),
     }));
-
-    menu.updateMenu();
 
     const rows = document.querySelectorAll('.victory-row');
     expect(rows).toHaveLength(2);
