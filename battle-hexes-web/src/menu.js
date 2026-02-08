@@ -72,6 +72,7 @@ export class Menu {
     this.#initPhaseEndButton();
     this.#setCurrentTurn();
     this.#updateCombatIndicator();
+    this.updateMenu();
   }
 
   getShowHexCoordsPreference() {
@@ -108,7 +109,7 @@ export class Menu {
     const selectedHex = this.#game.getBoard().getSelectedHex();
 
     if (!selectedHex) {
-      this.#selHexContentsDiv.innerHTML = '';
+      this.#selHexContentsDiv.innerHTML = '<em>No selection</em>';
       this.#selHexCoordDiv.innerHTML = '';
       this.#selHexTerrainDiv.innerHTML = '';
       this.#selHexObjectivesDiv.innerHTML = '';
