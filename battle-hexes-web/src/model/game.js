@@ -114,10 +114,12 @@ export class Game {
   }
 
   resolveCombat(finishedCb) {
-    return this.#combatResolver.resolveCombat().then(() => {
+    return this.#combatResolver.resolveCombat().then((combatResult) => {
+      this.updateScores(combatResult?.scores);
       if (finishedCb) {
-        finishedCb();
+        finishedCb(combatResult);
       }
+      return combatResult;
     });
   }
   

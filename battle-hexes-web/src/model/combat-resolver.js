@@ -23,5 +23,6 @@ export class CombatResolver {
 
     const boardUpdater = new BoardUpdater();
     boardUpdater.updateBoard(this.#board, combatResult.data.units);
+    return combatResult.data;
   }
 }
