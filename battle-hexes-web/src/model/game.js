@@ -89,6 +89,20 @@ export class Game {
     return { ...this.#scores };
   }
 
+  updateScores(scores = {}) {
+    if (!scores || typeof scores !== 'object') {
+      this.#scores = {};
+      return;
+    }
+
+    const entries = Object.entries(scores).map(([playerName, value]) => {
+      const safeValue = Number.isFinite(value) ? value : 0;
+      return [playerName, safeValue];
+    });
+
+    this.#scores = Object.fromEntries(entries);
+  }
+
   isGameOver() {
     const owners = new Set();
     for (const unit of this.#board.getUnits()) {

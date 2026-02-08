@@ -241,7 +241,10 @@ export class Menu {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-movement`,
         this.#game.getBoard().sparseBoard()
-      ).catch(err => console.error('Failed to update movement state', err));
+      ).then((response) => {
+        this.#game.updateScores?.(response?.data?.scores);
+        this.updateMenu();
+      }).catch(err => console.error('Failed to update movement state', err));
     }
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
@@ -251,7 +254,10 @@ export class Menu {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-turn`,
         this.#game.getBoard().sparseBoard()
-      ).catch(err => console.error('Failed to update game state', err))
+      ).then((response) => {
+        this.#game.updateScores?.(response?.data?.scores);
+        this.updateMenu();
+      }).catch(err => console.error('Failed to update game state', err))
        .finally(() => {
          if (!this.#game.isGameOver()) {
            this.#game.getCurrentPlayer().play(this.#game);

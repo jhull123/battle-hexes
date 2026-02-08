@@ -1,6 +1,9 @@
 /** @jest-environment jsdom */
+import axios from 'axios';
 import { Menu } from '../../src/menu';
 import { eventBus } from '../../src/event-bus.js';
+
+jest.mock('axios');
 
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
@@ -9,6 +12,8 @@ jest.mock('../../src/event-bus.js', () => ({
 }));
 
 describe('auto new game persistence', () => {
+  const flushPromises = () => new Promise((resolve) => queueMicrotask(resolve));
+
   function buildDom() {
     document.body.innerHTML = `
       <div id="selHexContents"></div>
@@ -55,6 +60,7 @@ describe('auto new game persistence', () => {
   beforeEach(() => {
     eventBus.emit.mockClear();
     window.localStorage.clear();
+    axios.post.mockReset();
   });
 
   test('checkbox reflects url parameter', () => {
@@ -119,8 +125,6 @@ describe('auto new game persistence', () => {
   });
 
   describe('new game button behaviour', () => {
-    const flushPromises = () => new Promise((resolve) => queueMicrotask(resolve));
-
     test('disables button during request and re-enables afterwards', async () => {
       buildDom();
       history.replaceState(null, '', '/');
@@ -300,5 +304,52 @@ describe('auto new game persistence', () => {
     expect(row.querySelector('.victory-name').textContent).toBe('Player 3');
     expect(row.querySelector('.victory-score').textContent).toBe('0');
     expect(row.querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
+  });
+
+  test('updates victory points after end of movement response', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const players = [
+      {
+        getName: () => 'Player 1',
+        getFactions: () => [{ getCounterColor: () => '#ff0000' }],
+      },
+    ];
+
+    let currentScores = { 'Player 1': 0 };
+    const game = fakeGame({
+      getPlayers: () => ({
+        getAllPlayers: () => players,
+      }),
+      getScores: () => ({ ...currentScores }),
+      updateScores: (scores) => {
+        currentScores = { ...scores };
+      },
+      getCurrentPhase: () => 'Movement',
+      endPhase: () => false,
+      getBoard: () => ({
+        sparseBoard: () => ({}),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    axios.post.mockResolvedValue({
+      data: {
+        scores: {
+          'Player 1': 4,
+        },
+      },
+    });
+
+    const menu = new Menu(game);
+    expect(document.querySelector('.victory-score').textContent).toBe('0');
+
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(document.querySelector('.victory-score').textContent).toBe('4');
   });
 });
