@@ -134,6 +134,44 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_from_board.assert_called_once_with(mock_board)
 
+    @patch('battle_hexes_api.main.logger')
+    @patch('battle_hexes_api.main.ObjectiveScorer')
+    @patch('battle_hexes_api.main.Combat')
+    @patch('battle_hexes_api.main.game_repo')
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
+    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
+    def test_resolve_combat_awards_objectives_after_combat(
+        self,
+        mock_apply_to_board,
+        mock_from_board,
+        mock_game_repo,
+        mock_combat,
+        mock_scorer,
+        mock_logger,
+    ):
+        mock_board = MagicMock()
+        game_id = "game-456"
+        mock_game = MagicMock()
+        mock_game.id = game_id
+        mock_game.get_board.return_value = mock_board
+        mock_game_repo.get_game.return_value = mock_game
+        mock_results = MagicMock()
+        mock_results.get_battles.return_value = []
+        mock_combat.return_value.resolve_combat.return_value = mock_results
+        mock_scorer.return_value.award_hold_objectives_after_combat.return_value = 3
+        mock_from_board.return_value = MagicMock()
+
+        self.client.post(f"/games/{game_id}/combat", json={"units": []})
+
+        scorer_instance = mock_scorer.return_value
+        scorer_instance.award_hold_objectives_after_combat.assert_called_once_with(
+            mock_game, mock_results
+        )
+        mock_logger.info.assert_any_call(
+            'Awarded %d pts for objectvies after combat.',
+            3,
+        )
+
     @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.Combat')
     @patch('battle_hexes_api.main.game_repo')
