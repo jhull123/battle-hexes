@@ -59,25 +59,42 @@
 <body>
   <div id="menu" style="background-color: #F8F8F8;">
     <h2>Battle Hexes</h2>
-    <div id="selHexContents"></div>
-    <div id="selHexCoord"></div>
-    <div id="selHexTerrain"></div>
-    <div id="selHexObjectives"></div>
-    <div id="unitMovesLeftDiv"></div>
+    <hr class="menu-divider">
+    <div id="victoryPointsMenu">
+      <h3>Victory Points</h3>
+      <div id="victoryPointsList"></div>
+    </div>
+    <hr class="menu-divider">
+    <div id="selectedHexMenu">
+      <h3>Selected Hex</h3>
+      <div id="selHexContents"></div>
+      <div id="selHexCoord"></div>
+      <div id="selHexTerrain"></div>
+      <div id="selHexObjectives"></div>
+      <div id="unitMovesLeftDiv"></div>
+    </div>
+    <hr class="menu-divider">
     <div id="gameStagesMenu">
       <h3>Game Stages</h3>
       <div id="phasesList">
         <!-- phases list is created dynamically -->
       </div>
       <div>Current turn: <span id="currentTurnLabel"></span></div>
+      <button id="endPhaseBtn"></button>
+      <h3 id="gameOverLabel" style="display: none;">Game Over</h3>
+      <button id="newGameBtn" style="display: none;">New Game</button>
     </div>
-    <br/>
-    <button id="endPhaseBtn"></button>
-    <h3 id="gameOverLabel" style="display: none;">Game Over</h3>
-    <label class="menu-toggle"><input type="checkbox" id="showHexCoords" checked> Show hex coordinates</label>
-    <label class="menu-toggle"><input type="checkbox" id="autoNewGame"> Start new game automatically</label>
-    <button id="newGameBtn" style="display: none;">New Game</button>
-    <a class="back-link" href="index.html">Back to title screen</a>
+    <hr class="menu-divider">
+    <div id="optionsMenu">
+      <h3>Options</h3>
+      <label class="menu-toggle"><input type="checkbox" id="showHexCoords" checked> Show hex coordinates</label>
+      <label class="menu-toggle"><input type="checkbox" id="autoNewGame"> Start new game automatically</label>
+    </div>
+    <hr class="menu-divider">
+    <div id="navigationMenu">
+      <h3>Navigation</h3>
+      <a class="back-link" href="index.html">Back to title screen</a>
+    </div>
   </div>
   <div id="canvas-container"></div>
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet">
