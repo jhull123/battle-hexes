@@ -1,6 +1,7 @@
 import logging
 
 from battle_hexes_core.combat.combat import Combat
+from battle_hexes_core.combat.combatresult import CombatResult
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.game import Game
 
@@ -32,13 +33,56 @@ class ObjectiveScorer:
         self, game: Game, combat_results: CombatResults
     ) -> int:
         """Award points for surviving attackers on objectives."""
-        # TODO! Use combat results to examine the attacking units.
-        # For attacking units that did not retreat and occupy an objective
-        # hex then award the points for holding that hex. The points are
-        # awarded per hex and not per unit so be sure not to over-award.
-        game
-        combat_results
-        return 0
+        current_player = game.get_current_player()
+        score_tracker = game.get_score_tracker()
+        eligible_attacker_ids = self._get_eligible_attacker_ids(
+            combat_results, current_player
+        )
+        held_objectives = self._get_post_combat_held_objectives(
+            game, eligible_attacker_ids
+        )
+        total_points = sum(objective.points for objective in held_objectives)
+        if total_points:
+            score_tracker.add_points(current_player, total_points)
+            self._log_awarded_points(
+                current_player.name, total_points, held_objectives
+            )
+        return total_points
+
+    def _get_eligible_attacker_ids(
+        self, combat_results: CombatResults, current_player
+    ) -> set[str]:
+        """Return attacker IDs that remain eligible after combat."""
+        eligible_attacker_ids = set()
+        for battle in combat_results.get_battles():
+            participants = battle.get_battle_participants()
+            if participants is None:
+                continue
+            if battle.get_combat_result() == CombatResult.ATTACKER_RETREAT_2:
+                continue
+            attackers, _ = participants
+            for attacker in attackers:
+                if current_player.owns(attacker):
+                    eligible_attacker_ids.add(attacker.get_id())
+        return eligible_attacker_ids
+
+    def _get_post_combat_held_objectives(
+        self, game: Game, eligible_attacker_ids: set[str]
+    ) -> list:
+        """Return hold objectives occupied by surviving attackers."""
+        board = game.get_board()
+        held_objectives = []
+        for objective in board.get_objectives():
+            if objective.type != "hold":
+                continue
+            row, column = objective.coords
+            if any(
+                unit.get_id() in eligible_attacker_ids
+                and unit.get_coords() == (row, column)
+                for unit in board.get_units()
+            ):
+                held_objectives.append(objective)
+        return held_objectives
 
     def _get_engaged_unit_ids(self, game: Game, current_player) -> set[str]:
         """Return IDs for the current player's units engaged in combat."""

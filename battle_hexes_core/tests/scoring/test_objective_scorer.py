@@ -1,5 +1,10 @@
 import unittest
 
+from battle_hexes_core.combat.combatresult import (
+    CombatResult,
+    CombatResultData,
+)
+from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
@@ -122,6 +127,94 @@ class TestObjectiveScorer(unittest.TestCase):
 
         scorer = ObjectiveScorer()
         points = scorer.award_hold_objectives(game)
+
+        self.assertEqual(points, 0)
+        self.assertEqual(
+            game.get_score_tracker().get_score(self.player_one), 0
+        )
+
+    def test_awards_points_after_combat_for_surviving_attacker(self):
+        attacker = Unit(
+            id="u1",
+            name="Attacker",
+            faction=self.faction_one,
+            player=self.player_one,
+            type="Inf",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        defender = Unit(
+            id="u2",
+            name="Defender",
+            faction=self.faction_two,
+            player=self.player_two,
+            type="Inf",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        self.board.add_unit(attacker, 1, 1)
+        self.board.add_unit(defender, 2, 1)
+        game = Game([self.player_one, self.player_two], self.board)
+        combat_results = CombatResults()
+        combat_results.add_battle(
+            CombatResultData(
+                odds=(1, 1),
+                die_roll=4,
+                combat_result=CombatResult.DEFENDER_ELIMINATED,
+                battle_participants=([attacker], [defender]),
+            )
+        )
+
+        scorer = ObjectiveScorer()
+        points = scorer.award_hold_objectives_after_combat(
+            game, combat_results
+        )
+
+        self.assertEqual(points, 2)
+        self.assertEqual(
+            game.get_score_tracker().get_score(self.player_one), 2
+        )
+
+    def test_skips_attacker_retreats_after_combat(self):
+        attacker = Unit(
+            id="u1",
+            name="Attacker",
+            faction=self.faction_one,
+            player=self.player_one,
+            type="Inf",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        defender = Unit(
+            id="u2",
+            name="Defender",
+            faction=self.faction_two,
+            player=self.player_two,
+            type="Inf",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        self.board.add_unit(attacker, 1, 1)
+        self.board.add_unit(defender, 2, 1)
+        game = Game([self.player_one, self.player_two], self.board)
+        combat_results = CombatResults()
+        combat_results.add_battle(
+            CombatResultData(
+                odds=(1, 1),
+                die_roll=1,
+                combat_result=CombatResult.ATTACKER_RETREAT_2,
+                battle_participants=([attacker], [defender]),
+            )
+        )
+
+        scorer = ObjectiveScorer()
+        points = scorer.award_hold_objectives_after_combat(
+            game, combat_results
+        )
 
         self.assertEqual(points, 0)
         self.assertEqual(
