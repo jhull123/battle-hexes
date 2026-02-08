@@ -1,3 +1,10 @@
+const mockResolveCombat = jest.fn().mockResolvedValue({});
+jest.mock("../../src/model/combat-resolver", () => ({
+  CombatResolver: jest.fn().mockImplementation(() => ({
+    resolveCombat: mockResolveCombat,
+  })),
+}));
+
 import { Board } from "../../src/model/board";
 import { Game } from "../../src/model/game";
 import { Faction } from "../../src/model/faction";
@@ -11,6 +18,8 @@ const player2 = new Player('Player 2');
 const players = new Players([player1, player2]);
 
 beforeEach(() => {
+  mockResolveCombat.mockReset();
+  mockResolveCombat.mockResolvedValue({});
   game = new Game('game-id', phases, players, new Board(10, 10));
 });
 
@@ -109,6 +118,17 @@ describe('endPhase', () => {
     expect(switched).toBe(true);
     expect(game.getCurrentPhase()).toBe(phases[0]);
     expect(game.getCurrentPlayer()).toEqual(player2);
+  });
+});
+
+describe('resolveCombat', () => {
+  test('updates scores from combat response', async () => {
+    mockResolveCombat.mockResolvedValueOnce({ scores: { 'Player 1': 7 } });
+
+    await game.resolveCombat();
+
+    expect(mockResolveCombat).toHaveBeenCalled();
+    expect(game.getScores()).toEqual({ 'Player 1': 7 });
   });
 });
 

@@ -17,6 +17,7 @@ class SparseBoard(BaseModel):
 
     units: List[SparseUnit] = Field(default_factory=list)
     last_combat_results: Optional[List[CombatResultSchema]] = None
+    scores: Optional[dict[str, int]] = None
 
     def add_unit(self, unit: SparseUnit) -> None:
         self.units.append(unit)
