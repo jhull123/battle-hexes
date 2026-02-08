@@ -158,14 +158,19 @@ class TestFastAPI(unittest.TestCase):
         mock_results = MagicMock()
         mock_results.get_battles.return_value = []
         mock_combat.return_value.resolve_combat.return_value = mock_results
-        mock_scorer.return_value.award_hold_objectives_after_combat.return_value = 3
+        (
+            mock_scorer.return_value.award_hold_objectives_after_combat
+        ).return_value = 3
         mock_from_board.return_value = MagicMock()
 
         self.client.post(f"/games/{game_id}/combat", json={"units": []})
 
         scorer_instance = mock_scorer.return_value
-        scorer_instance.award_hold_objectives_after_combat.assert_called_once_with(
-            mock_game, mock_results
+        (
+            scorer_instance.award_hold_objectives_after_combat
+        ).assert_called_once_with(
+            mock_game,
+            mock_results,
         )
         mock_logger.info.assert_any_call(
             'Awarded %d pts for objectvies after combat.',
