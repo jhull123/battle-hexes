@@ -191,10 +191,13 @@ export class Menu {
         row.classList.add('victory-row-current');
       }
 
-      const turnBadge = document.createElement('span');
-      turnBadge.classList.add('victory-turn-badge');
-      turnBadge.textContent = 'Turn';
-      turnBadge.hidden = !isCurrentPlayer;
+      const turnBadge = isCurrentPlayer
+        ? document.createElement('span')
+        : null;
+      if (turnBadge) {
+        turnBadge.classList.add('victory-turn-badge');
+        turnBadge.textContent = 'Turn';
+      }
 
       const leader = document.createElement('span');
       leader.classList.add('victory-leader');
@@ -204,7 +207,7 @@ export class Menu {
       const value = scores[playerName];
       score.textContent = Number.isFinite(value) ? value : 0;
 
-      row.append(swatch, name, turnBadge, leader, score);
+      row.append(swatch, name, ...(turnBadge ? [turnBadge] : []), leader, score);
       this.#victoryPointsList.appendChild(row);
     }
   }

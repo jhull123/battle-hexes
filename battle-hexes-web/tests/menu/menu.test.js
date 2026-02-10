@@ -287,7 +287,7 @@ describe('auto new game persistence', () => {
     expect(rows[1].querySelector('.victory-score').textContent).toBe('1');
     expect(rows[1].querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(0, 0, 255)');
     expect(rows[1].classList.contains('victory-row-current')).toBe(false);
-    expect(rows[1].querySelector('.victory-turn-badge').hidden).toBe(true);
+    expect(rows[1].querySelector('.victory-turn-badge')).toBeNull();
   });
 
   test('falls back to neutral swatch and zero score when missing data', () => {
@@ -398,14 +398,14 @@ describe('auto new game persistence', () => {
     expect(rows[0].classList.contains('victory-row-current')).toBe(true);
     expect(rows[0].querySelector('.victory-turn-badge').hidden).toBe(false);
     expect(rows[1].classList.contains('victory-row-current')).toBe(false);
-    expect(rows[1].querySelector('.victory-turn-badge').hidden).toBe(true);
+    expect(rows[1].querySelector('.victory-turn-badge')).toBeNull();
 
     currentPlayerName = 'Player 2';
     menu.updateMenu();
 
     rows = document.querySelectorAll('.victory-row');
     expect(rows[0].classList.contains('victory-row-current')).toBe(false);
-    expect(rows[0].querySelector('.victory-turn-badge').hidden).toBe(true);
+    expect(rows[0].querySelector('.victory-turn-badge')).toBeNull();
     expect(rows[1].classList.contains('victory-row-current')).toBe(true);
     expect(rows[1].querySelector('.victory-turn-badge').hidden).toBe(false);
   });
