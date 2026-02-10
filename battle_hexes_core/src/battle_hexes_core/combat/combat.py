@@ -16,7 +16,7 @@ class Combat:
         self.attacking_player = game.get_current_player()
         self.combat_solver = CombatSolver()
 
-    def resolve_combat(self):
+    def resolve_combat(self) -> CombatResults:
         combat_results = CombatResults()
         for attackers, defenders in self.find_combat():
             if not attackers or not defenders:

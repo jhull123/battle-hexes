@@ -13,9 +13,11 @@ export class Menu {
   #gameOverLabel;
   #autoNewGameChk;
   #showHexCoordsChk;
+  #victoryPointsList;
   #autoReloadScheduled = false;
   #onNewGameRequested;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
+  static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
   constructor(game, { onNewGameRequested } = {}) {
     this.#game = game;
@@ -28,6 +30,7 @@ export class Menu {
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
     this.#showHexCoordsChk = document.getElementById('showHexCoords');
+    this.#victoryPointsList = document.getElementById('victoryPointsList');
     this.#onNewGameRequested = onNewGameRequested;
 
     // Initialize checkbox state from URL param
@@ -69,6 +72,7 @@ export class Menu {
     this.#initPhaseEndButton();
     this.#setCurrentTurn();
     this.#updateCombatIndicator();
+    this.updateMenu();
   }
 
   getShowHexCoordsPreference() {
@@ -105,7 +109,7 @@ export class Menu {
     const selectedHex = this.#game.getBoard().getSelectedHex();
 
     if (!selectedHex) {
-      this.#selHexContentsDiv.innerHTML = '';
+      this.#selHexContentsDiv.innerHTML = '<em>No selection</em>';
       this.#selHexCoordDiv.innerHTML = '';
       this.#selHexTerrainDiv.innerHTML = '';
       this.#selHexObjectivesDiv.innerHTML = '';
@@ -133,6 +137,7 @@ export class Menu {
 
     this.#updateCombatIndicator();
     this.#setCurrentTurn();
+    this.#updateVictoryPoints();
     this.#updatePhasesStyling();
     this.#disableOrEnableActionButton();
 
@@ -155,6 +160,52 @@ export class Menu {
         return `🚩 ${objective.displayName} (${points} ${pointsLabel})`;
       })
       .join('<br/>');
+  }
+
+  #updateVictoryPoints() {
+    if (!this.#victoryPointsList) {
+      return;
+    }
+
+    this.#victoryPointsList.innerHTML = '';
+    const players = this.#game.getPlayers()?.getAllPlayers?.() ?? [];
+    const scores = this.#game.getScores?.() ?? {};
+
+    for (const player of players) {
+      const row = document.createElement('div');
+      row.classList.add('victory-row');
+
+      const swatch = document.createElement('span');
+      swatch.classList.add('victory-swatch');
+      swatch.style.backgroundColor = this.#getPlayerSwatchColor(player);
+
+      const name = document.createElement('span');
+      const playerName = player.getName?.() ?? 'Unknown';
+      name.classList.add('victory-name');
+      name.textContent = playerName;
+
+      const leader = document.createElement('span');
+      leader.classList.add('victory-leader');
+
+      const score = document.createElement('span');
+      score.classList.add('victory-score');
+      const value = scores[playerName];
+      score.textContent = Number.isFinite(value) ? value : 0;
+
+      row.append(swatch, name, leader, score);
+      this.#victoryPointsList.appendChild(row);
+    }
+  }
+
+  #getPlayerSwatchColor(player) {
+    const factions = player?.getFactions?.() ?? [];
+    if (Array.isArray(factions) && factions.length > 0) {
+      const color = factions[0]?.getCounterColor?.();
+      if (typeof color === 'string' && color.trim().length > 0) {
+        return color;
+      }
+    }
+    return Menu.#DEFAULT_SWATCH_COLOR;
   }
 
   #updateCombatIndicator() {
@@ -186,6 +237,15 @@ export class Menu {
 
   #finishPhase() {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+    if (this.#game.getCurrentPhase().toLowerCase() === 'movement') {
+      axios.post(
+        `${API_URL}/games/${this.#game.getId()}/end-movement`,
+        this.#game.getBoard().sparseBoard()
+      ).then((response) => {
+        this.#game.updateScores?.(response?.data?.scores);
+        this.updateMenu();
+      }).catch(err => console.error('Failed to update movement state', err));
+    }
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
     this.#disableOrEnableActionButton();
@@ -194,7 +254,10 @@ export class Menu {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-turn`,
         this.#game.getBoard().sparseBoard()
-      ).catch(err => console.error('Failed to update game state', err))
+      ).then((response) => {
+        this.#game.updateScores?.(response?.data?.scores);
+        this.updateMenu();
+      }).catch(err => console.error('Failed to update game state', err))
        .finally(() => {
          if (!this.#game.isGameOver()) {
            this.#game.getCurrentPlayer().play(this.#game);

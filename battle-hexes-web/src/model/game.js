@@ -11,10 +11,12 @@ export class Game {
   #combatResolver;
   #scenarioId;
   #playerTypeIds;
+  #scores;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
     playerTypeIds = null,
+    scores = {},
   } = {}) {
     this.#id = id;
     this.#phases = phases;
@@ -31,6 +33,7 @@ export class Game {
     this.#playerTypeIds = Array.isArray(playerTypeIds) && playerTypeIds.every((value) => typeof value === 'string' && value.trim().length > 0)
       ? [...playerTypeIds]
       : null;
+    this.#scores = { ...scores };
   }
 
   endPhase() {
@@ -82,6 +85,24 @@ export class Game {
     return this.#playerTypeIds ? [...this.#playerTypeIds] : null;
   }
 
+  getScores() {
+    return { ...this.#scores };
+  }
+
+  updateScores(scores = {}) {
+    if (!scores || typeof scores !== 'object') {
+      this.#scores = {};
+      return;
+    }
+
+    const entries = Object.entries(scores).map(([playerName, value]) => {
+      const safeValue = Number.isFinite(value) ? value : 0;
+      return [playerName, safeValue];
+    });
+
+    this.#scores = Object.fromEntries(entries);
+  }
+
   isGameOver() {
     const owners = new Set();
     for (const unit of this.#board.getUnits()) {
@@ -93,10 +114,12 @@ export class Game {
   }
 
   resolveCombat(finishedCb) {
-    return this.#combatResolver.resolveCombat().then(() => {
+    return this.#combatResolver.resolveCombat().then((combatResult) => {
+      this.updateScores(combatResult?.scores);
       if (finishedCb) {
-        finishedCb();
+        finishedCb(combatResult);
       }
+      return combatResult;
     });
   }
   

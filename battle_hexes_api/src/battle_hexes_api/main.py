@@ -18,6 +18,9 @@ logger.info("sys.path: %s", sys.path)
 
 from battle_hexes_core.combat.combat import Combat  # noqa: E402
 from battle_hexes_core.game.gamerepo import GameRepository  # noqa: E402
+from battle_hexes_core.scoring.objective_scorer import (  # noqa: E402
+    ObjectiveScorer,
+)
 from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
     ScenarioRegistry,
 )
@@ -158,9 +161,18 @@ def resolve_combat(
     results = Combat(game).resolve_combat()
     logger.info('Combat results: %s', results)
 
+    scorer = ObjectiveScorer()
+    post_combat_pts = scorer.award_hold_objectives_after_combat(game, results)
+    if post_combat_pts > 0:
+        logger.info(
+            'Awarded %d pts for objectvies after combat.',
+            post_combat_pts
+        )
+
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
     sparse_board = SparseBoard.from_board(game.get_board())
+    sparse_board.scores = game.get_score_tracker().get_scores()
     sparse_board.last_combat_results = [
         CombatResultSchema.from_combat_result_data(battle)
         for battle in results.get_battles()
@@ -182,6 +194,21 @@ def generate_movement(game_id: str):
         "game": GameModel.from_game(game),
         "plans": [p.to_dict() for p in plans],
     }
+
+
+@app.post('/games/{game_id}/end-movement')
+def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
+    """Update game state at the end of a player's movement phase."""
+    game = _get_game_or_404(game_id)
+
+    sparse_board.apply_to_board(game.get_board())
+
+    scorer = ObjectiveScorer()
+    scorer.award_hold_objectives(game)
+
+    game_repo.update_game(game)
+    _call_end_game_callbacks(game)
+    return GameModel.from_game(game)
 
 
 @app.post('/games/{game_id}/end-turn')

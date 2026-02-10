@@ -1,0 +1,64 @@
+{
+  "version": "1",
+  "id": "village_1",
+  "name": "Village Demo 1",
+  "description": "A simple scenario with a village objective.",
+  "board_size": [10, 10],
+  "factions": [
+    {
+      "id": "red faction",
+      "name": "Red Faction",
+      "color": "#C81010",
+      "player": "Player 1"
+    },
+    {
+      "id": "blue faction",
+      "name": "Blue Faction",
+      "color": "#4682B4",
+      "player": "Player 2"
+    }
+  ],
+  "units": [
+    {
+      "id": "red_unit_1",
+      "name": "Assault Infantry",
+      "faction": "red faction", 
+      "type": "Infantry",
+      "attack": 8,
+      "defense": 5,
+      "movement": 3
+    },
+    {
+      "id": "blue_unit_1",
+      "name": "Blue Unit",
+      "faction": "blue faction", 
+      "type": "Infantry",
+      "attack": 4,
+      "defense": 4,
+      "movement": 4
+    },
+    {
+      "id": "blue_unit_2",
+      "name": "Blue Two",
+      "faction": "blue faction", 
+      "type": "Scout",
+      "attack": 2,
+      "defense": 2,
+      "movement": 6
+    }
+  ],
+  "terrain_default": "open",
+  "terrain_types": {
+    "open": { "color": "#8F9779" },
+    "village": { "color": "#9A8F7A" }
+  },
+  "hex_data": [
+    { "coords": [5, 5], "terrain": "village" },
+    { "coords": [2, 2], "units": ["red_unit_1"] },
+    { "coords": [8, 9], "units": ["blue_unit_1"] },
+    { "coords": [9, 5], "units": ["blue_unit_2"] }
+  ],
+  "objectives": [
+    { "coords": [5, 5], "points": 3, "type": "hold" }
+  ]
+}

@@ -82,5 +82,5 @@ def test_iterators_yield_all_scenarios():
         for scenario in iter_scenarios(scenario_dir=_scenario_dir())
     }
 
-    assert scenario_ids == {"elim_1", "elim_2"}
-    assert core_ids == {"elim_1", "elim_2"}
+    assert scenario_ids == {"elim_1", "elim_2", "village_1"}
+    assert core_ids == {"elim_1", "elim_2", "village_1"}
