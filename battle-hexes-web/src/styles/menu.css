@@ -18,6 +18,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+#menu .victory-row-current {
+  background-color: #d9e3f1;
 }
 
 #menu .victory-swatch {
@@ -30,6 +36,30 @@
 
 #menu .victory-name {
   white-space: nowrap;
+}
+
+#menu .victory-row-current .victory-name {
+  color: #1f5ea9;
+  font-weight: 700;
+}
+
+#menu .victory-turn-badge {
+  display: inline-flex;
+  align-items: center;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background-color: #2c6fbe;
+  border: 1px solid #22579a;
+  border-radius: 12px;
+  padding: 1px 8px;
+}
+
+
+#menu .victory-turn-badge[hidden] {
+  display: none;
 }
 
 #menu .victory-leader {

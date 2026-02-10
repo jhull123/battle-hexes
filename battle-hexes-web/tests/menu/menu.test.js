@@ -262,6 +262,11 @@ describe('auto new game persistence', () => {
       getPlayers: () => ({
         getAllPlayers: () => players,
       }),
+      getCurrentPlayer: () => ({
+        getName: () => 'Player 1',
+        isHuman: () => true,
+        play: jest.fn(),
+      }),
       getScores: () => ({
         'Player 1': 3,
         'Player 2': 1,
@@ -274,10 +279,17 @@ describe('auto new game persistence', () => {
     expect(rows[0].querySelector('.victory-name').textContent).toBe('Player 1');
     expect(rows[0].querySelector('.victory-score').textContent).toBe('3');
     expect(rows[0].querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(255, 0, 0)');
+    expect(rows[0].classList.contains('victory-row-current')).toBe(true);
+    expect(rows[0].querySelector('.victory-turn-badge').textContent).toBe('Turn');
+    expect(rows[0].querySelector('.victory-turn-badge').hidden).toBe(false);
+    expect(rows[0].querySelector('.victory-turn-badge').hasAttribute('hidden')).toBe(false);
 
     expect(rows[1].querySelector('.victory-name').textContent).toBe('Player 2');
     expect(rows[1].querySelector('.victory-score').textContent).toBe('1');
     expect(rows[1].querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(0, 0, 255)');
+    expect(rows[1].classList.contains('victory-row-current')).toBe(false);
+    expect(rows[1].querySelector('.victory-turn-badge').hidden).toBe(true);
+    expect(rows[1].querySelector('.victory-turn-badge').hasAttribute('hidden')).toBe(true);
   });
 
   test('falls back to neutral swatch and zero score when missing data', () => {
@@ -351,5 +363,56 @@ describe('auto new game persistence', () => {
     await flushPromises();
 
     expect(document.querySelector('.victory-score').textContent).toBe('4');
+  });
+
+  test('moves turn badge and highlight when current player changes', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const players = [
+      {
+        getName: () => 'Player 1',
+        getFactions: () => [{ getCounterColor: () => '#ff0000' }],
+      },
+      {
+        getName: () => 'Player 2',
+        getFactions: () => [{ getCounterColor: () => '#0000ff' }],
+      },
+    ];
+
+    let currentPlayerName = 'Player 1';
+    const menu = new Menu(fakeGame({
+      getPlayers: () => ({
+        getAllPlayers: () => players,
+      }),
+      getCurrentPlayer: () => ({
+        getName: () => currentPlayerName,
+        isHuman: () => true,
+        play: jest.fn(),
+      }),
+      getScores: () => ({
+        'Player 1': 3,
+        'Player 2': 1,
+      }),
+    }));
+
+    let rows = document.querySelectorAll('.victory-row');
+    expect(rows[0].classList.contains('victory-row-current')).toBe(true);
+    expect(rows[0].querySelector('.victory-turn-badge').hidden).toBe(false);
+    expect(rows[0].querySelector('.victory-turn-badge').hasAttribute('hidden')).toBe(false);
+    expect(rows[1].classList.contains('victory-row-current')).toBe(false);
+    expect(rows[1].querySelector('.victory-turn-badge').hidden).toBe(true);
+    expect(rows[1].querySelector('.victory-turn-badge').hasAttribute('hidden')).toBe(true);
+
+    currentPlayerName = 'Player 2';
+    menu.updateMenu();
+
+    rows = document.querySelectorAll('.victory-row');
+    expect(rows[0].classList.contains('victory-row-current')).toBe(false);
+    expect(rows[0].querySelector('.victory-turn-badge').hidden).toBe(true);
+    expect(rows[0].querySelector('.victory-turn-badge').hasAttribute('hidden')).toBe(true);
+    expect(rows[1].classList.contains('victory-row-current')).toBe(true);
+    expect(rows[1].querySelector('.victory-turn-badge').hidden).toBe(false);
+    expect(rows[1].querySelector('.victory-turn-badge').hasAttribute('hidden')).toBe(false);
   });
 });
