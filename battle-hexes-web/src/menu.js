@@ -170,6 +170,7 @@ export class Menu {
     this.#victoryPointsList.innerHTML = '';
     const players = this.#game.getPlayers()?.getAllPlayers?.() ?? [];
     const scores = this.#game.getScores?.() ?? {};
+    const currentPlayerName = this.#game.getCurrentPlayer?.()?.getName?.();
 
     for (const player of players) {
       const row = document.createElement('div');
@@ -184,6 +185,17 @@ export class Menu {
       name.classList.add('victory-name');
       name.textContent = playerName;
 
+      const isCurrentPlayer = typeof currentPlayerName === 'string'
+        && currentPlayerName === playerName;
+      if (isCurrentPlayer) {
+        row.classList.add('victory-row-current');
+      }
+
+      const turnBadge = document.createElement('span');
+      turnBadge.classList.add('victory-turn-badge');
+      turnBadge.textContent = 'Turn';
+      turnBadge.hidden = !isCurrentPlayer;
+
       const leader = document.createElement('span');
       leader.classList.add('victory-leader');
 
@@ -192,7 +204,7 @@ export class Menu {
       const value = scores[playerName];
       score.textContent = Number.isFinite(value) ? value : 0;
 
-      row.append(swatch, name, leader, score);
+      row.append(swatch, name, turnBadge, leader, score);
       this.#victoryPointsList.appendChild(row);
     }
   }
