@@ -49,7 +49,7 @@
   ],
   "terrain_default": "open",
   "terrain_types": {
-    "open": { "color": "#A3B18A" },
+    "open": { "color": "#8F9779" },
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
