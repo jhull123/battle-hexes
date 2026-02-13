@@ -8,6 +8,8 @@ from battle_hexes_core.scenario.scenario import (
     Scenario,
     ScenarioFaction,
     ScenarioHexData,
+    ScenarioRoad,
+    ScenarioRoadType,
     ScenarioTerrainType,
     ScenarioUnit,
 )
@@ -32,6 +34,8 @@ class TestGameCreator(unittest.TestCase):
         mock_scenario.terrain_default = None
         mock_scenario.terrain_types = {}
         mock_scenario.hex_data = ()
+        mock_scenario.road_types = {}
+        mock_scenario.roads = ()
 
         # Set up mock players
         mock_player1 = Mock(spec=Player)
@@ -59,6 +63,8 @@ class TestGameCreator(unittest.TestCase):
         mock_scenario.terrain_default = None
         mock_scenario.terrain_types = {}
         mock_scenario.hex_data = ()
+        mock_scenario.road_types = {}
+        mock_scenario.roads = ()
         mock_player1 = Mock(spec=Player)
         mock_player2 = Mock(spec=Player)
 
@@ -251,6 +257,38 @@ class TestGameCreator(unittest.TestCase):
         self.assertEqual(default_hex.terrain.hex_color, "#C6AA5C")
         self.assertEqual(override_hex.terrain.name, "village")
         self.assertEqual(override_hex.terrain.hex_color, "#9A8F7A")
+
+    def test_add_roads_populates_board_road_data(self):
+        scenario = Scenario(
+            id="scenario-1",
+            name="Scenario",
+            board_size=(2, 2),
+            road_types={
+                "highway": ScenarioRoadType(edge_move_cost=0.5),
+                "secondary": ScenarioRoadType(edge_move_cost=1),
+            },
+            roads=(
+                ScenarioRoad(type="highway", path=((0, 0), (0, 1))),
+                ScenarioRoad(type="secondary", path=((1, 0), (1, 1))),
+            ),
+        )
+
+        player1 = Player(name="Player 1", type=PlayerType.HUMAN, factions=[])
+        player2 = Player(name="Player 2", type=PlayerType.CPU, factions=[])
+
+        game = self.creator.create_game(scenario, player1, player2)
+
+        self.assertEqual(
+            game.board.get_road_types(),
+            {"highway": 0.5, "secondary": 1},
+        )
+        self.assertEqual(
+            game.board.get_road_paths(),
+            (
+                ("highway", ((0, 0), (0, 1))),
+                ("secondary", ((1, 0), (1, 1))),
+            ),
+        )
 
     def test_add_objectives_populates_board_hexes(self):
         objective = Objective(coords=(0, 1), points=2, type="hold")

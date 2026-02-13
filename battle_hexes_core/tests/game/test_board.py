@@ -59,6 +59,25 @@ class TestBoard(unittest.TestCase):
         actual_units = self.board.get_units()
         self.assertEqual(actual_units[0].get_coords(), (2, 3))
 
+    def test_set_and_get_road_types(self):
+        road_types = {"highway": 0.5, "secondary": 1.0}
+
+        self.board.set_road_types(road_types)
+        fetched = self.board.get_road_types()
+
+        self.assertEqual(fetched, road_types)
+        self.assertIsNot(fetched, road_types)
+
+    def test_set_and_get_road_paths(self):
+        road_paths = (
+            ("highway", ((0, 0), (0, 1), (0, 2))),
+            ("secondary", ((2, 1), (2, 2))),
+        )
+
+        self.board.set_road_paths(road_paths)
+
+        self.assertEqual(self.board.get_road_paths(), road_paths)
+
     def test_get_neighboring_hexes_center_hex_even(self):
         self.board.add_unit(self.red_unit, 2, 2)
 
