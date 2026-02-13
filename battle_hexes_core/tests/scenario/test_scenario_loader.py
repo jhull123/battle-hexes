@@ -33,6 +33,19 @@ def test_load_scenario_data_from_directory():
     assert scenario.units[0].movement == 6
 
 
+def test_load_scenario_data_reads_roads_and_road_types():
+    scenario = load_scenario_data(
+        "village_1", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.road_types is not None
+    assert scenario.road_types["secondary"].edge_move_cost == 1
+    assert scenario.roads is not None
+    assert scenario.roads[0].type == "secondary"
+    assert scenario.roads[0].path[0] == (5, 0)
+    assert scenario.roads[0].path[-1] == (5, 5)
+
+
 def test_load_scenario_data_raises_for_mismatched_id(tmp_path):
     payload_path = _scenario_dir() / "elim_1.json"
     payload = json.loads(payload_path.read_text(encoding="utf-8"))
@@ -54,6 +67,23 @@ def test_load_scenario_converts_core_types():
     assert scenario.hex_data[1].units == ("red_unit_1",)
     assert scenario.hex_data[0].objectives[0].type == "hold"
     assert scenario.hex_data[0].objectives[0].points == 3
+
+
+def test_load_scenario_converts_roads_and_road_types():
+    scenario = load_scenario(
+        "village_1", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.road_types["secondary"].edge_move_cost == 1
+    assert scenario.roads[0].type == "secondary"
+    assert scenario.roads[0].path == (
+        (5, 0),
+        (5, 1),
+        (6, 2),
+        (6, 3),
+        (6, 4),
+        (5, 5),
+    )
 
 
 def test_load_scenario_assigns_objectives_to_hexes():

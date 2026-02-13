@@ -51,6 +51,21 @@ class ScenarioTerrainType:
 
 
 @dataclass(frozen=True)
+class ScenarioRoadType:
+    """Representation of a road type as defined in a scenario."""
+
+    edge_move_cost: float
+
+
+@dataclass(frozen=True)
+class ScenarioRoad:
+    """Representation of a road path as defined in a scenario."""
+
+    type: str
+    path: tuple[tuple[int, int], ...]
+
+
+@dataclass(frozen=True)
 class Scenario:
     """Container for the data required to configure a game scenario."""
 
@@ -62,4 +77,6 @@ class Scenario:
     units: tuple[ScenarioUnit, ...] = field(default_factory=tuple)
     terrain_default: str | None = None
     terrain_types: dict[str, ScenarioTerrainType] = field(default_factory=dict)
+    road_types: dict[str, ScenarioRoadType] = field(default_factory=dict)
+    roads: tuple[ScenarioRoad, ...] = field(default_factory=tuple)
     hex_data: tuple[ScenarioHexData, ...] = field(default_factory=tuple)
