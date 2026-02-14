@@ -48,6 +48,8 @@ class TestGameModel(unittest.TestCase):
             move=1,
         )
         board.add_unit(unit, 0, 1)
+        board.set_road_types({"secondary": 1.0})
+        board.set_road_paths((("secondary", ((0, 0), (0, 1))),))
         board.get_hex(0, 0).set_terrain(Terrain("open", "#C6AA5C"))
         board.get_hex(0, 0).objectives.append(
             Objective(coords=(0, 0), points=2, type="hold")
@@ -67,6 +69,15 @@ class TestGameModel(unittest.TestCase):
         self.assertEqual(model.board.columns, 2)
         self.assertEqual(len(model.board.units), 1)
         self.assertEqual(model.board.terrain.default, "open")
+        self.assertEqual(model.board.road_types, {"secondary": 1.0})
+        self.assertEqual(model.board.road_paths[0].type, "secondary")
+        self.assertEqual(
+            [
+                (coord.row, coord.column)
+                for coord in model.board.road_paths[0].path
+            ],
+            [(0, 0), (0, 1)],
+        )
         self.assertEqual(len(model.objectives), 1)
         objective_model = model.objectives[0]
         self.assertEqual(objective_model.row, 0)
