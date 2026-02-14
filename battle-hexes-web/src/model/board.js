@@ -6,12 +6,14 @@ export class Board {
   #selectedHex;
   #hoverHex;
   #units;
+  #roads;
   #players;
   #animator;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
     this.#units = new Set();
+    this.#roads = new Array();
     this.#animator = new MovementAnimator(this);
 
     for (let row = 0; row < rows; row++) {
@@ -233,6 +235,11 @@ export class Board {
         unit.updateCombatOpponents(this.getAdjacentHexes(hex));
       }
     }
+  }
+
+  addRoad(road) {
+    this.#roads.push(road);
+    console.log("There are " + this.#roads.length + " roads.");
   }
 
   sparseBoard() {
