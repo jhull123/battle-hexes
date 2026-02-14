@@ -21,7 +21,8 @@ export class Road {
   #path;
 
   constructor(type, path) {
-    this.type = type;
+    this.#type = type;
+    // Path coordinates are stored as an array of [row, column] pairs, e.g. [[5, 0], [5, 1], [6, 2]].
     this.#path = path;
   }
 

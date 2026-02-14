@@ -242,6 +242,10 @@ export class Board {
     console.log("There are " + this.#roads.length + " roads.");
   }
 
+  getRoads() {
+    return [...this.#roads];
+  }
+
   sparseBoard() {
     const sparseUnits = [];
     for (let unit of this.getUnits()) {
