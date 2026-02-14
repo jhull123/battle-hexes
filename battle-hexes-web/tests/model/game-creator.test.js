@@ -15,6 +15,8 @@ beforeEach(() => {
     '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","faction_id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","attack":2,"defense":2,"move":6,"row":6,"column":4},' +
     '{"id":"c9a440d2-2b0a-4730-b4c6-da394b642c61","name":"Blue Unit","faction_id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","type":"Infantry","attack":4,"defense":4,"move":4,"row":3,"column":5}],' +
     '"terrain":{"default":"open","types":{"open":{"name":"open","color":"#C6AA5C"},"village":{"name":"village","color":"#9A8F7A"}},"hexes":[{"row":6,"column":4,"terrain":"village"}]}},' +
+    '"road_types":{"secondary":1.0},' +
+    '"road_paths":[{"type":"secondary","path":[{"row":5,"column":0},{"row":5,"column":1},{"row":6,"column":2}]}],' +
     '"objectives":[{"row":6,"column":4,"points":3,"type":"hold"}]}'
   );
   game = gameCreator.createGame(gameData);
@@ -135,5 +137,14 @@ describe("createGame", () => {
 
     expect(objective.type).toBe('hold');
     expect(objective.points).toBe(3);
+  });
+
+  test('board loads roads from top-level game payload', () => {
+    const roads = game.getBoard().getRoads();
+
+    expect(roads).toHaveLength(1);
+    expect(roads[0].type).toBe('secondary');
+    expect(roads[0].movementCost).toBe(1.0);
+    expect(roads[0].path).toEqual([[5, 0], [5, 1], [6, 2]]);
   });
 });

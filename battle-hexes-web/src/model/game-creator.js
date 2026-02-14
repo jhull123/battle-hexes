@@ -6,6 +6,7 @@ import { PlayerFactory } from "../player/player-factory";
 import { Unit } from "./unit";
 import { Terrain } from "./terrain";
 import { Objective } from "./objective";
+import { Road, RoadType } from './road';
 
 export class GameCreator {
   createGame(gameData) {
@@ -26,6 +27,7 @@ export class GameCreator {
     );
     this.#addTerrain(board, gameData.board);
     this.#addUnits(board, game.getPlayers(), gameData.board);
+    this.#addRoads(board, gameData);
     this.#addObjectives(board, gameData);
     return game;
   }
@@ -149,6 +151,54 @@ export class GameCreator {
       const points = Number.isFinite(objectiveData.points) ? objectiveData.points : 0;
       targetHex.addObjective(new Objective(type, points));
     }
+  }
+
+  #addRoads(board, gameData) {
+    if (!gameData || typeof gameData !== 'object' || !Array.isArray(gameData.road_paths)) {
+      return;
+    }
+
+    const roadTypeMap = this.#createRoadTypes(gameData.road_types);
+
+    for (const roadPathData of gameData.road_paths) {
+      const road = this.#createRoad(roadPathData, roadTypeMap);
+      if (road) {
+        board.addRoad(road);
+      }
+    }
+  }
+
+  #createRoadTypes(roadTypesData) {
+    const roadTypeMap = new Map();
+
+    if (!roadTypesData || typeof roadTypesData !== 'object') {
+      return roadTypeMap;
+    }
+
+    for (const [name, movementCost] of Object.entries(roadTypesData)) {
+      if (typeof name === 'string' && Number.isFinite(movementCost)) {
+        roadTypeMap.set(name, new RoadType(name, movementCost));
+      }
+    }
+
+    return roadTypeMap;
+  }
+
+  #createRoad(roadPathData, roadTypeMap) {
+    const roadType = roadTypeMap.get(roadPathData?.type);
+    if (!roadType || !Array.isArray(roadPathData?.path)) {
+      return null;
+    }
+
+    const path = roadPathData.path
+      .filter((hexCoord) => Number.isInteger(hexCoord?.row) && Number.isInteger(hexCoord?.column))
+      .map((hexCoord) => [hexCoord.row, hexCoord.column]);
+
+    if (path.length === 0) {
+      return null;
+    }
+
+    return new Road(roadType, path);
   }
 
   #getScores(gameData) {
