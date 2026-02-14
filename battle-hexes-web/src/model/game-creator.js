@@ -154,13 +154,22 @@ export class GameCreator {
   }
 
   #addRoads(board, gameData) {
-    if (!gameData || typeof gameData !== 'object' || !Array.isArray(gameData.road_paths)) {
+    if (!gameData || typeof gameData !== 'object') {
       return;
     }
 
-    const roadTypeMap = this.#createRoadTypes(gameData.road_types);
+    const boardRoadData = gameData?.board && typeof gameData.board === 'object' ? gameData.board : null;
+    const roadData = Array.isArray(boardRoadData?.road_paths)
+      ? boardRoadData
+      : gameData;
 
-    for (const roadPathData of gameData.road_paths) {
+    if (!Array.isArray(roadData.road_paths)) {
+      return;
+    }
+
+    const roadTypeMap = this.#createRoadTypes(roadData.road_types);
+
+    for (const roadPathData of roadData.road_paths) {
       const road = this.#createRoad(roadPathData, roadTypeMap);
       if (road) {
         board.addRoad(road);
