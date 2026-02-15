@@ -9,20 +9,33 @@ export class RoadDrawer {
     this.#getRoads = getRoads;
   }
 
-  draw(aHex) {
-    if (!this.#hexHasRoad(aHex)) {
+  draw() {
+    this.drawAll();
+  }
+
+  drawAll() {
+    const radius = this.#hexDrawer.getHexRadius();
+
+    for (const road of this.#getRoads()) {
+      const points = road.path.map(([row, column]) =>
+        this.#hexDrawer.hexCenter({ row, column })
+      );
+
+      this.#drawRoadCurve(points, radius);
+    }
+  }
+
+  #drawRoadCurve(points, radius) {
+    if (points.length < 2) {
       return;
     }
 
-    const center = this.#hexDrawer.hexCenter(aHex);
-    const radius = this.#hexDrawer.getHexRadius();
-    const roadLength = radius * 1.35;
-    const x1 = center.x - roadLength / 2;
-    const x2 = center.x + roadLength / 2;
-    const y = center.y;
+    const first = points[0];
+    const last = points[points.length - 1];
     const ctx = this.#p.drawingContext;
 
     this.#p.push();
+    this.#p.noFill();
     this.#p.strokeCap(this.#p.ROUND);
     this.#p.strokeJoin(this.#p.ROUND);
 
@@ -30,25 +43,29 @@ export class RoadDrawer {
     ctx.shadowColor = 'rgba(0,0,0,0.18)';
     this.#p.stroke(0x8A, 0x76, 0x50, 220);
     this.#p.strokeWeight(radius * 0.33);
-    this.#p.line(x1, y, x2, y);
+    this.#p.beginShape();
+    this.#p.curveVertex(first.x, first.y);
+    this.#p.curveVertex(first.x, first.y);
+    for (const point of points) {
+      this.#p.curveVertex(point.x, point.y);
+    }
+    this.#p.curveVertex(last.x, last.y);
+    this.#p.curveVertex(last.x, last.y);
+    this.#p.endShape();
 
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'rgba(0,0,0,0)';
     this.#p.stroke(0xC7, 0xB4, 0x8A, 205);
     this.#p.strokeWeight(radius * 0.18);
-    this.#p.line(x1, y, x2, y);
-    this.#p.pop();
-  }
-
-  #hexHasRoad(aHex) {
-    for (const road of this.#getRoads()) {
-      for (const [row, column] of road.path) {
-        if (row === aHex.row && column === aHex.column) {
-          return true;
-        }
-      }
+    this.#p.beginShape();
+    this.#p.curveVertex(first.x, first.y);
+    this.#p.curveVertex(first.x, first.y);
+    for (const point of points) {
+      this.#p.curveVertex(point.x, point.y);
     }
-
-    return false;
+    this.#p.curveVertex(last.x, last.y);
+    this.#p.curveVertex(last.x, last.y);
+    this.#p.endShape();
+    this.#p.pop();
   }
 }
