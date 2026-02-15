@@ -111,6 +111,11 @@ new p5((p) => {
     p.background(90);
   
     for (let drawer of drawers) {
+      if (typeof drawer.drawAll === 'function') {
+        drawer.drawAll();
+        continue;
+      }
+
       for (let currentHex of game.getBoard().getAllHexes()) {
         drawer.draw(currentHex);
       }
@@ -164,6 +169,11 @@ new p5((p) => {
     game.getBoard().getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
 
     for (let drawer of drawers) {
+      if (typeof drawer.drawAll === 'function') {
+        drawer.drawAll();
+        continue;
+      }
+
       for (let hexToDraw of hexesToDraw) {
         drawer.draw(hexToDraw);
       }
