@@ -1,12 +1,9 @@
-import { TerrainDrawerResolver } from "../terraindraw/terrain-drawer-resolver.js";
-
 export class HexDrawer {
   #p;
   #hexRadius;
   #hexHeight;
   #hexDiameter;
   #showHexCoords;
-  #terrainDrawerResolver;
 
   constructor(p, hexRadius) {
     this.#p = p;
@@ -15,14 +12,12 @@ export class HexDrawer {
     this.#hexDiameter = hexRadius * 2;
     
     this.#showHexCoords = false;
-    this.#terrainDrawerResolver = new TerrainDrawerResolver(p, this);
   }
 
   draw(hexToDraw) {
     const terrain = hexToDraw.getTerrain();
     const fillColor = terrain ? terrain.color : '#fffdd0';
     this.drawHex(hexToDraw, '#202020', 2, fillColor);
-    this.#terrainDrawerResolver.resolve(hexToDraw)?.draw(hexToDraw);
   }
 
   drawHex(hexToDraw, strokeColor, strokeSize, fillColor) {
