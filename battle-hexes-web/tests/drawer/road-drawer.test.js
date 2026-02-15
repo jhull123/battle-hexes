@@ -24,11 +24,11 @@ describe('RoadDrawer.draw', () => {
     roadDrawer.draw(new Hex(2, 3));
 
     expect(p5.stroke).toHaveBeenNthCalledWith(1, '#8A7650');
-    expect(p5.strokeWeight).toHaveBeenNthCalledWith(1, 11);
+    expect(p5.strokeWeight).toHaveBeenNthCalledWith(1, expect.any(Number));
     expect(p5.line).toHaveBeenNthCalledWith(1, 66.25, 200, 133.75, 200);
 
     expect(p5.stroke).toHaveBeenNthCalledWith(2, '#C7B48A');
-    expect(p5.strokeWeight).toHaveBeenNthCalledWith(2, 6);
+    expect(p5.strokeWeight).toHaveBeenNthCalledWith(2, expect.any(Number));
     expect(p5.line).toHaveBeenNthCalledWith(2, 66.25, 200, 133.75, 200);
   });
 

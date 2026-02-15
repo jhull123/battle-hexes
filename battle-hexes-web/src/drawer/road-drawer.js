@@ -19,11 +19,11 @@ export class RoadDrawer {
     const roadLength = radius * 1.35;
 
     this.#p.stroke('#8A7650');
-    this.#p.strokeWeight(radius * 0.22);
+    this.#p.strokeWeight(radius * 0.33);
     this.#p.line(center.x - roadLength / 2, center.y, center.x + roadLength / 2, center.y);
 
     this.#p.stroke('#C7B48A');
-    this.#p.strokeWeight(radius * 0.12);
+    this.#p.strokeWeight(radius * 0.18);
     this.#p.line(center.x - roadLength / 2, center.y, center.x + roadLength / 2, center.y);
   }
 
