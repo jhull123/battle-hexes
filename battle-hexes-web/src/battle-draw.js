@@ -111,6 +111,11 @@ new p5((p) => {
     p.background(90);
   
     for (let drawer of drawers) {
+      if (typeof drawer.drawAll === 'function') {
+        drawer.drawAll();
+        continue;
+      }
+
       for (let currentHex of game.getBoard().getAllHexes()) {
         drawer.draw(currentHex);
       }
@@ -160,6 +165,9 @@ new p5((p) => {
   }
 
   function drawHexNeighborhood(someHexes) {
+    someHexes;
+    p.draw();
+    /* keep for reference
     const hexesToDraw = game.getBoard().getHexNeighborhoods(someHexes);
     game.getBoard().getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
 
@@ -168,6 +176,7 @@ new p5((p) => {
         drawer.draw(hexToDraw);
       }
     }
+    */
   }
 
   function pixelToHex(x, y) {
