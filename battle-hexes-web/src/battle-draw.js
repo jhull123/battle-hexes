@@ -165,6 +165,9 @@ new p5((p) => {
   }
 
   function drawHexNeighborhood(someHexes) {
+    someHexes;
+    p.draw();
+    /* keep for reference
     const hexesToDraw = game.getBoard().getHexNeighborhoods(someHexes);
     game.getBoard().getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
 
@@ -173,6 +176,7 @@ new p5((p) => {
         drawer.draw(hexToDraw);
       }
     }
+    */
   }
 
   function pixelToHex(x, y) {
