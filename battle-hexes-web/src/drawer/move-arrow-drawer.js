@@ -11,7 +11,7 @@ export class MoveArrowDrawer {
     if (!aHex.isEmpty() && aHex.getUnits()[0].hasMovePath()) {
       const movePath = aHex.getUnits()[0].getMovePath();
       this.#drawMoveArrow(movePath[0], movePath[1]);
-    } else if (aHex.getMoveHoverFromHex() && aHex.getMoveHoverFromHex().getUnits()[0].isMovable()) {
+    } else if (aHex.getMoveHoverFromHex() && aHex.getMoveHoverFromHex().hasMovableUnit()) {
       console.log('Lets draw a move arrow!');
       this.#drawMoveArrow(aHex.getMoveHoverFromHex(), aHex);
     }

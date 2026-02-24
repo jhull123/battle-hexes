@@ -125,6 +125,16 @@ export class Hex {
     return false;
   }
 
+  hasMovableUnit() {
+    if (!this.#units || this.#units.length === 0) return false;
+    for (let unit of this.#units) {
+      if (unit && unit.isMovable()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   getOccupiers() {
     return this.getUnits();
   }
