@@ -1,0 +1,80 @@
+{
+  "version": "1",
+  "id": "d_day_crossroads",
+  "name": "Crossroads on D-Day",
+  "description": "In the early hours of D-Day, isolated airborne troops race to capture a strategic crossroads while German defenders scramble to hold the line.",
+  "board_size": [10, 18],
+  "factions": [
+    {
+      "id": "Airborne",
+      "name": "Airborne",
+      "color": "#556B2F",
+      "player": "Player 1"
+    },
+    {
+      "id": "Wehrmacht",
+      "name": "Wehrmacht",
+      "color": "#4D5D53",
+      "player": "Player 2"
+    }
+  ],
+  "units": [
+    {
+      "id": "Airborne Inf. A",
+      "name": "Airborne Inf. A",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "attack": 3,
+      "defense": 2,
+      "movement": 6
+    },
+    {
+      "id": "A / Inf. Zug",
+      "name": "A / Inf. Zug",
+      "faction": "Wehrmacht", 
+      "type": "Infantry",
+      "attack": 2,
+      "defense": 2,
+      "movement": 5
+    },
+    {
+      "id": "StuG. III Zug A",
+      "name": "StuG. III Zug A",
+      "faction": "Wehrmacht", 
+      "type": "Infantry",
+      "attack": 4,
+      "defense": 4,
+      "movement": 8
+    }
+  ],
+  "terrain_default": "open",
+  "terrain_types": {
+    "open": { "color": "#8F9779" },
+    "village": { "color": "#9A8F7A" }
+  },
+  "hex_data": [
+    { "coords": [2, 3], "terrain": "village" },
+    { "coords": [2, 15], "terrain": "village" },
+    { "coords": [9, 5], "units": ["Airborne Inf. A"] },
+    { "coords": [0, 16], "units": ["StuG. III Zug A"] },
+    { "coords": [2, 15], "units": ["A / Inf. Zug"] }
+  ],
+  "objectives": [
+    { "coords": [2, 15], "points": 3, "type": "hold" }
+  ],
+  "road_types": {
+    "secondary": {
+      "edge_move_cost": 1
+    }
+  },
+  "roads": [
+    {
+      "type": "secondary",
+      "path": [[9,7],[9,8],[8,8],[7,8],[6,8],[5,9],[4,9],[4,8],[3,7],[3,6],[2,5],[2,4],[2,3],[2,2],[1,1],[0,1]]
+    },
+    {
+      "type": "secondary",
+      "path": [[4,9],[4,10],[3,11],[3,12],[3,13],[3,14],[2,15],[2,16],[1,16],[0,17]]
+    }
+  ]
+}
