@@ -1,5 +1,10 @@
 const toCoordKey = (hex) => `${hex.row},${hex.column}`;
 
+const fromCoordKey = (key) => {
+  const [row, column] = key.split(',').map(Number);
+  return { row, column };
+};
+
 const normalizePathPoint = (point) => {
   if (Array.isArray(point)) {
     return { row: point[0], column: point[1] };
@@ -24,9 +29,19 @@ const getRoadPoints = (road) => {
   return [];
 };
 
-export const getRoadConnectionsForHex = (roads, aHex) => {
-  const aHexKey = toCoordKey(aHex);
-  const neighborsByKey = new Map();
+const addNeighbor = (neighborsByHexKey, fromHex, toHex) => {
+  const fromKey = toCoordKey(fromHex);
+  const toKey = toCoordKey(toHex);
+
+  if (!neighborsByHexKey.has(fromKey)) {
+    neighborsByHexKey.set(fromKey, new Set());
+  }
+
+  neighborsByHexKey.get(fromKey).add(toKey);
+};
+
+export const buildRoadGraph = (roads) => {
+  const neighborsByHexKey = new Map();
 
   for (const road of roads) {
     const points = getRoadPoints(road);
@@ -40,18 +55,34 @@ export const getRoadConnectionsForHex = (roads, aHex) => {
 
       const startKey = toCoordKey(start);
       const endKey = toCoordKey(end);
-
-      if (startKey === aHexKey && endKey !== aHexKey) {
-        neighborsByKey.set(endKey, end);
+      if (startKey === endKey) {
+        continue;
       }
 
-      if (endKey === aHexKey && startKey !== aHexKey) {
-        neighborsByKey.set(startKey, start);
-      }
+      addNeighbor(neighborsByHexKey, start, end);
+      addNeighbor(neighborsByHexKey, end, start);
     }
   }
 
-  return [...neighborsByKey.values()];
+  const degreesByHexKey = new Map();
+  for (const [hexKey, neighbors] of neighborsByHexKey.entries()) {
+    degreesByHexKey.set(hexKey, neighbors.size);
+  }
+
+  return { neighborsByHexKey, degreesByHexKey };
+};
+
+export const getJunctionHexKeys = (roads) => {
+  const { degreesByHexKey } = buildRoadGraph(roads);
+  const junctionHexKeys = new Set();
+
+  for (const [hexKey, degree] of degreesByHexKey.entries()) {
+    if (degree >= 3) {
+      junctionHexKeys.add(hexKey);
+    }
+  }
+
+  return junctionHexKeys;
 };
 
 export class RoadDrawer {
@@ -71,41 +102,13 @@ export class RoadDrawer {
 
   drawAll() {
     const roads = this.#getRoads();
-    const roadHexes = this.#getRoadHexes(roads);
     const radius = this.#hexDrawer.getHexRadius();
 
-    for (const roadHex of roadHexes.values()) {
-      const connections = getRoadConnectionsForHex(roads, roadHex);
-      if (connections.length === 0) {
-        continue;
-      }
-
-      this.#drawRoadJunction(roadHex, connections, radius);
-    }
+    this.#drawRoadPolylines(roads, radius);
+    this.#drawJunctionHubs(getJunctionHexKeys(roads), radius);
   }
 
-  #getRoadHexes(roads) {
-    const roadHexes = new Map();
-
-    for (const road of roads) {
-      const points = getRoadPoints(road);
-      for (const point of points) {
-        const normalized = normalizePathPoint(point);
-        if (!normalized) {
-          continue;
-        }
-
-        roadHexes.set(toCoordKey(normalized), normalized);
-      }
-    }
-
-    return roadHexes;
-  }
-
-  #drawRoadJunction(roadHex, connectedNeighbors, radius) {
-    const center = this.#hexDrawer.hexCenter(roadHex);
-    const spokeLength = radius * 0.88;
-    const hubRadius = radius * 0.16;
+  #drawRoadPolylines(roads, radius) {
     const ctx = this.#p.drawingContext;
 
     this.#p.push();
@@ -117,37 +120,54 @@ export class RoadDrawer {
     ctx.shadowColor = 'rgba(0,0,0,0.18)';
     this.#p.stroke(0x8A, 0x76, 0x50, 220);
     this.#p.strokeWeight(radius * 0.33);
-    this.#drawSpokes(center, connectedNeighbors, spokeLength);
-    this.#drawHub(center, hubRadius);
+    this.#drawRoadLinePass(roads);
 
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'rgba(0,0,0,0)';
     this.#p.stroke(0xC7, 0xB4, 0x8A, 205);
     this.#p.strokeWeight(radius * 0.18);
-    this.#drawSpokes(center, connectedNeighbors, spokeLength);
-    this.#drawHub(center, hubRadius * 0.95);
+    this.#drawRoadLinePass(roads);
 
     this.#p.pop();
   }
 
-  #drawSpokes(center, connectedNeighbors, spokeLength) {
-    for (const neighbor of connectedNeighbors) {
-      const neighborCenter = this.#hexDrawer.hexCenter(neighbor);
-      const dx = neighborCenter.x - center.x;
-      const dy = neighborCenter.y - center.y;
-      const magnitude = Math.hypot(dx, dy);
+  #drawRoadLinePass(roads) {
+    for (const road of roads) {
+      const points = getRoadPoints(road)
+        .map((point) => normalizePathPoint(point))
+        .filter((point) => point !== undefined)
+        .map((point) => this.#hexDrawer.hexCenter(point));
 
-      if (magnitude === 0) {
+      if (points.length < 2) {
         continue;
       }
 
-      const endX = center.x + (dx / magnitude) * spokeLength;
-      const endY = center.y + (dy / magnitude) * spokeLength;
-      this.#p.line(center.x, center.y, endX, endY);
+      this.#p.beginShape();
+      for (const point of points) {
+        this.#p.vertex(point.x, point.y);
+      }
+      this.#p.endShape();
     }
   }
 
-  #drawHub(center, hubRadius) {
-    this.#p.circle(center.x, center.y, hubRadius * 2);
+  #drawJunctionHubs(junctionHexKeys, radius) {
+    if (junctionHexKeys.size === 0) {
+      return;
+    }
+
+    this.#p.push();
+    this.#p.noStroke();
+
+    for (const hexKey of junctionHexKeys) {
+      const center = this.#hexDrawer.hexCenter(fromCoordKey(hexKey));
+
+      this.#p.fill(0x8A, 0x76, 0x50, 190);
+      this.#p.circle(center.x, center.y, radius * 0.22);
+
+      this.#p.fill(0xC7, 0xB4, 0x8A, 195);
+      this.#p.circle(center.x, center.y, radius * 0.12);
+    }
+
+    this.#p.pop();
   }
 }
