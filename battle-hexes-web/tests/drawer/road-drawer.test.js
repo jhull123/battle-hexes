@@ -18,10 +18,9 @@ const createMockP5 = () => {
     strokeJoin: jest.fn(),
     stroke: jest.fn(),
     strokeWeight: jest.fn(),
-    line: jest.fn(),
-    noStroke: jest.fn(),
-    fill: jest.fn(),
-    circle: jest.fn(),
+    beginShape: jest.fn(),
+    curveVertex: jest.fn(),
+    endShape: jest.fn(),
   };
 };
 
@@ -31,7 +30,7 @@ const createHexDrawer = ({ radius = 50 } = {}) => ({
 });
 
 describe('RoadDrawer', () => {
-  test('drawAll builds centerline segments and draws roads in two passes', () => {
+  test('drawAll renders smooth two-pass curves and avoids junction dot overlays', () => {
     const p5 = createMockP5();
     const hexDrawer = createHexDrawer();
     const roadType = new RoadType('secondary', 1);
@@ -43,9 +42,8 @@ describe('RoadDrawer', () => {
 
     roadDrawer.drawAll();
 
-    expect(p5.push).toHaveBeenCalledTimes(2);
+    expect(p5.push).toHaveBeenCalledTimes(1);
     expect(p5.noFill).toHaveBeenCalledTimes(1);
-    expect(p5.noStroke).toHaveBeenCalledTimes(1);
     expect(p5.strokeCap).toHaveBeenCalledWith(p5.ROUND);
     expect(p5.strokeJoin).toHaveBeenCalledWith(p5.ROUND);
 
@@ -54,22 +52,20 @@ describe('RoadDrawer', () => {
     expect(p5.stroke).toHaveBeenNthCalledWith(2, 0xC7, 0xB4, 0x8A, 205);
     expect(p5.strokeWeight).toHaveBeenNthCalledWith(2, 50 * 0.18);
 
-    expect(p5.line).toHaveBeenCalled();
-    const firstPassLines = p5.line.mock.calls.slice(0, p5.line.mock.calls.length / 2);
-    const hasRawJunctionEndpoints = firstPassLines.some((args) => (
-      (args[0] === 90 && args[1] === 40) || (args[2] === 90 && args[3] === 40)
-    ));
-    expect(hasRawJunctionEndpoints).toBe(false);
+    expect(p5.beginShape).toHaveBeenCalled();
+    expect(p5.curveVertex).toHaveBeenCalled();
+    expect(p5.endShape).toHaveBeenCalled();
+
+    const includesJunctionCenter = p5.curveVertex.mock.calls.some(
+      ([x, y]) => x === 90 && y === 40
+    );
+    expect(includesJunctionCenter).toBe(false);
 
     expect(hexDrawer.hexCenter).toHaveBeenCalledWith({ row: 4, column: 9 });
-    expect(p5.fill).toHaveBeenNthCalledWith(1, 0x8A, 0x76, 0x50, 220);
-    expect(p5.fill).toHaveBeenNthCalledWith(2, 0xC7, 0xB4, 0x8A, 205);
-    expect(p5.circle).toHaveBeenNthCalledWith(1, 90, 40, 50 * 0.24);
-    expect(p5.circle).toHaveBeenNthCalledWith(2, 90, 40, 50 * 0.14);
 
     expect(p5.drawingContext.shadowBlur).toBe(0);
     expect(p5.drawingContext.shadowColor).toBe('rgba(0,0,0,0)');
-    expect(p5.pop).toHaveBeenCalledTimes(2);
+    expect(p5.pop).toHaveBeenCalledTimes(1);
   });
 
   test('draw delegates to drawAll for compatibility', () => {
@@ -81,7 +77,7 @@ describe('RoadDrawer', () => {
 
     roadDrawer.draw(new Hex(9, 9));
 
-    expect(p5.line).toHaveBeenCalledTimes(2);
+    expect(p5.beginShape).toHaveBeenCalledTimes(2);
     expect(hexDrawer.hexCenter).toHaveBeenCalledWith({ row: 2, column: 3 });
     expect(hexDrawer.hexCenter).toHaveBeenCalledWith({ row: 2, column: 4 });
   });
@@ -96,7 +92,8 @@ describe('RoadDrawer', () => {
     roadDrawer.drawAll();
 
     expect(p5.push).not.toHaveBeenCalled();
-    expect(p5.line).not.toHaveBeenCalled();
-    expect(p5.circle).not.toHaveBeenCalled();
+    expect(p5.beginShape).not.toHaveBeenCalled();
+    expect(p5.curveVertex).not.toHaveBeenCalled();
+    expect(p5.endShape).not.toHaveBeenCalled();
   });
 });
