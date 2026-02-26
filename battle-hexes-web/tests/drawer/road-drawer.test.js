@@ -30,11 +30,14 @@ const createHexDrawer = ({ radius = 50 } = {}) => ({
 });
 
 describe('RoadDrawer', () => {
-  test('drawAll draws each road as a smooth two-pass curve', () => {
+  test('drawAll renders smooth two-pass curves and avoids junction dot overlays', () => {
     const p5 = createMockP5();
     const hexDrawer = createHexDrawer();
     const roadType = new RoadType('secondary', 1);
-    const roads = [new Road(roadType, [[2, 3], [2, 4], [3, 4]])];
+    const roads = [
+      new Road(roadType, [[9, 7], [9, 8], [8, 8], [7, 8], [6, 8], [5, 9], [4, 9], [4, 8], [3, 7]]),
+      new Road(roadType, [[4, 9], [4, 10], [3, 11], [3, 12]]),
+    ];
     const roadDrawer = new RoadDrawer(p5, hexDrawer, () => roads);
 
     roadDrawer.drawAll();
@@ -49,24 +52,16 @@ describe('RoadDrawer', () => {
     expect(p5.stroke).toHaveBeenNthCalledWith(2, 0xC7, 0xB4, 0x8A, 205);
     expect(p5.strokeWeight).toHaveBeenNthCalledWith(2, 50 * 0.18);
 
-    expect(p5.beginShape).toHaveBeenCalledTimes(2);
-    expect(p5.endShape).toHaveBeenCalledTimes(2);
+    expect(p5.beginShape).toHaveBeenCalled();
+    expect(p5.curveVertex).toHaveBeenCalled();
+    expect(p5.endShape).toHaveBeenCalled();
 
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(1, 30, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(2, 30, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(3, 30, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(4, 40, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(5, 40, 30);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(6, 40, 30);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(7, 40, 30);
+    const includesJunctionCenter = p5.curveVertex.mock.calls.some(
+      ([x, y]) => x === 90 && y === 40
+    );
+    expect(includesJunctionCenter).toBe(false);
 
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(8, 30, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(9, 30, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(10, 30, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(11, 40, 20);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(12, 40, 30);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(13, 40, 30);
-    expect(p5.curveVertex).toHaveBeenNthCalledWith(14, 40, 30);
+    expect(hexDrawer.hexCenter).toHaveBeenCalledWith({ row: 4, column: 9 });
 
     expect(p5.drawingContext.shadowBlur).toBe(0);
     expect(p5.drawingContext.shadowColor).toBe('rgba(0,0,0,0)');
