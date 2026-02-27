@@ -32,6 +32,11 @@ class Board:
         self.rows = rows
         self.columns = columns
         self.units: dict[str, Unit] = {}
+        self.road_types: dict[str, float] = {}
+        self.road_paths: tuple[
+            tuple[str, tuple[tuple[int, int], ...]],
+            ...,
+        ] = tuple()
         self.hexes = []
         for row in range(rows):
             for column in range(columns):
@@ -42,6 +47,33 @@ class Board:
 
     def get_columns(self) -> int:
         return self.columns
+
+    def set_road_types(self, road_types: dict[str, float] | None) -> None:
+        """Store movement costs keyed by road type name."""
+        self.road_types = dict(road_types or {})
+
+    def get_road_types(self) -> dict[str, float]:
+        """Return a copy of board road type movement costs."""
+        return dict(self.road_types)
+
+    def set_road_paths(
+        self,
+        road_paths: Iterable[tuple[str, tuple[tuple[int, int], ...]]] | None,
+    ) -> None:
+        """Store road paths as ``(type, path_coords)`` entries."""
+        if road_paths is None:
+            self.road_paths = tuple()
+            return
+
+        self.road_paths = tuple(
+            (road_type, tuple(path)) for road_type, path in road_paths
+        )
+
+    def get_road_paths(
+        self,
+    ) -> tuple[tuple[str, tuple[tuple[int, int], ...]], ...]:
+        """Return board road path entries."""
+        return self.road_paths
 
     def get_hex(self, row: int, column: int) -> Hex | None:
         if 0 <= row < self.rows and 0 <= column < self.columns:

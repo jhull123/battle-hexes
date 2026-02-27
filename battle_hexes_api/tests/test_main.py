@@ -45,6 +45,8 @@ class TestFastAPI(unittest.TestCase):
             terrain.get("hexes"),
             [{"row": 5, "column": 5, "terrain": "village"}],
         )
+        self.assertEqual(post_body.get("board", {}).get("road_types"), {})
+        self.assertEqual(post_body.get("board", {}).get("road_paths"), [])
 
         get_response = self.client.get(f'/games/{new_game_id}')
         get_body = get_response.json()
@@ -56,6 +58,8 @@ class TestFastAPI(unittest.TestCase):
             get_body.get("board", {}).get("terrain", {}).get("hexes"),
             [{"row": 5, "column": 5, "terrain": "village"}],
         )
+        self.assertEqual(get_body.get("board", {}).get("road_types"), {})
+        self.assertEqual(get_body.get("board", {}).get("road_paths"), [])
 
     def test_create_game_invalid_scenario_returns_404(self):
         payload = {

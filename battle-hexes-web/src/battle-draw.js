@@ -7,6 +7,8 @@ import { SelectionDrawer } from './drawer/selection-drawer.js';
 import { MoveSelectionDrawer } from './drawer/selection-drawer.js';
 import { CombatSelectionDrawer } from './drawer/selection-drawer.js';
 import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
+import { RoadDrawer } from './drawer/road-drawer.js';
+import { TerrainOverlayDrawer } from './drawer/terrain-overlay-drawer.js';
 import { Menu } from './menu.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
@@ -62,13 +64,24 @@ new p5((p) => {
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
   hexDrawWithCoords.setShowHexCoords(menu.getShowHexCoordsPreference());
   const hexDraw = new HexDrawer(p, hexRadius);
+  const roadDraw = new RoadDrawer(p, hexDraw, () => game.getBoard().getRoads());
+  const terrainOverlayDraw = new TerrainOverlayDrawer(p, hexDraw);
   
   const unitDraw = new UnitDrawer(p, hexDraw);
   const combatSelectionDraw = new CombatSelectionDrawer(new HexDrawer(p, hexRadius));
   const selectionDraw = new SelectionDrawer(hexDraw);
   const moveSelectionDraw = new MoveSelectionDrawer(hexDraw);
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
-  const drawers = [hexDrawWithCoords, combatSelectionDraw, selectionDraw, moveSelectionDraw, unitDraw, moveArrowDraw];
+  const drawers = [
+    hexDrawWithCoords,
+    roadDraw,
+    terrainOverlayDraw,
+    combatSelectionDraw,
+    selectionDraw,
+    moveSelectionDraw,
+    unitDraw,
+    moveArrowDraw,
+  ];
 
   eventBus.on('hexCoordsVisibilityChanged', (shouldShow) => {
     hexDrawWithCoords.setShowHexCoords(shouldShow);
@@ -97,12 +110,15 @@ new p5((p) => {
     // console.log("I'm starting to draw!");
     p.background(90);
   
-    for (let currentHex of game.getBoard().getAllHexes()) {
-      hexDrawWithCoords.draw(currentHex);
-    }
-  
-    for (let currentHex of game.getBoard().getAllHexes()) {
-      unitDraw.draw(currentHex);
+    for (let drawer of drawers) {
+      if (typeof drawer.drawAll === 'function') {
+        drawer.drawAll();
+        continue;
+      }
+
+      for (let currentHex of game.getBoard().getAllHexes()) {
+        drawer.draw(currentHex);
+      }
     }  
   };
 
@@ -149,6 +165,9 @@ new p5((p) => {
   }
 
   function drawHexNeighborhood(someHexes) {
+    someHexes;
+    p.draw();
+    /* keep for reference
     const hexesToDraw = game.getBoard().getHexNeighborhoods(someHexes);
     game.getBoard().getOccupiedHexes().forEach(hex => hexesToDraw.add(hex));
 
@@ -157,6 +176,7 @@ new p5((p) => {
         drawer.draw(hexToDraw);
       }
     }
+    */
   }
 
   function pixelToHex(x, y) {

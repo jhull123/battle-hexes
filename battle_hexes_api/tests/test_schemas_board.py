@@ -142,3 +142,22 @@ class TestBoardModel(unittest.TestCase):
         self.assertEqual(board_model.terrain.hexes[0].row, 1)
         self.assertEqual(board_model.terrain.hexes[0].column, 1)
         self.assertEqual(board_model.terrain.hexes[0].terrain, "village")
+
+    def test_to_board_model_includes_road_metadata(self):
+        self.board.set_road_types({"secondary": 1.0})
+        self.board.set_road_paths(
+            (("secondary", ((1, 1), (1, 2), (2, 2))),)
+        )
+
+        board_model = BoardModel.from_board(self.board)
+
+        self.assertEqual(board_model.road_types, {"secondary": 1.0})
+        self.assertEqual(len(board_model.road_paths), 1)
+        self.assertEqual(board_model.road_paths[0].type, "secondary")
+        self.assertEqual(
+            [
+                (coord.row, coord.column)
+                for coord in board_model.road_paths[0].path
+            ],
+            [(1, 1), (1, 2), (2, 2)],
+        )

@@ -18,6 +18,8 @@ from .scenario import (
     Scenario,
     ScenarioFaction,
     ScenarioHexData,
+    ScenarioRoad,
+    ScenarioRoadType,
     ScenarioTerrainType,
     ScenarioUnit,
 )
@@ -88,6 +90,23 @@ class ScenarioObjectiveEntry(BaseModel):
     type: str
 
 
+class ScenarioRoadTypeData(BaseModel):
+    """Road type configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    edge_move_cost: float
+
+
+class ScenarioRoadEntry(BaseModel):
+    """Road configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    type: str
+    path: list[tuple[int, int]]
+
+
 class ScenarioData(BaseModel):
     """Full scenario definition parsed from a JSON file."""
 
@@ -102,6 +121,8 @@ class ScenarioData(BaseModel):
     units: list[ScenarioUnitData]
     terrain_default: str | None = None
     terrain_types: dict[str, ScenarioTerrainTypeData] | None = None
+    road_types: dict[str, ScenarioRoadTypeData] | None = None
+    roads: list[ScenarioRoadEntry] | None = None
     hex_data: list[ScenarioHexDataEntry] | None = None
     objectives: list[ScenarioObjectiveEntry] | None = None
 
@@ -197,6 +218,28 @@ class ScenarioData(BaseModel):
             else {}
         )
 
+    def _build_road_types(self) -> dict[str, ScenarioRoadType]:
+        """Convert road type definitions into core data."""
+
+        return (
+            {
+                key: ScenarioRoadType(
+                    edge_move_cost=road_type.edge_move_cost
+                )
+                for key, road_type in self.road_types.items()
+            }
+            if self.road_types
+            else {}
+        )
+
+    def _build_roads(self) -> tuple[ScenarioRoad, ...]:
+        """Convert road definitions into core data."""
+
+        return tuple(
+            ScenarioRoad(type=road.type, path=tuple(road.path))
+            for road in (self.roads or [])
+        )
+
     def to_core(self) -> Scenario:
         """Convert the validated payload into a core :class:`Scenario`."""
 
@@ -212,6 +255,8 @@ class ScenarioData(BaseModel):
             units=self._build_units(),
             terrain_default=self.terrain_default,
             terrain_types=self._build_terrain_types(),
+            road_types=self._build_road_types(),
+            roads=self._build_roads(),
             hex_data=tuple(hex_entries),
         )
 

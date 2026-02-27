@@ -60,5 +60,16 @@
   ],
   "objectives": [
     { "coords": [5, 5], "points": 3, "type": "hold" }
+  ],
+  "road_types": {
+    "secondary": {
+      "edge_move_cost": 1
+    }
+  },
+  "roads": [
+    {
+      "type": "secondary",
+      "path": [[5,0],[5,1],[6,2],[6,3],[6,4],[5,5]]
+    }
   ]
 }

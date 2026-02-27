@@ -27,6 +27,7 @@ export class MovementAnimator {
       unit.move(prevHex, this.#board.getAdjacentHexes(prevHex));
     }
     this.#board.refreshCombat();
+    eventBus.emit('redraw');
     eventBus.emit('menuUpdate');
   }
 }

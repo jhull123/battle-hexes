@@ -72,6 +72,7 @@ class GameCreator:
             player2,
         )
         self.add_terrain(board, scenario_obj)
+        self.add_roads(board, scenario_obj)
         self.add_units(
             board,
             scenario_obj,
@@ -109,6 +110,19 @@ class GameCreator:
         )
         self._apply_default_terrain(board, default_terrain)
         self._apply_hex_terrain(board, scenario, terrain_by_name)
+
+    def add_roads(self, board: Board, scenario: Scenario) -> None:
+        """Apply scenario road definitions to board-level road metadata."""
+        board.set_road_types(
+            {
+                name: road_type.edge_move_cost
+                for name, road_type in scenario.road_types.items()
+            }
+        )
+        board.set_road_paths(
+            (road.type, tuple(road.path))
+            for road in scenario.roads
+        )
 
     def _build_terrain_by_name(
         self,

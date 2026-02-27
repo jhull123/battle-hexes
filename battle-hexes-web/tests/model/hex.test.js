@@ -61,3 +61,41 @@ describe('objectives', () => {
     expect(hex.getObjectives()).toEqual([objective]);
   });
 });
+
+describe('hasMovableUnit', () => {
+  test('returns false for empty hex', () => {
+    expect(hex.hasMovableUnit()).toBe(false);
+  });
+
+  test('returns true when any unit is movable (not necessarily first)', () => {
+    const unit1 = new Unit();
+    const unit2 = new Unit();
+
+    jest.spyOn(unit1, 'getMovesRemaining').mockReturnValue(0);
+    jest.spyOn(unit1, 'getOwningPlayer').mockReturnValue({ isHuman: () => true });
+
+    jest.spyOn(unit2, 'getMovesRemaining').mockReturnValue(1);
+    jest.spyOn(unit2, 'getOwningPlayer').mockReturnValue({ isHuman: () => true });
+
+    hex.addUnit(unit1);
+    hex.addUnit(unit2);
+
+    expect(hex.hasMovableUnit()).toBe(true);
+  });
+
+  test('returns false when no contained units are movable', () => {
+    const unit1 = new Unit();
+    const unit2 = new Unit();
+
+    jest.spyOn(unit1, 'getMovesRemaining').mockReturnValue(0);
+    jest.spyOn(unit1, 'getOwningPlayer').mockReturnValue({ isHuman: () => true });
+
+    jest.spyOn(unit2, 'getMovesRemaining').mockReturnValue(0);
+    jest.spyOn(unit2, 'getOwningPlayer').mockReturnValue({ isHuman: () => false });
+
+    hex.addUnit(unit1);
+    hex.addUnit(unit2);
+
+    expect(hex.hasMovableUnit()).toBe(false);
+  });
+});
