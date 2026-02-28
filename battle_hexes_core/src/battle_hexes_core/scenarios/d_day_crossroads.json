@@ -49,9 +49,9 @@
   ],
   "terrain_default": "open",
   "terrain_types": {
-    "forest": { "color": "#1F4D3A", "move_cost": 2 },
+    "forest": { "color": "#7F8C6A", "move_cost": 2 },
     "open": { "color": "#8F9779" },
-    "rough": { "color": "#5E6434", "move_cost": 2 },
+    "rough": { "color": "#84876B", "move_cost": 2 },
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
