@@ -1,3 +1,4 @@
+import { RoughDrawer } from "./rough-drawer.js";
 import { VillageDrawer } from "./village-drawer.js";
 
 export class TerrainDrawerResolver {
@@ -5,7 +6,8 @@ export class TerrainDrawerResolver {
 
   constructor(p, hexDrawer) {
     this.#terrainMap = new Map([
-      ["village", new VillageDrawer(p, hexDrawer)]
+      ["village", new VillageDrawer(p, hexDrawer)],
+      ["rough", new RoughDrawer(p, hexDrawer)]
     ]);
   }
 
