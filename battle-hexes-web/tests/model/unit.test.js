@@ -78,3 +78,22 @@ describe('resetCombat', () => {
     expect(unit.getCombatOpponents()).toHaveLength(0);
   });
 });
+
+
+describe('canEnterHex', () => {
+  test('returns true when terrain cost is affordable', () => {
+    const unit = new Unit('8', 'Test Unit', friendlyFaction, null, 4, 4, 3);
+    const destinationHex = new Hex(2, 2);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    expect(unit.canEnterHex(destinationHex)).toBe(true);
+  });
+
+  test('returns false when terrain cost exceeds remaining moves', () => {
+    const unit = new Unit('9', 'Test Unit', friendlyFaction, null, 4, 4, 2);
+    const destinationHex = new Hex(2, 3);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    expect(unit.canEnterHex(destinationHex)).toBe(false);
+  });
+});

@@ -115,6 +115,27 @@ describe('animator integration', () => {
 
     expect(animatorInstance.animate).toHaveBeenCalledWith(unit, [start, end], true);
   });
+
+
+  test('selectHex does not animate movement when destination terrain cost is unaffordable', () => {
+    const player = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00')];
+    factions[0].setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.setPlayers({ getCurrentPlayer: () => player });
+    const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
+    board.addUnit(unit, 0, 0);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+    end.setTerrain({ moveCost: 2 });
+
+    const animatorInstance = board.getAnimator();
+    board.selectHex(start);
+    board.selectHex(end);
+
+    expect(animatorInstance.animate).not.toHaveBeenCalled();
+  });
 });
 
 
