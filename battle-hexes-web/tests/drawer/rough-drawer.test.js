@@ -18,8 +18,12 @@ const createMockP5 = () => ({
   fill: jest.fn(),
   stroke: jest.fn(),
   strokeWeight: jest.fn(),
+  // the drawer now uses custom shapes rather than simple circles
   circle: jest.fn(),
   beginShape: jest.fn(),
+  vertex: jest.fn(),
+  bezierVertex: jest.fn(),
+  endShape: jest.fn(),
   background: jest.fn(),
   noFill: jest.fn(),
   randomSeed: jest.fn(),
@@ -42,7 +46,11 @@ describe('RoughDrawer', () => {
     expect(p5.strokeWeight).toHaveBeenCalledWith(1.2);
     expect(p5.fill).toHaveBeenCalled();
     expect(p5.stroke).toHaveBeenCalled();
-    expect(p5.circle).toHaveBeenCalled();
+    // shape-based drawing should have been invoked
+    expect(p5.beginShape).toHaveBeenCalled();
+    expect(p5.vertex).toHaveBeenCalled();
+    expect(p5.bezierVertex).toHaveBeenCalled();
+    expect(p5.endShape).toHaveBeenCalledWith(p5.CLOSE);
 
     const fillArg = p5.fill.mock.calls[0][0];
     const strokeArg = p5.stroke.mock.calls[0][0];
@@ -50,7 +58,7 @@ describe('RoughDrawer', () => {
     expect(strokeArg).toMatch(/^#3E3F33[0-9A-F]{2}$/);
 
     expect(hexDrawer.drawHex).not.toHaveBeenCalled();
-    expect(p5.beginShape).not.toHaveBeenCalled();
+    // background/noFill still shouldn't be called
     expect(p5.background).not.toHaveBeenCalled();
     expect(p5.noFill).not.toHaveBeenCalled();
   });
