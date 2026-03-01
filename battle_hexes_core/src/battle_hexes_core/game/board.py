@@ -1,8 +1,8 @@
 from collections.abc import Iterable
-from collections import deque
 from typing import List, Set, Tuple
 
 from battle_hexes_core.game.hex import Hex
+from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.unit.unit import Unit
 
@@ -152,73 +152,14 @@ class Board:
     def get_reachable_hexes(
             self, unit: Unit, start: Hex, move_points: int = None
     ) -> Set[Hex]:
-        """Get all hexes reachable by the unit from the start hex."""
-        if move_points is None:
-            move_points = unit.get_move()
-
-        visited = set()
-        queue = deque()
-        reachable_hexes = set()
-
-        queue.append((start, 0))
-        visited.add((start.row, start.column))
-        reachable_hexes.add(start)
-
-        while queue:
-            current_hex, cost = queue.popleft()
-
-            if cost >= move_points:
-                continue
-
-            if self.enemy_adjacent(unit, current_hex):
-                # Movement must stop when entering a hex adjacent to an enemy
-                # unit, so do not expand further from this hex.
-                continue
-
-            for neighbor in self.get_neighboring_hexes(current_hex):
-                coord = (neighbor.row, neighbor.column)
-                if coord not in visited:
-                    visited.add(coord)
-                    reachable_hexes.add(neighbor)
-                    # TODO static cost of 1
-                    queue.append((neighbor, cost + 1))
-
-        return reachable_hexes
+        movement = MovementCalculator(self)
+        return movement.get_reachable_hexes(unit, start, move_points)
 
     def shortest_path(
             self, unit: Unit, start: Hex, end: Hex
     ) -> List[Hex]:
-        """Find the shortest path from start to end hex for the unit."""
-        move_points = unit.get_move()
-        reachable_hexes = self.get_reachable_hexes(unit, start, move_points)
-
-        if end not in reachable_hexes:
-            return []
-
-        visited = set()
-        queue = deque([(start, [])])
-        visited.add((start.row, start.column))
-
-        while queue:
-            current_hex, path = queue.popleft()
-            new_path = path + [current_hex]
-
-            if current_hex == end:
-                return new_path
-
-            if self.enemy_adjacent(unit, current_hex):
-                # Cannot continue moving once adjacent to an enemy unit
-                continue
-
-            for neighbor in self.get_neighboring_hexes(current_hex):
-                if (
-                    (neighbor.row, neighbor.column) not in visited
-                    and neighbor in reachable_hexes
-                ):
-                    visited.add((neighbor.row, neighbor.column))
-                    queue.append((neighbor, new_path))
-
-        return []
+        movement = MovementCalculator(self)
+        return movement.shortest_path(unit, start, end)
 
     def enemy_adjacent(self, unit: Unit, hex: Hex) -> bool:
         """Check if there are any enemy units adjacent to the given hex."""
