@@ -105,6 +105,15 @@ export class Unit {
     return this.#movesRemaining;
   }
 
+  canEnterHex(destinationHex) {
+    const terrainMoveCost = destinationHex?.getTerrain()?.moveCost;
+    const moveCost = Number.isFinite(terrainMoveCost) && terrainMoveCost > 0
+      ? terrainMoveCost
+      : 1;
+
+    return this.getMovesRemaining() >= moveCost;
+  }
+
   resetMovesRemaining() {
     this.#movesRemaining = this.getMovement();
   }
