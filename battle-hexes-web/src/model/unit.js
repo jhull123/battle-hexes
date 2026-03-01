@@ -68,8 +68,17 @@ export class Unit {
   }
 
   move(destinationHex, adjacentHexes) {
+    const terrainMoveCost = destinationHex?.getTerrain()?.moveCost;
+    const moveCost = Number.isFinite(terrainMoveCost) && terrainMoveCost > 0
+      ? terrainMoveCost
+      : 1;
+
     if (this.#movesRemaining <= 0) {
       throw new Error('No movement points remaining!');
+    }
+
+    if (this.#movesRemaining < moveCost) {
+      throw new Error('Not enough movement points remaining!');
     }
 
     this.setContainingHex(destinationHex);
@@ -79,11 +88,6 @@ export class Unit {
       this.#movesRemaining = 0;
       return;
     }
-
-    const terrainMoveCost = destinationHex?.getTerrain()?.moveCost;
-    const moveCost = Number.isFinite(terrainMoveCost) && terrainMoveCost > 0
-      ? terrainMoveCost
-      : 1;
 
     this.#movesRemaining = Math.max(0, this.#movesRemaining - moveCost);
   }

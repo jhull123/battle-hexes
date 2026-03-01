@@ -55,6 +55,19 @@ describe('move', () => {
     expect(unit.getMovesRemaining()).toBe(1);
   });
 
+  test('throws an error when terrain move cost exceeds movement points remaining', () => {
+    const unit = new Unit('8', 'Test Unit', friendlyFaction, null, 4, 4, 1);
+    const destinationHex = new Hex(5, 5);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    expect(() => {
+      unit.move(destinationHex, [new Hex(4, 5), new Hex(5, 6)]);
+    }).toThrow('Not enough movement points remaining!');
+
+    expect(unit.getContainingHex()).toBeUndefined();
+    expect(unit.getMovesRemaining()).toBe(1);
+  });
+
   test('adds combat opponent when opponent is adjacent', () => {
     const unit = new Unit('5', 'Test Unit', friendlyFaction, null, 4, 4, 4);
     const oppHex = new Hex(5, 6);
