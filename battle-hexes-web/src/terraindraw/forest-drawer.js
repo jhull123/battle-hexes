@@ -21,8 +21,7 @@ export class ForestDrawer {
 
     const center = this.#hexDrawer.hexCenter(aHex);
     const radius = this.#hexDrawer.getHexRadius();
-    const placementRadius = radius * 1.02;
-    const hexVertices = this.#terrainHelper.getHexVertices(aHex, center, placementRadius);
+    const hexVertices = this.#terrainHelper.getHexVertices(aHex, center, radius);
     const treeCount = Math.max(8, Math.floor(radius * 0.16 + this.#p.random(11) + 8));
     const strokeWeight = Math.max(0.4, radius * 0.016);
     const placedPoints = [];
@@ -34,7 +33,7 @@ export class ForestDrawer {
       const treeHeight = this.#p.random(radius * 0.15, radius * 0.24);
       const treeWidth = treeHeight * this.#p.random(0.55, 0.72);
       const minDist = Math.max(radius * 0.12, treeWidth * 0.75);
-      const { x, y } = this.#terrainHelper.pickPosition(center, placementRadius, hexVertices, placedPoints, minDist);
+      const { x, y } = this.#terrainHelper.pickPosition(center, hexVertices, placedPoints, minDist);
       const rotation = this.#p.random(-0.1745, 0.1745);
       const fillColor = PINE_FILL_COLORS[Math.floor(this.#p.random(PINE_FILL_COLORS.length))];
       const layerCount = this.#p.random() < 0.5 ? 1 : 2;
@@ -45,7 +44,6 @@ export class ForestDrawer {
 
     this.#p.randomSeed();
   }
-
 
   #drawPineGlyph(x, y, width, height, rotation, fillColor, layerCount) {
     this.#p.push();

@@ -78,7 +78,7 @@ describe('ForestDrawer', () => {
 
     forestDrawer.draw({ row: 0, column: 0 });
 
-    expect(hexDrawer.getHexVertices).toHaveBeenCalled();
+    expect(hexDrawer.getHexVertices).toHaveBeenCalledWith({ row: 0, column: 0 }, 40);
     expect(p5.translate).toHaveBeenCalled();
   });
 

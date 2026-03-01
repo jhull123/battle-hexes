@@ -7,12 +7,12 @@ export class TerrainHelper {
     this.#hexDrawer = hexDrawer;
   }
 
-  pickPosition(center, placementRadius, hexVertices, placedPoints, minDist) {
+  pickPosition(center, hexVertices, placedPoints, minDist) {
     const maxAttempts = 15;
     let fallbackCandidate;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const candidate = this.samplePointInHex(center, placementRadius, hexVertices);
+      const candidate = this.samplePointInHex(center, hexVertices);
 
       if (!fallbackCandidate) {
         fallbackCandidate = candidate;
@@ -32,7 +32,7 @@ export class TerrainHelper {
     return fallbackCandidate ?? center;
   }
 
-  samplePointInHex(center, placementRadius, hexVertices) {
+  samplePointInHex(center, hexVertices) {
     const bounds = this.#boundsForVertices(hexVertices);
     const maxAttempts = 15;
 
@@ -45,28 +45,26 @@ export class TerrainHelper {
       }
     }
 
-    const angle = this.#p.random(this.#p.TWO_PI);
-    const distance = Math.sqrt(this.#p.random()) * placementRadius;
-    return {
-      x: center.x + this.#p.cos(angle) * distance,
-      y: center.y + this.#p.sin(angle) * distance,
-    };
+    return center;
   }
 
-  getHexVertices(aHex, center, placementRadius) {
-    const apiVertices = this.#hexDrawer.getHexVertices?.(aHex) ?? this.#hexDrawer.hexVertices?.(aHex);
-    if (Array.isArray(apiVertices) && apiVertices.length >= 3) {
-      return apiVertices;
+  getHexVertices(aHex, center, hexRadius) {
+    if (typeof this.#hexDrawer.getHexVertices === 'function') {
+      const apiVertices = this.#hexDrawer.getHexVertices(aHex, hexRadius);
+      if (Array.isArray(apiVertices) && apiVertices.length >= 3) {
+        return apiVertices;
+      }
     }
 
     const vertices = [];
     for (let i = 0; i < 6; i += 1) {
-      const angle = this.#p.TWO_PI / 6 * i;
+      const angle = (this.#p.TWO_PI / 6) * i;
       vertices.push({
-        x: center.x + this.#p.cos(angle) * placementRadius,
-        y: center.y + this.#p.sin(angle) * placementRadius,
+        x: center.x + this.#p.cos(angle) * hexRadius,
+        y: center.y + this.#p.sin(angle) * hexRadius,
       });
     }
+
     return vertices;
   }
 

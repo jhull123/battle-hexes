@@ -18,7 +18,7 @@ const createMockP5 = () => ({
 });
 
 describe('TerrainHelper', () => {
-  test('getHexVertices returns vertices from hexDrawer API when available', () => {
+  test('getHexVertices uses hexDrawer.getHexVertices when available', () => {
     const p5 = createMockP5();
     const expectedVertices = [
       { x: 1, y: 2 },
@@ -33,10 +33,25 @@ describe('TerrainHelper', () => {
     const vertices = helper.getHexVertices({ row: 1, column: 2 }, { x: 100, y: 100 }, 40);
 
     expect(vertices).toBe(expectedVertices);
-    expect(hexDrawer.getHexVertices).toHaveBeenCalled();
+    expect(hexDrawer.getHexVertices).toHaveBeenCalledWith({ row: 1, column: 2 }, 40);
   });
 
-  test('samplePointInHex falls back to polar sampling when polygon sampling misses', () => {
+  test('getHexVertices fallback uses provided hex radius', () => {
+    const p5 = createMockP5();
+    const helper = new TerrainHelper(p5, {});
+    const center = { x: 100, y: 100 };
+
+    const vertices = helper.getHexVertices({ row: 0, column: 0 }, center, 40);
+
+    expect(vertices).toHaveLength(6);
+    vertices.forEach((vertex) => {
+      const dx = vertex.x - center.x;
+      const dy = vertex.y - center.y;
+      expect(Math.sqrt(dx * dx + dy * dy)).toBeCloseTo(40);
+    });
+  });
+
+  test('samplePointInHex returns center when polygon sampling misses', () => {
     const p5 = createMockP5();
     p5.random = jest.fn((min, max) => {
       if (typeof min === 'undefined') {
@@ -51,7 +66,6 @@ describe('TerrainHelper', () => {
     });
     const helper = new TerrainHelper(p5, {});
     const center = { x: 100, y: 200 };
-    const placementRadius = 51;
     const tinyHex = [
       { x: 0, y: 0 },
       { x: 0.1, y: 0 },
@@ -59,10 +73,9 @@ describe('TerrainHelper', () => {
       { x: 0, y: 0.1 },
     ];
 
-    const point = helper.samplePointInHex(center, placementRadius, tinyHex);
+    const point = helper.samplePointInHex(center, tinyHex);
 
-    expect(point.x).toBeCloseTo(100 + (Math.sqrt(0.5) * placementRadius));
-    expect(point.y).toBeCloseTo(200);
+    expect(point).toEqual(center);
   });
 
   test('pickPosition retries candidates and accepts the first with enough spacing', () => {
@@ -79,7 +92,7 @@ describe('TerrainHelper', () => {
     const candidateSequence = [{ x: 0, y: 0 }, { x: 5, y: 5 }];
     const sampleSpy = jest.spyOn(helper, 'samplePointInHex').mockImplementation(() => candidateSequence.shift());
 
-    const point = helper.pickPosition(center, 10, hexVertices, [{ x: 0, y: 0 }], 2);
+    const point = helper.pickPosition(center, hexVertices, [{ x: 0, y: 0 }], 2);
 
     expect(sampleSpy).toHaveBeenCalledTimes(2);
     expect(point).toEqual({ x: 5, y: 5 });
@@ -98,7 +111,7 @@ describe('TerrainHelper', () => {
 
     const sampleSpy = jest.spyOn(helper, 'samplePointInHex').mockReturnValue({ x: 11, y: 11 });
 
-    const point = helper.pickPosition(center, 10, hexVertices, [{ x: 11, y: 11 }], 2);
+    const point = helper.pickPosition(center, hexVertices, [{ x: 11, y: 11 }], 2);
 
     expect(sampleSpy).toHaveBeenCalledTimes(15);
     expect(point).toEqual({ x: 11, y: 11 });
