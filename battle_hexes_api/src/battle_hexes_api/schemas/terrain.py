@@ -15,6 +15,7 @@ class TerrainTypeModel(BaseModel):
 
     name: str
     color: str
+    move_cost: int = 1
 
     @classmethod
     def from_scenario_type(
@@ -22,7 +23,11 @@ class TerrainTypeModel(BaseModel):
     ) -> "TerrainTypeModel":
         """Create a terrain type model from scenario data."""
 
-        return cls(name=name, color=terrain_type.color)
+        return cls(
+            name=name,
+            color=terrain_type.color,
+            move_cost=terrain_type.move_cost,
+        )
 
 
 class TerrainHexModel(BaseModel):

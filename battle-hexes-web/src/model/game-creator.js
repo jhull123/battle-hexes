@@ -98,14 +98,17 @@ export class GameCreator {
       for (const [key, value] of Object.entries(terrainData.types)) {
         const name = value?.name ?? key;
         const color = value?.color ?? '#F0F0F0';
-        terrainTypes.set(key, new Terrain(name, color));
+        const moveCost = Number.isFinite(value?.move_cost) && value.move_cost > 0
+          ? value.move_cost
+          : 1;
+        terrainTypes.set(key, new Terrain(name, color, moveCost));
       }
     }
 
     const defaultTerrainId = typeof terrainData?.default === 'string' ? terrainData.default : null;
     const defaultTerrain =
       (defaultTerrainId ? terrainTypes.get(defaultTerrainId) : null)
-      ?? (defaultTerrainId ? new Terrain(defaultTerrainId, '#F0F0F0') : new Terrain('default', '#F0F0F0'));
+      ?? (defaultTerrainId ? new Terrain(defaultTerrainId, '#F0F0F0', 1) : new Terrain('default', '#F0F0F0', 1));
 
     for (const hex of board.getAllHexes()) {
       hex.setTerrain(defaultTerrain);

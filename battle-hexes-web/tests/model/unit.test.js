@@ -44,6 +44,17 @@ describe('move', () => {
     expect(unit.getMovesRemaining()).toBe(3);
   });
 
+
+  test('deducts terrain move cost when not adjacent to opponent', () => {
+    const unit = new Unit('7', 'Test Unit', friendlyFaction, null, 4, 4, 4);
+    const destinationHex = new Hex(5, 5);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    unit.move(destinationHex, [new Hex(4, 5), new Hex(5, 6)]);
+
+    expect(unit.getMovesRemaining()).toBe(1);
+  });
+
   test('adds combat opponent when opponent is adjacent', () => {
     const unit = new Unit('5', 'Test Unit', friendlyFaction, null, 4, 4, 4);
     const oppHex = new Hex(5, 6);

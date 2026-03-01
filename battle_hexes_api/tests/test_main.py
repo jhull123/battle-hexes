@@ -42,6 +42,10 @@ class TestFastAPI(unittest.TestCase):
             "#C6AA5C",
         )
         self.assertEqual(
+            terrain.get("types", {}).get("open", {}).get("move_cost"),
+            1,
+        )
+        self.assertEqual(
             terrain.get("hexes"),
             [{"row": 5, "column": 5, "terrain": "village"}],
         )
