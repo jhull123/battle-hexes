@@ -11,12 +11,13 @@ export class RoughDrawer {
   }
 
   draw(aHex) {
+    this.#p.randomSeed(aHex.hexSeed);
     const center = this.#hexDrawer.hexCenter(aHex);
     const radius = this.#hexDrawer.getHexRadius();
     const innerRadius = radius * 0.82;
-    const minDotSize = radius * 0.015;
-    const maxDotSize = radius * 0.05;
-    const dotCount = Math.max(10, Math.round(radius * radius * 0.015));
+    const minDotSize = radius * 0.09;
+    const maxDotSize = radius * 0.17;
+    const dotCount = this.#p.random(10) + 14;
 
     this.#p.strokeWeight(Math.max(0.6, radius * 0.03));
 
@@ -31,8 +32,27 @@ export class RoughDrawer {
 
       this.#p.fill(dotColor + this.#toHexAlpha(alpha));
       this.#p.stroke(OUTLINE_COLOR + this.#toHexAlpha(alpha));
-      this.#p.circle(x, y, diameter);
+      // draw an oval with a flat bottom instead of a perfect circle
+      const w = diameter;
+      const h = diameter * 0.7; // height less than width gives a flattened look
+      this.#p.beginShape();
+      this.#p.vertex(x - w/2, y); // bottom left
+      // left side curve up to top
+      this.#p.bezierVertex(
+        x - w/2, y - h/2,
+        x - w/4, y - h,
+        x,        y - h
+      );
+      // right side curve down back to bottom
+      this.#p.bezierVertex(
+        x + w/4, y - h,
+        x + w/2, y - h/2,
+        x + w/2, y
+      );
+      this.#p.endShape(this.#p.CLOSE);
     }
+
+    this.#p.randomSeed();
   }
 
   #toHexAlpha(alpha) {

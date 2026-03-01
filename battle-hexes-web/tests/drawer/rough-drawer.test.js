@@ -22,6 +22,7 @@ const createMockP5 = () => ({
   beginShape: jest.fn(),
   background: jest.fn(),
   noFill: jest.fn(),
+  randomSeed: jest.fn(),
 });
 
 describe('RoughDrawer', () => {
