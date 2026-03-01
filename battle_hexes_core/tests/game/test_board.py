@@ -3,6 +3,7 @@ import uuid
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -316,6 +317,51 @@ class TestBoard(unittest.TestCase):
 
         path = self.board.shortest_path(self.red_unit, start_hex, end_hex)
         self.assertEqual(path, [])
+
+    def test_get_reachable_hexes_respects_terrain_move_cost(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        start_hex = self.board.get_hex(2, 2)
+
+        mountain = Terrain("mountain", "#777777", move_cost=3)
+        forest = Terrain("forest", "#558855", move_cost=2)
+        self.board.get_hex(2, 3).set_terrain(mountain)
+        self.board.get_hex(3, 2).set_terrain(forest)
+
+        reachable_hexes = self.board.get_reachable_hexes(
+            self.red_unit, start_hex, move_points=2
+        )
+        actual_coords = {(hex.row, hex.column) for hex in reachable_hexes}
+
+        self.assertNotIn((2, 3), actual_coords)
+        self.assertIn((3, 2), actual_coords)
+
+    def test_shortest_path_prefers_lower_total_cost(self):
+        self.board = Board(3, 4)
+        self.board.add_unit(self.red_unit, 1, 0)
+        start_hex = self.board.get_hex(1, 0)
+        end_hex = self.board.get_hex(1, 3)
+
+        swamp = Terrain("swamp", "#445533", move_cost=4)
+        self.board.get_hex(1, 1).set_terrain(swamp)
+
+        path = self.board.shortest_path(self.red_unit, start_hex, end_hex)
+        coords = [(h.row, h.column) for h in path]
+
+        self.assertEqual(coords[0], (1, 0))
+        self.assertEqual(coords[-1], (1, 3))
+        self.assertNotIn((1, 1), coords)
+
+    def test_reachable_hexes_stop_expanding_when_start_enemy_adjacent(self):
+        self.board.add_unit(self.red_unit, 2, 2)
+        self.board.add_unit(self.blue_unit, 1, 2)
+        start_hex = self.board.get_hex(2, 2)
+
+        reachable_hexes = self.board.get_reachable_hexes(
+            self.red_unit, start_hex, move_points=3
+        )
+        coords = {(h.row, h.column) for h in reachable_hexes}
+
+        self.assertEqual(coords, {(2, 2)})
 
     def test_hex_distance(self):
         a = self.board.get_hex(0, 0)

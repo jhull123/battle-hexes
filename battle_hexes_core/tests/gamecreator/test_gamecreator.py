@@ -232,8 +232,8 @@ class TestGameCreator(unittest.TestCase):
             board_size=(2, 2),
             terrain_default="open",
             terrain_types={
-                "open": ScenarioTerrainType(color="#C6AA5C"),
-                "village": ScenarioTerrainType(color="#9A8F7A"),
+                "open": ScenarioTerrainType(color="#C6AA5C", move_cost=1),
+                "village": ScenarioTerrainType(color="#9A8F7A", move_cost=2),
             },
             hex_data=(
                 ScenarioHexData(
@@ -255,8 +255,10 @@ class TestGameCreator(unittest.TestCase):
         self.assertIsNotNone(override_hex)
         self.assertEqual(default_hex.terrain.name, "open")
         self.assertEqual(default_hex.terrain.hex_color, "#C6AA5C")
+        self.assertEqual(default_hex.terrain.move_cost, 1)
         self.assertEqual(override_hex.terrain.name, "village")
         self.assertEqual(override_hex.terrain.hex_color, "#9A8F7A")
+        self.assertEqual(override_hex.terrain.move_cost, 2)
 
     def test_add_roads_populates_board_road_data(self):
         scenario = Scenario(
