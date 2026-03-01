@@ -55,6 +55,7 @@
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
+    { "coords": [8, 0], "terrain": "forest" },    
     { "coords": [9, 0], "terrain": "forest" },    
     { "coords": [8, 1], "terrain": "rough" },
     { "coords": [9, 1], "terrain": "rough" },    
