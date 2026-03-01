@@ -28,7 +28,7 @@ const createMockP5 = () => ({
 });
 
 describe('ForestDrawer', () => {
-  test('draw renders deterministic pine glyphs inside the hex', () => {
+  test('draw renders deterministic pine glyphs for a hex', () => {
     const p5 = createMockP5();
     const hexDrawer = {
       hexCenter: jest.fn(() => ({ x: 100, y: 100 })),
@@ -58,6 +58,43 @@ describe('ForestDrawer', () => {
     expect(p5.line).toHaveBeenCalledTimes(19);
 
     expect(p5.rotate).toHaveBeenCalledWith(0);
+  });
+
+  test('draw uses hex polygon vertices when available for tree placement', () => {
+    const p5 = createMockP5();
+    const hexDrawer = {
+      hexCenter: jest.fn(() => ({ x: 100, y: 100 })),
+      getHexRadius: jest.fn(() => 40),
+      getHexVertices: jest.fn(() => [
+        { x: 100, y: 60 },
+        { x: 140, y: 80 },
+        { x: 140, y: 120 },
+        { x: 100, y: 140 },
+        { x: 60, y: 120 },
+        { x: 60, y: 80 },
+      ]),
+    };
+    const forestDrawer = new ForestDrawer(p5, hexDrawer);
+
+    forestDrawer.draw({ row: 0, column: 0 });
+
+    expect(hexDrawer.getHexVertices).toHaveBeenCalledWith({ row: 0, column: 0 }, 40);
+    expect(p5.translate).toHaveBeenCalled();
+  });
+
+  test('draw retries placement and still draws when spacing checks keep failing', () => {
+    const p5 = createMockP5();
+    const hexDrawer = {
+      hexCenter: jest.fn(() => ({ x: 100, y: 100 })),
+      getHexRadius: jest.fn(() => 40),
+    };
+    const forestDrawer = new ForestDrawer(p5, hexDrawer);
+
+    forestDrawer.draw({ row: 2, column: 4 });
+
+    const translatedPoints = p5.translate.mock.calls.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`);
+    expect(new Set(translatedPoints).size).toBe(1);
+    expect(p5.translate).toHaveBeenCalledTimes(19);
   });
 
   test('draw supports direct row/column properties and applies minimum stroke weight', () => {
