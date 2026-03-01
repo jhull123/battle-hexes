@@ -44,6 +44,17 @@ describe('move', () => {
     expect(unit.getMovesRemaining()).toBe(3);
   });
 
+
+  test('deducts terrain move cost when not adjacent to opponent', () => {
+    const unit = new Unit('7', 'Test Unit', friendlyFaction, null, 4, 4, 4);
+    const destinationHex = new Hex(5, 5);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    unit.move(destinationHex, [new Hex(4, 5), new Hex(5, 6)]);
+
+    expect(unit.getMovesRemaining()).toBe(1);
+  });
+
   test('adds combat opponent when opponent is adjacent', () => {
     const unit = new Unit('5', 'Test Unit', friendlyFaction, null, 4, 4, 4);
     const oppHex = new Hex(5, 6);
@@ -65,5 +76,24 @@ describe('resetCombat', () => {
     unit.resetCombat();
 
     expect(unit.getCombatOpponents()).toHaveLength(0);
+  });
+});
+
+
+describe('canEnterHex', () => {
+  test('returns true when terrain cost is affordable', () => {
+    const unit = new Unit('8', 'Test Unit', friendlyFaction, null, 4, 4, 3);
+    const destinationHex = new Hex(2, 2);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    expect(unit.canEnterHex(destinationHex)).toBe(true);
+  });
+
+  test('returns false when terrain cost exceeds remaining moves', () => {
+    const unit = new Unit('9', 'Test Unit', friendlyFaction, null, 4, 4, 2);
+    const destinationHex = new Hex(2, 3);
+    destinationHex.setTerrain({ moveCost: 3 });
+
+    expect(unit.canEnterHex(destinationHex)).toBe(false);
   });
 });

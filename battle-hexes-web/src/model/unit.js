@@ -76,10 +76,16 @@ export class Unit {
     this.updateCombatOpponents(adjacentHexes);
 
     if (this.#combatOpponents.length > 0) {
-      this.#movesRemaining = 0; 
-    } else if (this.#movesRemaining > 0) {
-      this.#movesRemaining--;
+      this.#movesRemaining = 0;
+      return;
     }
+
+    const terrainMoveCost = destinationHex?.getTerrain()?.moveCost;
+    const moveCost = Number.isFinite(terrainMoveCost) && terrainMoveCost > 0
+      ? terrainMoveCost
+      : 1;
+
+    this.#movesRemaining = Math.max(0, this.#movesRemaining - moveCost);
   }
 
   updateCombatOpponents(adjacentHexes) {
@@ -97,6 +103,15 @@ export class Unit {
 
   getMovesRemaining() {
     return this.#movesRemaining;
+  }
+
+  canEnterHex(destinationHex) {
+    const terrainMoveCost = destinationHex?.getTerrain()?.moveCost;
+    const moveCost = Number.isFinite(terrainMoveCost) && terrainMoveCost > 0
+      ? terrainMoveCost
+      : 1;
+
+    return this.getMovesRemaining() >= moveCost;
   }
 
   resetMovesRemaining() {

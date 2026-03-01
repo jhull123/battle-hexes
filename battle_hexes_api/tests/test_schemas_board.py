@@ -125,7 +125,7 @@ class TestBoardModel(unittest.TestCase):
             terrain_default="open",
             terrain_types={
                 "open": ScenarioTerrainType(color="#C6AA5C"),
-                "village": ScenarioTerrainType(color="#9A8F7A"),
+                "village": ScenarioTerrainType(color="#9A8F7A", move_cost=2),
             },
         )
         self.board.get_hex(0, 0).set_terrain(Terrain("open", "#C6AA5C"))
@@ -135,9 +135,11 @@ class TestBoardModel(unittest.TestCase):
 
         self.assertEqual(board_model.terrain.default, "open")
         self.assertEqual(board_model.terrain.types["open"].color, "#C6AA5C")
+        self.assertEqual(board_model.terrain.types["open"].move_cost, 1)
         self.assertEqual(
             board_model.terrain.types["village"].color, "#9A8F7A"
         )
+        self.assertEqual(board_model.terrain.types["village"].move_cost, 2)
         self.assertEqual(len(board_model.terrain.hexes), 1)
         self.assertEqual(board_model.terrain.hexes[0].row, 1)
         self.assertEqual(board_model.terrain.hexes[0].column, 1)

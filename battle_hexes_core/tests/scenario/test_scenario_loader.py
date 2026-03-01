@@ -63,6 +63,7 @@ def test_load_scenario_converts_core_types():
 
     assert scenario.terrain_default == "open"
     assert scenario.terrain_types["open"].color == "#C6AA5C"
+    assert scenario.terrain_types["open"].move_cost == 1
     assert scenario.hex_data[0].coords == (5, 5)
     assert scenario.hex_data[1].units == ("red_unit_1",)
     assert scenario.hex_data[0].objectives[0].type == "hold"

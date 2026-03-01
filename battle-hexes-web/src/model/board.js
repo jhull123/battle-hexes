@@ -9,9 +9,13 @@ export class Board {
   #roads;
   #players;
   #animator;
+  #rows;
+  #columns;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
+    this.#rows = rows;
+    this.#columns = columns;
     this.#units = new Set();
     this.#roads = new Array();
     this.#animator = new MovementAnimator(this);
@@ -53,6 +57,14 @@ export class Board {
     return this.#animator;
   }
 
+  getRows() {
+    return this.#rows;
+  }
+
+  getColumns() {
+    return this.#columns;
+  }
+
   getHex(row, column) {
     return this.#hexMap.get(`${row},${column}`);
   }
@@ -75,7 +87,9 @@ export class Board {
     } else if (this.isOppositionHex(oldSelection)) {
       oldSelection.setSelected(false);
     } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
-        && oldSelection.getUnits()[0].isMovable() && !this.isOppositionHex(hexToSelect)) {
+        && oldSelection.getUnits()[0].isMovable()
+        && oldSelection.getUnits()[0].canEnterHex(hexToSelect)
+        && !this.isOppositionHex(hexToSelect)) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       const path = [oldSelection, hexToSelect];
@@ -94,6 +108,10 @@ export class Board {
   }
 
   moveUnit(unit, oldHex, newHex) {
+    if (!unit.canEnterHex(newHex)) {
+      throw new Error('Unit does not have enough movement points to enter destination hex.');
+    }
+
     unit.move(newHex, this.getAdjacentHexes(newHex));
     oldHex.removeUnit(unit);
     newHex.addUnit(unit);
@@ -127,6 +145,7 @@ export class Board {
     if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)
+        && this.#selectedHex.getUnits()[0].canEnterHex(this.#hoverHex)
         && this.isOwnHexSelected()
         && !this.isOppositionHex(hoverHex)) {
       console.log(`We have a move hover hex! ${this.#hoverHex}`);

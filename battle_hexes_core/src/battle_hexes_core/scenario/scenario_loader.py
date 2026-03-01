@@ -68,6 +68,7 @@ class ScenarioTerrainTypeData(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     color: str
+    move_cost: int = 1
 
 
 class ScenarioHexDataEntry(BaseModel):
@@ -211,7 +212,10 @@ class ScenarioData(BaseModel):
 
         return (
             {
-                key: ScenarioTerrainType(color=terrain_type.color)
+                key: ScenarioTerrainType(
+                    color=terrain_type.color,
+                    move_cost=terrain_type.move_cost,
+                )
                 for key, terrain_type in self.terrain_types.items()
             }
             if self.terrain_types
