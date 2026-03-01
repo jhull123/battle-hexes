@@ -130,7 +130,7 @@ class GameCreator:
     ) -> dict[str, Terrain]:
         """Build Terrain instances keyed by their scenario terrain name."""
         return {
-            name: Terrain(name, terrain.color)
+            name: Terrain(name, terrain.color, terrain.move_cost)
             for name, terrain in scenario.terrain_types.items()
         }
 
