@@ -116,3 +116,13 @@ describe('animator integration', () => {
     expect(animatorInstance.animate).toHaveBeenCalledWith(unit, [start, end], true);
   });
 });
+
+
+describe('board dimensions', () => {
+  test('stores row and column counts from constructor', () => {
+    const board = new Board(11, 18);
+
+    expect(board.getRows()).toBe(11);
+    expect(board.getColumns()).toBe(18);
+  });
+});

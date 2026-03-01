@@ -9,9 +9,13 @@ export class Board {
   #roads;
   #players;
   #animator;
+  #rows;
+  #columns;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
+    this.#rows = rows;
+    this.#columns = columns;
     this.#units = new Set();
     this.#roads = new Array();
     this.#animator = new MovementAnimator(this);
@@ -51,6 +55,14 @@ export class Board {
 
   getAnimator() {
     return this.#animator;
+  }
+
+  getRows() {
+    return this.#rows;
+  }
+
+  getColumns() {
+    return this.#columns;
   }
 
   getHex(row, column) {

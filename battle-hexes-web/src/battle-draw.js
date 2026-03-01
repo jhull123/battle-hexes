@@ -10,6 +10,7 @@ import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
 import { RoadDrawer } from './drawer/road-drawer.js';
 import { TerrainOverlayDrawer } from './drawer/terrain-overlay-drawer.js';
 import { Menu } from './menu.js';
+import { getCanvasDimensions } from './drawer/canvas-dimensions.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
 import {
@@ -27,7 +28,6 @@ new p5((p) => {
   const hexHeight = Math.sqrt(3) * hexRadius;
   const hexDiameter = hexRadius * 2;
   const menuWidth = 300;
-  const hexRows = 10;
   const canvasMargin = 20;
   
   let game = new GameCreator().createGame(gameData);
@@ -45,6 +45,7 @@ new p5((p) => {
     rememberLoadedGameData(newGameData);
     game = new GameCreator().createGame(newGameData);
     menu.setGame(game);
+    p.resizeCanvas(getCanvasWidth(), getCanvasHeight());
 
     if (!game.getCurrentPlayer().isHuman()) {
       game.getCurrentPlayer().play(game);
@@ -156,12 +157,23 @@ new p5((p) => {
     drawHexNeighborhood([oldHover, hoverHex, game.getBoard().getSelectedHex()]);
   }
 
+  function getCanvasDimensionsForBoard() {
+    return getCanvasDimensions({
+      rows: game.getBoard().getRows(),
+      columns: game.getBoard().getColumns(),
+      hexRadius,
+      windowWidth: p.windowWidth,
+      menuWidth,
+      canvasMargin,
+    });
+  }
+
   function getCanvasWidth() {
-    return p.windowWidth - menuWidth - canvasMargin;
+    return getCanvasDimensionsForBoard().width;
   }
 
   function getCanvasHeight() {
-    return hexRows * hexHeight + hexRadius;
+    return getCanvasDimensionsForBoard().height;
   }
 
   function drawHexNeighborhood(someHexes) {
