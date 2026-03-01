@@ -56,7 +56,9 @@
   },
   "hex_data": [
     { "coords": [9, 0], "terrain": "forest" },    
+    { "coords": [8, 1], "terrain": "rough" },
     { "coords": [9, 1], "terrain": "rough" },    
+    { "coords": [9, 2], "terrain": "rough" },
     { "coords": [2, 3], "terrain": "village" },
     { "coords": [2, 15], "terrain": "village" },
     { "coords": [9, 5], "units": ["Airborne Inf. A"] },
