@@ -10,7 +10,7 @@ export class HexDrawer {
     this.#hexRadius = hexRadius;
     this.#hexHeight = Math.sqrt(3) * hexRadius;
     this.#hexDiameter = hexRadius * 2;
-    
+
     this.#showHexCoords = false;
   }
 
@@ -21,7 +21,9 @@ export class HexDrawer {
   }
 
   drawHex(hexToDraw, strokeColor, strokeSize, fillColor) {
-    let hexCenter = this.hexCenter(hexToDraw);
+    const vertices = this.getHexVertices(hexToDraw);
+    const hexCenter = this.hexCenter(hexToDraw);
+
     this.#p.stroke(strokeColor);
     this.#p.strokeWeight(strokeSize);
 
@@ -32,12 +34,7 @@ export class HexDrawer {
     }
 
     this.#p.beginShape();
-    for (let i = 0; i < 6; i++) {
-      let angle = this.#p.TWO_PI / 6 * i;
-      let vx = hexCenter.x + this.#p.cos(angle) * this.#hexRadius;
-      let vy = hexCenter.y + this.#p.sin(angle) * this.#hexRadius;
-      this.#p.vertex(vx, vy);
-    }
+    vertices.forEach(({ x, y }) => this.#p.vertex(x, y));
     this.#p.endShape(this.#p.CLOSE);
 
     if (this.#showHexCoords) {
@@ -47,20 +44,35 @@ export class HexDrawer {
 
   #drawHexCoords(hexToDraw, hexPosition) {
     this.#p.fill(0);
-    this.#p.noStroke();  // No outline for the text
+    this.#p.noStroke();
     this.#p.textSize(16);
-    this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);  // Center align text horizontally and vertically    
-    this.#p.text(`${hexToDraw.row}, ${hexToDraw.column}`, hexPosition.x, hexPosition.y);  
+    this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);
+    this.#p.text(`${hexToDraw.row}, ${hexToDraw.column}`, hexPosition.x, hexPosition.y);
   }
 
   hexCenter(hexToDraw) {
-    let oddColumnOffsetX = hexToDraw.column * this.#hexRadius / 2;
-    let oddColumnOffsetY = hexToDraw.column % 2 == 0 ? 0 : this.#hexHeight / 2;
+    const oddColumnOffsetX = (hexToDraw.column * this.#hexRadius) / 2;
+    const oddColumnOffsetY = hexToDraw.column % 2 === 0 ? 0 : this.#hexHeight / 2;
 
-    let x = this.#hexRadius + hexToDraw.column * this.#hexDiameter - oddColumnOffsetX;
-    let y = this.#hexHeight / 2 + hexToDraw.row * this.#hexHeight + oddColumnOffsetY;
+    const x = this.#hexRadius + hexToDraw.column * this.#hexDiameter - oddColumnOffsetX;
+    const y = this.#hexHeight / 2 + hexToDraw.row * this.#hexHeight + oddColumnOffsetY;
 
-    return {x, y};
+    return { x, y };
+  }
+
+  getHexVertices(hexToDraw, radius = this.#hexRadius) {
+    const hexCenter = this.hexCenter(hexToDraw);
+    const vertices = [];
+
+    for (let i = 0; i < 6; i += 1) {
+      const angle = (this.#p.TWO_PI / 6) * i;
+      vertices.push({
+        x: hexCenter.x + this.#p.cos(angle) * radius,
+        y: hexCenter.y + this.#p.sin(angle) * radius,
+      });
+    }
+
+    return vertices;
   }
 
   setShowHexCoords(showOrNot) {

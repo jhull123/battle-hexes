@@ -55,15 +55,21 @@
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
-    { "coords": [9, 0], "terrain": "forest" },    
-    { "coords": [8, 1], "terrain": "rough" },
-    { "coords": [9, 1], "terrain": "rough" },    
-    { "coords": [9, 2], "terrain": "rough" },
-    { "coords": [2, 3], "terrain": "village" },
-    { "coords": [2, 15], "terrain": "village" },
-    { "coords": [9, 5], "units": ["Airborne Inf. A"] },
     { "coords": [0, 16], "units": ["StuG. III Zug A"] },
-    { "coords": [2, 15], "units": ["A / Inf. Zug"] }
+    { "coords": [2, 3], "terrain": "village" },
+    { 
+      "coords": [2, 15],
+      "terrain": "village",
+      "units": ["A / Inf. Zug"]
+    },
+    { "coords": [6, 6], "terrain": "forest" },
+    { "coords": [6, 11], "terrain": "forest" },
+    { "coords": [8, 0], "terrain": "forest" },
+    { "coords": [8, 1], "terrain": "rough" },
+    { "coords": [9, 0], "terrain": "forest" },
+    { "coords": [9, 1], "terrain": "rough" },
+    { "coords": [9, 2], "terrain": "rough" },
+    { "coords": [9, 5], "units": ["Airborne Inf. A"] }
   ],
   "objectives": [
     { "coords": [2, 15], "points": 3, "type": "hold" }
