@@ -55,8 +55,11 @@
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
+    { "coords": [0, 15], "terrain": "forest" },
     { "coords": [0, 16], "units": ["StuG. III Zug A"] },
-    { "coords": [2, 3], "terrain": "village" },
+    { "coords": [0, 17], "terrain": "forest" },
+    { "coords": [1, 16], "terrain": "forest" },
+        { "coords": [2, 3], "terrain": "village" },
     { 
       "coords": [2, 15],
       "terrain": "village",
