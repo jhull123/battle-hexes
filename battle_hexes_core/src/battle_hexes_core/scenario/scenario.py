@@ -48,6 +48,7 @@ class ScenarioTerrainType:
     """Representation of a terrain type as defined in a scenario."""
 
     color: str
+    move_cost: int = 1
 
 
 @dataclass(frozen=True)
