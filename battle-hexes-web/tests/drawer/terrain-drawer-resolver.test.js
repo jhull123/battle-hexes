@@ -25,10 +25,22 @@ describe('TerrainDrawerResolver', () => {
     expect(typeof drawer.draw).toBe('function');
   });
 
-  test('returns null when no terrain drawer is registered', () => {
+  test('resolves forest terrain to a drawer instance', () => {
     const resolver = new TerrainDrawerResolver({}, {});
     const hex = {
       getTerrain: jest.fn(() => ({ name: 'forest' })),
+    };
+
+    const drawer = resolver.resolve(hex);
+
+    expect(drawer).not.toBeNull();
+    expect(typeof drawer.draw).toBe('function');
+  });
+
+  test('returns null when no terrain drawer is registered', () => {
+    const resolver = new TerrainDrawerResolver({}, {});
+    const hex = {
+      getTerrain: jest.fn(() => ({ name: 'marsh' })),
     };
 
     expect(resolver.resolve(hex)).toBeNull();
