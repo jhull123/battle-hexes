@@ -49,10 +49,16 @@
   ],
   "terrain_default": "open",
   "terrain_types": {
+    "forest": { "color": "#7F8C6A", "move_cost": 2 },
     "open": { "color": "#8F9779" },
+    "rough": { "color": "#84876B", "move_cost": 2 },
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
+    { "coords": [9, 0], "terrain": "forest" },    
+    { "coords": [8, 1], "terrain": "rough" },
+    { "coords": [9, 1], "terrain": "rough" },    
+    { "coords": [9, 2], "terrain": "rough" },
     { "coords": [2, 3], "terrain": "village" },
     { "coords": [2, 15], "terrain": "village" },
     { "coords": [9, 5], "units": ["Airborne Inf. A"] },

@@ -71,6 +71,10 @@ export class Hex {
     return `${this.row}, ${this.column}`
   }
 
+  get hexSeed() {
+    return (this.row << 16) | this.column;
+  }
+
   isAdjacent(anotherHex) {
     if (anotherHex === undefined || anotherHex === this) return false;
     return this.#adjacentHexCoords.has(`${anotherHex.row},${anotherHex.column}`);
