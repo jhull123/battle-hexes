@@ -171,9 +171,11 @@ export class Menu {
       .map((unit) => {
         const echelon = unit.getEchelon?.();
         const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
-        return echelon
+        const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
+        const unitData = echelon
           ? `${unit.getName()} (${echelon}, ${unitStrength})`
           : `${unit.getName()} (${unitStrength})`;
+        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span>${unitData}</div>`;
       })
       .join('<br/>');
   }
