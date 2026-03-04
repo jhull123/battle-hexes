@@ -1,4 +1,20 @@
 export class UnitDrawer {
+  static ECHELON_SYMBOLS = {
+    fireteam: 'Ø',
+    squad: '●',
+    section: '●●',
+    platoon: '●●●',
+    company: 'I',
+    battalion: 'II',
+    regiment: 'III',
+    brigade: 'X',
+    division: 'XX',
+    corps: 'XXX',
+    'field army': 'XXXX',
+    'army group': 'XXXXX',
+    theater: 'XXXXXX',
+  };
+
   #p;
   #hexDrawer;
   #counterSide;
@@ -41,7 +57,7 @@ export class UnitDrawer {
 
     this.#drawInfantrySymbol(x, y, this.#counterSide / 2, this.#counterSideThird);
     this.#drawUnitStats(aUnit, x, y);
-    this.#drawUnitSize(x, y);
+    this.#drawUnitSize(aUnit, x, y);
   }
 
   #halfColor(hexColor) {
@@ -89,11 +105,21 @@ export class UnitDrawer {
     this.#p.text(`${aUnit.getAttack()}-${aUnit.getDefense()}-${aUnit.getMovement()}`, x, y + this.#counterSideThird);
   }
   
-  #drawUnitSize(x, y) {
+  #drawUnitSize(aUnit, x, y) {
+    const unitEchelon = aUnit.getEchelon?.();
+    if (!unitEchelon) {
+      return;
+    }
+
+    const echelonSymbol = UnitDrawer.ECHELON_SYMBOLS[unitEchelon.trim().toLowerCase()];
+    if (!echelonSymbol) {
+      return;
+    }
+
     this.#p.fill(255);
     this.#p.noStroke();
     this.#p.textSize(9);
     this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);
-    this.#p.text('XX', x, y - this.#counterSideThird + this.#counterSideThird * 0.2);
+    this.#p.text(echelonSymbol, x, y - this.#counterSideThird + this.#counterSideThird * 0.2);
   }  
 }
