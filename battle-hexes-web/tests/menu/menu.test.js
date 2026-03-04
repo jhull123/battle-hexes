@@ -241,7 +241,9 @@ describe('auto new game persistence', () => {
 
     menu.updateMenu();
 
-    expect(document.getElementById('selHexContents').innerHTML).toBe('Airborne Inf. A (platoon, 3-2-5)');
+    const unitRow = document.querySelector('#selHexContents .selected-unit-row');
+    expect(unitRow.textContent).toBe('Airborne Inf. A (platoon, 3-2-5)');
+    expect(unitRow.querySelector('.selected-unit-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
   });
 
   test('omits echelon in selected hex unit details when not present', () => {
