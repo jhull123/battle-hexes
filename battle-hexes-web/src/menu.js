@@ -168,7 +168,13 @@ export class Menu {
     }
 
     return units
-      .map((unit) => `${unit.getName()} (${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()})`)
+      .map((unit) => {
+        const echelon = unit.getEchelon?.();
+        const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
+        return echelon
+          ? `${unit.getName()} (${echelon}, ${unitStrength})`
+          : `${unit.getName()} (${unitStrength})`;
+      })
       .join('<br/>');
   }
 

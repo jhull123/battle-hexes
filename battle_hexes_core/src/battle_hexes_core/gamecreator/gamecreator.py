@@ -256,6 +256,7 @@ class GameCreator:
                     unit_data.attack,
                     unit_data.defense,
                     unit_data.movement,
+                    echelon=unit_data.echelon,
                 )
 
                 board.add_unit(unit, row, column)

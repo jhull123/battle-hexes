@@ -33,6 +33,14 @@ def test_load_scenario_data_from_directory():
     assert scenario.units[0].movement == 6
 
 
+def test_load_scenario_data_reads_optional_unit_echelon():
+    scenario = load_scenario_data(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.units[0].echelon == "platoon"
+
+
 def test_load_scenario_data_reads_roads_and_road_types():
     scenario = load_scenario_data(
         "village_1", scenario_dir=_scenario_dir()
