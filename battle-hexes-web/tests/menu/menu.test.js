@@ -18,7 +18,9 @@ describe('auto new game persistence', () => {
     document.body.innerHTML = `
       <div id="selHexContents"></div>
       <div id="selHexCoord"></div>
+      <h4 id="selHexUnitsHeading"></h4>
       <div id="selHexTerrain"></div>
+      <h4 id="selHexTerrainHeading"></h4>
       <div id="selHexObjectives"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
@@ -177,7 +179,7 @@ describe('auto new game persistence', () => {
     });
   });
 
-  test('shows selected hex coord, units fallback, and terrain move cost', () => {
+  test('shows selected hex coord, units fallback, terrain move cost, and headings', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
@@ -204,6 +206,8 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('selHexCoord').innerHTML).toBe('Coords: (1, 2)');
     expect(document.getElementById('selHexContents').innerHTML).toBe('<em>None</em>');
     expect(document.getElementById('selHexTerrain').innerHTML).toBe('Open (cost=1)');
+    expect(document.getElementById('selHexUnitsHeading').style.display).toBe('');
+    expect(document.getElementById('selHexTerrainHeading').style.display).toBe('');
   });
 
 
@@ -246,6 +250,8 @@ describe('auto new game persistence', () => {
     new Menu(fakeGame());
 
     expect(document.getElementById('selHexCoord').innerHTML).toBe('<em>No selection</em>');
+    expect(document.getElementById('selHexUnitsHeading').style.display).toBe('none');
+    expect(document.getElementById('selHexTerrainHeading').style.display).toBe('none');
   });
 
   test('shows objective details when present on selected hex', () => {

@@ -7,6 +7,8 @@ export class Menu {
   #selHexContentsDiv;
   #selHexCoordDiv;
   #selHexTerrainDiv;
+  #selHexUnitsHeading;
+  #selHexTerrainHeading;
   #selHexObjectivesDiv;
   #unitMovesLeftDiv;
   #newGameBtn;
@@ -24,6 +26,8 @@ export class Menu {
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
     this.#selHexTerrainDiv = document.getElementById('selHexTerrain');
+    this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
+    this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
     this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
     this.#newGameBtn = document.getElementById('newGameBtn');
@@ -113,9 +117,11 @@ export class Menu {
       this.#selHexCoordDiv.innerHTML = '<em>No selection</em>';
       this.#selHexTerrainDiv.innerHTML = '';
       this.#selHexObjectivesDiv.innerHTML = '';
+      this.#toggleSelectedHexHeadings(false);
     } else {
       this.#selHexCoordDiv.innerHTML = `Coords: (${selectedHex.row}, ${selectedHex.column})`;
       this.#selHexContentsDiv.innerHTML = this.#formatSelectedHexUnits(selectedHex);
+      this.#toggleSelectedHexHeadings(true);
     }
 
     if (selectedHex) {
@@ -142,6 +148,16 @@ export class Menu {
       this.#showGameOver();
     } else {
       this.#hideGameOver();
+    }
+  }
+
+  #toggleSelectedHexHeadings(isVisible) {
+    const displayValue = isVisible ? '' : 'none';
+    if (this.#selHexUnitsHeading) {
+      this.#selHexUnitsHeading.style.display = displayValue;
+    }
+    if (this.#selHexTerrainHeading) {
+      this.#selHexTerrainHeading.style.display = displayValue;
     }
   }
 
