@@ -177,16 +177,17 @@ describe('auto new game persistence', () => {
     });
   });
 
-  test('updates terrain label when a hex is selected', () => {
+  test('shows selected hex coord, units fallback, and terrain move cost', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
     const selectedHex = {
       row: 1,
       column: 2,
-      isEmpty: () => true,
+      getUnits: () => [],
       getTerrain: () => ({
         name: 'open',
+        moveCost: 1,
       }),
     };
 
@@ -200,7 +201,42 @@ describe('auto new game persistence', () => {
 
     menu.updateMenu();
 
-    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Terrain: open');
+    expect(document.getElementById('selHexCoord').innerHTML).toBe('Coords: (1, 2)');
+    expect(document.getElementById('selHexContents').innerHTML).toBe('<em>None</em>');
+    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Open (cost=1)');
+  });
+
+
+  test('shows selected hex unit details when units are present', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 4,
+      column: 9,
+      getUnits: () => [{
+        getName: () => 'Airborne Inf. A',
+        getAttack: () => 3,
+        getDefense: () => 2,
+        getMovement: () => 5,
+      }],
+      getTerrain: () => ({
+        name: 'open',
+        moveCost: 1,
+      }),
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    expect(document.getElementById('selHexContents').innerHTML).toBe('Airborne Inf. A (3-2-5)');
   });
 
   test('shows no selection message when no hex is selected', () => {
@@ -209,7 +245,7 @@ describe('auto new game persistence', () => {
 
     new Menu(fakeGame());
 
-    expect(document.getElementById('selHexContents').innerHTML).toBe('<em>No selection</em>');
+    expect(document.getElementById('selHexCoord').innerHTML).toBe('<em>No selection</em>');
   });
 
   test('shows objective details when present on selected hex', () => {

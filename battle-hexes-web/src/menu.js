@@ -109,21 +109,18 @@ export class Menu {
     const selectedHex = this.#game.getBoard().getSelectedHex();
 
     if (!selectedHex) {
-      this.#selHexContentsDiv.innerHTML = '<em>No selection</em>';
-      this.#selHexCoordDiv.innerHTML = '';
+      this.#selHexContentsDiv.innerHTML = '';
+      this.#selHexCoordDiv.innerHTML = '<em>No selection</em>';
       this.#selHexTerrainDiv.innerHTML = '';
       this.#selHexObjectivesDiv.innerHTML = '';
-    } else if (selectedHex.isEmpty()) {
-      this.#selHexContentsDiv.innerHTML = 'Empty Hex';
-      this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
     } else {
-      this.#selHexContentsDiv.innerHTML = 'Hex contains a unit.';
-      this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
+      this.#selHexCoordDiv.innerHTML = `Coords: (${selectedHex.row}, ${selectedHex.column})`;
+      this.#selHexContentsDiv.innerHTML = this.#formatSelectedHexUnits(selectedHex);
     }
 
     if (selectedHex) {
       const terrain = selectedHex.getTerrain();
-      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.name}` : '';
+      this.#selHexTerrainDiv.innerHTML = this.#formatSelectedHexTerrain(terrain);
       this.#selHexObjectivesDiv.innerHTML = this.#formatObjectives(selectedHex);
     }
 
@@ -146,6 +143,31 @@ export class Menu {
     } else {
       this.#hideGameOver();
     }
+  }
+
+  #formatSelectedHexUnits(selectedHex) {
+    const units = selectedHex?.getUnits?.() ?? [];
+    if (units.length === 0) {
+      return '<em>None</em>';
+    }
+
+    return units
+      .map((unit) => `${unit.getName()} (${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()})`)
+      .join('<br/>');
+  }
+
+  #formatSelectedHexTerrain(terrain) {
+    if (!terrain) {
+      return '';
+    }
+
+    const moveCost = Number.isFinite(terrain.moveCost) && terrain.moveCost > 0
+      ? terrain.moveCost
+      : 1;
+    const terrainName = terrain.name
+      ? `${terrain.name.charAt(0).toUpperCase()}${terrain.name.slice(1)}`
+      : 'Unknown';
+    return `${terrainName} (cost=${moveCost})`;
   }
 
   #formatObjectives(selectedHex) {
