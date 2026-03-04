@@ -211,7 +211,7 @@ describe('auto new game persistence', () => {
   });
 
 
-  test('shows selected hex unit details when units are present', () => {
+  test('shows selected hex unit details with echelon when units are present', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
@@ -223,6 +223,40 @@ describe('auto new game persistence', () => {
         getAttack: () => 3,
         getDefense: () => 2,
         getMovement: () => 5,
+        getEchelon: () => 'platoon',
+      }],
+      getTerrain: () => ({
+        name: 'open',
+        moveCost: 1,
+      }),
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    expect(document.getElementById('selHexContents').innerHTML).toBe('Airborne Inf. A (platoon, 3-2-5)');
+  });
+
+  test('omits echelon in selected hex unit details when not present', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 4,
+      column: 9,
+      getUnits: () => [{
+        getName: () => 'Airborne Inf. A',
+        getAttack: () => 3,
+        getDefense: () => 2,
+        getMovement: () => 5,
+        getEchelon: () => null,
         getOwningPlayer: () => ({
           getFactions: () => [{ getCounterColor: () => '#ff0000' }],
         }),

@@ -15,6 +15,7 @@ class UnitModel(BaseModel):
     faction_id: str
     type: str
     attack: int
+    echelon: str | None = None
     defense: int
     move: int
     row: int
@@ -30,6 +31,7 @@ class UnitModel(BaseModel):
             faction_id=unit.faction.id,
             type=unit.type,
             attack=unit.attack,
+            echelon=unit.echelon,
             defense=unit.defense,
             move=unit.move,
             row=unit.row,

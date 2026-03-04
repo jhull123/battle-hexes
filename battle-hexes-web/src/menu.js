@@ -169,10 +169,15 @@ export class Menu {
 
     return units
       .map((unit) => {
+        const echelon = unit.getEchelon?.();
+        const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
         const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
-        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span>${unit.getName()} (${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()})</div>`;
+        const unitData = echelon
+          ? `${unit.getName()} (${echelon}, ${unitStrength})`
+          : `${unit.getName()} (${unitStrength})`;
+        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span>${unitData}</div>`;
       })
-      .join('');
+      .join('<br/>');
   }
 
   #formatSelectedHexTerrain(terrain) {

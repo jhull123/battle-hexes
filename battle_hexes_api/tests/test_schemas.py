@@ -134,6 +134,7 @@ class TestUnitModel(unittest.TestCase):
             type="Cavalry",
             attack=6,
             defense=4,
+            echelon="company",
             move=3,
             row=2,
             column=4,
@@ -146,6 +147,7 @@ class TestUnitModel(unittest.TestCase):
         self.assertEqual(unit_model.faction_id, "f3")
         self.assertEqual(unit_model.type, "Cavalry")
         self.assertEqual(unit_model.attack, 6)
+        self.assertEqual(unit_model.echelon, "company")
         self.assertEqual(unit_model.defense, 4)
         self.assertEqual(unit_model.move, 3)
         self.assertEqual(unit_model.row, 2)

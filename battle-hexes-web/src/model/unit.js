@@ -6,17 +6,19 @@ export class Unit {
   #faction;
   #type;
   #attack;
+  #echelon;
   #defense;
   #move;
   #movesRemaining;
   #combatOpponents;
 
-  constructor(id, name, faction, type, attack, defense, move) {
+  constructor(id, name, faction, type, attack, defense, move, echelon = null) {
     this.#id = id;
     this.#name = name;
     this.#faction = faction;
     this.#type = type;
     this.#attack = attack;
+    this.#echelon = echelon;
     this.#defense = defense;
     this.#move = move;
     this.#movesRemaining = move;
@@ -124,6 +126,10 @@ export class Unit {
 
   getMovement() {
     return this.#move;
+  }
+
+  getEchelon() {
+    return this.#echelon;
   }
 
   getDefense() {

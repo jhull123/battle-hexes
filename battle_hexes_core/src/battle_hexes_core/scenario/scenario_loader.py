@@ -57,6 +57,7 @@ class ScenarioUnitData(BaseModel):
     name: str
     faction: str
     type: str
+    echelon: str | None = None
     attack: int
     defense: int
     movement: int
@@ -200,6 +201,7 @@ class ScenarioData(BaseModel):
                 name=unit.name,
                 faction=unit.faction,
                 type=unit.type,
+                echelon=unit.echelon,
                 attack=unit.attack,
                 defense=unit.defense,
                 movement=unit.movement,

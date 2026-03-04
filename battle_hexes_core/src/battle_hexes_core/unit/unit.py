@@ -14,13 +14,15 @@ class Unit:
             defense: int,
             move: int,
             row: int = None,
-            column: int = None):
+            column: int = None,
+            echelon: str | None = None):
         self.id = id
         self.name = name
         self.faction = faction
         self._player = player
         self.type = type
         self.attack = attack
+        self.echelon = echelon
         self.defense = defense
         self.move = move
         self.row = row

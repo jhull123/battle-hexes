@@ -97,3 +97,18 @@ describe('canEnterHex', () => {
     expect(unit.canEnterHex(destinationHex)).toBe(false);
   });
 });
+
+
+describe('echelon', () => {
+  test('returns echelon when provided', () => {
+    const unit = new Unit('10', 'Test Unit', friendlyFaction, null, 2, 2, 2, 'platoon');
+
+    expect(unit.getEchelon()).toBe('platoon');
+  });
+
+  test('defaults echelon to null when omitted', () => {
+    const unit = new Unit('11', 'Test Unit', friendlyFaction, null, 2, 2, 2);
+
+    expect(unit.getEchelon()).toBeNull();
+  });
+});
