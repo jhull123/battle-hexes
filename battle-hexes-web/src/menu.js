@@ -10,7 +10,6 @@ export class Menu {
   #selHexUnitsHeading;
   #selHexTerrainHeading;
   #selHexObjectivesDiv;
-  #unitMovesLeftDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -29,7 +28,6 @@ export class Menu {
     this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
     this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
-    this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -130,14 +128,6 @@ export class Menu {
       this.#selHexObjectivesDiv.innerHTML = this.#formatObjectives(selectedHex);
     }
 
-    if (this.#game.getBoard().isOwnHexSelected()) {
-      // friendly hex selected
-      this.#unitMovesLeftDiv.innerHTML = `Moves Left: ${selectedHex.getUnits()[0].getMovesRemaining()}`;
-    } else {
-      // opposing hex selected
-      this.#unitMovesLeftDiv.innerHTML = '';
-    }
-
     this.#updateCombatIndicator();
     this.#setCurrentTurn();
     this.#updateVictoryPoints();
@@ -171,13 +161,15 @@ export class Menu {
       .map((unit) => {
         const echelon = unit.getEchelon?.();
         const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
+        const movesRemaining = unit.getMovesRemaining?.();
+        const movesDisplay = Number.isFinite(movesRemaining) ? movesRemaining : 0;
         const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
-        const unitData = echelon
-          ? `${unit.getName()} (${echelon}, ${unitStrength})`
-          : `${unit.getName()} (${unitStrength})`;
-        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span>${unitData}</div>`;
+        const tooltipText = echelon
+          ? `${echelon}, ${unitStrength}`
+          : unitStrength;
+        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span><span class="selected-unit-label" title="${tooltipText}">${unit.getName()} <span class="selected-unit-moves">(moves ${movesDisplay})</span></span></div>`;
       })
-      .join('<br/>');
+      .join('');
   }
 
   #formatSelectedHexTerrain(terrain) {

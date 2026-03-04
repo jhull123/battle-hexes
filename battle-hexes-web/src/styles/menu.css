@@ -83,6 +83,10 @@
   height: 12px;
 }
 
+#menu .selected-unit-moves {
+  font-size: 0.85em;
+}
+
 #phasesList span {
   font-style: italic;
 }

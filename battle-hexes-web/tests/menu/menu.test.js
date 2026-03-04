@@ -224,6 +224,7 @@ describe('auto new game persistence', () => {
         getDefense: () => 2,
         getMovement: () => 5,
         getEchelon: () => 'platoon',
+        getMovesRemaining: () => 0,
       }],
       getTerrain: () => ({
         name: 'open',
@@ -242,7 +243,8 @@ describe('auto new game persistence', () => {
     menu.updateMenu();
 
     const unitRow = document.querySelector('#selHexContents .selected-unit-row');
-    expect(unitRow.textContent).toBe('Airborne Inf. A (platoon, 3-2-5)');
+    expect(unitRow.textContent).toBe('Airborne Inf. A (moves 0)');
+    expect(unitRow.querySelector('.selected-unit-label').title).toBe('platoon, 3-2-5');
     expect(unitRow.querySelector('.selected-unit-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
   });
 
@@ -259,6 +261,7 @@ describe('auto new game persistence', () => {
         getDefense: () => 2,
         getMovement: () => 5,
         getEchelon: () => null,
+        getMovesRemaining: () => 0,
         getOwningPlayer: () => ({
           getFactions: () => [{ getCounterColor: () => '#ff0000' }],
         }),
@@ -280,7 +283,8 @@ describe('auto new game persistence', () => {
     menu.updateMenu();
 
     const unitRow = document.querySelector('#selHexContents .selected-unit-row');
-    expect(unitRow.textContent).toBe('Airborne Inf. A (3-2-5)');
+    expect(unitRow.textContent).toBe('Airborne Inf. A (moves 0)');
+    expect(unitRow.querySelector('.selected-unit-label').title).toBe('3-2-5');
     expect(unitRow.querySelector('.selected-unit-swatch').style.backgroundColor).toBe('rgb(255, 0, 0)');
   });
 
