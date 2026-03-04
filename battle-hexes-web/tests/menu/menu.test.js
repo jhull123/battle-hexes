@@ -223,6 +223,9 @@ describe('auto new game persistence', () => {
         getAttack: () => 3,
         getDefense: () => 2,
         getMovement: () => 5,
+        getOwningPlayer: () => ({
+          getFactions: () => [{ getCounterColor: () => '#ff0000' }],
+        }),
       }],
       getTerrain: () => ({
         name: 'open',
@@ -240,7 +243,9 @@ describe('auto new game persistence', () => {
 
     menu.updateMenu();
 
-    expect(document.getElementById('selHexContents').innerHTML).toBe('Airborne Inf. A (3-2-5)');
+    const unitRow = document.querySelector('#selHexContents .selected-unit-row');
+    expect(unitRow.textContent).toBe('Airborne Inf. A (3-2-5)');
+    expect(unitRow.querySelector('.selected-unit-swatch').style.backgroundColor).toBe('rgb(255, 0, 0)');
   });
 
   test('shows no selection message when no hex is selected', () => {

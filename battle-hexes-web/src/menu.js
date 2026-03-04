@@ -168,8 +168,11 @@ export class Menu {
     }
 
     return units
-      .map((unit) => `${unit.getName()} (${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()})`)
-      .join('<br/>');
+      .map((unit) => {
+        const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
+        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span>${unit.getName()} (${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()})</div>`;
+      })
+      .join('');
   }
 
   #formatSelectedHexTerrain(terrain) {
