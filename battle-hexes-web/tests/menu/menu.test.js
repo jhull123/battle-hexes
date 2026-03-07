@@ -379,6 +379,19 @@ describe('auto new game persistence', () => {
     expect(rows[1].querySelector('.victory-turn-badge')).toBeNull();
   });
 
+
+  test('freezes displayed turn at the limit when game state has advanced past it', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame({
+      getTurnLimit: () => 9,
+      getTurnNumber: () => 10,
+    }));
+
+    expect(document.getElementById('victoryTurnLabel').textContent).toBe('Turn 9 / 9');
+  });
+
   test('falls back to neutral swatch and zero score when missing data', () => {
     buildDom();
     history.replaceState(null, '', '/');

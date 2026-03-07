@@ -205,8 +205,11 @@ export class Menu {
     if (turnLabel) {
       const turnNumber = this.#game.getTurnNumber?.() ?? 1;
       const turnLimit = this.#game.getTurnLimit?.();
+      const limitedTurnNumber = Number.isInteger(turnLimit) && turnLimit > 0
+        ? Math.min(turnNumber, turnLimit)
+        : turnNumber;
       const turnLimitDisplay = Number.isInteger(turnLimit) && turnLimit > 0 ? turnLimit : '∞';
-      turnLabel.textContent = `Turn ${turnNumber} / ${turnLimitDisplay}`;
+      turnLabel.textContent = `Turn ${limitedTurnNumber} / ${turnLimitDisplay}`;
     }
 
     if (!this.#victoryPointsList) {
