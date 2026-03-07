@@ -77,11 +77,13 @@ export class CpuPlayer extends Player {
         console.error('Failed to update game state', err);
         return null;
       });
-      game.updateScores?.(endTurnResponse?.data?.scores);
-      game.updateTurnState?.({
-        turnLimit: endTurnResponse?.data?.turnLimit,
-        turnNumber: endTurnResponse?.data?.turnNumber,
-      });
+      if (endTurnResponse?.data) {
+        game.updateScores?.(endTurnResponse.data.scores);
+        game.updateTurnState?.({
+          turnLimit: endTurnResponse.data.turnLimit,
+          turnNumber: endTurnResponse.data.turnNumber,
+        });
+      }
       game.endPhase();
       eventBus.emit('menuUpdate');
       if (!game.isGameOver()) {
