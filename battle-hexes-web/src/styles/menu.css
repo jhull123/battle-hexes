@@ -8,6 +8,11 @@
   margin: 12px 0;
 }
 
+#menu #victoryTurnLabel {
+  margin-top: 6px;
+  font-weight: 700;
+}
+
 #menu #victoryPointsList {
   display: flex;
   flex-direction: column;

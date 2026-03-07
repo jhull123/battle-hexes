@@ -13,6 +13,8 @@ export class GameCreator {
     const board = new Board(gameData.board.rows, gameData.board.columns);
     const scenarioId = this.#extractScenarioId(gameData);
     const playerTypeIds = this.#extractPlayerTypeIds(gameData);
+    const turnLimit = this.#extractTurnLimit(gameData);
+    const turnNumber = this.#extractTurnNumber(gameData);
 
     const game = new Game(
       gameData.id,
@@ -23,6 +25,8 @@ export class GameCreator {
         scenarioId,
         playerTypeIds,
         scores: this.#getScores(gameData),
+        turnLimit,
+        turnNumber,
       },
     );
     this.#addTerrain(board, gameData.board);
@@ -41,7 +45,38 @@ export class GameCreator {
     return candidates.find((value) => typeof value === 'string' && value.trim().length > 0) ?? null;
   }
 
+  #extractTurnLimit(gameData) {
+    const candidates = [
+      gameData?.turnLimit,
+      gameData?.turn_limit,
+    ];
+
+    for (const candidate of candidates) {
+      if (Number.isInteger(candidate) && candidate > 0) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  #extractTurnNumber(gameData) {
+    const candidates = [
+      gameData?.turnNumber,
+      gameData?.turn_number,
+    ];
+
+    for (const candidate of candidates) {
+      if (Number.isInteger(candidate) && candidate > 0) {
+        return candidate;
+      }
+    }
+
+    return 1;
+  }
+
   #extractPlayerTypeIds(gameData) {
+
     const candidates = [
       gameData?.playerTypeIds,
       gameData?.playerTypes,

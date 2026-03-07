@@ -128,6 +128,33 @@ describe('CpuPlayer', () => {
     await playPromise;
   });
 
+
+
+  test('does not wipe scores when end-turn request fails', async () => {
+    jest.useFakeTimers();
+
+    const board = new Board(1, 1);
+    const players = new Players([cpuPlayer, new Player('Dummy')]);
+    game = new Game('game-1', ['End Turn'], players, board);
+    jest.spyOn(game, 'isGameOver').mockReturnValue(false);
+
+    const updateScoresSpy = jest.spyOn(game, 'updateScores');
+    const updateTurnStateSpy = jest.spyOn(game, 'updateTurnState');
+
+    axios.post.mockRejectedValueOnce(new Error('network down'));
+
+    const playPromise = cpuPlayer.play(game);
+    await jest.runOnlyPendingTimersAsync();
+    await playPromise;
+
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/${game.getId()}/end-turn`,
+      game.getBoard().sparseBoard()
+    );
+    expect(updateScoresSpy).not.toHaveBeenCalled();
+    expect(updateTurnStateSpy).not.toHaveBeenCalled();
+  });
+
   test('animates movement plans returned from server', async () => {
     jest.useFakeTimers();
     const board = new Board(1, 2);

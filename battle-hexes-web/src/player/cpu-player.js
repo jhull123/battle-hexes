@@ -70,10 +70,20 @@ export class CpuPlayer extends Player {
       }
     } else if (game.getCurrentPhase() === 'End Turn') {
       await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
-      await axios.post(
+      const endTurnResponse = await axios.post(
         `${API_URL}/games/${game.getId()}/end-turn`,
         game.getBoard().sparseBoard()
-      ).catch(err => console.error('Failed to update game state', err));
+      ).catch(err => {
+        console.error('Failed to update game state', err);
+        return null;
+      });
+      if (endTurnResponse?.data) {
+        game.updateScores?.(endTurnResponse.data.scores);
+        game.updateTurnState?.({
+          turnLimit: endTurnResponse.data.turnLimit,
+          turnNumber: endTurnResponse.data.turnNumber,
+        });
+      }
       game.endPhase();
       eventBus.emit('menuUpdate');
       if (!game.isGameOver()) {

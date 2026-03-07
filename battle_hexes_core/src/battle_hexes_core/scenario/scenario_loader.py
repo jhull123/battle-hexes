@@ -118,6 +118,7 @@ class ScenarioData(BaseModel):
     id: str
     name: str
     description: str
+    turn_limit: int | None = None
     board_size: tuple[int, int]
     factions: list[ScenarioFactionData]
     units: list[ScenarioUnitData]
@@ -256,6 +257,7 @@ class ScenarioData(BaseModel):
             id=self.id,
             name=self.name,
             description=self.description,
+            turn_limit=self.turn_limit,
             board_size=self.board_size,
             factions=self._build_factions(),
             units=self._build_units(),

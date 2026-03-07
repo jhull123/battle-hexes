@@ -440,6 +440,8 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(serialized["board"], {"hexes": []})
         self.assertEqual(serialized["scenarioId"], "elim_1")
         self.assertEqual(serialized["playerTypeIds"], ["human", "cpu"])
+        self.assertEqual(serialized["turnLimit"], None)
+        self.assertEqual(serialized["turnNumber"], 1)
 
         self.assertEqual(
             serialized["players"],

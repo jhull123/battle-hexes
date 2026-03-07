@@ -25,6 +25,8 @@ class GameModel(BaseModel):
     board: BoardModel
     objectives: List[ObjectiveModel]
     scores: dict[str, int]
+    turn_limit: int | None = None
+    turn_number: int = 1
 
     @classmethod
     def from_game(
@@ -41,4 +43,6 @@ class GameModel(BaseModel):
                 for objective in game.get_board().get_objectives()
             ],
             scores=game.get_score_tracker().get_scores(),
+            turn_limit=getattr(game, "turn_limit", None),
+            turn_number=getattr(game, "turn_number", 1),
         )
