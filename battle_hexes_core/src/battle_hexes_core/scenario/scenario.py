@@ -29,6 +29,7 @@ class ScenarioUnit:
     attack: int
     defense: int
     movement: int
+    echelon: str | None = None
 
 
 @dataclass(frozen=True)

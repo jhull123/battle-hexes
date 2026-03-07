@@ -18,7 +18,9 @@ describe('auto new game persistence', () => {
     document.body.innerHTML = `
       <div id="selHexContents"></div>
       <div id="selHexCoord"></div>
+      <h4 id="selHexUnitsHeading"></h4>
       <div id="selHexTerrain"></div>
+      <h4 id="selHexTerrainHeading"></h4>
       <div id="selHexObjectives"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
@@ -177,16 +179,17 @@ describe('auto new game persistence', () => {
     });
   });
 
-  test('updates terrain label when a hex is selected', () => {
+  test('shows selected hex coord, units fallback, terrain move cost, and headings', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
     const selectedHex = {
       row: 1,
       column: 2,
-      isEmpty: () => true,
+      getUnits: () => [],
       getTerrain: () => ({
         name: 'open',
+        moveCost: 1,
       }),
     };
 
@@ -200,7 +203,89 @@ describe('auto new game persistence', () => {
 
     menu.updateMenu();
 
-    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Terrain: open');
+    expect(document.getElementById('selHexCoord').innerHTML).toBe('Coords: (1, 2)');
+    expect(document.getElementById('selHexContents').innerHTML).toBe('<em>None</em>');
+    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Open (cost=1)');
+    expect(document.getElementById('selHexUnitsHeading').style.display).toBe('');
+    expect(document.getElementById('selHexTerrainHeading').style.display).toBe('');
+  });
+
+
+  test('shows selected hex unit details with echelon when units are present', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 4,
+      column: 9,
+      getUnits: () => [{
+        getName: () => 'Airborne Inf. A',
+        getAttack: () => 3,
+        getDefense: () => 2,
+        getMovement: () => 5,
+        getEchelon: () => 'platoon',
+        getMovesRemaining: () => 0,
+      }],
+      getTerrain: () => ({
+        name: 'open',
+        moveCost: 1,
+      }),
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    const unitRow = document.querySelector('#selHexContents .selected-unit-row');
+    expect(unitRow.textContent).toBe('Airborne Inf. A (moves 0)');
+    expect(unitRow.querySelector('.selected-unit-label').title).toBe('platoon, 3-2-5');
+    expect(unitRow.querySelector('.selected-unit-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
+  });
+
+  test('omits echelon in selected hex unit details when not present', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 4,
+      column: 9,
+      getUnits: () => [{
+        getName: () => 'Airborne Inf. A',
+        getAttack: () => 3,
+        getDefense: () => 2,
+        getMovement: () => 5,
+        getEchelon: () => null,
+        getMovesRemaining: () => 0,
+        getOwningPlayer: () => ({
+          getFactions: () => [{ getCounterColor: () => '#ff0000' }],
+        }),
+      }],
+      getTerrain: () => ({
+        name: 'open',
+        moveCost: 1,
+      }),
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }));
+
+    menu.updateMenu();
+
+    const unitRow = document.querySelector('#selHexContents .selected-unit-row');
+    expect(unitRow.textContent).toBe('Airborne Inf. A (moves 0)');
+    expect(unitRow.querySelector('.selected-unit-label').title).toBe('3-2-5');
+    expect(unitRow.querySelector('.selected-unit-swatch').style.backgroundColor).toBe('rgb(255, 0, 0)');
   });
 
   test('shows no selection message when no hex is selected', () => {
@@ -209,7 +294,9 @@ describe('auto new game persistence', () => {
 
     new Menu(fakeGame());
 
-    expect(document.getElementById('selHexContents').innerHTML).toBe('<em>No selection</em>');
+    expect(document.getElementById('selHexCoord').innerHTML).toBe('<em>No selection</em>');
+    expect(document.getElementById('selHexUnitsHeading').style.display).toBe('none');
+    expect(document.getElementById('selHexTerrainHeading').style.display).toBe('none');
   });
 
   test('shows objective details when present on selected hex', () => {

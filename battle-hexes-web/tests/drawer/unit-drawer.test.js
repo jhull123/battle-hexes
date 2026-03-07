@@ -67,3 +67,48 @@ describe('UnitDrawer.draw', () => {
     expect(unitDrawer.drawnCounters[2].y).toBeCloseTo(100 - expectedOffset * 2);
   });
 });
+
+describe('UnitDrawer.drawCounter echelon symbols', () => {
+  const createP5Mock = () => ({
+    CENTER: 'CENTER',
+    stroke: jest.fn(),
+    strokeWeight: jest.fn(),
+    fill: jest.fn(),
+    rectMode: jest.fn(),
+    rect: jest.fn(),
+    line: jest.fn(),
+    noStroke: jest.fn(),
+    textSize: jest.fn(),
+    textAlign: jest.fn(),
+    text: jest.fn(),
+  });
+
+  const createUnit = (echelon) => ({
+    getFaction: () => ({
+      getCounterColor: () => '#808080',
+    }),
+    getAttack: () => 4,
+    getDefense: () => 3,
+    getMovement: () => 2,
+    getEchelon: () => echelon,
+  });
+
+  test('draws echelon symbol for known echelons', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit('division'), 100, 100);
+
+    expect(p5.text).toHaveBeenCalledWith('XX', 100, expect.any(Number));
+  });
+
+  test('omits echelon text when echelon is undefined', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit(undefined), 100, 100);
+
+    expect(p5.text).toHaveBeenCalledTimes(1);
+    expect(p5.text).toHaveBeenCalledWith('4-3-2', 100, expect.any(Number));
+  });
+});

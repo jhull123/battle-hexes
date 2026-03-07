@@ -7,8 +7,9 @@ export class Menu {
   #selHexContentsDiv;
   #selHexCoordDiv;
   #selHexTerrainDiv;
+  #selHexUnitsHeading;
+  #selHexTerrainHeading;
   #selHexObjectivesDiv;
-  #unitMovesLeftDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -24,8 +25,9 @@ export class Menu {
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
     this.#selHexTerrainDiv = document.getElementById('selHexTerrain');
+    this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
+    this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
-    this.#unitMovesLeftDiv = document.getElementById('unitMovesLeftDiv');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -109,30 +111,21 @@ export class Menu {
     const selectedHex = this.#game.getBoard().getSelectedHex();
 
     if (!selectedHex) {
-      this.#selHexContentsDiv.innerHTML = '<em>No selection</em>';
-      this.#selHexCoordDiv.innerHTML = '';
+      this.#selHexContentsDiv.innerHTML = '';
+      this.#selHexCoordDiv.innerHTML = '<em>No selection</em>';
       this.#selHexTerrainDiv.innerHTML = '';
       this.#selHexObjectivesDiv.innerHTML = '';
-    } else if (selectedHex.isEmpty()) {
-      this.#selHexContentsDiv.innerHTML = 'Empty Hex';
-      this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
+      this.#toggleSelectedHexHeadings(false);
     } else {
-      this.#selHexContentsDiv.innerHTML = 'Hex contains a unit.';
-      this.#selHexCoordDiv.innerHTML = `Hex Coord: (${selectedHex.row}, ${selectedHex.column})`;
+      this.#selHexCoordDiv.innerHTML = `Coords: (${selectedHex.row}, ${selectedHex.column})`;
+      this.#selHexContentsDiv.innerHTML = this.#formatSelectedHexUnits(selectedHex);
+      this.#toggleSelectedHexHeadings(true);
     }
 
     if (selectedHex) {
       const terrain = selectedHex.getTerrain();
-      this.#selHexTerrainDiv.innerHTML = terrain ? `Terrain: ${terrain.name}` : '';
+      this.#selHexTerrainDiv.innerHTML = this.#formatSelectedHexTerrain(terrain);
       this.#selHexObjectivesDiv.innerHTML = this.#formatObjectives(selectedHex);
-    }
-
-    if (this.#game.getBoard().isOwnHexSelected()) {
-      // friendly hex selected
-      this.#unitMovesLeftDiv.innerHTML = `Moves Left: ${selectedHex.getUnits()[0].getMovesRemaining()}`;
-    } else {
-      // opposing hex selected
-      this.#unitMovesLeftDiv.innerHTML = '';
     }
 
     this.#updateCombatIndicator();
@@ -146,6 +139,51 @@ export class Menu {
     } else {
       this.#hideGameOver();
     }
+  }
+
+  #toggleSelectedHexHeadings(isVisible) {
+    const displayValue = isVisible ? '' : 'none';
+    if (this.#selHexUnitsHeading) {
+      this.#selHexUnitsHeading.style.display = displayValue;
+    }
+    if (this.#selHexTerrainHeading) {
+      this.#selHexTerrainHeading.style.display = displayValue;
+    }
+  }
+
+  #formatSelectedHexUnits(selectedHex) {
+    const units = selectedHex?.getUnits?.() ?? [];
+    if (units.length === 0) {
+      return '<em>None</em>';
+    }
+
+    return units
+      .map((unit) => {
+        const echelon = unit.getEchelon?.();
+        const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
+        const movesRemaining = unit.getMovesRemaining?.();
+        const movesDisplay = Number.isFinite(movesRemaining) ? movesRemaining : 0;
+        const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
+        const tooltipText = echelon
+          ? `${echelon}, ${unitStrength}`
+          : unitStrength;
+        return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span><span class="selected-unit-label" title="${tooltipText}">${unit.getName()} <span class="selected-unit-moves">(moves ${movesDisplay})</span></span></div>`;
+      })
+      .join('');
+  }
+
+  #formatSelectedHexTerrain(terrain) {
+    if (!terrain) {
+      return '';
+    }
+
+    const moveCost = Number.isFinite(terrain.moveCost) && terrain.moveCost > 0
+      ? terrain.moveCost
+      : 1;
+    const terrainName = terrain.name
+      ? `${terrain.name.charAt(0).toUpperCase()}${terrain.name.slice(1)}`
+      : 'Unknown';
+    return `${terrainName} (cost=${moveCost})`;
   }
 
   #formatObjectives(selectedHex) {

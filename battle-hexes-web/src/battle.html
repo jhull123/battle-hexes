@@ -54,6 +54,11 @@
       display: block;
       margin: 10px;
     }
+
+    .selected-hex-subheading {
+      margin-top: 0.67em;
+      margin-bottom: 0.4em;
+    }
   </style>
 </head>
 <body>
@@ -67,11 +72,12 @@
     <hr class="menu-divider">
     <div id="selectedHexMenu">
       <h3>Selected Hex</h3>
-      <div id="selHexContents"></div>
       <div id="selHexCoord"></div>
+      <h4 id="selHexUnitsHeading" class="selected-hex-subheading">Units</h4>
+      <div id="selHexContents"></div>
+      <h4 id="selHexTerrainHeading" class="selected-hex-subheading">Terrain</h4>
       <div id="selHexTerrain"></div>
       <div id="selHexObjectives"></div>
-      <div id="unitMovesLeftDiv"></div>
     </div>
     <hr class="menu-divider">
     <div id="gameStagesMenu">

@@ -24,6 +24,7 @@
       "name": "Airborne Inf. A",
       "faction": "Airborne", 
       "type": "Infantry",
+      "echelon": "platoon",
       "attack": 3,
       "defense": 2,
       "movement": 5
@@ -33,15 +34,27 @@
       "name": "A / Inf. Zug",
       "faction": "Wehrmacht", 
       "type": "Infantry",
+      "echelon": "platoon",
       "attack": 2,
       "defense": 2,
       "movement": 4
+    },
+    {
+      "id": "Crossroads Feldwache",
+      "name": "Crossroads Feldwache",
+      "faction": "Wehrmacht", 
+      "type": "Infantry",
+      "echelon": "section",
+      "attack": 1,
+      "defense": 1,
+      "movement": 0
     },
     {
       "id": "StuG. III Zug A",
       "name": "StuG. III Zug A",
       "faction": "Wehrmacht", 
       "type": "Infantry",
+      "echelon": "platoon",
       "attack": 4,
       "defense": 4,
       "movement": 7
@@ -64,6 +77,10 @@
       "coords": [2, 15],
       "terrain": "village",
       "units": ["A / Inf. Zug"]
+    },
+    {
+      "coords": [4, 9],
+      "units": ["Crossroads Feldwache"]
     },
     { "coords": [6, 6], "terrain": "forest" },
     { "coords": [6, 11], "terrain": "forest" },
