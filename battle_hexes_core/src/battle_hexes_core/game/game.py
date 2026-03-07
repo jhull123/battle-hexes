@@ -9,13 +9,24 @@ from battle_hexes_core.unit.faction import Faction
 
 
 class Game:
-    def __init__(self, players: list, board: Board):
+    def __init__(
+        self,
+        players: list,
+        board: Board,
+        turn_limit: int | None = None,
+    ):
         self.id = uuid.uuid4()
         self.players = players
         if players:
             self.current_player = players[0]
         self.board = board
         self.score_tracker = ScoreTracker(players)
+        self.turn_limit = (
+            turn_limit
+            if isinstance(turn_limit, int) and turn_limit > 0
+            else None
+        )
+        self.turn_number = 1
 
     def get_id(self):
         return self.id
@@ -46,7 +57,10 @@ class Game:
         if not self.players:
             return None
         idx = self.players.index(self.current_player)
-        self.current_player = self.players[(idx + 1) % len(self.players)]
+        next_idx = (idx + 1) % len(self.players)
+        if next_idx == 0:
+            self.turn_number += 1
+        self.current_player = self.players[next_idx]
         return self.current_player
 
     def get_opposing_factions(self, faction: Faction) -> List[Faction]:
@@ -63,8 +77,17 @@ class Game:
                 return player
         raise ValueError(f"No player found for faction {faction.name}")
 
+    def get_turn_limit(self) -> int | None:
+        return self.turn_limit
+
+    def get_turn_number(self) -> int:
+        return self.turn_number
+
     def is_game_over(self) -> bool:
-        """Return True if zero or one players still have units on the board."""
+        """Return True if zero/one players remain or turn limit was reached."""
+        if self.turn_limit is not None and self.turn_number > self.turn_limit:
+            return True
+
         active_players = {
             unit.player.name
             for unit in self.get_board().get_units()

@@ -12,11 +12,15 @@ export class Game {
   #scenarioId;
   #playerTypeIds;
   #scores;
+  #turnLimit;
+  #turnNumber;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
     playerTypeIds = null,
     scores = {},
+    turnLimit = null,
+    turnNumber = 1,
   } = {}) {
     this.#id = id;
     this.#phases = phases;
@@ -34,13 +38,18 @@ export class Game {
       ? [...playerTypeIds]
       : null;
     this.#scores = { ...scores };
+    this.#turnLimit = Number.isInteger(turnLimit) && turnLimit > 0 ? turnLimit : null;
+    this.#turnNumber = Number.isInteger(turnNumber) && turnNumber > 0 ? turnNumber : 1;
   }
 
   endPhase() {
     const newPhaseIdx = this.#phases.indexOf(this.#currentPhase) + 1;
     if (newPhaseIdx >= this.#phases.length) {
       this.#currentPhase = this.#phases[0];
-      this.#players.nextPlayer();
+      const wrappedToFirstPlayer = this.#players.nextPlayer() === this.#players.getAllPlayers()[0];
+      if (wrappedToFirstPlayer) {
+        this.#turnNumber += 1;
+      }
       this.#board.resetMovesRemaining();
       return true;
     } else {
@@ -85,6 +94,14 @@ export class Game {
     return this.#playerTypeIds ? [...this.#playerTypeIds] : null;
   }
 
+  getTurnLimit() {
+    return this.#turnLimit;
+  }
+
+  getTurnNumber() {
+    return this.#turnNumber;
+  }
+
   getScores() {
     return { ...this.#scores };
   }
@@ -103,7 +120,16 @@ export class Game {
     this.#scores = Object.fromEntries(entries);
   }
 
+  updateTurnState({ turnLimit = this.#turnLimit, turnNumber = this.#turnNumber } = {}) {
+    this.#turnLimit = Number.isInteger(turnLimit) && turnLimit > 0 ? turnLimit : null;
+    this.#turnNumber = Number.isInteger(turnNumber) && turnNumber > 0 ? turnNumber : 1;
+  }
+
   isGameOver() {
+    if (Number.isInteger(this.#turnLimit) && this.#turnNumber > this.#turnLimit) {
+      return true;
+    }
+
     const owners = new Set();
     for (const unit of this.#board.getUnits()) {
       if (unit.getContainingHex()) {

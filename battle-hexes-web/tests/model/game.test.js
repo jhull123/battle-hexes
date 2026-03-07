@@ -81,6 +81,27 @@ describe('configuration metadata', () => {
     expect(configuredGame.getPlayerTypeIds()).toEqual(['human', 'random']);
   });
 
+
+  test('tracks turn number and optional turn limit', () => {
+    const configuredGame = new Game(
+      'configured-id',
+      phases,
+      players,
+      new Board(10, 10),
+      {
+        turnLimit: 9,
+        turnNumber: 2,
+      },
+    );
+
+    expect(configuredGame.getTurnLimit()).toBe(9);
+    expect(configuredGame.getTurnNumber()).toBe(2);
+
+    configuredGame.updateTurnState({ turnLimit: null, turnNumber: 3 });
+    expect(configuredGame.getTurnLimit()).toBeNull();
+    expect(configuredGame.getTurnNumber()).toBe(3);
+  });
+
   test('scores are exposed and defensively copied', () => {
     const configuredGame = new Game(
       'configured-id',
@@ -154,6 +175,13 @@ describe('isGameOver', () => {
     game.getBoard().addUnit(u1, 0, 0);
 
     expect(game.isGameOver()).toBe(true);
+  });
+
+
+  test('returns true when turn limit is exceeded', () => {
+    const limitedGame = new Game('game-id', phases, players, new Board(10, 10), { turnLimit: 1, turnNumber: 2 });
+
+    expect(limitedGame.isGameOver()).toBe(true);
   });
 
   test('returns true after a unit is eliminated leaving one player', () => {

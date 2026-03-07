@@ -125,3 +125,9 @@ def test_iterators_yield_all_scenarios():
         "d_day_crossroads", "elim_1", "elim_2", "village_1"
     }
     assert core_ids == {"d_day_crossroads", "elim_1", "elim_2", "village_1"}
+
+
+def test_load_scenario_with_turn_limit():
+    scenario = load_scenario("d_day_crossroads", scenario_dir=_scenario_dir())
+
+    assert scenario.turn_limit == 9

@@ -84,6 +84,7 @@ class GameCreator:
         game = Game(
             players=players_list,
             board=board,
+            turn_limit=scenario_obj.turn_limit,
         )
 
         # Persist the original configuration on the ``Game`` instance so the

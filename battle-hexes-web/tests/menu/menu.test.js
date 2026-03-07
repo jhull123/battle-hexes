@@ -30,6 +30,7 @@ describe('auto new game persistence', () => {
       <div id="phasesList"></div>
       <button id="endPhaseBtn"></button>
       <div id="currentTurnLabel"></div>
+      <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
     `;
   }
@@ -362,6 +363,7 @@ describe('auto new game persistence', () => {
 
     const rows = document.querySelectorAll('.victory-row');
     expect(rows).toHaveLength(2);
+    expect(document.getElementById('victoryTurnLabel').textContent).toBe('Turn 1 / ∞');
 
     expect(rows[0].querySelector('.victory-name').textContent).toBe('Player 1');
     expect(rows[0].querySelector('.victory-score').textContent).toBe('3');

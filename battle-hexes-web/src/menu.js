@@ -201,6 +201,14 @@ export class Menu {
   }
 
   #updateVictoryPoints() {
+    const turnLabel = document.getElementById('victoryTurnLabel');
+    if (turnLabel) {
+      const turnNumber = this.#game.getTurnNumber?.() ?? 1;
+      const turnLimit = this.#game.getTurnLimit?.();
+      const turnLimitDisplay = Number.isInteger(turnLimit) && turnLimit > 0 ? turnLimit : '∞';
+      turnLabel.textContent = `Turn ${turnNumber} / ${turnLimitDisplay}`;
+    }
+
     if (!this.#victoryPointsList) {
       return;
     }
@@ -296,6 +304,10 @@ export class Menu {
         this.#game.getBoard().sparseBoard()
       ).then((response) => {
         this.#game.updateScores?.(response?.data?.scores);
+        this.#game.updateTurnState?.({
+          turnLimit: response?.data?.turnLimit,
+          turnNumber: response?.data?.turnNumber,
+        });
         this.updateMenu();
       }).catch(err => console.error('Failed to update movement state', err));
     }
@@ -309,6 +321,10 @@ export class Menu {
         this.#game.getBoard().sparseBoard()
       ).then((response) => {
         this.#game.updateScores?.(response?.data?.scores);
+        this.#game.updateTurnState?.({
+          turnLimit: response?.data?.turnLimit,
+          turnNumber: response?.data?.turnNumber,
+        });
         this.updateMenu();
       }).catch(err => console.error('Failed to update game state', err))
        .finally(() => {
