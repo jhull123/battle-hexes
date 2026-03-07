@@ -30,6 +30,7 @@ describe('auto new game persistence', () => {
       <div id="phasesList"></div>
       <button id="endPhaseBtn"></button>
       <div id="currentTurnLabel"></div>
+      <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
     `;
   }
@@ -362,6 +363,7 @@ describe('auto new game persistence', () => {
 
     const rows = document.querySelectorAll('.victory-row');
     expect(rows).toHaveLength(2);
+    expect(document.getElementById('victoryTurnLabel').textContent).toBe('Turn 1 / ∞');
 
     expect(rows[0].querySelector('.victory-name').textContent).toBe('Player 1');
     expect(rows[0].querySelector('.victory-score').textContent).toBe('3');
@@ -375,6 +377,19 @@ describe('auto new game persistence', () => {
     expect(rows[1].querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(0, 0, 255)');
     expect(rows[1].classList.contains('victory-row-current')).toBe(false);
     expect(rows[1].querySelector('.victory-turn-badge')).toBeNull();
+  });
+
+
+  test('freezes displayed turn at the limit when game state has advanced past it', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame({
+      getTurnLimit: () => 9,
+      getTurnNumber: () => 10,
+    }));
+
+    expect(document.getElementById('victoryTurnLabel').textContent).toBe('Turn 9 / 9');
   });
 
   test('falls back to neutral swatch and zero score when missing data', () => {

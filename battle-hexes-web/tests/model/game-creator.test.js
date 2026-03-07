@@ -8,7 +8,7 @@ beforeEach(() => {
   const gameData = JSON.parse(
     '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b",' +
     '"scenarioId":"elem_test",' +
-    '"playerTypeIds":["human","q-learning"],' +
+    '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
     '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010"}]},' +
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
     '"board":{"rows":10,"columns":10,"units":[' +
@@ -89,6 +89,28 @@ describe("createGame", () => {
   test('game exposes configuration metadata from payload', () => {
     expect(game.getScenarioId()).toBe('elem_test');
     expect(game.getPlayerTypeIds()).toEqual(['human', 'q-learning']);
+    expect(game.getTurnLimit()).toBe(9);
+    expect(game.getTurnNumber()).toBe(2);
+  });
+
+  test('defaults turn metadata when omitted from payload', () => {
+    const gameCreator = new GameCreator();
+    const minimalGameData = {
+      id: 'turn-defaults',
+      players: [
+        { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#C81010' }] },
+        { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#4682B4' }] },
+      ],
+      board: {
+        rows: 1,
+        columns: 1,
+        units: [],
+      },
+    };
+
+    const turnDefaultGame = gameCreator.createGame(minimalGameData);
+    expect(turnDefaultGame.getTurnLimit()).toBeNull();
+    expect(turnDefaultGame.getTurnNumber()).toBe(1);
   });
 
   test('creates fallback default terrain when none specified', () => {

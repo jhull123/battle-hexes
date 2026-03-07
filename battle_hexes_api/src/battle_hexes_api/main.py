@@ -78,6 +78,9 @@ def _serialize_game(game) -> dict:
     if scenario_id is not None:
         model["scenarioId"] = scenario_id
 
+    model["turnLimit"] = model.pop("turn_limit", None)
+    model["turnNumber"] = model.pop("turn_number", 1)
+
     player_type_ids = getattr(game, "player_type_ids", None)
     if player_type_ids is not None:
         model["playerTypeIds"] = list(player_type_ids)

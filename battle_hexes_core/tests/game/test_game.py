@@ -79,3 +79,10 @@ class TestGame(unittest.TestCase):
         game.apply_movement_plans([plan])
 
         self.assertEqual(unit.get_coords(), (0, 1))
+
+    def test_game_over_when_turn_limit_reached(self):
+        board = Board(5, 5)
+        game = Game([], board, turn_limit=1)
+        game.turn_number = 2
+
+        self.assertTrue(game.is_game_over())

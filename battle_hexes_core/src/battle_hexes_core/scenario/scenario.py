@@ -74,6 +74,7 @@ class Scenario:
     id: str
     name: str
     description: str | None = None
+    turn_limit: int | None = None
     board_size: Tuple[int, int] | None = None
     factions: tuple[ScenarioFaction, ...] = field(default_factory=tuple)
     units: tuple[ScenarioUnit, ...] = field(default_factory=tuple)

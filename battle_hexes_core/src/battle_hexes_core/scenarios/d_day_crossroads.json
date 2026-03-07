@@ -4,6 +4,7 @@
   "name": "Crossroads on D-Day",
   "description": "In the early hours of D-Day, isolated airborne troops race to capture a strategic crossroads while German defenders scramble to hold the line.",
   "board_size": [12, 18],
+  "turn_limit": 9,
   "factions": [
     {
       "id": "Airborne",
