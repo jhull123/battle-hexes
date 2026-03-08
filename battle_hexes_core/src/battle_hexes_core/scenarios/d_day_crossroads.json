@@ -3,6 +3,7 @@
   "id": "d_day_crossroads",
   "name": "Crossroads on D-Day",
   "description": "In the early hours of D-Day, isolated airborne troops race to capture a strategic crossroads while German defenders scramble to hold the line.",
+  "victory_conditions": "At the end of the game, the Americans score 1 point for each objective they control. The Germans score 1 point for each objective not controlled by the Americans. Higher score wins.",
   "board_size": [12, 18],
   "turn_limit": 8,
   "factions": [
@@ -61,6 +62,16 @@
       "movement": 4
     },
     {
+      "id": "C / Inf. Zug",
+      "name": "C / Inf. Zug",
+      "faction": "Wehrmacht", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 2,
+      "movement": 4
+    },
+    {
       "id": "Crossroads Feldwache",
       "name": "Crossroads Feldwache",
       "faction": "Wehrmacht", 
@@ -98,6 +109,9 @@
       "terrain": "village",
       "units": ["B / Inf. Zug"]
     },
+    {
+      "coords": [2, 4], "units": ["C / Inf. Zug"]
+    },
     { 
       "coords": [2, 15],
       "terrain": "village",
@@ -118,9 +132,9 @@
     { "coords": [10, 15], "units": ["Airborne Inf. B"] }
   ],
   "objectives": [
-    { "coords": [2, 3], "points": 1, "type": "hold" },
-    { "coords": [2, 15], "points": 1, "type": "hold" },
-    { "coords": [4, 9], "points": 1, "type": "hold" }
+    { "coords": [2, 3], "points": 1, "type": "control" },
+    { "coords": [2, 15], "points": 1, "type": "control" },
+    { "coords": [4, 9], "points": 1, "type": "control" }
   ],
   "road_types": {
     "secondary": {
