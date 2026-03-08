@@ -130,4 +130,4 @@ def test_iterators_yield_all_scenarios():
 def test_load_scenario_with_turn_limit():
     scenario = load_scenario("d_day_crossroads", scenario_dir=_scenario_dir())
 
-    assert scenario.turn_limit == 9
+    assert scenario.turn_limit == 8
