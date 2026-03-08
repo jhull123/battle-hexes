@@ -11,21 +11,60 @@ from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.terrain import Terrain
-from battle_hexes_core.scenario.scenario import Scenario
+from battle_hexes_core.scenario.scenario import Scenario, ScenarioVictory
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
 
 class TestScenarioModel(unittest.TestCase):
     def test_round_trip(self):
-        core_scenario = Scenario(id="s1", name="Scenario 1")
+        core_scenario = Scenario(
+            id="s1",
+            name="Scenario 1",
+            description="Briefing text",
+            victory=None,
+        )
 
         model = ScenarioModel.from_core(core_scenario)
         self.assertEqual(model.id, "s1")
         self.assertEqual(model.name, "Scenario 1")
+        self.assertEqual(model.description, "Briefing text")
+        self.assertIsNone(model.victory)
 
         converted = model.to_core()
         self.assertEqual(converted, core_scenario)
+
+    def test_round_trip_with_victory(self):
+        core_scenario = Scenario(
+            id="s2",
+            name="Scenario 2",
+            description="Hold crossroads.",
+            victory=ScenarioVictory(
+                method="objective_control",
+                scoring_side="Allies",
+                description="Allies win by holding the objective.",
+            ),
+        )
+
+        model = ScenarioModel.from_core(core_scenario)
+
+        self.assertEqual(model.victory.method, "objective_control")
+        self.assertEqual(model.victory.scoring_side, "Allies")
+        self.assertEqual(
+            model.victory.description,
+            "Allies win by holding the objective.",
+        )
+
+        converted = model.to_core()
+        self.assertEqual(converted.id, "s2")
+        self.assertEqual(converted.name, "Scenario 2")
+        self.assertEqual(converted.description, "Hold crossroads.")
+        self.assertEqual(converted.victory.method, "objective_control")
+        self.assertEqual(converted.victory.scoring_side, "Allies")
+        self.assertEqual(
+            converted.victory.description,
+            "Allies win by holding the objective.",
+        )
 
 
 class TestGameModel(unittest.TestCase):
