@@ -3,7 +3,11 @@
   "id": "d_day_crossroads",
   "name": "Crossroads on D-Day",
   "description": "In the early hours of D-Day, isolated airborne troops race to capture a strategic crossroads while German defenders scramble to hold the line.",
-  "victory_conditions": "At the end of the game, the Americans score 1 point for each objective they control. The Germans score 1 point for each objective not controlled by the Americans. Higher score wins.",
+  "victory": {
+    "description": "At the end of the game, the Americans score 1 point for each objective they occupy. The Germans score 1 point for each objective not occupied by the Americans. Higher score wins.",
+    "method": "objective_control",
+    "scoring_side": "Airborne"
+  },
   "board_size": [12, 18],
   "turn_limit": 8,
   "factions": [
@@ -132,9 +136,9 @@
     { "coords": [10, 15], "units": ["Airborne Inf. B"] }
   ],
   "objectives": [
-    { "coords": [2, 3], "points": 1, "type": "control" },
-    { "coords": [2, 15], "points": 1, "type": "control" },
-    { "coords": [4, 9], "points": 1, "type": "control" }
+    { "coords": [2, 3], "points": 1, "type": "occupy" },
+    { "coords": [2, 15], "points": 1, "type": "occupy" },
+    { "coords": [4, 9], "points": 1, "type": "occupy" }
   ],
   "road_types": {
     "secondary": {
