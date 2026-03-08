@@ -210,6 +210,9 @@ class TestFastAPI(unittest.TestCase):
             mock_game,
             mock_results,
         )
+        scorer_instance.recalculate_scenario_victory.assert_called_once_with(
+            mock_game
+        )
         mock_logger.info.assert_any_call(
             'Awarded %d pts for objectvies after combat.',
             3,
@@ -306,12 +309,14 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(response.json(), {"id": "game-101"})
 
     @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
+    @patch('battle_hexes_api.main.ObjectiveScorer')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_updates_game_and_returns_game_model(
         self,
         mock_game_repo,
         mock_from_game,
+        mock_scorer,
         mock_apply_to_board,
     ):
         mock_game = MagicMock()
@@ -338,6 +343,10 @@ class TestFastAPI(unittest.TestCase):
         )
 
         mock_apply_to_board.assert_called_once_with(mock_board)
+        scorer_instance = mock_scorer.return_value
+        scorer_instance.recalculate_scenario_victory.assert_called_once_with(
+            mock_game
+        )
         mock_game.get_current_player.assert_called_once_with()
         mock_game.next_player.assert_called_once_with()
         mock_game_repo.update_game.assert_called_once_with(mock_game)
@@ -348,10 +357,11 @@ class TestFastAPI(unittest.TestCase):
             {"id": "game-789", "current_player": "Bob"}
         )
 
+    @patch('battle_hexes_api.main.ObjectiveScorer')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
     def test_end_turn_calls_end_game_callback_when_game_over(
-        self, mock_game_repo, mock_from_game
+        self, mock_game_repo, mock_from_game, mock_scorer
     ):
         mock_player1 = MagicMock()
         mock_player2 = MagicMock()
@@ -368,6 +378,10 @@ class TestFastAPI(unittest.TestCase):
             f"/games/{game_id}/end-turn", json={"units": []}
         )
 
+        scorer_instance = mock_scorer.return_value
+        scorer_instance.recalculate_scenario_victory.assert_called_once_with(
+            mock_game
+        )
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
         mock_from_game.assert_called_once_with(mock_game)

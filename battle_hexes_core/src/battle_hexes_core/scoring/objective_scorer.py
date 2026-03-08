@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 class ObjectiveScorer:
     """Award points for objectives held at the end of movement."""
 
+    def recalculate_scenario_victory(self, game: Game) -> int | None:
+        """Recalculate scenario-driven victory scoring when configured."""
+        return self._award_scenario_objective_control(game)
+
     def award_hold_objectives(self, game: Game) -> int:
         """Award points for the active scenario scoring method."""
         scenario_points = self._award_scenario_objective_control(game)
