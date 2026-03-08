@@ -160,3 +160,9 @@ def test_load_scenario_keeps_victory_optional_for_legacy_scenarios():
     scenario = load_scenario("elim_2", scenario_dir=_scenario_dir())
 
     assert scenario.victory is None
+
+
+def test_load_scenario_with_turn_limit():
+    scenario = load_scenario("d_day_crossroads", scenario_dir=_scenario_dir())
+
+    assert scenario.turn_limit == 8
