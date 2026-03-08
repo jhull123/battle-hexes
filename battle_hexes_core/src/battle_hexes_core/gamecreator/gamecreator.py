@@ -86,6 +86,7 @@ class GameCreator:
             board=board,
             turn_limit=scenario_obj.turn_limit,
         )
+        game.victory = scenario_obj.victory
 
         # Persist the original configuration on the ``Game`` instance so the
         # API can expose it when clients fetch the game later.  This allows
