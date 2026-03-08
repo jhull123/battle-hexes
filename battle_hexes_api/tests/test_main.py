@@ -109,8 +109,18 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(
             response.json(),
             [
-                {"id": "test-1", "name": "Test Scenario"},
-                {"id": "test-2", "name": "Another Scenario"},
+                {
+                    "id": "test-1",
+                    "name": "Test Scenario",
+                    "description": None,
+                    "victory": None,
+                },
+                {
+                    "id": "test-2",
+                    "name": "Another Scenario",
+                    "description": None,
+                    "victory": None,
+                },
             ],
         )
         mock_registry.list_scenarios.assert_called_once_with()
