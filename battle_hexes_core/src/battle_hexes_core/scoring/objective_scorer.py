@@ -37,6 +37,10 @@ class ObjectiveScorer:
         self, game: Game, combat_results: CombatResults
     ) -> int:
         """Award points for surviving attackers on objectives."""
+        scenario_points = self._award_scenario_objective_control(game)
+        if scenario_points is not None:
+            return scenario_points
+
         current_player = game.get_current_player()
         score_tracker = game.get_score_tracker()
         eligible_attacker_ids = self._get_eligible_attacker_ids(

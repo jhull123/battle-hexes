@@ -333,6 +333,27 @@ class TestObjectiveControlScorer(unittest.TestCase):
         self.assertEqual(self.game.get_score_tracker().get_score(
             self.wehrmacht_player), 0)
 
+    def test_objective_control_recalculation_after_combat(self):
+        self._add_unit("a1", self.airborne, self.airborne_player, (2, 1))
+        self._add_unit(
+            "w1",
+            self.wehrmacht,
+            self.wehrmacht_player,
+            (2, 3),
+        )
+
+        combat_results = CombatResults()
+
+        points = ObjectiveScorer().award_hold_objectives_after_combat(
+            self.game, combat_results
+        )
+
+        self.assertEqual(points, 1)
+        self.assertEqual(self.game.get_score_tracker().get_score(
+            self.airborne_player), 1)
+        self.assertEqual(self.game.get_score_tracker().get_score(
+            self.wehrmacht_player), 2)
+
     def test_objective_control_recalculation_does_not_accumulate(self):
         scorer = ObjectiveScorer()
         self._add_unit("a1", self.airborne, self.airborne_player, (2, 1))
