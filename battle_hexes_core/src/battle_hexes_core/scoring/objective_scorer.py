@@ -12,7 +12,11 @@ class ObjectiveScorer:
     """Award points for objectives held at the end of movement."""
 
     def award_hold_objectives(self, game: Game) -> int:
-        """Award points to the current player for held objectives."""
+        """Award points for the active scenario scoring method."""
+        scenario_points = self._award_scenario_objective_control(game)
+        if scenario_points is not None:
+            return scenario_points
+
         current_player = game.get_current_player()
         score_tracker = game.get_score_tracker()
         engaged_unit_ids = self._get_engaged_unit_ids(game, current_player)
@@ -48,6 +52,56 @@ class ObjectiveScorer:
                 current_player.name, total_points, held_objectives
             )
         return total_points
+
+    def _award_scenario_objective_control(self, game: Game) -> int | None:
+        """Apply objective-control scoring when configured in metadata."""
+        victory = getattr(game, "victory", None)
+        if victory is None or victory.method != "objective_control":
+            return None
+
+        scoring_player = self._get_scoring_player(game, victory.scoring_side)
+        if scoring_player is None:
+            return None
+
+        objectives = game.get_board().get_objectives()
+        occupied_count = self._count_objectives_occupied_by_player(
+            game,
+            objectives,
+            scoring_player,
+        )
+        opponent_score = len(objectives) - occupied_count
+
+        score_tracker = game.get_score_tracker()
+        score_tracker.set_score(scoring_player, occupied_count)
+        for player in game.get_players():
+            if player is not scoring_player:
+                score_tracker.set_score(player, opponent_score)
+
+        return occupied_count
+
+    def _count_objectives_occupied_by_player(
+        self,
+        game: Game,
+        objectives: list,
+        player,
+    ) -> int:
+        board = game.get_board()
+        occupied_count = 0
+        for objective in objectives:
+            row, column = objective.coords
+            if any(
+                unit.get_coords() == (row, column) and player.owns(unit)
+                for unit in board.get_units()
+            ):
+                occupied_count += 1
+        return occupied_count
+
+    def _get_scoring_player(self, game: Game, scoring_side: str):
+        for player in game.get_players():
+            for faction in player.factions:
+                if faction.id == scoring_side or faction.name == scoring_side:
+                    return player
+        return None
 
     def _get_eligible_attacker_ids(
         self, combat_results: CombatResults, current_player
