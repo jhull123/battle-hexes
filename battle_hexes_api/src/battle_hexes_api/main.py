@@ -172,6 +172,8 @@ def resolve_combat(
             post_combat_pts
         )
 
+    scorer.recalculate_scenario_victory(game)
+
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
     sparse_board = SparseBoard.from_board(game.get_board())
@@ -221,6 +223,8 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     # sync the server-side board state with the client provided one
     sparse_board.apply_to_board(game.get_board())
+
+    ObjectiveScorer().recalculate_scenario_victory(game)
 
     old_player = game.get_current_player()
     new_player = game.next_player()
