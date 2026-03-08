@@ -41,6 +41,24 @@ def test_load_scenario_data_reads_optional_unit_echelon():
     assert scenario.units[0].echelon == "platoon"
 
 
+def test_load_scenario_data_reads_victory_block():
+    scenario = load_scenario_data(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.victory is not None
+    assert scenario.victory.method == "objective_control"
+    assert scenario.victory.scoring_side == "Airborne"
+
+
+def test_load_scenario_data_keeps_victory_optional_for_legacy_scenarios():
+    scenario = load_scenario_data(
+        "elim_1", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.victory is None
+
+
 def test_load_scenario_data_reads_roads_and_road_types():
     scenario = load_scenario_data(
         "village_1", scenario_dir=_scenario_dir()
@@ -125,6 +143,23 @@ def test_iterators_yield_all_scenarios():
         "d_day_crossroads", "elim_1", "elim_2", "village_1"
     }
     assert core_ids == {"d_day_crossroads", "elim_1", "elim_2", "village_1"}
+
+
+def test_load_scenario_maps_victory_to_core_type():
+    scenario = load_scenario(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.victory is not None
+    assert scenario.victory.method == "objective_control"
+    assert scenario.victory.scoring_side == "Airborne"
+    assert scenario.victory.description is not None
+
+
+def test_load_scenario_keeps_victory_optional_for_legacy_scenarios():
+    scenario = load_scenario("elim_2", scenario_dir=_scenario_dir())
+
+    assert scenario.victory is None
 
 
 def test_load_scenario_with_turn_limit():

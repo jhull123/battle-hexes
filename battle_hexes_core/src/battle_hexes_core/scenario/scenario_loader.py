@@ -22,6 +22,7 @@ from .scenario import (
     ScenarioRoadType,
     ScenarioTerrainType,
     ScenarioUnit,
+    ScenarioVictory,
 )
 
 
@@ -109,6 +110,16 @@ class ScenarioRoadEntry(BaseModel):
     path: list[tuple[int, int]]
 
 
+class ScenarioVictoryData(BaseModel):
+    """Victory configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    method: str
+    scoring_side: str
+    description: str | None = None
+
+
 class ScenarioData(BaseModel):
     """Full scenario definition parsed from a JSON file."""
 
@@ -118,6 +129,7 @@ class ScenarioData(BaseModel):
     id: str
     name: str
     description: str
+    victory: ScenarioVictoryData | None = None
     turn_limit: int | None = None
     board_size: tuple[int, int]
     factions: list[ScenarioFactionData]
@@ -257,6 +269,15 @@ class ScenarioData(BaseModel):
             id=self.id,
             name=self.name,
             description=self.description,
+            victory=(
+                ScenarioVictory(
+                    method=self.victory.method,
+                    scoring_side=self.victory.scoring_side,
+                    description=self.victory.description,
+                )
+                if self.victory
+                else None
+            ),
             turn_limit=self.turn_limit,
             board_size=self.board_size,
             factions=self._build_factions(),
