@@ -3,8 +3,13 @@
   "id": "d_day_crossroads",
   "name": "Crossroads on D-Day",
   "description": "In the early hours of D-Day, isolated airborne troops race to capture a strategic crossroads while German defenders scramble to hold the line.",
+  "victory": {
+    "description": "At the end of the game, the Americans score 1 point for each objective they occupy. The Germans score 1 point for each objective not occupied by the Americans. Higher score wins.",
+    "method": "objective_control",
+    "scoring_side": "Airborne"
+  },
   "board_size": [12, 18],
-  "turn_limit": 9,
+  "turn_limit": 8,
   "factions": [
     {
       "id": "Airborne",
@@ -31,8 +36,38 @@
       "movement": 5
     },
     {
+      "id": "Airborne Inf. B",
+      "name": "Airborne Inf. B",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 3,
+      "defense": 2,
+      "movement": 5
+    },
+    {
       "id": "A / Inf. Zug",
       "name": "A / Inf. Zug",
+      "faction": "Wehrmacht", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 2,
+      "movement": 4
+    },
+    {
+      "id": "B / Inf. Zug",
+      "name": "B / Inf. Zug",
+      "faction": "Wehrmacht", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 2,
+      "movement": 4
+    },
+    {
+      "id": "C / Inf. Zug",
+      "name": "C / Inf. Zug",
       "faction": "Wehrmacht", 
       "type": "Infantry",
       "echelon": "platoon",
@@ -73,7 +108,14 @@
     { "coords": [0, 16], "units": ["StuG. III Zug A"] },
     { "coords": [0, 17], "terrain": "forest" },
     { "coords": [1, 16], "terrain": "forest" },
-        { "coords": [2, 3], "terrain": "village" },
+    {
+      "coords": [2, 3], 
+      "terrain": "village",
+      "units": ["B / Inf. Zug"]
+    },
+    {
+      "coords": [2, 4], "units": ["C / Inf. Zug"]
+    },
     { 
       "coords": [2, 15],
       "terrain": "village",
@@ -90,10 +132,13 @@
     { "coords": [9, 0], "terrain": "forest" },
     { "coords": [9, 1], "terrain": "rough" },
     { "coords": [9, 2], "terrain": "rough" },
-    { "coords": [9, 5], "units": ["Airborne Inf. A"] }
+    { "coords": [9, 5], "units": ["Airborne Inf. A"] },
+    { "coords": [10, 15], "units": ["Airborne Inf. B"] }
   ],
   "objectives": [
-    { "coords": [2, 15], "points": 3, "type": "hold" }
+    { "coords": [2, 3], "points": 1, "type": "occupy" },
+    { "coords": [2, 15], "points": 1, "type": "occupy" },
+    { "coords": [4, 9], "points": 1, "type": "occupy" }
   ],
   "road_types": {
     "secondary": {

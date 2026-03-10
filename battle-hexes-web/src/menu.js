@@ -15,6 +15,12 @@ export class Menu {
   #autoNewGameChk;
   #showHexCoordsChk;
   #victoryPointsList;
+  #scenarioOverviewHeading;
+  #scenarioOverviewDescription;
+  #scenarioVictoryHeading;
+  #scenarioVictoryDescription;
+  #activeScenarioId;
+  #scenarioDetailsRequestId = 0;
   #autoReloadScheduled = false;
   #onNewGameRequested;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
@@ -33,6 +39,11 @@ export class Menu {
     this.#autoNewGameChk = document.getElementById('autoNewGame');
     this.#showHexCoordsChk = document.getElementById('showHexCoords');
     this.#victoryPointsList = document.getElementById('victoryPointsList');
+    this.#scenarioOverviewHeading = document.getElementById('scenarioOverviewHeading');
+    this.#scenarioOverviewDescription = document.getElementById('scenarioOverviewDescription');
+    this.#scenarioVictoryHeading = document.getElementById('scenarioVictoryHeading');
+    this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
+    this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
 
     // Initialize checkbox state from URL param
@@ -72,9 +83,59 @@ export class Menu {
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
+    this.#renderScenarioOverview();
+    this.#loadScenarioDetails(this.#activeScenarioId);
     this.#setCurrentTurn();
     this.#updateCombatIndicator();
     this.updateMenu();
+  }
+
+  #renderScenarioOverview(scenario = null) {
+    if (!this.#scenarioOverviewHeading || !this.#scenarioVictoryHeading) {
+      return;
+    }
+
+    const fallbackScenarioId = this.#activeScenarioId ?? this.#game.getScenarioId?.() ?? '';
+    const scenarioHeading = scenario?.name || scenario?.id || fallbackScenarioId;
+    this.#scenarioOverviewHeading.textContent = scenarioHeading || 'Scenario';
+
+    if (this.#scenarioOverviewDescription) {
+      this.#scenarioOverviewDescription.textContent = scenario?.description || '';
+      this.#scenarioOverviewDescription.style.display = this.#scenarioOverviewDescription.textContent ? '' : 'none';
+    }
+
+    if (this.#scenarioVictoryDescription) {
+      const victoryDescription = scenario?.victory?.description || '';
+      this.#scenarioVictoryDescription.textContent = victoryDescription;
+      this.#scenarioVictoryHeading.style.display = victoryDescription ? '' : 'none';
+      this.#scenarioVictoryDescription.style.display = victoryDescription ? '' : 'none';
+    }
+  }
+
+  #loadScenarioDetails(scenarioId) {
+    if (!scenarioId) {
+      this.#renderScenarioOverview();
+      return;
+    }
+
+    const requestId = this.#scenarioDetailsRequestId + 1;
+    this.#scenarioDetailsRequestId = requestId;
+    axios.get(`${API_URL}/scenarios`)
+      .then((response) => {
+        if (requestId !== this.#scenarioDetailsRequestId) {
+          return;
+        }
+        const scenarios = Array.isArray(response?.data) ? response.data : [];
+        const scenario = scenarios.find((value) => value?.id === scenarioId);
+        this.#renderScenarioOverview(scenario);
+      })
+      .catch((error) => {
+        if (requestId !== this.#scenarioDetailsRequestId) {
+          return;
+        }
+        console.warn('Failed to load scenario details for menu', error);
+        this.#renderScenarioOverview();
+      });
   }
 
   getShowHexCoordsPreference() {
@@ -404,6 +465,12 @@ export class Menu {
 
   setGame(game) {
     this.#game = game;
+    const scenarioId = this.#game.getScenarioId?.() ?? null;
+    if (scenarioId !== this.#activeScenarioId) {
+      this.#activeScenarioId = scenarioId;
+      this.#renderScenarioOverview();
+      this.#loadScenarioDetails(this.#activeScenarioId);
+    }
     this.#autoReloadScheduled = false;
     this.#hideGameOver();
     this.updateMenu();

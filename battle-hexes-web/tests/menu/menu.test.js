@@ -32,6 +32,10 @@ describe('auto new game persistence', () => {
       <div id="currentTurnLabel"></div>
       <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
+      <h3 id="scenarioOverviewHeading"></h3>
+      <p id="scenarioOverviewDescription"></p>
+      <h4 id="scenarioVictoryHeading"></h4>
+      <p id="scenarioVictoryDescription"></p>
     `;
   }
 
@@ -55,6 +59,7 @@ describe('auto new game persistence', () => {
       getScores: () => ({}),
       isGameOver: () => false,
       getId: () => 'game-id',
+      getScenarioId: () => 'elim_1',
     };
 
     return { ...baseGame, ...overrides };
@@ -64,6 +69,51 @@ describe('auto new game persistence', () => {
     eventBus.emit.mockClear();
     window.localStorage.clear();
     axios.post.mockReset();
+    axios.get.mockReset();
+    axios.get.mockResolvedValue({ data: [] });
+  });
+
+  test('shows scenario heading from name with description and victory conditions', async () => {
+    buildDom();
+
+    axios.get.mockResolvedValue({
+      data: [{
+        id: 'elim_1',
+        name: 'Elimination One',
+        description: 'Secure all objectives before the turn limit.',
+        victory: {
+          description: 'Control every objective at the end of any turn.',
+        },
+      }],
+    });
+
+    new Menu(fakeGame());
+    await flushPromises();
+
+    expect(document.getElementById('scenarioOverviewHeading').textContent).toBe('Elimination One');
+    expect(document.getElementById('scenarioOverviewDescription').textContent).toBe('Secure all objectives before the turn limit.');
+    expect(document.getElementById('scenarioVictoryHeading').style.display).toBe('');
+    expect(document.getElementById('scenarioVictoryDescription').textContent).toBe('Control every objective at the end of any turn.');
+  });
+
+  test('falls back to scenario id and hides optional sections when details are missing', async () => {
+    buildDom();
+
+    axios.get.mockResolvedValue({
+      data: [{
+        id: 'elim_1',
+      }],
+    });
+
+    new Menu(fakeGame());
+    await flushPromises();
+
+    expect(document.getElementById('scenarioOverviewHeading').textContent).toBe('elim_1');
+    expect(document.getElementById('scenarioOverviewDescription').style.display).toBe('none');
+    expect(document.getElementById('scenarioOverviewDescription').textContent).toBe('');
+    expect(document.getElementById('scenarioVictoryHeading').style.display).toBe('none');
+    expect(document.getElementById('scenarioVictoryDescription').style.display).toBe('none');
+    expect(document.getElementById('scenarioVictoryDescription').textContent).toBe('');
   });
 
   test('checkbox reflects url parameter', () => {

@@ -68,12 +68,22 @@ class ScenarioRoad:
 
 
 @dataclass(frozen=True)
+class ScenarioVictory:
+    """Victory metadata defined for a scenario."""
+
+    method: str
+    scoring_side: str
+    description: str | None = None
+
+
+@dataclass(frozen=True)
 class Scenario:
     """Container for the data required to configure a game scenario."""
 
     id: str
     name: str
     description: str | None = None
+    victory: ScenarioVictory | None = None
     turn_limit: int | None = None
     board_size: Tuple[int, int] | None = None
     factions: tuple[ScenarioFaction, ...] = field(default_factory=tuple)

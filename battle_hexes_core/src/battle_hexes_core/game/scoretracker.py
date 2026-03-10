@@ -28,6 +28,19 @@ class ScoreTracker:
         key = self._player_key(player)
         self._scores[key] = self._scores.get(key, 0) + points
 
+    def set_score(self, player: Player, points: int) -> None:
+        """Replace a player's score with ``points``."""
+        key = self._player_key(player)
+        self._scores[key] = max(0, points)
+
+    def set_scores(
+        self,
+        score_updates: Iterable[tuple[Player, int]],
+    ) -> None:
+        """Replace multiple player score values."""
+        for player, points in score_updates:
+            self.set_score(player, points)
+
     def get_score(self, player: Player) -> int:
         """Return the current score for the given player."""
         return self._scores.get(self._player_key(player), 0)
