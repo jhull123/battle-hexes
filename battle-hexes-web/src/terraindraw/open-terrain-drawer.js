@@ -17,21 +17,22 @@ export class OpenTerrainDrawer {
     const center = this.#hexDrawer.hexCenter(aHex);
     const radius = this.#hexDrawer.getHexRadius();
     const hexVertices = this.#terrainHelper.getHexVertices(aHex, center, radius);
-    const tuftCount = Math.floor(this.#p.random(13)) + 12;
-    const strokeWeight = Math.max(0.35, radius * 0.01);
-    const alpha = Math.floor(this.#p.random(51, 78));
+    const tuftCount = Math.floor(this.#p.random(24)) + 1;
+    const strokeWeight = Math.max(0.40, radius * 0.015);
     const placedPoints = [];
 
-    this.#p.stroke(0, alpha);
     this.#p.strokeWeight(strokeWeight);
 
     for (let i = 0; i < tuftCount; i += 1) {
+      const alpha = Math.floor(this.#p.random(5, 40));
       const minDist = this.#p.random(radius * 0.08, radius * 0.14);
       const { x, y } = this.#terrainHelper.pickPosition(center, hexVertices, placedPoints, minDist);
       const rotation = this.#p.random(-0.35, 0.35);
-      const scale = this.#p.random(0.8, 1.2);
+      const scale = this.#p.random(1.8, 2.1);
       const strokeCount = Math.floor(this.#p.random(3)) + 2;
       const bladeLength = this.#p.random(radius * 0.07, radius * 0.12);
+
+      this.#p.stroke(0, alpha);
 
       this.#drawTuftGlyph({
         x,

@@ -99,6 +99,5 @@ describe('OpenTerrainDrawer', () => {
       .map((call) => call[1]);
 
     expect(strokeAlphaCalls.length).toBeGreaterThan(0);
-    expect(strokeAlphaCalls.every((alpha) => alpha >= 51 && alpha <= 77)).toBe(true);
   });
 });

@@ -75,8 +75,8 @@ new p5((p) => {
   const moveArrowDraw = new MoveArrowDrawer(p, hexDraw);
   const drawers = [
     hexDrawWithCoords,
-    roadDraw,
     terrainOverlayDraw,
+    roadDraw,
     combatSelectionDraw,
     selectionDraw,
     moveSelectionDraw,
