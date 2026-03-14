@@ -86,6 +86,16 @@
       "movement": 0
     },
     {
+      "id": "MG Trupp A",
+      "name": "MG Trupp A",
+      "faction": "Wehrmacht", 
+      "type": "MG",
+      "echelon": "section",
+      "attack": 1,
+      "defense": 2,
+      "movement": 3
+    },
+    {
       "id": "StuG. III Zug A",
       "name": "StuG. III Zug A",
       "faction": "Wehrmacht", 
@@ -105,7 +115,13 @@
   },
   "hex_data": [
     { "coords": [0, 15], "terrain": "forest" },
-    { "coords": [0, 16], "units": ["StuG. III Zug A"] },
+    { 
+      "coords": [0, 16], 
+      "units": [
+        "StuG. III Zug A",
+        "MG Trupp A"
+      ] 
+    },
     { "coords": [0, 17], "terrain": "forest" },
     { "coords": [1, 16], "terrain": "forest" },
     {
