@@ -24,7 +24,7 @@ const gameData = await loadGameData();
 console.log('game data: ' + JSON.stringify(gameData));
 
 new p5((p) => {
-  const hexRadius = 50;
+  const hexRadius = 42;
   const hexHeight = Math.sqrt(3) * hexRadius;
   const hexDiameter = hexRadius * 2;
   const menuWidth = 300;
