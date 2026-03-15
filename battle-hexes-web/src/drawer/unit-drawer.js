@@ -58,6 +58,7 @@ export class UnitDrawer {
     this.#drawInfantrySymbol(x, y, this.#counterSide / 2, this.#counterSideThird);
     this.#drawUnitStats(aUnit, x, y);
     this.#drawUnitSize(aUnit, x, y);
+    this.#drawDefensiveFireIcon(x, y);
   }
 
   #halfColor(hexColor) {
@@ -121,5 +122,27 @@ export class UnitDrawer {
     this.#p.textSize(9);
     this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);
     this.#p.text(echelonSymbol, x, y - this.#counterSideThird + this.#counterSideThird * 0.2);
-  }  
+  }
+
+  #drawDefensiveFireIcon(x, y) {
+    const counterHalfSide = this.#counterSide / 2;
+    const iconSide = this.#counterSide * 0.18;
+    const iconPadding = this.#counterSide * 0.08;
+    const iconX = x + counterHalfSide - iconPadding - iconSide / 2;
+    const iconY = y - counterHalfSide + iconPadding + iconSide / 2;
+
+    this.#p.noStroke();
+    this.#p.fill('#2B2B2B');
+    this.#p.rect(iconX, iconY, iconSide, iconSide);
+
+    this.#p.fill('#FAF9F6');
+    this.#p.rect(iconX,
+                 iconY + (iconSide * (1/5)), 
+                 iconSide / 4, 
+                 iconSide * (1/3));
+    this.#p.rect(iconX,
+                 iconY - (iconSide * 0.20), 
+                 iconSide / 8, 
+                 iconSide * 0.30);
+  }
 }
