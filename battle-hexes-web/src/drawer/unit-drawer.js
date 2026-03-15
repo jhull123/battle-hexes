@@ -58,6 +58,7 @@ export class UnitDrawer {
     this.#drawInfantrySymbol(x, y, this.#counterSide / 2, this.#counterSideThird);
     this.#drawUnitStats(aUnit, x, y);
     this.#drawUnitSize(aUnit, x, y);
+    this.#drawDefensiveFireIcon(x, y);
   }
 
   #halfColor(hexColor) {
@@ -121,5 +122,29 @@ export class UnitDrawer {
     this.#p.textSize(9);
     this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);
     this.#p.text(echelonSymbol, x, y - this.#counterSideThird + this.#counterSideThird * 0.2);
-  }  
+  }
+
+  #drawDefensiveFireIcon(x, y) {
+    const counterHalfSide = this.#counterSide / 2;
+    const iconSide = this.#counterSide * 0.18;
+    const iconPadding = this.#counterSide * 0.08;
+    const iconX = x + counterHalfSide - iconPadding - iconSide / 2;
+    const iconY = y - counterHalfSide + iconPadding + iconSide / 2;
+
+    this.#p.noStroke();
+    this.#p.fill('#2B2B2B');
+    this.#p.rect(iconX, iconY, iconSide, iconSide);
+
+    const separatorHeight = iconSide * 0.04;
+    const ammoHeight = iconSide * 0.56;
+    const thinLineHeight = (ammoHeight - separatorHeight) / 3;
+    const thickLineHeight = ammoHeight - separatorHeight - thinLineHeight;
+    const ammoWidth = iconSide * 0.58;
+    const ammoLeft = iconX - ammoWidth / 2;
+    const ammoTop = iconY - ammoHeight / 2;
+
+    this.#p.fill('#FAF9F6');
+    this.#p.rect(ammoLeft, ammoTop, ammoWidth, thinLineHeight);
+    this.#p.rect(ammoLeft, ammoTop + thinLineHeight + separatorHeight, ammoWidth, thickLineHeight);
+  }
 }
