@@ -135,16 +135,14 @@ export class UnitDrawer {
     this.#p.fill('#2B2B2B');
     this.#p.rect(iconX, iconY, iconSide, iconSide);
 
-    const separatorHeight = iconSide * 0.04;
-    const ammoHeight = iconSide * 0.56;
-    const thinLineHeight = (ammoHeight - separatorHeight) / 3;
-    const thickLineHeight = ammoHeight - separatorHeight - thinLineHeight;
-    const ammoWidth = iconSide * 0.58;
-    const ammoLeft = iconX - ammoWidth / 2;
-    const ammoTop = iconY - ammoHeight / 2;
-
     this.#p.fill('#FAF9F6');
-    this.#p.rect(ammoLeft, ammoTop, ammoWidth, thinLineHeight);
-    this.#p.rect(ammoLeft, ammoTop + thinLineHeight + separatorHeight, ammoWidth, thickLineHeight);
+    this.#p.rect(iconX,
+                 iconY + (iconSide * (1/5)), 
+                 iconSide / 4, 
+                 iconSide * (1/3));
+    this.#p.rect(iconX,
+                 iconY - (iconSide * 0.20), 
+                 iconSide / 8, 
+                 iconSide * 0.30);
   }
 }

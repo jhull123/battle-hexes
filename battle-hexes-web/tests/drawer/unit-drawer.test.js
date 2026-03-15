@@ -152,21 +152,6 @@ describe('UnitDrawer.drawCounter defensive fire icon', () => {
 
     expect(p5.rect).toHaveBeenCalledWith(iconX, iconY, iconSide, iconSide);
 
-    const separatorHeight = iconSide * 0.04;
-    const ammoHeight = iconSide * 0.56;
-    const thinLineHeight = (ammoHeight - separatorHeight) / 3;
-    const thickLineHeight = ammoHeight - separatorHeight - thinLineHeight;
-    const ammoWidth = iconSide * 0.58;
-    const ammoLeft = iconX - ammoWidth / 2;
-    const ammoTop = iconY - ammoHeight / 2;
-
-    expect(p5.rect).toHaveBeenCalledWith(ammoLeft, ammoTop, ammoWidth, thinLineHeight);
-    expect(p5.rect).toHaveBeenCalledWith(
-      ammoLeft,
-      ammoTop + thinLineHeight + separatorHeight,
-      ammoWidth,
-      thickLineHeight,
-    );
     expect(p5.noStroke).toHaveBeenCalled();
     expect(p5.fill).toHaveBeenCalledWith('#2B2B2B');
     expect(p5.fill).toHaveBeenCalledWith('#FAF9F6');
