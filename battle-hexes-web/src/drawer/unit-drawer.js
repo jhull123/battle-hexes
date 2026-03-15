@@ -100,7 +100,7 @@ export class UnitDrawer {
   #drawUnitStats(aUnit, x, y) {
     this.#p.fill(255);
     this.#p.noStroke();
-    this.#p.textSize(14);
+    this.#p.textSize(12);
     this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);    
     this.#p.text(`${aUnit.getAttack()}-${aUnit.getDefense()}-${aUnit.getMovement()}`, x, y + this.#counterSideThird);
   }

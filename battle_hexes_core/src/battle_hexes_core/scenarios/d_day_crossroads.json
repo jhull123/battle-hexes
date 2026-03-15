@@ -8,7 +8,7 @@
     "method": "objective_control",
     "scoring_side": "Airborne"
   },
-  "board_size": [12, 18],
+  "board_size": [18, 18],
   "turn_limit": 8,
   "factions": [
     {
@@ -38,6 +38,56 @@
     {
       "id": "Airborne Inf. B",
       "name": "Airborne Inf. B",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 3,
+      "defense": 2,
+      "movement": 5
+    },
+    {
+      "id": "Airborne Inf. B",
+      "name": "Airborne Inf. B",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 3,
+      "defense": 2,
+      "movement": 5
+    },
+    {
+      "id": "Airborne Inf. C",
+      "name": "Airborne Inf. C",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 3,
+      "defense": 2,
+      "movement": 5
+    },
+    {
+      "id": "Airborne Inf. D",
+      "name": "Airborne Inf. D",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 3,
+      "defense": 2,
+      "movement": 5
+    },
+    {
+      "id": "Airborne Inf. E",
+      "name": "Airborne Inf. E",
+      "faction": "Airborne", 
+      "type": "Infantry",
+      "echelon": "platoon",
+      "attack": 3,
+      "defense": 2,
+      "movement": 5
+    },
+        {
+      "id": "Airborne Inf. F",
+      "name": "Airborne Inf. F",
       "faction": "Airborne", 
       "type": "Infantry",
       "echelon": "platoon",
@@ -114,6 +164,10 @@
     "village": { "color": "#9A8F7A" }
   },
   "hex_data": [
+    { "coords": [0, 8], "terrain": "forest" },
+    { "coords": [0, 9], "terrain": "forest" },
+    { "coords": [0, 10], "terrain": "forest" },
+    { "coords": [0, 11], "terrain": "rough" },
     { "coords": [0, 15], "terrain": "forest" },
     { 
       "coords": [0, 16], 
@@ -123,33 +177,73 @@
       ] 
     },
     { "coords": [0, 17], "terrain": "forest" },
-    { "coords": [1, 16], "terrain": "forest" },
+    { "coords": [1, 16] },
     {
       "coords": [2, 3], 
       "terrain": "village",
       "units": ["B / Inf. Zug"]
     },
     {
-      "coords": [2, 4], "units": ["C / Inf. Zug"]
-    },
-    { 
-      "coords": [2, 15],
+      "coords": [3, 15],
       "terrain": "village",
       "units": ["A / Inf. Zug"]
     },
+    { "coords": [4, 5], "units": ["C / Inf. Zug"] },
+    { "coords": [5, 9], "terrain": "rough" },
     {
-      "coords": [4, 9],
+      "coords": [6, 9],
       "units": ["Crossroads Feldwache"]
     },
     { "coords": [6, 6], "terrain": "forest" },
     { "coords": [6, 11], "terrain": "forest" },
     { "coords": [8, 0], "terrain": "forest" },
     { "coords": [8, 1], "terrain": "rough" },
+    { "coords": [8, 3], "terrain": "forest" },
+    { "coords": [8, 17], "terrain": "forest" },
     { "coords": [9, 0], "terrain": "forest" },
-    { "coords": [9, 1], "terrain": "rough" },
+    { "coords": [9, 1], "terrain": "forest" },
     { "coords": [9, 2], "terrain": "rough" },
-    { "coords": [9, 5], "units": ["Airborne Inf. A"] },
-    { "coords": [10, 15], "units": ["Airborne Inf. B"] }
+    { "coords": [9, 3], "terrain": "forest" },
+    { "coords": [9, 4], "terrain": "forest" },
+    { "coords": [9, 5], "terrain": "forest" },
+    { "coords": [9, 7], "terrain": "forest" },
+    { "coords": [9, 15], "terrain": "forest" },
+    { "coords": [9, 16], "terrain": "forest" },
+    { "coords": [9, 17], "terrain": "forest" },
+    { "coords": [10, 2], "terrain": "forest" },
+    { "coords": [10, 4], "terrain": "forest" },
+    { "coords": [10, 5], "terrain": "forest" },
+    { "coords": [10, 6], "terrain": "forest" },
+    { "coords": [10, 8], "terrain": "forest" },
+    { "coords": [10, 9], "terrain": "forest" },
+    { "coords": [10, 11], "terrain": "forest" },
+    { "coords": [10, 12], "terrain": "forest" },
+    { "coords": [10, 13], "terrain": "forest" },
+    { "coords": [10, 14], "terrain": "forest" },
+    { "coords": [10, 15], "terrain": "forest" },
+    { "coords": [10, 16], "terrain": "forest" },
+    { "coords": [10, 17], "terrain": "forest" },
+    { "coords": [11, 6], "terrain": "forest" },
+    { "coords": [11, 9], "terrain": "forest" },
+    { "coords": [11, 1], "terrain": "rough" },
+    { "coords": [11, 14], "terrain": "forest" },
+    { "coords": [11, 15], "terrain": "forest" },
+    { "coords": [11, 16], "terrain": "forest" },
+    { "coords": [12, 1], "terrain": "forest" },
+    { "coords": [12, 7],  "units": ["Airborne Inf. B"] },
+    { "coords": [12, 9], "terrain": "rough" },
+    { "coords": [12, 11], "units": ["Airborne Inf. A"] },
+    { "coords": [12, 13], "terrain": "rough" },
+    { "coords": [13, 5], "terrain": "forest" },
+    { "coords": [13, 12], "terrain": "rough" },
+    { "coords": [15, 16], "units": ["Airborne Inf. C"] },
+    { "coords": [16, 0], "units": ["Airborne Inf. E"] },
+    { "coords": [16, 1], "units": ["Airborne Inf. D"] },
+    { "coords": [16, 7], "units": ["Airborne Inf. F"] },
+    { "coords": [16, 17], "terrain": "forest" },
+    { "coords": [17, 15], "terrain": "forest" },
+    { "coords": [17, 16], "terrain": "forest" },
+    { "coords": [17, 17], "terrain": "forest" }
   ],
   "objectives": [
     { "coords": [2, 3], "points": 1, "type": "occupy" },
@@ -164,11 +258,11 @@
   "roads": [
     {
       "type": "secondary",
-      "path": [[11,6],[10,6],[9,7],[9,8],[8,8],[7,8],[6,8],[5,9],[4,9],[4,8],[3,7],[3,6],[2,5],[2,4],[2,3],[2,2],[1,1],[0,1]]
+      "path": [[17,6],[16,6],[15,6],[14,7],[14,8],[13,9],[13,10],[12,10],[11,10],[10,10],[9,9],[8,9],[7,9],[6,9],[6,10],[5,11],[5,12],[4,13],[4,14],[3,15],[3,16],[2,17]]
     },
     {
       "type": "secondary",
-      "path": [[4,9],[4,10],[3,11],[3,12],[3,13],[3,14],[2,15],[2,16],[1,16],[0,17]]
+      "path": [[6,9],[6,8],[5,7],[4,5],[4,4],[3,3],[2,3],[1,3],[0,3]]
     }
   ]
 }
