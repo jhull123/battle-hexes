@@ -17,6 +17,17 @@ must end its movement on that hex.
 ## Ending the Game
 
 Play continues until only one player still has units on the board. When all of
-your opponents' forces have been eliminated, the game ends immediately.
+your opponents' forces have been eliminated, the game ends immediately. The
+game also ends immediately when the scenario turn limit is reached.
 
+## Defensive Fire
+
+An off-turn unit may fire when an enemy moves into combat position (becomes
+adjacent). Each unit can use defensive fire at most once per off turn.
+
+A unit is eligible only if, on its previous turn, it did not spend all of its
+movement points and it was not forced to retreat.
+
+Defensive fire effectiveness depends on the firing unit and on the concealment
+provided by the target unit's terrain.
 
