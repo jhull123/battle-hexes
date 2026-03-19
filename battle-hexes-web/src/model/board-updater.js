@@ -15,6 +15,9 @@ export class BoardUpdater {
       } else {
         const destinationHex = board.getHex(unit.row, unit.column);
         board.updateUnitPosition(boardUnit, containingHex, destinationHex);
+        if (Object.hasOwn(unit, 'defensive_fire_available')) {
+          boardUnit.setDefensiveFireAvailable(unit.defensive_fire_available);
+        }
       }
     }
 

@@ -155,6 +155,7 @@ class TestSparseUnit(unittest.TestCase):
         self.assertEqual(sparse_unit.id, "u2")
         self.assertEqual(sparse_unit.row, 5)
         self.assertEqual(sparse_unit.column, 7)
+        self.assertTrue(sparse_unit.defensive_fire_available)
 
 
 class TestUnitModel(unittest.TestCase):
@@ -191,3 +192,4 @@ class TestUnitModel(unittest.TestCase):
         self.assertEqual(unit_model.move, 3)
         self.assertEqual(unit_model.row, 2)
         self.assertEqual(unit_model.column, 4)
+        self.assertTrue(unit_model.defensive_fire_available)

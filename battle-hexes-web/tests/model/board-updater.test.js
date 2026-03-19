@@ -47,6 +47,20 @@ describe('updateBoard', () => {
     expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
 
+
+  test('syncs defensive fire availability from server payload', () => {
+    board.addUnit(redUnit, 4, 5);
+    redUnit.setDefensiveFireAvailable(true);
+
+    boardUpdater.updateBoard(board, [{
+      id: 'unit-001',
+      row: 4,
+      column: 5,
+      defensive_fire_available: false,
+    }]);
+
+    expect(redUnit.hasDefensiveFire()).toBe(false);
+  });
   test('one unit eliminated', () => {
     board.addUnit(redUnit, 4, 5);
     boardUpdater.updateBoard(board, []);

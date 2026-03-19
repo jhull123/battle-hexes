@@ -28,6 +28,9 @@ class TestGame(unittest.TestCase):
                 self.name = name
                 self.factions = []
 
+            def owns(self, unit):
+                return False
+
             def __eq__(self, other):
                 return isinstance(other, MockPlayer) and \
                     self.name == other.name
@@ -55,6 +58,43 @@ class TestGame(unittest.TestCase):
         next_player = game.next_player()
         self.assertEqual(next_player, player1)
         self.assertEqual(game.get_current_player(), player1)
+
+    def test_next_player_restores_defensive_fire_for_new_current_player(self):
+        board = Board(5, 5)
+        faction1 = Faction(id="f1", name="f1", color="#fff")
+        faction2 = Faction(id="f2", name="f2", color="#000")
+        player1 = Player(name="P1", type=PlayerType.HUMAN, factions=[faction1])
+        player2 = Player(name="P2", type=PlayerType.CPU, factions=[faction2])
+        unit1 = Unit(
+            id="u1",
+            name="U1",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        unit2 = Unit(
+            id="u2",
+            name="U2",
+            faction=faction2,
+            player=player2,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        board.add_unit(unit1, 0, 0)
+        board.add_unit(unit2, 0, 1)
+        unit1.set_defensive_fire_available(False)
+        unit2.set_defensive_fire_available(False)
+        game = Game([player1, player2], board)
+
+        game.next_player()
+
+        self.assertFalse(unit1.has_defensive_fire())
+        self.assertTrue(unit2.has_defensive_fire())
 
     def test_next_player_with_no_players_returns_none(self):
         board = Board(5, 5)

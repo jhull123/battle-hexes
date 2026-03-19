@@ -20,6 +20,7 @@ class UnitModel(BaseModel):
     move: int
     row: int
     column: int
+    defensive_fire_available: bool = True
 
     @classmethod
     def from_unit(cls, unit: "Unit") -> "UnitModel":
@@ -36,6 +37,7 @@ class UnitModel(BaseModel):
             move=unit.move,
             row=unit.row,
             column=unit.column,
+            defensive_fire_available=unit.has_defensive_fire(),
         )
 
 
@@ -44,9 +46,15 @@ class SparseUnit(BaseModel):
     id: str
     row: int
     column: int
+    defensive_fire_available: bool | None = None
 
     @classmethod
     def from_unit(cls, unit: "Unit") -> "SparseUnit":
         """Create a sparse unit model from a core :class:`Unit`."""
 
-        return cls(id=str(unit.id), row=unit.row, column=unit.column)
+        return cls(
+            id=str(unit.id),
+            row=unit.row,
+            column=unit.column,
+            defensive_fire_available=unit.has_defensive_fire(),
+        )

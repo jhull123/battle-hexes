@@ -128,7 +128,7 @@ describe('UnitDrawer.drawCounter defensive fire icon', () => {
     text: jest.fn(),
   });
 
-  const createUnit = () => ({
+  const createUnit = (hasDefensiveFire = true) => ({
     getFaction: () => ({
       getCounterColor: () => '#808080',
     }),
@@ -136,6 +136,7 @@ describe('UnitDrawer.drawCounter defensive fire icon', () => {
     getDefense: () => 3,
     getMovement: () => 2,
     getEchelon: () => 'division',
+    hasDefensiveFire: () => hasDefensiveFire,
   });
 
   test('draws a borderless inset icon with specified ammo-mark colors and line proportions', () => {
@@ -155,6 +156,18 @@ describe('UnitDrawer.drawCounter defensive fire icon', () => {
     expect(p5.noStroke).toHaveBeenCalled();
     expect(p5.fill).toHaveBeenCalledWith('#2B2B2B');
     expect(p5.fill).toHaveBeenCalledWith('#FAF9F6');
+  });
+
+
+  test('does not draw the defensive fire icon when unavailable', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit(false), 100, 100);
+
+    const counterSide = 30 * 1.3;
+    const iconSide = counterSide * 0.18;
+    expect(p5.rect).not.toHaveBeenCalledWith(expect.any(Number), expect.any(Number), iconSide, iconSide);
   });
 });
 

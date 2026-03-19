@@ -61,6 +61,9 @@ class Game:
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
+        for unit in self.get_board().get_units():
+            if self.current_player.owns(unit):
+                unit.set_defensive_fire_available(True)
         return self.current_player
 
     def get_opposing_factions(self, faction: Faction) -> List[Faction]:
