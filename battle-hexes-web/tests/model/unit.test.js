@@ -115,8 +115,8 @@ describe('echelon', () => {
 
 
 describe('defensive fire availability', () => {
-  test('becomes unavailable when a unit spends all movement points', () => {
-    const unit = new Unit('12', 'Test Unit', friendlyFaction, null, 4, 4, 1);
+  test('becomes unavailable when a unit reaches one remaining movement point', () => {
+    const unit = new Unit('12', 'Test Unit', friendlyFaction, null, 4, 4, 2);
 
     unit.move(new Hex(5, 5), [new Hex(4, 5), new Hex(5, 6)]);
 
@@ -124,11 +124,22 @@ describe('defensive fire availability', () => {
   });
 
   test('is restored when movement points reset for a new turn', () => {
-    const unit = new Unit('13', 'Test Unit', friendlyFaction, null, 4, 4, 1);
+    const unit = new Unit('13', 'Test Unit', friendlyFaction, null, 4, 4, 2);
     unit.move(new Hex(5, 5), [new Hex(4, 5), new Hex(5, 6)]);
 
     unit.resetMovesRemaining();
 
+    expect(unit.hasDefensiveFire()).toBe(true);
+  });
+
+  test('remains available while a unit still has more than one movement point remaining', () => {
+    const unit = new Unit('14', 'Test Unit', friendlyFaction, null, 4, 4, 4);
+    const destinationHex = new Hex(5, 5);
+    destinationHex.setTerrain({ moveCost: 2 });
+
+    unit.move(destinationHex, [new Hex(4, 5), new Hex(5, 6)]);
+
+    expect(unit.getMovesRemaining()).toBe(2);
     expect(unit.hasDefensiveFire()).toBe(true);
   });
 });

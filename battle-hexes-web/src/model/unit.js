@@ -72,7 +72,7 @@ export class Unit {
       : 1;
 
     this.#movesRemaining = Math.max(0, this.#movesRemaining - moveCost);
-    if (this.#movesRemaining === 0) {
+    if (this.#movesRemaining <= 1) {
       this.#defensiveFireAvailable = false;
     }
   }
