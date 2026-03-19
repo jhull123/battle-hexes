@@ -62,8 +62,11 @@ class Game:
             final_hex = plan.path[-1]
             plan.unit.set_coords(final_hex.row, final_hex.column)
             if (
-                movement_points_spent >= plan.unit.get_move() - 1
-                or self.get_board().enemy_adjacent(plan.unit, final_hex)
+                plan.unit.get_move() > 0
+                and (
+                    movement_points_spent >= plan.unit.get_move() - 1
+                    or self.get_board().enemy_adjacent(plan.unit, final_hex)
+                )
             ):
                 plan.unit.set_defensive_fire_available(False)
         self.get_current_player().movement_cb()

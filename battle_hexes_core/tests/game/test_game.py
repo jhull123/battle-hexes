@@ -195,6 +195,32 @@ class TestGame(unittest.TestCase):
 
         self.assertFalse(moving_unit.has_defensive_fire())
 
+    def test_apply_movement_plans_keeps_defensive_fire_for_zero_move_unit(
+        self
+    ):
+        board = Board(5, 5)
+        faction = Faction(id="f1", name="f", color="#fff")
+        player = Player(name="P", type=PlayerType.CPU, factions=[faction])
+        unit = Unit(
+            id="u1",
+            name="Bunker",
+            faction=faction,
+            player=player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=0,
+        )
+        board.add_unit(unit, 0, 0)
+        game = Game([player], board)
+
+        start_hex = board.get_hex(0, 0)
+        plan = UnitMovementPlan(unit, [start_hex])
+
+        game.apply_movement_plans([plan])
+
+        self.assertTrue(unit.has_defensive_fire())
+
     def test_game_over_when_turn_limit_reached(self):
         board = Board(5, 5)
         game = Game([], board, turn_limit=1)
