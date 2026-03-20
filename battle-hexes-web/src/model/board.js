@@ -205,9 +205,20 @@ export class Board {
     return this.#selectedHex;
   }
 
-  resetMovesRemaining() {
+  resetMovesRemaining(player = null) {
     for (let unit of this.#units) {
-      unit.resetMovesRemaining();
+      if (!player || unit.isOwnedBy(player)) {
+        unit.resetMovesRemaining();
+      }
+    }
+  }
+
+  resetDefensiveFire(player = null) {
+    console.log("Resetting defensive fire for " + player.getName());
+    for (let unit of this.#units) {
+      if (!player || unit.isOwnedBy(player)) {
+        unit.resetDefensiveFire();
+      }
     }
   }
 

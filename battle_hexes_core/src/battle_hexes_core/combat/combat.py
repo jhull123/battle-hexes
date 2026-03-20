@@ -1,4 +1,5 @@
 from itertools import combinations
+import logging
 
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.combat.combatresult import (
@@ -15,6 +16,7 @@ class Combat:
         self.board = game.get_board()
         self.attacking_player = game.get_current_player()
         self.combat_solver = CombatSolver()
+        self.logger = logging.getLogger(__name__)
 
     def resolve_combat(self) -> CombatResults:
         combat_results = CombatResults()
@@ -174,6 +176,17 @@ class Combat:
             if attackers and defenders:
                 results.append((attackers, defenders))
 
+            self.logger.info(
+                "find_combat: %d combats -> %s",
+                len(results),
+                [
+                    {
+                        "attackers": [u.get_id() for u in atk],
+                        "defenders": [u.get_id() for u in dfn],
+                    }
+                    for atk, dfn in results
+                ],
+            )
         return results
 
     def set_static_die_roll(self, static_die_roll: int) -> None:

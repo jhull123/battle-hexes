@@ -123,11 +123,15 @@ describe('defensive fire availability', () => {
     expect(unit.hasDefensiveFire()).toBe(false);
   });
 
-  test('is restored when movement points reset for a new turn', () => {
+  test('is restored only when defensive fire is explicitly reset', () => {
     const unit = new Unit('13', 'Test Unit', friendlyFaction, null, 4, 4, 2);
     unit.move(new Hex(5, 5), [new Hex(4, 5), new Hex(5, 6)]);
 
     unit.resetMovesRemaining();
+
+    expect(unit.hasDefensiveFire()).toBe(false);
+
+    unit.resetDefensiveFire();
 
     expect(unit.hasDefensiveFire()).toBe(true);
   });
