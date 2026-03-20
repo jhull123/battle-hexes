@@ -186,7 +186,7 @@ class Combat:
                     }
                     for atk, dfn in results
                 ],
-            )        
+            )
         return results
 
     def set_static_die_roll(self, static_die_roll: int) -> None:
