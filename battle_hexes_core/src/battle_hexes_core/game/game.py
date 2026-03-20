@@ -75,13 +75,14 @@ class Game:
         """Advance to the next player and return it."""
         if not self.players:
             return None
+        previous_player = self.current_player
         idx = self.players.index(self.current_player)
         next_idx = (idx + 1) % len(self.players)
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
         for unit in self.get_board().get_units():
-            if self.current_player.owns(unit):
+            if previous_player.owns(unit):
                 unit.set_defensive_fire_available(True)
         return self.current_player
 

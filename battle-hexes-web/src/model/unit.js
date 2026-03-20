@@ -44,7 +44,7 @@ export class Unit {
   getId() { return this.#id; }
   getName() { return this.#name; }
   getFaction() { return this.#faction; }
-  getOwningPlayer() { return this.#faction.getOwningPlayer(); }
+  getOwningPlayer() { return this.#faction?.getOwningPlayer?.(); }
   getType() { return this.#type; }
   getContainingHex() { return this.#containingHex; }
   setContainingHex(aHex) { this.#containingHex = aHex; }
@@ -102,6 +102,9 @@ export class Unit {
 
   resetMovesRemaining() {
     this.#movesRemaining = this.getMovement();
+  }
+
+  resetDefensiveFire() {
     this.#defensiveFireAvailable = true;
   }
 

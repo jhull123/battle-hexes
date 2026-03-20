@@ -59,7 +59,7 @@ class TestGame(unittest.TestCase):
         self.assertEqual(next_player, player1)
         self.assertEqual(game.get_current_player(), player1)
 
-    def test_next_player_restores_defensive_fire_for_new_current_player(self):
+    def test_next_player_restores_defensive_fire_for_previous_player(self):
         board = Board(5, 5)
         faction1 = Faction(id="f1", name="f1", color="#fff")
         faction2 = Faction(id="f2", name="f2", color="#000")
@@ -93,8 +93,8 @@ class TestGame(unittest.TestCase):
 
         game.next_player()
 
-        self.assertFalse(unit1.has_defensive_fire())
-        self.assertTrue(unit2.has_defensive_fire())
+        self.assertTrue(unit1.has_defensive_fire())
+        self.assertFalse(unit2.has_defensive_fire())
 
     def test_next_player_with_no_players_returns_none(self):
         board = Board(5, 5)

@@ -140,6 +140,43 @@ describe('endPhase', () => {
     expect(game.getCurrentPhase()).toBe(phases[0]);
     expect(game.getCurrentPlayer()).toEqual(player2);
   });
+
+  test('resets movement for the new current player and defensive fire for the previous player', () => {
+    const turnPhases = ['End Turn'];
+    const turnPlayer1 = new Player('Player 1');
+    const turnPlayer2 = new Player('Player 2');
+    const turnPlayers = new Players([turnPlayer1, turnPlayer2]);
+    const board = new Board(10, 10);
+    const turnGame = new Game('turn-game-id', turnPhases, turnPlayers, board);
+
+    const faction1 = new Faction('f1', 'Faction 1', '#f00');
+    const faction2 = new Faction('f2', 'Faction 2', '#0f0');
+    faction1.setOwningPlayer(turnPlayer1);
+    faction2.setOwningPlayer(turnPlayer2);
+
+    const unit1 = new Unit('u1', 'Unit1', faction1, null, 1, 1, 2);
+    const unit2 = new Unit('u2', 'Unit2', faction2, null, 1, 1, 2);
+    board.addUnit(unit1, 0, 0);
+    board.addUnit(unit2, 0, 1);
+
+    unit1.move(board.getHex(0, 0), []);
+    unit2.move(board.getHex(0, 1), []);
+    expect(unit1.hasDefensiveFire()).toBe(false);
+    expect(unit2.hasDefensiveFire()).toBe(false);
+    expect(unit1.getMovesRemaining()).toBe(1);
+    expect(unit2.getMovesRemaining()).toBe(1);
+
+    const switched = turnGame.endPhase();
+
+    expect(switched).toBe(true);
+    expect(turnGame.getCurrentPhase()).toBe('End Turn');
+    expect(turnGame.getCurrentPlayer()).toEqual(turnPlayer2);
+    expect(unit1.getMovesRemaining()).toBe(1);
+    expect(unit2.getMovesRemaining()).toBe(2);
+    expect(unit1.hasDefensiveFire()).toBe(true);
+    expect(unit2.hasDefensiveFire()).toBe(false);
+  });
+
 });
 
 describe('resolveCombat', () => {
