@@ -29,6 +29,8 @@ A unit is eligible only if, on its previous turn, the unit ended the turn with m
 
 Units with zero movement points as part of their stats (like a 1-1-0 unit) may engage in defensive fire despite never having more than one movement point after each turn.
 
+Defensive fire status is reset at the start of a player's turn.
+
 Defensive fire effectiveness depends on the firing unit and on the concealment
 provided by the target unit's terrain.
 
