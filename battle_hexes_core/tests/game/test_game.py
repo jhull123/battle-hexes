@@ -28,6 +28,9 @@ class TestGame(unittest.TestCase):
                 self.name = name
                 self.factions = []
 
+            def owns(self, unit):
+                return False
+
             def __eq__(self, other):
                 return isinstance(other, MockPlayer) and \
                     self.name == other.name
@@ -56,6 +59,43 @@ class TestGame(unittest.TestCase):
         self.assertEqual(next_player, player1)
         self.assertEqual(game.get_current_player(), player1)
 
+    def test_next_player_restores_defensive_fire_for_new_current_player(self):
+        board = Board(5, 5)
+        faction1 = Faction(id="f1", name="f1", color="#fff")
+        faction2 = Faction(id="f2", name="f2", color="#000")
+        player1 = Player(name="P1", type=PlayerType.HUMAN, factions=[faction1])
+        player2 = Player(name="P2", type=PlayerType.CPU, factions=[faction2])
+        unit1 = Unit(
+            id="u1",
+            name="U1",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        unit2 = Unit(
+            id="u2",
+            name="U2",
+            faction=faction2,
+            player=player2,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        board.add_unit(unit1, 0, 0)
+        board.add_unit(unit2, 0, 1)
+        unit1.set_defensive_fire_available(False)
+        unit2.set_defensive_fire_available(False)
+        game = Game([player1, player2], board)
+
+        game.next_player()
+
+        self.assertFalse(unit1.has_defensive_fire())
+        self.assertTrue(unit2.has_defensive_fire())
+
     def test_next_player_with_no_players_returns_none(self):
         board = Board(5, 5)
         game = Game([], board)
@@ -79,6 +119,107 @@ class TestGame(unittest.TestCase):
         game.apply_movement_plans([plan])
 
         self.assertEqual(unit.get_coords(), (0, 1))
+
+    def test_apply_movement_plans_removes_defensive_fire_at_one_move_left(
+        self
+    ):
+        board = Board(5, 5)
+        faction = Faction(id="f1", name="f", color="#fff")
+        player = Player(name="P", type=PlayerType.CPU, factions=[faction])
+        unit = Unit(
+            id="u1",
+            name="U",
+            faction=faction,
+            player=player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=2,
+        )
+        board.add_unit(unit, 0, 0)
+        game = Game([player], board)
+
+        start_hex = board.get_hex(0, 0)
+        end_hex = board.get_hex(0, 1)
+        plan = UnitMovementPlan(unit, [start_hex, end_hex])
+
+        game.apply_movement_plans([plan])
+
+        self.assertFalse(unit.has_defensive_fire())
+
+    def test_apply_movement_plans_removes_defensive_fire_when_enemy_adjacent(
+        self
+    ):
+        board = Board(5, 5)
+        red_faction = Faction(id="red", name="Red", color="#fff")
+        blue_faction = Faction(id="blue", name="Blue", color="#000")
+        red_player = Player(
+            name="Red",
+            type=PlayerType.CPU,
+            factions=[red_faction],
+        )
+        blue_player = Player(
+            name="Blue",
+            type=PlayerType.CPU,
+            factions=[blue_faction],
+        )
+        moving_unit = Unit(
+            id="u1",
+            name="Mover",
+            faction=red_faction,
+            player=red_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=4,
+        )
+        enemy_unit = Unit(
+            id="u2",
+            name="Enemy",
+            faction=blue_faction,
+            player=blue_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=4,
+        )
+        board.add_unit(moving_unit, 0, 0)
+        board.add_unit(enemy_unit, 1, 2)
+        game = Game([red_player, blue_player], board)
+
+        start_hex = board.get_hex(0, 0)
+        end_hex = board.get_hex(0, 1)
+        plan = UnitMovementPlan(moving_unit, [start_hex, end_hex])
+
+        game.apply_movement_plans([plan])
+
+        self.assertFalse(moving_unit.has_defensive_fire())
+
+    def test_apply_movement_plans_keeps_defensive_fire_for_zero_move_unit(
+        self
+    ):
+        board = Board(5, 5)
+        faction = Faction(id="f1", name="f", color="#fff")
+        player = Player(name="P", type=PlayerType.CPU, factions=[faction])
+        unit = Unit(
+            id="u1",
+            name="Bunker",
+            faction=faction,
+            player=player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=0,
+        )
+        board.add_unit(unit, 0, 0)
+        game = Game([player], board)
+
+        start_hex = board.get_hex(0, 0)
+        plan = UnitMovementPlan(unit, [start_hex])
+
+        game.apply_movement_plans([plan])
+
+        self.assertTrue(unit.has_defensive_fire())
 
     def test_game_over_when_turn_limit_reached(self):
         board = Board(5, 5)

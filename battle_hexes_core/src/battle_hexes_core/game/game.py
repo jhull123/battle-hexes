@@ -2,6 +2,7 @@ import uuid
 from typing import List
 
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.scoretracker import ScoreTracker
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
@@ -45,11 +46,29 @@ class Game:
 
     def apply_movement_plans(self, plans: List["UnitMovementPlan"]) -> None:
         """Apply a collection of movement plans to update unit positions."""
+        movement = MovementCalculator(self.get_board())
         for plan in plans:
             if not plan.path:
                 continue
+
+            movement_points_spent = 0
+            for from_hex, to_hex in zip(plan.path, plan.path[1:]):
+                movement_points_spent += movement.move_cost(
+                    plan.unit,
+                    from_hex,
+                    to_hex,
+                )
+
             final_hex = plan.path[-1]
             plan.unit.set_coords(final_hex.row, final_hex.column)
+            if (
+                plan.unit.get_move() > 0
+                and (
+                    movement_points_spent >= plan.unit.get_move() - 1
+                    or self.get_board().enemy_adjacent(plan.unit, final_hex)
+                )
+            ):
+                plan.unit.set_defensive_fire_available(False)
         self.get_current_player().movement_cb()
 
     def next_player(self) -> Player:
@@ -61,6 +80,9 @@ class Game:
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
+        for unit in self.get_board().get_units():
+            if self.current_player.owns(unit):
+                unit.set_defensive_fire_available(True)
         return self.current_player
 
     def get_opposing_factions(self, faction: Faction) -> List[Faction]:

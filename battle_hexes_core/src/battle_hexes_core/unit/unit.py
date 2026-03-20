@@ -25,6 +25,7 @@ class Unit:
         self.echelon = echelon
         self.defense = defense
         self.move = move
+        self.defensive_fire_available = True
         self.row = row
         self.column = column
 
@@ -56,6 +57,12 @@ class Unit:
 
     def get_move(self):
         return self.move
+
+    def has_defensive_fire(self) -> bool:
+        return self.defensive_fire_available
+
+    def set_defensive_fire_available(self, is_available: bool) -> None:
+        self.defensive_fire_available = bool(is_available)
 
     def set_coords(self, row: int, column: int):
         self.row = row

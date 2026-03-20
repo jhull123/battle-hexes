@@ -39,3 +39,7 @@ class SparseBoard(BaseModel):
             unit_id = str(unit_data.id)
             unit = board.get_unit_by_id(unit_id)
             unit.set_coords(unit_data.row, unit_data.column)
+            if unit_data.defensive_fire_available is not None:
+                unit.set_defensive_fire_available(
+                    unit_data.defensive_fire_available
+                )

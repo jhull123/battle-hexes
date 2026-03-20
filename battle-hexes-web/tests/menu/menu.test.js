@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { Menu } from '../../src/menu';
 import { eventBus } from '../../src/event-bus.js';
+import { API_URL } from '../../src/model/battle-api.js';
 
 jest.mock('axios');
 
@@ -513,6 +514,54 @@ describe('auto new game persistence', () => {
     await flushPromises();
 
     expect(document.querySelector('.victory-score').textContent).toBe('4');
+  });
+
+  test('posts end-turn board state captured before endPhase resets moves', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const preResetPayload = {
+      units: [{ id: 'unit-1', defensive_fire_available: false }],
+    };
+    const postResetPayload = {
+      units: [{ id: 'unit-1', defensive_fire_available: true }],
+    };
+    let movesReset = false;
+    const currentPlayer = {
+      getName: () => 'Player 1',
+      isHuman: () => true,
+      play: jest.fn(),
+    };
+
+    const game = fakeGame({
+      getCurrentPhase: () => 'End Turn',
+      getCurrentPlayer: () => currentPlayer,
+      endPhase: () => {
+        movesReset = true;
+        return true;
+      },
+      getBoard: () => ({
+        sparseBoard: () => (movesReset ? postResetPayload : preResetPayload),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    axios.post.mockResolvedValue({ data: {} });
+
+    const menu = new Menu(game);
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/game-id/end-turn`,
+      preResetPayload
+    );
+    expect(axios.post).not.toHaveBeenCalledWith(
+      `${API_URL}/games/game-id/end-turn`,
+      postResetPayload
+    );
   });
 
   test('moves turn badge and highlight when current player changes', () => {

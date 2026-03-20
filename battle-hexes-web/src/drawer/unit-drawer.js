@@ -58,7 +58,9 @@ export class UnitDrawer {
     this.#drawInfantrySymbol(x, y, this.#counterSide / 2, this.#counterSideThird);
     this.#drawUnitStats(aUnit, x, y);
     this.#drawUnitSize(aUnit, x, y);
-    this.#drawDefensiveFireIcon(x, y);
+    if (aUnit.hasDefensiveFire?.()) {
+      this.#drawDefensiveFireIcon(x, y);
+    }
   }
 
   #halfColor(hexColor) {

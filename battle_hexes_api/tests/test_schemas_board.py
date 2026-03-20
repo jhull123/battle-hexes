@@ -84,6 +84,25 @@ class TestSparseBoard(unittest.TestCase):
         self.assertEqual(self.red_unit.get_coords(), (2, 3))
         self.assertEqual(self.blue_unit.get_coords(), (3, 2))
 
+    def test_update_board_applies_defensive_fire_state(self):
+        self.board.add_unit(self.red_unit, 0, 4)
+        self.red_unit.set_defensive_fire_available(True)
+
+        sparse_board_data = {
+            "units": [
+                {
+                    "id": str(self.red_unit.get_id()),
+                    "row": 0,
+                    "column": 4,
+                    "defensive_fire_available": False,
+                },
+            ]
+        }
+
+        SparseBoard(**sparse_board_data).apply_to_board(self.board)
+
+        self.assertFalse(self.red_unit.has_defensive_fire())
+
 
 class TestBoardModel(unittest.TestCase):
     def setUp(self):

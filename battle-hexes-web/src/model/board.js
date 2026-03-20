@@ -269,7 +269,12 @@ export class Board {
     const sparseUnits = [];
     for (let unit of this.getUnits()) {
       let unitHex = unit.getContainingHex();
-      sparseUnits.push({id: unit.getId(), row: unitHex.getRow(), column: unitHex.getColumn()})
+      sparseUnits.push({
+        id: unit.getId(),
+        row: unitHex.getRow(),
+        column: unitHex.getColumn(),
+        defensive_fire_available: unit.hasDefensiveFire(),
+      })
     }
     return {
       units: sparseUnits

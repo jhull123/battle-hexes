@@ -362,6 +362,11 @@ export class Menu {
 
   #finishPhase() {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+
+    const endTurnPayload = this.#game.getCurrentPhase().toLowerCase() === 'end turn'
+      ? this.#game.getBoard().sparseBoard()
+      : null;
+
     if (this.#game.getCurrentPhase().toLowerCase() === 'movement') {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-movement`,
@@ -382,7 +387,7 @@ export class Menu {
     if (switchedPlayers) {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-turn`,
-        this.#game.getBoard().sparseBoard()
+        endTurnPayload
       ).then((response) => {
         this.#game.updateScores?.(response?.data?.scores);
         this.#game.updateTurnState?.({

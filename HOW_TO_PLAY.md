@@ -25,8 +25,9 @@ game also ends immediately when the scenario turn limit is reached.
 An off-turn unit may fire when an enemy moves into combat position (becomes
 adjacent). Each unit can use defensive fire at most once per off turn.
 
-A unit is eligible only if, on its previous turn, it did not spend all of its
-movement points and it was not forced to retreat.
+A unit is eligible only if, on its previous turn, the unit ended the turn with more than one movement point remaining and it was not forced to retreat.
+
+Units with zero movement points as part of their stats (like a 1-1-0 unit) may engage in defensive fire despite never having more than one movement point after each turn.
 
 Defensive fire effectiveness depends on the firing unit and on the concealment
 provided by the target unit's terrain.
