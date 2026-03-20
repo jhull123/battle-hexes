@@ -165,3 +165,9 @@ class Unit:
     def __str__(self):
         return f"{self.name} ({self.faction.name}) " + \
                f"{self.attack}-{self.defense}-{self.move}"
+
+    def __repr__(self):
+        return (f"Unit(id={self.id!r}, name={self.name!r}, faction={self.faction!r}, "
+                f"player={self.player!r}, type={self.type!r}, attack={self.attack}, "
+                f"defense={self.defense}, move={self.move}, row={self.row}, "
+                f"column={self.column}, echelon={self.echelon!r})")

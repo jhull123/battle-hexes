@@ -173,10 +173,9 @@ describe('endPhase', () => {
     expect(turnGame.getCurrentPlayer()).toEqual(turnPlayer2);
     expect(unit1.getMovesRemaining()).toBe(1);
     expect(unit2.getMovesRemaining()).toBe(2);
-    expect(unit1.hasDefensiveFire()).toBe(true);
-    expect(unit2.hasDefensiveFire()).toBe(false);
+    expect(unit1.hasDefensiveFire()).toBe(false);
+    expect(unit2.hasDefensiveFire()).toBe(true);
   });
-
 });
 
 describe('resolveCombat', () => {

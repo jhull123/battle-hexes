@@ -214,6 +214,7 @@ export class Board {
   }
 
   resetDefensiveFire(player = null) {
+    console.log("Resetting defensive fire for " + player.getName());
     for (let unit of this.#units) {
       if (!player || unit.isOwnedBy(player)) {
         unit.resetDefensiveFire();
