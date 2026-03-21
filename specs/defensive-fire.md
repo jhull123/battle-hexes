@@ -13,18 +13,23 @@ The intent is to turn the existing `defensive_fire_available` flag and UI indica
 
 ## Rulebook requirements
 
-`HOW_TO_PLAY.md` currently defines defensive fire as follows:
+`HOW_TO_PLAY.md` now defines defensive fire as follows:
 
-- An off-turn unit may fire when an enemy unit moves into an adjacent hex.
-- A unit may use defensive fire at most once per off turn.
+- An off-turn unit fires automatically when an enemy unit moves into an adjacent hex.
+- A unit may use defensive fire at most once per off turn, and the shot is consumed whether the result is retreat or no effect.
 - A unit is eligible only if, on its previous turn, it ended the turn with **more than one movement point remaining** and it **was not forced to retreat**.
 - Units whose printed movement is `0` are still eligible even though they never end a turn with more than one movement point remaining.
-- Defensive fire is reset at the start of a player's turn.
-- Firing is automatic.
+- Defensive fire eligibility is computed at the end of the unit's friendly turn.
+- A unit loses defensive-fire eligibility immediately if it is forced to retreat before it fires.
+- Defensive fire usage state resets at the start of a player's turn.
 - The only possible results are:
   - the moving/offensive unit retreats one hex, or
   - no effect.
-- Effectiveness depends on the firing unit and the target unit's terrain concealment.
+- If multiple eligible units occupy the same hex, each unit resolves defensive fire separately.
+- When a unit becomes adjacent, its movement points are set to zero and then defensive fire is resolved.
+- Effectiveness is probabilistic and scenario-driven:
+  - `chance = base_probability × unit_modifier × terrain_modifier`
+  - the final chance is clamped between scenario minimum and maximum values.
 
 ## Current state of the code base
 
@@ -118,7 +123,12 @@ At the start of an enemy off-turn, a unit should be considered able to defensive
 
 - the unit belongs to the non-current player,
 - it has not already spent defensive fire during this off-turn,
-- it was not forced to retreat since the end of its last friendly turn, and
+- it was marked eligible at the end of its own previous friendly turn, and
+- it has not been forced to retreat since that eligibility snapshot was computed.
+
+That end-of-turn eligibility snapshot should itself be computed from:
+
+- whether the unit was forced to retreat during its just-completed friendly turn, and
 - either:
   - its printed movement is `0`, or
   - it ended its own previous turn with **more than one** movement point remaining.
@@ -143,6 +153,7 @@ When a new player turn begins:
 
 - all units belonging to the **current player** should clear any "spent this off-turn" status,
 - those same units should begin their own active turn normally,
+- units that were previously eligible should remain visibly eligible only until they fire or are forced to retreat, and
 - the system should preserve enough information to determine eligibility for the *next* enemy off-turn when that player's turn ends.
 
 ### Important clarification
@@ -170,7 +181,8 @@ For each unit owned by that player:
    - `move == 0`, or
    - `moves_remaining > 1`,
    and it was **not** forced to retreat.
-4. Reset `defensive_fire_spent_this_off_turn` to `False` so it may react during the enemy turn.
+4. Persist that eligibility snapshot so the off-turn state can be revoked immediately if the unit retreats before firing.
+5. Reset `defensive_fire_spent_this_off_turn` to `False` so it may react during the enemy turn.
 
 ### Consequence
 
@@ -184,11 +196,13 @@ Defensive fire happens when an enemy unit **moves into combat position (becomes 
 
 During movement step resolution, after the moving unit enters each hex:
 
-1. Identify enemy units adjacent to the mover's new hex.
-2. Filter that set to units with defensive fire currently available.
-3. For each eligible defending unit, check whether the adjacency is newly created by this move step.
+1. Apply the normal movement-stop rule as soon as the mover becomes adjacent by setting its remaining movement points to zero.
+2. Identify enemy units adjacent to the mover's new hex.
+3. Filter that set to units with defensive fire currently available.
+4. For each eligible defending unit, check whether the adjacency is newly created by this move step.
    - Defensive fire should only trigger when the mover **becomes adjacent**, not when it starts adjacent and remains adjacent.
-4. Resolve the defensive fire event immediately before the mover can continue any further movement.
+   - Because movement halts on first adjacency, the mover will not simultaneously become newly adjacent to one enemy while remaining free to continue moving around another.
+5. Resolve the defensive fire event immediately after movement halts and before any further action is taken with that mover.
 
 ### Why step-by-step resolution matters
 
@@ -196,7 +210,7 @@ Movement is path-based. A unit may become adjacent midway through a path, and de
 
 ### Ordering recommendation
 
-If multiple defenders become newly adjacent at the same step:
+If multiple eligible defenders occupy the same adjacent hex at the triggering step, each of them should resolve defensive fire separately:
 
 - resolve them in a deterministic order,
 - stop further reactions if the moving unit has already been retreated/eliminated/otherwise removed from the triggering hex,
@@ -228,24 +242,24 @@ Introduce a core-level result object such as `DefensiveFireResult` or `ReactionF
 The resolver should:
 
 1. Evaluate whether the defending unit is still eligible.
-2. Determine effectiveness from firing-unit characteristics plus target-terrain concealment.
-3. If the result is retreat:
-   - attempt to force the moving unit back one hex,
-   - define the retreat direction and validation rules,
+2. Calculate the final defensive-fire chance from scenario, unit, and terrain data:
+   - read `base_probability`, `minimum`, and `maximum` from the scenario's `defensive_fire` settings,
+   - multiply by the firing unit's `defensive_fire_modifier` (default `1.0`),
+   - multiply by the target hex terrain's `defensive_fire_modifier` (default `1.0`),
+   - clamp the result between the scenario minimum and maximum.
+3. Roll against that final probability.
+4. If the result is retreat:
+   - force the moving unit to retreat using the existing combat retreat logic,
+   - reuse the same retreat direction and blocked-retreat rules already enforced for normal combat,
    - update board/unit state immediately.
-4. Consume the defender's defensive fire for the off-turn regardless of result, unless design decides otherwise.
-5. Return structured results for logging, API responses, and animation.
+5. Consume the defender's defensive fire for the off-turn regardless of result.
+6. Return structured results for logging, API responses, and animation.
 
 ### Retreat handling
 
-The code base already has `Unit.forced_move(board, from_hex, distance)` for retreat-like movement. That should be evaluated as the starting point for defensive-fire retreat handling.
+Defensive fire should use the existing combat retreat logic for both retreat direction and blocked-retreat handling.
 
-However, implementation must verify that its retreat-direction semantics match the desired defensive-fire rule:
-
-- defensive fire says the **offensive unit** retreats one hex,
-- the current forced-move helper moves the unit away from a given origin hex in cube-space terms.
-
-This may be reusable directly, or defensive fire may need a dedicated one-hex retreat helper to avoid hidden assumptions.
+The code base already has `Unit.forced_move(board, from_hex, distance)` for retreat-like movement. That should be evaluated as the starting point for defensive-fire retreat handling, but the implementation must ensure the helper is invoked in exactly the same way normal combat retreats are resolved so the two systems stay consistent.
 
 ## 6. Record forced-retreat history
 
@@ -253,7 +267,7 @@ Because the rulebook says a unit is not eligible if it "was forced to retreat," 
 
 ### Required sources of forced retreat
 
-At minimum, the implementation must decide whether this includes:
+At minimum, this includes:
 
 - retreat caused by standard combat resolution,
 - retreat caused by defensive fire,
@@ -261,9 +275,12 @@ At minimum, the implementation must decide whether this includes:
 
 ### Proposed rule-engine behavior
 
-Whenever a unit is displaced by a mandatory retreat effect, set a per-unit flag indicating that it was forced to retreat during the current friendly turn window or since last eligibility evaluation, depending on the chosen state model.
+Whenever a unit is displaced by a mandatory retreat effect, set a per-unit flag indicating that it was forced to retreat since its last defensive-fire eligibility snapshot was computed.
 
-This flag is then used when computing defensive-fire eligibility for the next off-turn.
+This flag is then used in two ways:
+
+- when computing defensive-fire eligibility at the end of the unit's next friendly turn, and
+- to revoke currently displayed defensive-fire availability immediately if the unit retreats before firing.
 
 ## 7. Keep the API indicator, but expand payloads for events
 
@@ -374,82 +391,27 @@ To keep the first implementation tractable, the following should be explicitly o
 - sound/particle effects,
 - e2e animation polish.
 
-## Open questions
+## Implementation clarifications
 
-The following questions should be answered before implementation begins.
+The answers that were previously tracked as open questions are now part of the implementation requirements:
 
-1. **What exactly counts as "was forced to retreat" for eligibility?**
-   - Only retreats suffered during the unit's own immediately previous friendly turn?
-   - Or any retreat suffered since the last time eligibility was computed?
-   - **Answer:** Defensive fire eligibility is determined at the end of a unit’s friendly turn and is lost immediately if the unit is forced to retreat before it fires.
-
-2. **When, exactly, is eligibility computed?**
-   - At the instant the player's turn ends?
-   - At the start of the enemy turn?
-   - These are usually equivalent, but the implementation should choose one authoritative timing.
-   - **Answer:** Eligibility is computed at the end of the friendly turn, but the defensive fire icon is removed immediately if the unit retreats or fires.
-
-3. **If multiple defenders become newly adjacent on the same move step, do all of them fire, or only one?**
-   - The rulebook says a unit fires automatically when it has defensive fire available and an enemy moves adjacent, which suggests each eligible defender fires.
-   - This should be confirmed.
-   - **Answer:** If multiple eligible units are in the same hex, each unit resolves defensive fire separately.
-
-4. **Is defensive fire consumed on `no_effect`, or only on successful retreat?**
-   - "May fire at most once per off turn" strongly suggests it is consumed whenever it fires, even with no effect.
-   - This should still be confirmed explicitly.
-   - **Answer:** It should be consumed whenever the unit fires, regardless of result.
-
-5. **How is defensive-fire effectiveness calculated?**
-   - The rulebook says it depends on the firing unit and the target terrain's concealment, but does not specify the formula/table.
-   - An explicit combat table or deterministic/probabilistic rule is required before coding.
-   - **Answer:** See the updated how to play file. Defensive fire chance = base_probability × unit_modifier × terrain_modifier, clamped between scenario minimum and maximum.  So defensive fire is probabilistic, scenario-driven, and modified by unit and terrain, not based on the CRT.
-
-6. **What terrain property represents concealment?**
-   - Current terrain models include color and move cost, but not concealment.
-   - Should concealment be a new terrain attribute in scenarios/API/frontend terrain data?
-   - See the updated d_day_crossroads.json for an example.
-
-7. **What is the retreat destination when defensive fire succeeds?**
-   - Always back to the hex the unit just came from?
-   - Away from the firing unit using geometric retreat logic?
-   - If several defenders fire, which defender determines the direction?
-   - **Answer:** Use the existing combat retreat logic.
-
-8. **What happens if the retreat hex is blocked or off-map?**
-   - Is the result cancelled to `no_effect`?
-   - Is the moving unit eliminated?
-   - Does another legal retreat hex get chosen?
-   - **Answer:** Use the existing combat retreat logic.
-
-9. **Can defensive fire trigger when a unit enters adjacency to one enemy while already adjacent to a different enemy?**
-   - The implementation needs a precise "newly adjacent" definition per defender.
-   - **Answer:** units must halt when they become adjacent so this is not possible.
-
-10. **Should defensive fire be resolved before normal adjacency-stops-movement logic, after it, or as part of the same step transition?**
-    - This affects whether the mover can ever remain adjacent after a failed defensive fire.
-    - **Answer:** when a unit becomes adjacent then its movement points are set to zero and after that defensive fire is resolved.
-
-11. **Should the frontend animate defensive fire step-by-step, or is a log/message sufficient for the first release?**
-    - This affects API event detail and sequencing requirements.
-    - **Answer:** The front end should display the result of defensive (e.g. the on-turn player's unit retreating and the defender's fire icon disappearing) fire during the movement phase.
-
-12. **Do AI players need defensive-fire-specific decision hooks now, or is all defensive fire strictly automatic with no branching?**
-    - If automatic, AI impact is minimal.
-    - If any future choice is anticipated, event/state design should leave room for it.
-    - **Answer:** defensive fire is automatic so no AI updates are needed.
+- Eligibility is computed at the end of the friendly turn, and the icon/availability must disappear immediately if the unit retreats or fires before using that eligibility.
+- Each eligible unit in the same hex resolves defensive fire separately.
+- Defensive fire is always consumed when it fires, regardless of result.
+- Probability uses the scenario-driven formula documented in `HOW_TO_PLAY.md` and illustrated in `d_day_crossroads.json`.
+- Retreat destination and blocked-retreat behavior both reuse the existing combat retreat logic.
+- A unit cannot trigger new adjacency against one enemy while already continuing movement beside another, because movement halts when adjacency is created.
+- Movement halts first, then defensive fire is resolved.
+- The frontend should visibly show the results of defensive fire during movement resolution.
+- Defensive fire is fully automatic, so no AI decision hook is required for the first implementation.
 
 ## Recommended implementation sequence
 
-1. Finalize open questions, especially:
-   - effectiveness formula,
-   - retreat destination rules,
-   - blocked-retreat behavior,
-   - consumption semantics.
-2. Refactor core unit/game state so eligibility is computed explicitly.
-3. Add step-based movement interception and defensive-fire result objects.
-4. Expose results through API schemas.
-5. Update frontend synchronization/UI messaging while preserving the existing icon.
-6. Add comprehensive tests across core, API, and web.
+1. Refactor core unit/game state so eligibility is computed explicitly.
+2. Add step-based movement interception and defensive-fire result objects.
+3. Expose results through API schemas.
+4. Update frontend synchronization/UI messaging while preserving the existing icon.
+5. Add comprehensive tests across core, API, and web.
 
 ## Definition of done
 
