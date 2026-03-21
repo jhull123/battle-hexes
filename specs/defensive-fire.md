@@ -381,50 +381,62 @@ The following questions should be answered before implementation begins.
 1. **What exactly counts as "was forced to retreat" for eligibility?**
    - Only retreats suffered during the unit's own immediately previous friendly turn?
    - Or any retreat suffered since the last time eligibility was computed?
+   - **Answer:** Defensive fire eligibility is determined at the end of a unit’s friendly turn and is lost immediately if the unit is forced to retreat before it fires.
 
 2. **When, exactly, is eligibility computed?**
    - At the instant the player's turn ends?
    - At the start of the enemy turn?
    - These are usually equivalent, but the implementation should choose one authoritative timing.
+   - **Answer:** Eligibility is computed at the end of the friendly turn, but the defensive fire icon is removed immediately if the unit retreats or fires.
 
 3. **If multiple defenders become newly adjacent on the same move step, do all of them fire, or only one?**
    - The rulebook says a unit fires automatically when it has defensive fire available and an enemy moves adjacent, which suggests each eligible defender fires.
    - This should be confirmed.
+   - **Answer:** If multiple eligible units are in the same hex, each unit resolves defensive fire separately.
 
 4. **Is defensive fire consumed on `no_effect`, or only on successful retreat?**
    - "May fire at most once per off turn" strongly suggests it is consumed whenever it fires, even with no effect.
    - This should still be confirmed explicitly.
+   - **Answer:** It should be consumed whenever the unit fires, regardless of result.
 
 5. **How is defensive-fire effectiveness calculated?**
    - The rulebook says it depends on the firing unit and the target terrain's concealment, but does not specify the formula/table.
    - An explicit combat table or deterministic/probabilistic rule is required before coding.
+   - **Answer:** See the updated how to play file. Defensive fire chance = base_probability × unit_modifier × terrain_modifier, clamped between scenario minimum and maximum.  So defensive fire is probabilistic, scenario-driven, and modified by unit and terrain, not based on the CRT.
 
 6. **What terrain property represents concealment?**
    - Current terrain models include color and move cost, but not concealment.
    - Should concealment be a new terrain attribute in scenarios/API/frontend terrain data?
+   - See the updated d_day_crossroads.json for an example.
 
 7. **What is the retreat destination when defensive fire succeeds?**
    - Always back to the hex the unit just came from?
    - Away from the firing unit using geometric retreat logic?
    - If several defenders fire, which defender determines the direction?
+   - **Answer:** Use the existing combat retreat logic.
 
 8. **What happens if the retreat hex is blocked or off-map?**
    - Is the result cancelled to `no_effect`?
    - Is the moving unit eliminated?
    - Does another legal retreat hex get chosen?
+   - **Answer:** Use the existing combat retreat logic.
 
 9. **Can defensive fire trigger when a unit enters adjacency to one enemy while already adjacent to a different enemy?**
    - The implementation needs a precise "newly adjacent" definition per defender.
+   - **Answer:** units must halt when they become adjacent so this is not possible.
 
 10. **Should defensive fire be resolved before normal adjacency-stops-movement logic, after it, or as part of the same step transition?**
     - This affects whether the mover can ever remain adjacent after a failed defensive fire.
+    - **Answer:** when a unit becomes adjacent then its movement points are set to zero and after that defensive fire is resolved.
 
 11. **Should the frontend animate defensive fire step-by-step, or is a log/message sufficient for the first release?**
     - This affects API event detail and sequencing requirements.
+    - **Answer:** The front end should display the result of defensive (e.g. the on-turn player's unit retreating and the defender's fire icon disappearing) fire during the movement phase.
 
 12. **Do AI players need defensive-fire-specific decision hooks now, or is all defensive fire strictly automatic with no branching?**
     - If automatic, AI impact is minimal.
     - If any future choice is anticipated, event/state design should leave room for it.
+    - **Answer:** defensive fire is automatic so no AI updates are needed.
 
 ## Recommended implementation sequence
 

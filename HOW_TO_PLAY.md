@@ -36,6 +36,10 @@ A unit is eligible only if, on its previous turn, the unit ended the turn with m
 
 Units with zero movement points as part of their stats (like a 1-1-0 unit) may engage in defensive fire despite never having more than one movement point after each turn.
 
+A unit that conducts defensive fire loses its defensive fire ability for the remainder of that off-turn, regardless of whether the result is retreat or no effect.
+
+Defensive fire eligibility is determined at the end of a unit’s friendly turn and is lost immediately if the unit is forced to retreat before it fires.
+
 Defensive fire status is reset at the start of a player's turn.
 
 ### Firing
