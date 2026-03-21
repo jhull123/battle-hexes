@@ -25,6 +25,10 @@ class Unit:
         self.echelon = echelon
         self.defense = defense
         self.move = move
+        self.current_turn_movement_points_remaining = move
+        self.ended_last_friendly_turn_with_defensive_fire_eligibility = True
+        self.forced_to_retreat_since_last_friendly_turn = False
+        self.defensive_fire_spent_this_off_turn = False
         self.defensive_fire_available = True
         self.row = row
         self.column = column
@@ -58,11 +62,67 @@ class Unit:
     def get_move(self):
         return self.move
 
-    def has_defensive_fire(self) -> bool:
-        return self.defensive_fire_available
+    def has_defensive_fire(self, current_player: Player | None = None) -> bool:
+        if current_player is not None and current_player.owns(self):
+            return False
+        return (
+            self.ended_last_friendly_turn_with_defensive_fire_eligibility
+            and not self.forced_to_retreat_since_last_friendly_turn
+            and not self.defensive_fire_spent_this_off_turn
+        )
 
     def set_defensive_fire_available(self, is_available: bool) -> None:
-        self.defensive_fire_available = bool(is_available)
+        is_available = bool(is_available)
+        self.ended_last_friendly_turn_with_defensive_fire_eligibility = (
+            is_available
+        )
+        self.forced_to_retreat_since_last_friendly_turn = False
+        self.defensive_fire_spent_this_off_turn = False
+        self.current_turn_movement_points_remaining = self.move
+        self.defensive_fire_available = is_available
+
+    def update_defensive_fire_available(
+            self,
+            current_player: Player | None = None,
+    ) -> bool:
+        self.defensive_fire_available = self.has_defensive_fire(current_player)
+        return self.defensive_fire_available
+
+    def record_friendly_turn_end(
+            self,
+            moves_remaining: int,
+            current_player: Player | None = None,
+    ) -> None:
+        self.ended_last_friendly_turn_with_defensive_fire_eligibility = (
+            (self.move == 0 or moves_remaining > 1)
+            and not self.forced_to_retreat_since_last_friendly_turn
+        )
+        self.forced_to_retreat_since_last_friendly_turn = False
+        self.defensive_fire_spent_this_off_turn = False
+        self.current_turn_movement_points_remaining = self.move
+        self.update_defensive_fire_available(current_player)
+
+    def reset_defensive_fire_for_new_turn(
+            self,
+            current_player: Player | None = None,
+    ) -> None:
+        self.defensive_fire_spent_this_off_turn = False
+        self.current_turn_movement_points_remaining = self.move
+        self.update_defensive_fire_available(current_player)
+
+    def spend_defensive_fire(
+            self,
+            current_player: Player | None = None,
+    ) -> None:
+        self.defensive_fire_spent_this_off_turn = True
+        self.update_defensive_fire_available(current_player)
+
+    def record_forced_retreat(
+            self,
+            current_player: Player | None = None,
+    ) -> None:
+        self.forced_to_retreat_since_last_friendly_turn = True
+        self.update_defensive_fire_available(current_player)
 
     def set_coords(self, row: int, column: int):
         self.row = row
