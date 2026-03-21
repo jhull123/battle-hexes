@@ -63,7 +63,9 @@ class Unit:
         return self.move
 
     def has_defensive_fire(self, current_player: Player | None = None) -> bool:
-        if current_player is not None and current_player.owns(self):
+        if current_player is None:
+            return self.defensive_fire_available
+        if current_player.owns(self):
             return False
         return (
             self.ended_last_friendly_turn_with_defensive_fire_eligibility
@@ -72,14 +74,7 @@ class Unit:
         )
 
     def set_defensive_fire_available(self, is_available: bool) -> None:
-        is_available = bool(is_available)
-        self.ended_last_friendly_turn_with_defensive_fire_eligibility = (
-            is_available
-        )
-        self.forced_to_retreat_since_last_friendly_turn = False
-        self.defensive_fire_spent_this_off_turn = False
-        self.current_turn_movement_points_remaining = self.move
-        self.defensive_fire_available = is_available
+        self.defensive_fire_available = bool(is_available)
 
     def update_defensive_fire_available(
             self,

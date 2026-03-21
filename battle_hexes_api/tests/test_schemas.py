@@ -150,12 +150,14 @@ class TestSparseUnit(unittest.TestCase):
             column=7,
         )
 
+        unit.defensive_fire_available = False
+
         sparse_unit = SparseUnit.from_unit(unit)
 
         self.assertEqual(sparse_unit.id, "u2")
         self.assertEqual(sparse_unit.row, 5)
         self.assertEqual(sparse_unit.column, 7)
-        self.assertTrue(sparse_unit.defensive_fire_available)
+        self.assertFalse(sparse_unit.defensive_fire_available)
 
 
 class TestUnitModel(unittest.TestCase):
@@ -180,6 +182,8 @@ class TestUnitModel(unittest.TestCase):
             column=4,
         )
 
+        unit.defensive_fire_available = False
+
         unit_model = UnitModel.from_unit(unit)
 
         self.assertEqual(unit_model.id, "u3")
@@ -192,4 +196,4 @@ class TestUnitModel(unittest.TestCase):
         self.assertEqual(unit_model.move, 3)
         self.assertEqual(unit_model.row, 2)
         self.assertEqual(unit_model.column, 4)
-        self.assertTrue(unit_model.defensive_fire_available)
+        self.assertFalse(unit_model.defensive_fire_available)

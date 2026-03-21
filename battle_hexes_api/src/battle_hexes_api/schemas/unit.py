@@ -37,7 +37,7 @@ class UnitModel(BaseModel):
             move=unit.move,
             row=unit.row,
             column=unit.column,
-            defensive_fire_available=unit.has_defensive_fire(),
+            defensive_fire_available=unit.defensive_fire_available,
         )
 
 
@@ -56,5 +56,5 @@ class SparseUnit(BaseModel):
             id=str(unit.id),
             row=unit.row,
             column=unit.column,
-            defensive_fire_available=unit.has_defensive_fire(),
+            defensive_fire_available=unit.defensive_fire_available,
         )
