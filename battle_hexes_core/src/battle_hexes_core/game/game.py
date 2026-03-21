@@ -88,20 +88,15 @@ class Game:
             self,
             player: Player,
     ) -> None:
-        units = [
-            unit for unit in self.get_board().get_units()
-            if player.owns(unit)
-        ]
-        for unit in units:
+        for unit in self.get_board().get_units_for_player(player):
             unit.record_friendly_turn_end(
                 unit.current_turn_movement_points_remaining,
                 self.current_player,
             )
 
     def _reset_defensive_fire_off_turn_usage(self, player: Player) -> None:
-        for unit in self.get_board().get_units():
-            if player.owns(unit):
-                unit.reset_defensive_fire_for_new_turn(self.current_player)
+        for unit in self.get_board().get_units_for_player(player):
+            unit.reset_defensive_fire_for_new_turn(self.current_player)
 
     def _refresh_defensive_fire_availability(self) -> None:
         for unit in self.get_board().get_units():

@@ -98,8 +98,8 @@ class ObjectiveScorer:
         for objective in objectives:
             row, column = objective.coords
             if any(
-                unit.get_coords() == (row, column) and player.owns(unit)
-                for unit in board.get_units()
+                unit.get_coords() == (row, column)
+                for unit in board.get_units_for_player(player)
             ):
                 occupied_count += 1
         return occupied_count
@@ -149,11 +149,15 @@ class ObjectiveScorer:
     def _get_engaged_unit_ids(self, game: Game, current_player) -> set[str]:
         """Return IDs for the current player's units engaged in combat."""
         combat = Combat(game)
+        current_player_unit_ids = {
+            unit.get_id()
+            for unit in game.get_board().get_units_for_player(current_player)
+        }
         return {
             unit.get_id()
             for attackers, defenders in combat.find_combat()
             for unit in attackers + defenders
-            if current_player.owns(unit)
+            if unit.get_id() in current_player_unit_ids
         }
 
     def _get_held_objectives(
@@ -178,9 +182,8 @@ class ObjectiveScorer:
         row, column = objective.coords
         return any(
             unit.get_coords() == (row, column)
-            and current_player.owns(unit)
             and unit.get_id() not in engaged_unit_ids
-            for unit in board.get_units()
+            for unit in board.get_units_for_player(current_player)
         )
 
     def _log_awarded_points(

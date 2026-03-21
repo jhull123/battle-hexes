@@ -16,7 +16,7 @@ class RandomPlayer(Player):
 
     def movement(self) -> List[UnitMovementPlan]:
         plans = []
-        for unit in self.own_units(self._board.get_units()):
+        for unit in self._board.get_units_for_player(self):
             starting_hex = self._board.get_hex(unit.row, unit.column)
             reachable_hexes = self._board.get_reachable_hexes(
                 unit,

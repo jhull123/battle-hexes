@@ -405,3 +405,40 @@ class TestBoard(unittest.TestCase):
         end_dist = Board.hex_distance(end_hex, threat_hex)
         self.assertEqual(len(path), 2)
         self.assertGreater(end_dist, start_dist)
+
+    def test_get_units_for_player_returns_owned_units(self):
+        player = self.red_player
+        enemy_faction = Faction(id="enemy", name="Enemy", color="#000")
+        enemy_player = Player(
+            name="Enemy",
+            type=PlayerType.CPU,
+            factions=[enemy_faction],
+        )
+        friendly_unit = Unit(
+            id="friendly",
+            name="Friendly",
+            faction=self.red_faction,
+            player=player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+        enemy_unit = Unit(
+            id="enemy-unit",
+            name="Enemy Unit",
+            faction=enemy_faction,
+            player=enemy_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=1,
+        )
+
+        self.board.add_unit(friendly_unit, 0, 0)
+        self.board.add_unit(enemy_unit, 0, 1)
+
+        self.assertEqual(
+            [friendly_unit],
+            self.board.get_units_for_player(player),
+        )
