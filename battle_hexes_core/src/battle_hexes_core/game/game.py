@@ -61,30 +61,46 @@ class Game:
 
             final_hex = plan.path[-1]
             plan.unit.set_coords(final_hex.row, final_hex.column)
-            if (
-                plan.unit.get_move() > 0
-                and (
-                    movement_points_spent >= plan.unit.get_move() - 1
-                    or self.get_board().enemy_adjacent(plan.unit, final_hex)
-                )
-            ):
-                plan.unit.set_defensive_fire_available(False)
+            plan.unit.current_turn_movement_points_remaining = max(
+                plan.unit.get_move() - movement_points_spent,
+                0,
+            )
         self.get_current_player().movement_cb()
 
     def next_player(self) -> Player:
         """Advance to the next player and return it."""
         if not self.players:
             return None
+
         previous_player = self.current_player
+        self._snapshot_defensive_fire_eligibility(previous_player)
+
         idx = self.players.index(self.current_player)
         next_idx = (idx + 1) % len(self.players)
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
-        for unit in self.get_board().get_units():
-            if previous_player.owns(unit):
-                unit.set_defensive_fire_available(True)
+        self._reset_defensive_fire_off_turn_usage(self.current_player)
+        self._refresh_defensive_fire_availability()
         return self.current_player
+
+    def _snapshot_defensive_fire_eligibility(
+            self,
+            player: Player,
+    ) -> None:
+        for unit in self.get_board().get_units_for_player(player):
+            unit.record_friendly_turn_end(
+                unit.current_turn_movement_points_remaining,
+                self.current_player,
+            )
+
+    def _reset_defensive_fire_off_turn_usage(self, player: Player) -> None:
+        for unit in self.get_board().get_units_for_player(player):
+            unit.reset_defensive_fire_for_new_turn(self.current_player)
+
+    def _refresh_defensive_fire_availability(self) -> None:
+        for unit in self.get_board().get_units():
+            unit.update_defensive_fire_available(self.current_player)
 
     def get_opposing_factions(self, faction: Faction) -> List[Faction]:
         owning_player = self.get_player_for_faction(faction)

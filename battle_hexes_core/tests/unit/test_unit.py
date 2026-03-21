@@ -111,3 +111,45 @@ class TestUnit(unittest.TestCase):
 
         self.assertFalse(result)
         self.assertEqual((2, 2), self.unit1.get_coords())
+
+    def test_turn_end_needs_more_than_one_move_remaining(self):
+        self.unit1.record_friendly_turn_end(1, self.player2)
+
+        self.assertFalse(
+            self.unit1.has_defensive_fire(self.player2)
+        )
+
+    def test_record_friendly_turn_end_allows_zero_move_unit(self):
+        bunker = Unit(
+            id=str(uuid.uuid4()),
+            name="Bunker",
+            player=self.player1,
+            faction=self.faction1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=0,
+            row=0,
+            column=0,
+        )
+
+        bunker.record_friendly_turn_end(0, self.player2)
+
+        self.assertTrue(bunker.has_defensive_fire(self.player2))
+
+    def test_forced_retreat_revokes_defensive_fire_immediately(self):
+        self.unit1.record_friendly_turn_end(3, self.player2)
+
+        self.unit1.record_forced_retreat(self.player2)
+
+        self.assertFalse(self.unit1.has_defensive_fire(self.player2))
+
+    def test_spending_defensive_fire_marks_unit_unavailable_until_reset(self):
+        self.unit1.record_friendly_turn_end(3, self.player2)
+
+        self.unit1.spend_defensive_fire(self.player2)
+
+        self.assertFalse(self.unit1.has_defensive_fire(self.player2))
+        self.unit1.reset_defensive_fire_for_new_turn(self.player1)
+        self.assertFalse(self.unit1.has_defensive_fire(self.player1))
+        self.assertTrue(self.unit1.has_defensive_fire(self.player2))

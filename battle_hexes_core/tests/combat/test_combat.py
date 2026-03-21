@@ -309,6 +309,21 @@ class TestCombat(unittest.TestCase):
             combat_result.get_battles()[0].get_no_retreat_units(),
         )
 
+    def test_forced_retreat_marks_unit_as_retreated_since_last_turn(self):
+        self.red_unit.record_friendly_turn_end(3, self.blue_player)
+        self.board.add_unit(self.red_unit, 4, 4)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.combat.set_static_die_roll(4)
+
+        self.combat.resolve_combat()
+
+        self.assertTrue(
+            self.red_unit.forced_to_retreat_since_last_friendly_turn
+        )
+        self.assertFalse(
+            self.red_unit.has_defensive_fire(self.game.get_current_player())
+        )
+
     def test_defender_retreat_blocked_by_enemy_eliminates_unit(self):
         red_blocker = Unit(
             id=str(uuid.uuid4()),

@@ -67,6 +67,9 @@ class Combat:
                 origin = defenders[0].get_coords()
                 removed = []
                 for attacker in attackers:
+                    attacker.record_forced_retreat(
+                        self.game.get_current_player()
+                    )
                     success = attacker.forced_move(self.board, origin, 2)
                     if not success:
                         removed.append(attacker)
@@ -83,6 +86,9 @@ class Combat:
                 origin = attackers[0].get_coords()
                 removed = []
                 for defender in defenders:
+                    defender.record_forced_retreat(
+                        self.game.get_current_player()
+                    )
                     success = defender.forced_move(self.board, origin, 2)
                     if not success:
                         removed.append(defender)
