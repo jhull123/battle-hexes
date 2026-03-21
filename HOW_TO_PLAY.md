@@ -40,9 +40,20 @@ Defensive fire status is reset at the start of a player's turn.
 
 ### Firing
 A defending unit fires automatically when it has defensive fire available and
-and enemy unit moves adjacent.
+an enemy unit moves adjacent. If multiple eligible units are in the same hex,
+each unit resolves defensive fire separately. If any result forces a retreat,
+the moving unit retreats one hex and its movement ends immediately.
 
 ### Effectiveness
-Defensive fire effectiveness depends on the firing unit and on the concealment
-provided by the target unit's terrain.
+Defensive fire is resolved using a probability defined by the scenario.
 
+Final defensive fire chance is calculated as:
+
+    chance = base_probability × unit_modifier × terrain_modifier
+
+- base_probability is defined in the scenario
+- unit_modifier is defined on the firing unit (default 1.0)
+- terrain_modifier is based on the terrain of the target unit (default 1.0)
+- The final chance is clamped between the scenario minimum and maximum
+
+If the defensive fire roll succeeds, the moving unit retreats one hex. Otherwise, there is no effect.
