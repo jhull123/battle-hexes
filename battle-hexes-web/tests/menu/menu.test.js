@@ -9,6 +9,7 @@ jest.mock('axios');
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
     emit: jest.fn(),
+    on: jest.fn(),
   },
 }));
 
@@ -23,6 +24,7 @@ describe('auto new game persistence', () => {
       <div id="selHexTerrain"></div>
       <h4 id="selHexTerrainHeading"></h4>
       <div id="selHexObjectives"></div>
+      <div id="reactionStatus"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
       <div id="gameOverLabel"></div>
@@ -68,6 +70,7 @@ describe('auto new game persistence', () => {
 
   beforeEach(() => {
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
     window.localStorage.clear();
     axios.post.mockReset();
     axios.get.mockReset();
@@ -95,6 +98,26 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('scenarioOverviewDescription').textContent).toBe('Secure all objectives before the turn limit.');
     expect(document.getElementById('scenarioVictoryHeading').style.display).toBe('');
     expect(document.getElementById('scenarioVictoryDescription').textContent).toBe('Control every objective at the end of any turn.');
+  });
+
+  test('shows defensive fire messages from movement-phase reactions', async () => {
+    buildDom();
+
+    new Menu(fakeGame());
+    await flushPromises();
+
+    const defensiveFireListener = eventBus.on.mock.calls.find(
+      ([eventName]) => eventName === 'defensiveFireResolved'
+    )?.[1];
+
+    defensiveFireListener([
+      { message: 'Defensive fire forced the target to retreat to (0, 1).' },
+      { message: 'Defensive fire had no effect.' },
+    ]);
+
+    expect(document.getElementById('reactionStatus').textContent).toBe(
+      'Defensive fire forced the target to retreat to (0, 1). Defensive fire had no effect.'
+    );
   });
 
   test('falls back to scenario id and hides optional sections when details are missing', async () => {

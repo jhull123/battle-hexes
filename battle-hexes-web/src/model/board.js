@@ -1,5 +1,6 @@
 import { Hex } from './hex.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
+import { eventBus } from '../event-bus.js';
 
 export class Board {
   #hexMap;
@@ -11,6 +12,8 @@ export class Board {
   #animator;
   #rows;
   #columns;
+  #movementHandler;
+  #movementInProgress = false;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
@@ -61,6 +64,10 @@ export class Board {
     return this.#rows;
   }
 
+  setMovementHandler(handler) {
+    this.#movementHandler = handler;
+  }
+
   getColumns() {
     return this.#columns;
   }
@@ -79,6 +86,7 @@ export class Board {
 
   selectHex(hexToSelect) {
     if (hexToSelect === this.#selectedHex) return;
+    if (this.#movementInProgress) return;
     
     const oldSelection = this.#selectedHex;
 
@@ -93,7 +101,7 @@ export class Board {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       const path = [oldSelection, hexToSelect];
-      this.#animator.animate(units[0], path, true);
+      this.#resolveMovement(units[0], path);
       oldSelection.setSelected(false);
       hexToSelect.setSelected(true);
       this.setHoverHex(undefined);
@@ -105,6 +113,22 @@ export class Board {
     if (hexToSelect) this.#selectedHex.setSelected(true);
     
     return oldSelection;
+  }
+
+  async #resolveMovement(unit, path) {
+    this.#movementInProgress = true;
+
+    try {
+      await this.#animator.animate(unit, path, true);
+      if (this.#movementHandler) {
+        await this.#movementHandler({ unit, path });
+      }
+    } catch (error) {
+      console.error('Failed to resolve movement.', error);
+    } finally {
+      this.#movementInProgress = false;
+      eventBus.emit('menuUpdate');
+    }
   }
 
   moveUnit(unit, oldHex, newHex) {

@@ -10,6 +10,7 @@ export class Menu {
   #selHexUnitsHeading;
   #selHexTerrainHeading;
   #selHexObjectivesDiv;
+  #reactionStatusDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -34,6 +35,7 @@ export class Menu {
     this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
     this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
+    this.#reactionStatusDiv = document.getElementById('reactionStatus');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -80,6 +82,9 @@ export class Menu {
     });
     this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
+    eventBus.on('defensiveFireResolved', (events) => {
+      this.#showDefensiveFireStatus(events);
+    });
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -210,6 +215,20 @@ export class Menu {
     if (this.#selHexTerrainHeading) {
       this.#selHexTerrainHeading.style.display = displayValue;
     }
+  }
+
+  #showDefensiveFireStatus(events) {
+    if (!this.#reactionStatusDiv) {
+      return;
+    }
+
+    const eventMessages = Array.isArray(events)
+      ? events
+        .map((event) => event?.message)
+        .filter((message) => typeof message === 'string' && message.length > 0)
+      : [];
+
+    this.#reactionStatusDiv.textContent = eventMessages.join(' ');
   }
 
   #formatSelectedHexUnits(selectedHex) {
