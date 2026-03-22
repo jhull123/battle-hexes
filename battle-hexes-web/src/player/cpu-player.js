@@ -39,14 +39,7 @@ export class CpuPlayer extends Player {
           }
         }
 
-        const boardUpdater = new BoardUpdater();
-        boardUpdater.updateBoard(
-          game.getBoard(),
-          response.data.sparse_board?.units ?? response.data.game.board.units,
-          {
-            defensiveFireEvents: response.data.defensive_fire_events ?? [],
-          }
-        );
+        applyMovementResponse(game.getBoard(), response.data);
 
         await axios.post(
           `${API_URL}/games/${game.getId()}/end-movement`,

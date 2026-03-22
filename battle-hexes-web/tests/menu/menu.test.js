@@ -554,7 +554,8 @@ describe('auto new game persistence', () => {
 
     new Menu(fakeGame());
 
-    const handler = eventBus.on.mock.calls.find(([eventName]) => eventName === 'defensiveFireResolved')[1];
+    const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
+    const handler = calls[calls.length - 1][1];
     handler([{ outcome: 'no_effect', message: 'Defensive fire had no effect.' }]);
 
     const reactionMessages = document.getElementById('reactionMessages');
