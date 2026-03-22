@@ -244,10 +244,19 @@ class TestMovementSchemas(unittest.TestCase):
 
         self.assertEqual(response.plans, [])
         self.assertEqual(response.defensive_fire_events, [])
+        self.assertEqual(response.model_dump(by_alias=True)["turnLimit"], None)
+        self.assertEqual(response.model_dump(by_alias=True)["turnNumber"], 1)
 
     def test_movement_response_model_from_movement_result(self):
         game = type("GameStub", (), {})()
         game.get_board = lambda: type("BoardStub", (), {})()
+        game.get_score_tracker = lambda: type(
+            "ScoreTrackerStub",
+            (),
+            {"get_scores": lambda self: {"Alice": 4}},
+        )()
+        game.turn_limit = 6
+        game.turn_number = 3
         plan = type(
             "PlanStub",
             (),
@@ -311,3 +320,6 @@ class TestMovementSchemas(unittest.TestCase):
             response.defensive_fire_events[0].outcome,
             "no_effect",
         )
+        self.assertEqual(response.scores, {"Alice": 4})
+        self.assertEqual(response.model_dump(by_alias=True)["turnLimit"], 6)
+        self.assertEqual(response.model_dump(by_alias=True)["turnNumber"], 3)

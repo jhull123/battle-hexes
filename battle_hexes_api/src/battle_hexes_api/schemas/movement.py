@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .game_model import GameModel
 from .sparseboard import SparseBoard
@@ -58,11 +58,22 @@ class DefensiveFireEventModel(BaseModel):
 class MovementResponseModel(BaseModel):
     """Movement endpoint payload including board updates and reactions."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     game: GameModel
     plans: list[dict[str, Any]] = Field(default_factory=list)
     sparse_board: SparseBoard
     defensive_fire_events: list[DefensiveFireEventModel] = Field(
         default_factory=list
+    )
+    scores: dict[str, int] = Field(default_factory=dict)
+    turn_limit: int | None = Field(
+        default=None,
+        serialization_alias="turnLimit",
+    )
+    turn_number: int = Field(
+        default=1,
+        serialization_alias="turnNumber",
     )
 
     @classmethod
@@ -87,4 +98,7 @@ class MovementResponseModel(BaseModel):
                 DefensiveFireEventModel.from_result(result)
                 for result in defensive_fire_results
             ],
+            scores=game.get_score_tracker().get_scores(),
+            turn_limit=getattr(game, "turn_limit", None),
+            turn_number=getattr(game, "turn_number", 1),
         )

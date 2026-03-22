@@ -298,6 +298,11 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = self._game_model_payload()
         mock_from_board.return_value = SparseBoard(units=[])
+        mock_game.get_score_tracker.return_value.get_scores.return_value = {
+            "Alice": 3,
+        }
+        mock_game.turn_limit = 7
+        mock_game.turn_number = 2
         mock_game.apply_movement_plans.return_value = (
             MovementResolutionResult()
         )
@@ -318,6 +323,9 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(response.json()["plans"], [{"plan": 1}])
         self.assertEqual(response.json()["defensive_fire_events"], [])
         self.assertIn("sparse_board", response.json())
+        self.assertEqual(response.json()["scores"], {"Alice": 3})
+        self.assertEqual(response.json()["turnLimit"], 7)
+        self.assertEqual(response.json()["turnNumber"], 2)
 
     @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.GameModel.from_game')
@@ -353,6 +361,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = self._game_model_payload()
         mock_from_board.return_value = SparseBoard(units=[])
+        mock_game.get_score_tracker.return_value.get_scores.return_value = {}
 
         response = self.client.post("/games/game-789/movement")
 
@@ -385,6 +394,11 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = self._game_model_payload()
         mock_from_board.return_value = SparseBoard(units=[])
+        mock_game.get_score_tracker.return_value.get_scores.return_value = {
+            "Alice": 5,
+        }
+        mock_game.turn_limit = 9
+        mock_game.turn_number = 4
         mock_to_movement_plans.return_value = mock_plans
         mock_game.apply_movement_plans.return_value = (
             MovementResolutionResult()
@@ -410,6 +424,9 @@ class TestFastAPI(unittest.TestCase):
             "00000000-0000-0000-0000-000000000000",
         )
         self.assertEqual(response.json()["defensive_fire_events"], [])
+        self.assertEqual(response.json()["scores"], {"Alice": 5})
+        self.assertEqual(response.json()["turnLimit"], 9)
+        self.assertEqual(response.json()["turnNumber"], 4)
 
     @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
@@ -455,6 +472,9 @@ class TestFastAPI(unittest.TestCase):
                 }
             ]
         )
+        mock_game.get_score_tracker.return_value.get_scores.return_value = {
+            "Alice": 5,
+        }
 
         response = self.client.post(
             "/games/game-202/end-movement",
@@ -475,6 +495,7 @@ class TestFastAPI(unittest.TestCase):
             response.json()["defensive_fire_events"][0]["outcome"],
             "no_effect",
         )
+        self.assertEqual(response.json()["scores"], {"Alice": 5})
 
     @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
     @patch('battle_hexes_api.main.ObjectiveScorer')
