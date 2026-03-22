@@ -43,10 +43,7 @@ Defensive fire eligibility is determined at the end of a unit’s friendly turn 
 Defensive fire status is reset at the start of a player's turn.
 
 ### Firing
-A defending unit fires automatically when it has defensive fire available and
-an enemy unit moves adjacent. If multiple eligible units are in the same hex,
-each unit resolves defensive fire separately. If any result forces a retreat,
-the moving unit retreats one hex and its movement ends immediately.
+Defensive fire is resolved immediately during the movement phase when an enemy unit moves adjacent. A defending unit fires automatically when it has defensive fire available and an enemy unit becomes adjacent. If multiple eligible units are in the same hex, each unit resolves defensive fire separately. If any result forces a retreat, the moving unit retreats one hex and its movement ends immediately.
 
 ### Effectiveness
 Defensive fire is resolved using a probability defined by the scenario.
