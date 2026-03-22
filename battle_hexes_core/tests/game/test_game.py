@@ -257,6 +257,41 @@ class TestGame(unittest.TestCase):
 
         self.assertTrue(game.is_game_over())
 
+    def test_apply_movement_plans_preserve_points_across_calls(
+        self,
+    ):
+        board, player1, _player2, faction1, _faction2, game = (
+            self._make_two_player_game()
+        )
+        mover = Unit(
+            id="mover",
+            name="Mover",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        board.add_unit(mover, 0, 0)
+
+        first_plan = UnitMovementPlan(
+            mover,
+            [board.get_hex(0, 0), board.get_hex(0, 1)],
+        )
+        second_plan = UnitMovementPlan(
+            mover,
+            [board.get_hex(0, 1), board.get_hex(0, 2)],
+        )
+
+        game.apply_movement_plans([first_plan])
+        self.assertEqual(mover.current_turn_movement_points_remaining, 2)
+
+        game.apply_movement_plans([second_plan])
+
+        self.assertEqual(mover.get_coords(), (0, 2))
+        self.assertEqual(mover.current_turn_movement_points_remaining, 1)
+
     @patch(
         RANDOM_PATCH_TARGET,
         return_value=0.0,

@@ -78,17 +78,22 @@ class Game:
         if unit.get_coords() is None:
             return
 
-        movement_points_spent = 0
+        movement_points_remaining = (
+            unit.current_turn_movement_points_remaining
+        )
         for from_hex, to_hex in zip(plan.path, plan.path[1:]):
             if unit.get_coords() != (from_hex.row, from_hex.column):
                 break
 
             was_adjacent = self.board.enemy_adjacent(unit, from_hex)
-            movement_points_spent += movement.move_cost(unit, from_hex, to_hex)
-            unit.set_coords(to_hex.row, to_hex.column)
-            unit.current_turn_movement_points_remaining = max(
-                unit.get_move() - movement_points_spent,
+            move_cost = movement.move_cost(unit, from_hex, to_hex)
+            movement_points_remaining = max(
+                movement_points_remaining - move_cost,
                 0,
+            )
+            unit.set_coords(to_hex.row, to_hex.column)
+            unit.current_turn_movement_points_remaining = (
+                movement_points_remaining
             )
 
             if was_adjacent:

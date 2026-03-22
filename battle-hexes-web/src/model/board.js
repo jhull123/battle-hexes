@@ -117,6 +117,7 @@ export class Board {
 
   async #resolveMovement(unit, path) {
     this.#movementInProgress = true;
+    const movementSnapshot = unit.createMovementSnapshot();
 
     try {
       await this.#animator.animate(unit, path, true);
@@ -124,11 +125,31 @@ export class Board {
         await this.#movementHandler({ unit, path });
       }
     } catch (error) {
+      this.#rollbackMovement(unit, path, movementSnapshot);
       console.error('Failed to resolve movement.', error);
     } finally {
       this.#movementInProgress = false;
       eventBus.emit('menuUpdate');
     }
+  }
+
+  #rollbackMovement(unit, path, movementSnapshot) {
+    const startingHex = path[0];
+    const endingHex = path[path.length - 1];
+    const currentHex = unit.getContainingHex();
+
+    this.updateUnitPosition(unit, currentHex, startingHex);
+    unit.restoreMovementSnapshot(movementSnapshot);
+    this.refreshCombat();
+
+    if (this.#selectedHex === endingHex) {
+      endingHex?.setSelected(false);
+      this.#selectedHex = startingHex;
+      startingHex?.setSelected(true);
+    }
+
+    this.setHoverHex(undefined);
+    eventBus.emit('redraw');
   }
 
   moveUnit(unit, oldHex, newHex) {
