@@ -30,6 +30,7 @@ from battle_hexes_api.schemas import (  # noqa: E402
     CombatResultSchema,
     CreateGameRequest,
     GameModel,
+    MovementResponseModel,
     SparseBoard,
     PlayerModel,
     PlayerTypeModel,
@@ -192,13 +193,14 @@ def generate_movement(game_id: str):
     current_player = game.get_current_player()
     logger.info("Generating movement for player: %s", current_player.name)
     plans = current_player.movement()
-    game.apply_movement_plans(plans)
+    movement_resolution = game.apply_movement_plans(plans)
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return {
-        "game": GameModel.from_game(game),
-        "plans": [p.to_dict() for p in plans],
-    }
+    return MovementResponseModel.from_movement_result(
+        game,
+        plans,
+        movement_resolution,
+    )
 
 
 @app.post('/games/{game_id}/end-movement')
@@ -207,14 +209,18 @@ def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
     game = _get_game_or_404(game_id)
 
     plans = sparse_board.to_movement_plans(game.get_board())
-    game.apply_movement_plans(plans)
+    movement_resolution = game.apply_movement_plans(plans)
 
     scorer = ObjectiveScorer()
     scorer.award_hold_objectives(game)
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return GameModel.from_game(game)
+    return MovementResponseModel.from_movement_result(
+        game,
+        plans,
+        movement_resolution,
+    )
 
 
 @app.post('/games/{game_id}/end-turn')

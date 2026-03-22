@@ -1,11 +1,15 @@
 import unittest
 
 from battle_hexes_api.schemas import (
+    DefensiveFireEventModel,
     GameModel,
+    MovementResponseModel,
     ScenarioModel,
+    SparseBoard,
     SparseUnit,
     UnitModel,
 )
+from battle_hexes_core.defensivefire.defensive_fire import DefensiveFireResult
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.objective import Objective
@@ -197,3 +201,125 @@ class TestUnitModel(unittest.TestCase):
         self.assertEqual(unit_model.row, 2)
         self.assertEqual(unit_model.column, 4)
         self.assertFalse(unit_model.defensive_fire_available)
+
+
+class TestMovementSchemas(unittest.TestCase):
+    def test_defensive_fire_event_model_from_result(self):
+        result = DefensiveFireResult(
+            firing_unit_id="u1",
+            target_unit_id="u2",
+            trigger_hex=(3, 4),
+            target_hex_before=(3, 4),
+            outcome="retreat",
+            retreat_destination=(2, 4),
+            probability=0.5,
+            roll=0.4,
+        )
+
+        model = DefensiveFireEventModel.from_result(result)
+
+        self.assertEqual(model.firing_unit_id, "u1")
+        self.assertEqual(model.target_unit_id, "u2")
+        self.assertEqual(model.retreat_destination, (2, 4))
+        self.assertIn("forced the target to retreat", model.message)
+
+    def test_movement_response_model_defaults_event_list(self):
+        response = MovementResponseModel(
+            game=GameModel(
+                id="00000000-0000-0000-0000-000000000000",
+                players=[],
+                board={
+                    "rows": 1,
+                    "columns": 1,
+                    "units": [],
+                    "terrain": {"default": None, "types": {}, "hexes": []},
+                    "road_types": {},
+                    "road_paths": [],
+                },
+                objectives=[],
+                scores={},
+            ),
+            sparse_board=SparseBoard(units=[]),
+        )
+
+        self.assertEqual(response.plans, [])
+        self.assertEqual(response.defensive_fire_events, [])
+        self.assertEqual(response.model_dump(by_alias=True)["turnLimit"], None)
+        self.assertEqual(response.model_dump(by_alias=True)["turnNumber"], 1)
+
+    def test_movement_response_model_from_movement_result(self):
+        game = type("GameStub", (), {})()
+        game.get_board = lambda: type("BoardStub", (), {})()
+        game.get_score_tracker = lambda: type(
+            "ScoreTrackerStub",
+            (),
+            {"get_scores": lambda self: {"Alice": 4}},
+        )()
+        game.turn_limit = 6
+        game.turn_number = 3
+        plan = type(
+            "PlanStub",
+            (),
+            {"to_dict": lambda self: {"unit_id": "u1", "path": []}},
+        )()
+        movement_resolution = type(
+            "MovementResolutionStub",
+            (),
+            {
+                "defensive_fire_results": [
+                    DefensiveFireResult(
+                        firing_unit_id="u1",
+                        target_unit_id="u2",
+                        trigger_hex=(1, 1),
+                        target_hex_before=(1, 1),
+                        outcome="no_effect",
+                        retreat_destination=None,
+                    )
+                ]
+            },
+        )()
+
+        original_from_game = GameModel.from_game
+        original_from_board = SparseBoard.from_board
+        try:
+            GameModel.from_game = classmethod(
+                lambda cls, core_game: GameModel(
+                    id="00000000-0000-0000-0000-000000000000",
+                    players=[],
+                    board={
+                        "rows": 1,
+                        "columns": 1,
+                        "units": [],
+                        "terrain": {
+                            "default": None,
+                            "types": {},
+                            "hexes": [],
+                        },
+                        "road_types": {},
+                        "road_paths": [],
+                    },
+                    objectives=[],
+                    scores={},
+                )
+            )
+            SparseBoard.from_board = classmethod(
+                lambda cls, board: SparseBoard(units=[])
+            )
+
+            response = MovementResponseModel.from_movement_result(
+                game,
+                [plan],
+                movement_resolution,
+            )
+        finally:
+            GameModel.from_game = original_from_game
+            SparseBoard.from_board = original_from_board
+
+        self.assertEqual(response.plans, [{"unit_id": "u1", "path": []}])
+        self.assertEqual(
+            response.defensive_fire_events[0].outcome,
+            "no_effect",
+        )
+        self.assertEqual(response.scores, {"Alice": 4})
+        self.assertEqual(response.model_dump(by_alias=True)["turnLimit"], 6)
+        self.assertEqual(response.model_dump(by_alias=True)["turnNumber"], 3)
