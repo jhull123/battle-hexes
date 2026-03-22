@@ -35,6 +35,7 @@ class Game:
         )
         self.turn_number = 1
         self.defensive_fire_resolver = DefensiveFireResolver(board)
+        self._refresh_defensive_fire_availability()
 
     def get_id(self):
         return self.id
@@ -65,6 +66,7 @@ class Game:
             if not plan.path:
                 continue
             self._apply_single_movement_plan(plan, movement, resolution)
+        self._refresh_defensive_fire_availability()
         self.get_current_player().movement_cb()
         return resolution
 
