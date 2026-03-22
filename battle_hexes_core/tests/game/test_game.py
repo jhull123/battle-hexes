@@ -125,6 +125,38 @@ class TestGame(unittest.TestCase):
         self.assertTrue(unit1.has_defensive_fire(game.get_current_player()))
         self.assertFalse(unit2.has_defensive_fire(game.get_current_player()))
 
+    def test_game_inits_public_defensive_fire_state_for_current_turn(self):
+        board = Board(5, 5)
+        faction1 = Faction(id="f1", name="f1", color="#fff")
+        faction2 = Faction(id="f2", name="f2", color="#000")
+        player1 = Player(name="P1", type=PlayerType.HUMAN, factions=[faction1])
+        player2 = Player(name="P2", type=PlayerType.CPU, factions=[faction2])
+        unit1 = Unit(
+            id="u1",
+            name="U1",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        unit2 = Unit(
+            id="u2",
+            name="U2",
+            faction=faction2,
+            player=player2,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        board.add_unit(unit1, 0, 0)
+        board.add_unit(unit2, 4, 4)
+
+        self.assertTrue(unit1.defensive_fire_available)
+        self.assertTrue(unit2.defensive_fire_available)
+
     def test_next_player_with_no_players_returns_none(self):
         board = Board(5, 5)
         game = Game([], board)
@@ -148,6 +180,7 @@ class TestGame(unittest.TestCase):
         game.apply_movement_plans([plan])
 
         self.assertEqual(unit.get_coords(), (0, 1))
+        self.assertFalse(unit.defensive_fire_available)
 
     def test_next_player_makes_unit_ineligible_with_one_move_remaining(self):
         board = Board(5, 5)
