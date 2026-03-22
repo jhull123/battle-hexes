@@ -15,6 +15,7 @@ from pydantic import (
 
 from .scenario import (
     Objective,
+    DefensiveFireConfig,
     Scenario,
     ScenarioFaction,
     ScenarioHexData,
@@ -64,6 +65,16 @@ class ScenarioUnitData(BaseModel):
     movement: int
 
 
+class DefensiveFireConfigData(BaseModel):
+    """Defensive fire configuration as defined in a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    base_probability: float
+    minimum: float
+    maximum: float
+
+
 class ScenarioTerrainTypeData(BaseModel):
     """Terrain type configuration as defined in a scenario file."""
 
@@ -71,6 +82,7 @@ class ScenarioTerrainTypeData(BaseModel):
 
     color: str
     move_cost: int = 1
+    defensive_fire_modifier: float = 1.0
 
 
 class ScenarioHexDataEntry(BaseModel):
@@ -130,6 +142,7 @@ class ScenarioData(BaseModel):
     name: str
     description: str
     victory: ScenarioVictoryData | None = None
+    defensive_fire: DefensiveFireConfigData | None = None
     turn_limit: int | None = None
     board_size: tuple[int, int]
     factions: list[ScenarioFactionData]
@@ -230,6 +243,9 @@ class ScenarioData(BaseModel):
                 key: ScenarioTerrainType(
                     color=terrain_type.color,
                     move_cost=terrain_type.move_cost,
+                    defensive_fire_modifier=(
+                        terrain_type.defensive_fire_modifier
+                    ),
                 )
                 for key, terrain_type in self.terrain_types.items()
             }
@@ -287,6 +303,15 @@ class ScenarioData(BaseModel):
             road_types=self._build_road_types(),
             roads=self._build_roads(),
             hex_data=tuple(hex_entries),
+            defensive_fire=(
+                DefensiveFireConfig(
+                    base_probability=self.defensive_fire.base_probability,
+                    minimum=self.defensive_fire.minimum,
+                    maximum=self.defensive_fire.maximum,
+                )
+                if self.defensive_fire
+                else None
+            ),
         )
 
 

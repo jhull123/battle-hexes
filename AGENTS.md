@@ -39,3 +39,8 @@ tests and linter across **all** Python packages. The script adjusts
 - Agents will not be able to run integration tests (`npm run test:e2e`) because
   most environments (like the Codex sandbox) will not allow binary downloads. As such, 
   running the e2e tests is not necessary for opening a PR.
+
+## Change quality guidance
+
+- Prefer small, focused methods; avoid introducing long methods when a few well-named helpers would make the logic easier to read.
+- Keep cyclomatic complexity reasonable by extracting branching logic into helper functions or dedicated classes when behavior grows beyond a straightforward flow.

@@ -2,6 +2,12 @@ import uuid
 from typing import List
 
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.defensivefire.defensive_fire import (
+    MovementResolutionResult,
+)
+from battle_hexes_core.defensivefire.defensive_fire_resolver import (
+    DefensiveFireResolver,
+)
 from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.scoretracker import ScoreTracker
@@ -28,6 +34,7 @@ class Game:
             else None
         )
         self.turn_number = 1
+        self.defensive_fire_resolver = DefensiveFireResolver(board)
 
     def get_id(self):
         return self.id
@@ -44,28 +51,62 @@ class Game:
     def get_score_tracker(self) -> ScoreTracker:
         return self.score_tracker
 
-    def apply_movement_plans(self, plans: List["UnitMovementPlan"]) -> None:
-        """Apply a collection of movement plans to update unit positions."""
+    def set_defensive_fire_settings(self, settings) -> None:
+        self.defensive_fire_resolver.set_settings(settings)
+
+    def apply_movement_plans(
+        self,
+        plans: List["UnitMovementPlan"],
+    ) -> MovementResolutionResult:
+        """Apply movement plans incrementally and resolve defensive fire."""
         movement = MovementCalculator(self.get_board())
+        resolution = MovementResolutionResult()
         for plan in plans:
             if not plan.path:
                 continue
+            self._apply_single_movement_plan(plan, movement, resolution)
+        self.get_current_player().movement_cb()
+        return resolution
 
-            movement_points_spent = 0
-            for from_hex, to_hex in zip(plan.path, plan.path[1:]):
-                movement_points_spent += movement.move_cost(
-                    plan.unit,
-                    from_hex,
-                    to_hex,
-                )
+    def _apply_single_movement_plan(
+        self,
+        plan: UnitMovementPlan,
+        movement: MovementCalculator,
+        resolution: MovementResolutionResult,
+    ) -> None:
+        unit = plan.unit
+        if unit.get_coords() is None:
+            return
 
-            final_hex = plan.path[-1]
-            plan.unit.set_coords(final_hex.row, final_hex.column)
-            plan.unit.current_turn_movement_points_remaining = max(
-                plan.unit.get_move() - movement_points_spent,
+        movement_points_spent = 0
+        for from_hex, to_hex in zip(plan.path, plan.path[1:]):
+            if unit.get_coords() != (from_hex.row, from_hex.column):
+                break
+
+            was_adjacent = self.board.enemy_adjacent(unit, from_hex)
+            movement_points_spent += movement.move_cost(unit, from_hex, to_hex)
+            unit.set_coords(to_hex.row, to_hex.column)
+            unit.current_turn_movement_points_remaining = max(
+                unit.get_move() - movement_points_spent,
                 0,
             )
-        self.get_current_player().movement_cb()
+
+            if was_adjacent:
+                continue
+
+            if not self.board.enemy_adjacent(unit, to_hex):
+                continue
+
+            unit.current_turn_movement_points_remaining = 0
+            defensive_fire_results = (
+                self.defensive_fire_resolver.resolve_defensive_fire(
+                    unit,
+                    to_hex,
+                    self.get_current_player(),
+                )
+            )
+            resolution.defensive_fire_results.extend(defensive_fire_results)
+            break
 
     def next_player(self) -> Player:
         """Advance to the next player and return it."""

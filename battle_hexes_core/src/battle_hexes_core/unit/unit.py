@@ -30,6 +30,7 @@ class Unit:
         self.forced_to_retreat_since_last_friendly_turn = False
         self.defensive_fire_spent_this_off_turn = False
         self.defensive_fire_available = True
+        self.defensive_fire_modifier = 1.0
         self.row = row
         self.column = column
 
