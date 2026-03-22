@@ -7,7 +7,7 @@ This document defines the **frontend integration changes** required for defensiv
 This spec is intentionally limited to:
 
 - preserving the existing defensive-fire indicator icon,
-- consuming backend-authored defensive-fire event payloads,
+- consuming backend-authored defensive-fire event payloads during movement resolution,
 - updating frontend synchronization, messaging, and animation hooks.
 
 It assumes the core and API defensive-fire specs have already been implemented.
@@ -19,7 +19,7 @@ It assumes the core and API defensive-fire specs have already been implemented.
 2. **Preserve the existing availability indicator**
    - Units should continue to show the icon whenever `defensive_fire_available` is true.
 3. **Surface reaction events clearly**
-   - Defensive fire should be visible to players during movement resolution.
+   - Defensive fire should be visible to players during movement resolution, in the movement phase itself.
 
 ## Current state of the code base
 
@@ -27,7 +27,7 @@ The frontend already stores `defensiveFireAvailable`, resets it at turn changes,
 
 That gives the UI an existing presentation hook for defensive-fire availability.
 
-However, the frontend currently has no concept of a backend-authored defensive-fire event and no dedicated logic for movement being interrupted by a defensive-fire retreat.
+However, the frontend currently has no concept of a backend-authored defensive-fire event and no dedicated logic for movement being interrupted mid-resolution by a defensive-fire retreat.
 
 ## Required behavior
 
@@ -37,9 +37,9 @@ Continue displaying the defensive-fire indicator icon whenever the backend says 
 
 The frontend should treat that field as authoritative and should not attempt to infer availability from local movement heuristics.
 
-## 2. Consume defensive-fire event payloads after movement
+## 2. Consume defensive-fire event payloads as part of movement resolution
 
-After a move is submitted and the server responds, the frontend must:
+Defensive fire happens immediately during movement resolution when an enemy unit becomes adjacent, not as a separate later phase. After a move is submitted and the server responds, the frontend must treat any defensive-fire payloads as part of that same movement resolution and must:
 
 - update unit positions,
 - update defensive-fire availability flags,
@@ -51,9 +51,9 @@ Expected visible outcomes include at least:
 - defensive fire occurred and caused retreat,
 - defensive fire occurred and had no effect.
 
-## 3. Support movement interruption or revision
+## 3. Support movement interruption or revision during the movement phase
 
-If movement is animated client-side before server confirmation, the frontend must allow defensive-fire reactions to:
+If movement is animated client-side before server confirmation, the frontend must allow defensive-fire reactions to occur during that movement presentation and to:
 
 - interrupt the in-progress movement presentation,
 - revise the mover's final displayed position,
@@ -75,7 +75,7 @@ Implementation may include:
 
 - extending board/game synchronization logic to ingest `defensive_fire_events`,
 - adding a message or event-bus hook for reaction-fire notifications,
-- integrating defensive-fire outcomes into movement animation control flow,
+- integrating defensive-fire outcomes into movement-phase animation control flow,
 - updating tests around board updates and movement result handling.
 
 The exact presentation can evolve later, but the first implementation should visibly communicate that defensive fire occurred.
@@ -109,7 +109,7 @@ This spec does **not** include:
 Add or update tests covering:
 
 - the icon still reflecting backend `defensive_fire_available`,
-- movement-response handling updating positions after defensive fire,
+- movement-response handling updating positions when defensive fire resolves during movement,
 - defensive-fire event payloads being consumed correctly,
 - any new messaging or animation hooks used to present reaction results.
 
@@ -119,5 +119,5 @@ This spec is complete only when all of the following are true:
 
 - the existing defensive-fire indicator still reflects backend state,
 - frontend synchronization handles backend-authored defensive-fire events,
-- retreat/no-effect results are surfaced visibly to the player,
+- retreat/no-effect results are surfaced visibly to the player during movement resolution,
 - the frontend does not recalculate defensive-fire rules or odds locally.
