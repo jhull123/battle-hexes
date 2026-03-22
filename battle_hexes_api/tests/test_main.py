@@ -5,6 +5,11 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from battle_hexes_api.main import app, _serialize_game
+from battle_hexes_api.schemas import GameModel
+from battle_hexes_core.defensivefire.defensive_fire import (
+    DefensiveFireResult,
+    MovementResolutionResult,
+)
 from battle_hexes_api.schemas import SparseBoard
 from battle_hexes_api.player_types import PlayerTypeDefinition
 from battle_hexes_core.game.player import Player, PlayerType
@@ -15,6 +20,22 @@ from battle_hexes_core.unit.faction import Faction
 class TestFastAPI(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
+
+    def _game_model_payload(self):
+        return GameModel(
+            id="00000000-0000-0000-0000-000000000000",
+            players=[],
+            board={
+                "rows": 1,
+                "columns": 1,
+                "units": [],
+                "terrain": {"default": None, "types": {}, "hexes": []},
+                "road_types": {},
+                "road_paths": [],
+            },
+            objectives=[],
+            scores={},
+        )
 
     def test_health_check(self):
         response = self.client.get('/health')
@@ -259,9 +280,15 @@ class TestFastAPI(unittest.TestCase):
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
 
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
-    def test_generate_movement(self, mock_game_repo, mock_from_game):
+    def test_generate_movement(
+        self,
+        mock_game_repo,
+        mock_from_game,
+        mock_from_board,
+    ):
         mock_plan = MagicMock()
         mock_player = MagicMock()
         mock_player.movement.return_value = [mock_plan]
@@ -269,7 +296,12 @@ class TestFastAPI(unittest.TestCase):
         mock_game = MagicMock()
         mock_game.get_current_player.return_value = mock_player
         mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = {"id": "game-456"}
+        mock_from_game.return_value = self._game_model_payload()
+        mock_from_board.return_value = SparseBoard(units=[])
+        mock_game.apply_movement_plans.return_value = (
+            MovementResolutionResult()
+        )
+        mock_game.get_board.return_value = MagicMock()
 
         game_id = "game-456"
         response = self.client.post(f"/games/{game_id}/movement")
@@ -280,10 +312,59 @@ class TestFastAPI(unittest.TestCase):
         mock_from_game.assert_called_once_with(mock_game)
         mock_plan.to_dict.assert_called_once_with()
         self.assertEqual(
-            response.json(),
-            {"game": {"id": "game-456"}, "plans": [{"plan": 1}]},
+            response.json()["game"]["id"],
+            "00000000-0000-0000-0000-000000000000",
         )
+        self.assertEqual(response.json()["plans"], [{"plan": 1}])
+        self.assertEqual(response.json()["defensive_fire_events"], [])
+        self.assertIn("sparse_board", response.json())
 
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
+    @patch('battle_hexes_api.main.GameModel.from_game')
+    @patch('battle_hexes_api.main.game_repo')
+    def test_generate_movement_includes_defensive_fire_events(
+        self,
+        mock_game_repo,
+        mock_from_game,
+        mock_from_board,
+    ):
+        mock_plan = MagicMock()
+        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_player = MagicMock()
+        mock_player.name = "CPU 1"
+        mock_player.movement.return_value = [mock_plan]
+        mock_game = MagicMock()
+        mock_game.get_current_player.return_value = mock_player
+        mock_game.get_board.return_value = MagicMock()
+        mock_game.apply_movement_plans.return_value = MovementResolutionResult(
+            defensive_fire_results=[
+                DefensiveFireResult(
+                    firing_unit_id="df-1",
+                    target_unit_id="m-1",
+                    trigger_hex=(1, 1),
+                    target_hex_before=(1, 1),
+                    outcome="retreat",
+                    retreat_destination=(0, 1),
+                    probability=0.5,
+                    roll=0.2,
+                )
+            ]
+        )
+        mock_game_repo.get_game.return_value = mock_game
+        mock_from_game.return_value = self._game_model_payload()
+        mock_from_board.return_value = SparseBoard(units=[])
+
+        response = self.client.post("/games/game-789/movement")
+
+        self.assertEqual(response.status_code, 200)
+        event = response.json()["defensive_fire_events"][0]
+        self.assertEqual(event["firing_unit_id"], "df-1")
+        self.assertEqual(event["target_unit_id"], "m-1")
+        self.assertEqual(event["outcome"], "retreat")
+        self.assertEqual(event["retreat_destination"], [0, 1])
+        self.assertIn("forced the target to retreat", event["message"])
+
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
     @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
     @patch('battle_hexes_api.main.ObjectiveScorer')
     @patch('battle_hexes_api.main.GameModel.from_game')
@@ -294,14 +375,20 @@ class TestFastAPI(unittest.TestCase):
         mock_from_game,
         mock_scorer,
         mock_to_movement_plans,
+        mock_from_board,
     ):
         mock_game = MagicMock()
         mock_board = MagicMock()
         mock_plans = [MagicMock()]
+        mock_plans[0].to_dict.return_value = {"plan": 1}
         mock_game.get_board.return_value = mock_board
         mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = {"id": "game-101"}
+        mock_from_game.return_value = self._game_model_payload()
+        mock_from_board.return_value = SparseBoard(units=[])
         mock_to_movement_plans.return_value = mock_plans
+        mock_game.apply_movement_plans.return_value = (
+            MovementResolutionResult()
+        )
 
         game_id = "game-101"
         sparse_board_data = {"units": []}
@@ -318,8 +405,76 @@ class TestFastAPI(unittest.TestCase):
         )
         mock_game_repo.update_game.assert_called_once_with(mock_game)
         mock_from_game.assert_called_once_with(mock_game)
+        self.assertEqual(
+            response.json()["game"]["id"],
+            "00000000-0000-0000-0000-000000000000",
+        )
+        self.assertEqual(response.json()["defensive_fire_events"], [])
+
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
+    @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
+    @patch('battle_hexes_api.main.ObjectiveScorer')
+    @patch('battle_hexes_api.main.GameModel.from_game')
+    @patch('battle_hexes_api.main.game_repo')
+    def test_end_movement_returns_retreat_state_and_events(
+        self,
+        mock_game_repo,
+        mock_from_game,
+        mock_scorer,
+        mock_to_movement_plans,
+        mock_from_board,
+    ):
+        mock_game = MagicMock()
+        mock_game.get_board.return_value = MagicMock()
+        mock_game_repo.get_game.return_value = mock_game
+        mock_plan = MagicMock()
+        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_to_movement_plans.return_value = [mock_plan]
+        mock_game.apply_movement_plans.return_value = MovementResolutionResult(
+            defensive_fire_results=[
+                DefensiveFireResult(
+                    firing_unit_id="df-2",
+                    target_unit_id="m-2",
+                    trigger_hex=(2, 2),
+                    target_hex_before=(2, 2),
+                    outcome="no_effect",
+                    retreat_destination=None,
+                    probability=0.3,
+                    roll=0.9,
+                )
+            ]
+        )
+        mock_from_game.return_value = self._game_model_payload()
+        mock_from_board.return_value = SparseBoard(
+            units=[
+                {
+                    "id": "m-2",
+                    "row": 2,
+                    "column": 2,
+                    "defensive_fire_available": False,
+                }
+            ]
+        )
+
+        response = self.client.post(
+            "/games/game-202/end-movement",
+            json={"units": [{"id": "m-2", "row": 3, "column": 2}]},
+        )
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"id": "game-101"})
+        self.assertEqual(
+            response.json()["sparse_board"]["units"][0],
+            {
+                "id": "m-2",
+                "row": 2,
+                "column": 2,
+                "defensive_fire_available": False,
+            },
+        )
+        self.assertEqual(
+            response.json()["defensive_fire_events"][0]["outcome"],
+            "no_effect",
+        )
 
     @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
     @patch('battle_hexes_api.main.ObjectiveScorer')

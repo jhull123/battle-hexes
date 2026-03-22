@@ -4,6 +4,7 @@ from .board import BoardModel
 from .combat import CombatResultSchema
 from .create_game import CreateGameRequest
 from .faction import FactionModel
+from .movement import DefensiveFireEventModel, MovementResponseModel
 from .game_model import GameModel
 from .objective import ObjectiveModel
 from .player import PlayerModel
@@ -18,7 +19,9 @@ __all__ = [
     "CombatResultSchema",
     "CreateGameRequest",
     "FactionModel",
+    "DefensiveFireEventModel",
     "GameModel",
+    "MovementResponseModel",
     "ObjectiveModel",
     "PlayerModel",
     "PlayerTypeModel",
