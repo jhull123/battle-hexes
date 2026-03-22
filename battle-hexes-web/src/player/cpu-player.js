@@ -42,7 +42,10 @@ export class CpuPlayer extends Player {
         const boardUpdater = new BoardUpdater();
         boardUpdater.updateBoard(
           game.getBoard(),
-          response.data.game.board.units
+          response.data.sparse_board?.units ?? response.data.game.board.units,
+          {
+            defensiveFireEvents: response.data.defensive_fire_events ?? [],
+          }
         );
 
         await axios.post(

@@ -2,6 +2,29 @@
   margin-bottom: 0.5rem;
 }
 
+#menu #reactionMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#menu .reaction-message {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+#menu .reaction-message--retreat {
+  background-color: #fde7e9;
+  border-left: 4px solid #c62828;
+}
+
+#menu .reaction-message--no_effect {
+  background-color: #eef2f7;
+  border-left: 4px solid #607d8b;
+}
+
 #menu .menu-divider {
   border: 0;
   border-top: 1px solid #d6d6d6;
