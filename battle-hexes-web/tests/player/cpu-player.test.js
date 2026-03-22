@@ -12,6 +12,7 @@ import { Unit } from '../../src/model/unit.js';
 import { Player, Players } from '../../src/player/player.js';
 import { API_URL } from '../../src/model/battle-api.js';
 import { BoardUpdater } from '../../src/model/board-updater.js';
+import { eventBus } from '../../src/event-bus.js';
 
 jest.mock('axios');
 const mockUpdateBoard = jest.fn();
@@ -19,6 +20,11 @@ jest.mock('../../src/model/board-updater.js', () => ({
   BoardUpdater: jest.fn().mockImplementation(() => ({
     updateBoard: mockUpdateBoard,
   })),
+}));
+jest.mock('../../src/event-bus.js', () => ({
+  eventBus: {
+    emit: jest.fn(),
+  },
 }));
 
 describe('CpuPlayer', () => {
@@ -30,6 +36,7 @@ describe('CpuPlayer', () => {
     axios.post.mockResolvedValue({ data: { game: { board: { units: [] } }, plans: [] } });
     mockUpdateBoard.mockClear();
     MovementAnimator.mockClear();
+    eventBus.emit.mockClear();
     cpuPlayer = new CpuPlayer('CPU');
     const board = new Board(1, 1);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
@@ -195,6 +202,21 @@ describe('CpuPlayer', () => {
     await cpuPlayer.play(game);
 
     expect(axios.post).not.toHaveBeenCalled();
+  });
+
+  test('emits redraw after ending turn so defensive fire icons refresh for the next player', async () => {
+    jest.useFakeTimers();
+    const board = new Board(1, 1);
+    const players = new Players([cpuPlayer, new Player('Dummy')]);
+    game = new Game('game-1', ['End Turn'], players, board);
+    jest.spyOn(game, 'isGameOver').mockReturnValue(false);
+
+    const playPromise = cpuPlayer.play(game);
+    await jest.runOnlyPendingTimersAsync();
+    await playPromise;
+
+    expect(eventBus.emit).toHaveBeenCalledWith('redraw');
+    expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
 
   test('stops playing when game becomes over mid-turn', async () => {

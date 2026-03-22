@@ -382,6 +382,7 @@ export class Menu {
     }
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
+    eventBus.emit('redraw');
     this.#disableOrEnableActionButton();
 
     if (switchedPlayers) {

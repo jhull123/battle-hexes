@@ -564,6 +564,31 @@ describe('auto new game persistence', () => {
     );
   });
 
+  test('redraws immediately after a turn switch so refreshed defensive fire icons are visible', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const game = fakeGame({
+      getCurrentPhase: () => 'End Turn',
+      endPhase: () => true,
+      getBoard: () => ({
+        sparseBoard: () => ({}),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    axios.post.mockResolvedValue({ data: {} });
+
+    const menu = new Menu(game);
+    eventBus.emit.mockClear();
+
+    menu.doEndPhase();
+
+    expect(eventBus.emit).toHaveBeenCalledWith('redraw');
+  });
+
   test('moves turn badge and highlight when current player changes', () => {
     buildDom();
     history.replaceState(null, '', '/');
