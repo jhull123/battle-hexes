@@ -51,6 +51,7 @@ export class CpuPlayer extends Player {
         );
 
         game.endPhase();
+        eventBus.emit('redraw');
         eventBus.emit('menuUpdate');
 
         return this.play(game);
@@ -62,6 +63,7 @@ export class CpuPlayer extends Player {
         await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
         await game.resolveCombat();
         game.endPhase();
+        eventBus.emit('redraw');
         eventBus.emit('menuUpdate');
 
         return this.play(game);
@@ -85,6 +87,7 @@ export class CpuPlayer extends Player {
         });
       }
       game.endPhase();
+      eventBus.emit('redraw');
       eventBus.emit('menuUpdate');
       if (!game.isGameOver()) {
         game.getCurrentPlayer().play(game);
