@@ -206,7 +206,8 @@ def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Update game state at the end of a player's movement phase."""
     game = _get_game_or_404(game_id)
 
-    sparse_board.apply_to_board(game.get_board())
+    plans = sparse_board.to_movement_plans(game.get_board())
+    game.apply_movement_plans(plans)
 
     scorer = ObjectiveScorer()
     scorer.award_hold_objectives(game)

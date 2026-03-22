@@ -3,6 +3,7 @@
 from typing import List, Optional, TYPE_CHECKING
 
 from battle_hexes_core.game.movement import MovementCalculator
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
 from pydantic import BaseModel, Field
 
@@ -76,3 +77,22 @@ class SparseBoard(BaseModel):
             unit.get_move() - movement_points_spent,
             0,
         )
+
+    def to_movement_plans(self, board: "Board") -> List[UnitMovementPlan]:
+        """Create movement plans for any units whose coordinates changed."""
+
+        plans: list[UnitMovementPlan] = []
+        for unit_data in self.units:
+            unit = board.get_unit_by_id(str(unit_data.id))
+            current_coords = unit.get_coords()
+            target_coords = (unit_data.row, unit_data.column)
+
+            if current_coords is None or current_coords == target_coords:
+                continue
+
+            start_hex = board.get_hex(*current_coords)
+            target_hex = board.get_hex(unit_data.row, unit_data.column)
+            path = board.shortest_path(unit, start_hex, target_hex)
+            plans.append(UnitMovementPlan(unit, path))
+
+        return plans
