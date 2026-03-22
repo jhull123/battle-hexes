@@ -7,6 +7,7 @@ import { Unit } from '../../src/model/unit.js';
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
     emit: jest.fn(),
+    on: jest.fn(),
   },
 }));
 
@@ -61,6 +62,23 @@ describe('updateBoard', () => {
 
     expect(redUnit.hasDefensiveFire()).toBe(false);
   });
+
+  test('emits defensive fire events from authoritative movement results', () => {
+    board.addUnit(redUnit, 4, 5);
+
+    const defensiveFireEvents = [{
+      firing_unit_id: 'unit-002',
+      target_unit_id: 'unit-001',
+      outcome: 'retreat',
+      message: 'Defensive fire forced the target to retreat to (3, 5).',
+    }];
+
+    boardUpdater.updateBoard(board, [{ id: 'unit-001', row: 3, column: 5 }], { defensiveFireEvents });
+
+    expect(redUnit.getContainingHex().coordsHumanString()).toBe('3, 5');
+    expect(eventBus.emit).toHaveBeenCalledWith('defensiveFireResolved', defensiveFireEvents);
+  });
+
   test('one unit eliminated', () => {
     board.addUnit(redUnit, 4, 5);
     boardUpdater.updateBoard(board, []);

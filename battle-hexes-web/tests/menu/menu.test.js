@@ -3,13 +3,21 @@ import axios from 'axios';
 import { Menu } from '../../src/menu';
 import { eventBus } from '../../src/event-bus.js';
 import { API_URL } from '../../src/model/battle-api.js';
+import { BoardUpdater } from '../../src/model/board-updater.js';
 
 jest.mock('axios');
 
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
     emit: jest.fn(),
+    on: jest.fn(),
   },
+}));
+
+jest.mock('../../src/model/board-updater.js', () => ({
+  BoardUpdater: jest.fn().mockImplementation(() => ({
+    updateBoard: jest.fn(),
+  })),
 }));
 
 describe('auto new game persistence', () => {
@@ -33,6 +41,7 @@ describe('auto new game persistence', () => {
       <div id="currentTurnLabel"></div>
       <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
+      <div id="reactionMessages"></div>
       <h3 id="scenarioOverviewHeading"></h3>
       <p id="scenarioOverviewDescription"></p>
       <h4 id="scenarioVictoryHeading"></h4>
@@ -68,6 +77,8 @@ describe('auto new game persistence', () => {
 
   beforeEach(() => {
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
     window.localStorage.clear();
     axios.post.mockReset();
     axios.get.mockReset();
@@ -155,12 +166,16 @@ describe('auto new game persistence', () => {
     const coordsCheckbox = document.getElementById('showHexCoords');
 
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
     coordsCheckbox.checked = false;
     coordsCheckbox.dispatchEvent(new Event('change'));
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', false);
     expect(window.localStorage.getItem('battleHexes.showHexCoords')).toBe('false');
 
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
     coordsCheckbox.checked = true;
     coordsCheckbox.dispatchEvent(new Event('change'));
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', true);
@@ -469,6 +484,63 @@ describe('auto new game persistence', () => {
     expect(row.querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
   });
 
+
+  test('applies authoritative end-movement board updates and defensive fire events', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const updateBoard = jest.fn();
+    BoardUpdater.mockImplementation(() => ({ updateBoard }));
+
+    const unit = { id: 'unit-1' };
+    const board = {
+      sparseBoard: () => ({ units: [{ id: 'unit-1', row: 4, column: 4 }] }),
+      getUnits: () => new Set([unit]),
+      getSelectedHex: () => null,
+      isOwnHexSelected: () => false,
+      hasCombat: () => false,
+    };
+    const game = fakeGame({
+      getCurrentPhase: () => 'Movement',
+      endPhase: () => false,
+      getBoard: () => board,
+    });
+
+    axios.post.mockResolvedValue({
+      data: {
+        sparse_board: {
+          units: [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }],
+        },
+        defensive_fire_events: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
+        scores: { 'Player 1': 2 },
+        turnLimit: 9,
+        turnNumber: 4,
+      },
+    });
+
+    const menu = new Menu(game);
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(updateBoard).toHaveBeenCalledWith(board, [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }], {
+      defensiveFireEvents: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
+    });
+  });
+
+  test('renders defensive fire messages from the event bus hook', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame());
+
+    const handler = eventBus.on.mock.calls.find(([eventName]) => eventName === 'defensiveFireResolved')[1];
+    handler([{ outcome: 'no_effect', message: 'Defensive fire had no effect.' }]);
+
+    const reactionMessages = document.getElementById('reactionMessages');
+    expect(reactionMessages.textContent).toContain('Defensive fire had no effect.');
+    expect(reactionMessages.style.display).toBe('block');
+  });
+
   test('updates victory points after end of movement response', async () => {
     buildDom();
     history.replaceState(null, '', '/');
@@ -583,6 +655,8 @@ describe('auto new game persistence', () => {
 
     const menu = new Menu(game);
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
 
     menu.doEndPhase();
 

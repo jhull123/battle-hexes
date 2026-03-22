@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { API_URL } from './model/battle-api.js';
 import { eventBus } from './event-bus.js';
+import { BoardUpdater } from './model/board-updater.js';
 
 export class Menu {
   #game;
@@ -23,6 +24,7 @@ export class Menu {
   #scenarioDetailsRequestId = 0;
   #autoReloadScheduled = false;
   #onNewGameRequested;
+  #reactionMessagesDiv;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
@@ -43,6 +45,7 @@ export class Menu {
     this.#scenarioOverviewDescription = document.getElementById('scenarioOverviewDescription');
     this.#scenarioVictoryHeading = document.getElementById('scenarioVictoryHeading');
     this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
+    this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
 
@@ -80,6 +83,8 @@ export class Menu {
     });
     this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
+
+    eventBus.on?.('defensiveFireResolved', (events) => this.#showDefensiveFireEvents(events));
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -372,11 +377,7 @@ export class Menu {
         `${API_URL}/games/${this.#game.getId()}/end-movement`,
         this.#game.getBoard().sparseBoard()
       ).then((response) => {
-        this.#game.updateScores?.(response?.data?.scores);
-        this.#game.updateTurnState?.({
-          turnLimit: response?.data?.turnLimit,
-          turnNumber: response?.data?.turnNumber,
-        });
+        this.#applyMovementResponse(response?.data);
         this.updateMenu();
       }).catch(err => console.error('Failed to update movement state', err));
     }
@@ -434,6 +435,36 @@ export class Menu {
   #postCombat() {
     console.log('Combat phase is over.')
     // TODO: update the menu area of the UI to show the results of the combat
+  }
+
+  #applyMovementResponse(responseData) {
+    const safeUnits = responseData?.sparse_board?.units ?? responseData?.game?.board?.units ?? [];
+    new BoardUpdater().updateBoard(this.#game.getBoard(), safeUnits, {
+      defensiveFireEvents: responseData?.defensive_fire_events ?? [],
+    });
+
+    this.#game.updateScores?.(responseData?.scores);
+    this.#game.updateTurnState?.({
+      turnLimit: responseData?.turnLimit,
+      turnNumber: responseData?.turnNumber,
+    });
+  }
+
+  #showDefensiveFireEvents(events = []) {
+    if (!this.#reactionMessagesDiv) {
+      return;
+    }
+
+    if (!Array.isArray(events) || events.length === 0) {
+      this.#reactionMessagesDiv.innerHTML = '';
+      this.#reactionMessagesDiv.style.display = 'none';
+      return;
+    }
+
+    this.#reactionMessagesDiv.innerHTML = events
+      .map((event) => `<div class="reaction-message reaction-message--${event.outcome ?? 'info'}">${event.message ?? 'Defensive fire resolved.'}</div>`)
+      .join('');
+    this.#reactionMessagesDiv.style.display = 'block';
   }
 
   #setCurrentTurn() {
