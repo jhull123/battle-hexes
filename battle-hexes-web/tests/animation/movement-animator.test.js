@@ -47,4 +47,18 @@ describe('MovementAnimator', () => {
     expect(board.refreshCombat).toHaveBeenCalled();
     expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
   });
+
+  test('interrupt stops an in-flight animation before later path steps', async () => {
+    const promise = animator.animate(unit, [hexA, hexB, hexC], true);
+
+    expect(board.updateUnitPosition).toHaveBeenCalledWith(unit, hexA, hexB);
+    expect(animator.interrupt(unit)).toBe(true);
+
+    await jest.runOnlyPendingTimersAsync();
+    await promise;
+
+    expect(board.updateUnitPosition).not.toHaveBeenCalledWith(unit, hexB, hexC);
+    expect(unit.move).not.toHaveBeenCalled();
+  });
+
 });
