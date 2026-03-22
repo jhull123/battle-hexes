@@ -61,6 +61,19 @@ describe('updateBoard', () => {
 
     expect(redUnit.hasDefensiveFire()).toBe(false);
   });
+
+  test('emits defensive fire events when supplied by the server response handler', () => {
+    board.addUnit(redUnit, 4, 5);
+    const events = [
+      { outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (4, 4).' },
+    ];
+
+    boardUpdater.updateBoard(board, [{ id: 'unit-001', row: 4, column: 4 }], {
+      defensiveFireEvents: events,
+    });
+
+    expect(eventBus.emit).toHaveBeenCalledWith('defensiveFireEvents', events);
+  });
   test('one unit eliminated', () => {
     board.addUnit(redUnit, 4, 5);
     boardUpdater.updateBoard(board, []);

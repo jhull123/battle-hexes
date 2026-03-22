@@ -4,7 +4,9 @@ export class BoardUpdater {
   constructor() {
   }
 
-  updateBoard(board, units) {
+  updateBoard(board, units, { defensiveFireEvents = [] } = {}) {
+    board.getAnimator?.().stop?.();
+
     for (const boardUnit of board.getUnits()) {
       const unit = this.#findUnit(boardUnit.getId(), units);
       const containingHex = boardUnit.getContainingHex();
@@ -22,6 +24,9 @@ export class BoardUpdater {
     }
 
     board.refreshCombat();
+    if (defensiveFireEvents.length > 0) {
+      eventBus.emit('defensiveFireEvents', defensiveFireEvents);
+    }
     eventBus.emit('redraw');
     eventBus.emit('menuUpdate');
   }

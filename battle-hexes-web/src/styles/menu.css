@@ -2,6 +2,15 @@
   margin-bottom: 0.5rem;
 }
 
+#menu .defensive-fire-status {
+  padding: 0.5rem 0.65rem;
+  border-left: 4px solid #c96b2c;
+  background-color: #fff2e8;
+  color: #7a3310;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
 #menu .menu-divider {
   border: 0;
   border-top: 1px solid #d6d6d6;

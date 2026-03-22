@@ -9,6 +9,7 @@ jest.mock('axios');
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
     emit: jest.fn(),
+    on: jest.fn(),
   },
 }));
 
@@ -31,6 +32,7 @@ describe('auto new game persistence', () => {
       <div id="phasesList"></div>
       <button id="endPhaseBtn"></button>
       <div id="currentTurnLabel"></div>
+      <div id="defensiveFireStatus"></div>
       <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
       <h3 id="scenarioOverviewHeading"></h3>
@@ -68,6 +70,7 @@ describe('auto new game persistence', () => {
 
   beforeEach(() => {
     eventBus.emit.mockClear();
+    eventBus.on.mockReset();
     window.localStorage.clear();
     axios.post.mockReset();
     axios.get.mockReset();
@@ -260,6 +263,22 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('selHexTerrain').innerHTML).toBe('Open (cost=1)');
     expect(document.getElementById('selHexUnitsHeading').style.display).toBe('');
     expect(document.getElementById('selHexTerrainHeading').style.display).toBe('');
+  });
+
+  test('shows defensive fire status messages from backend-authored events', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame());
+
+    const defensiveFireListener = eventBus.on.mock.calls.find(([eventName]) => eventName === 'defensiveFireEvents')[1];
+    defensiveFireListener([
+      { message: 'Defensive fire forced the target to retreat to (2, 1).' },
+    ]);
+
+    const status = document.getElementById('defensiveFireStatus');
+    expect(status.textContent).toBe('Defensive fire forced the target to retreat to (2, 1).');
+    expect(status.style.display).toBe('');
   });
 
 

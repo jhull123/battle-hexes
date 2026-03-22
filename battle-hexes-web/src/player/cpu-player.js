@@ -4,6 +4,7 @@ import { API_URL } from '../model/battle-api.js';
 import { BoardUpdater } from '../model/board-updater.js';
 import { eventBus } from '../event-bus.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
+import { MovementResponseHandler } from '../model/movement-response-handler.js';
 
 export class CpuPlayer extends Player {
   static PHASE_DELAY_MS = 333;
@@ -39,11 +40,7 @@ export class CpuPlayer extends Player {
           }
         }
 
-        const boardUpdater = new BoardUpdater();
-        boardUpdater.updateBoard(
-          game.getBoard(),
-          response.data.game.board.units
-        );
+        new MovementResponseHandler(new BoardUpdater()).apply(game, response.data);
 
         await axios.post(
           `${API_URL}/games/${game.getId()}/end-movement`,

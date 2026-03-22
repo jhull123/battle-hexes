@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { API_URL } from './model/battle-api.js';
 import { eventBus } from './event-bus.js';
+import { MovementResponseHandler } from './model/movement-response-handler.js';
 
 export class Menu {
   #game;
@@ -10,6 +11,7 @@ export class Menu {
   #selHexUnitsHeading;
   #selHexTerrainHeading;
   #selHexObjectivesDiv;
+  #defensiveFireStatusDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -34,6 +36,7 @@ export class Menu {
     this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
     this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
+    this.#defensiveFireStatusDiv = document.getElementById('defensiveFireStatus');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -80,6 +83,9 @@ export class Menu {
     });
     this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
+    eventBus.on?.('defensiveFireEvents', (events) => {
+      this.#showDefensiveFireStatus(events);
+    });
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -88,6 +94,25 @@ export class Menu {
     this.#setCurrentTurn();
     this.#updateCombatIndicator();
     this.updateMenu();
+  }
+
+  #showDefensiveFireStatus(events = []) {
+    if (!this.#defensiveFireStatusDiv) {
+      return;
+    }
+
+    if (!Array.isArray(events) || events.length === 0) {
+      this.#defensiveFireStatusDiv.textContent = '';
+      this.#defensiveFireStatusDiv.style.display = 'none';
+      return;
+    }
+
+    const messages = events
+      .map((event) => event?.message)
+      .filter((message) => typeof message === 'string' && message.length > 0);
+
+    this.#defensiveFireStatusDiv.textContent = messages.join(' ');
+    this.#defensiveFireStatusDiv.style.display = '';
   }
 
   #renderScenarioOverview(scenario = null) {
@@ -372,11 +397,7 @@ export class Menu {
         `${API_URL}/games/${this.#game.getId()}/end-movement`,
         this.#game.getBoard().sparseBoard()
       ).then((response) => {
-        this.#game.updateScores?.(response?.data?.scores);
-        this.#game.updateTurnState?.({
-          turnLimit: response?.data?.turnLimit,
-          turnNumber: response?.data?.turnNumber,
-        });
+        new MovementResponseHandler().apply(this.#game, response?.data);
         this.updateMenu();
       }).catch(err => console.error('Failed to update movement state', err));
     }
