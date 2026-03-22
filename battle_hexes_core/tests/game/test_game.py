@@ -156,7 +156,7 @@ class TestGame(unittest.TestCase):
 
         game = Game([player1, player2], board)
 
-        self.assertFalse(unit1.defensive_fire_available)
+        self.assertTrue(unit1.defensive_fire_available)
         self.assertTrue(unit2.defensive_fire_available)
 
     def test_next_player_with_no_players_returns_none(self):

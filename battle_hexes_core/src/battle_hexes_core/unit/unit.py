@@ -74,6 +74,22 @@ class Unit:
             and not self.defensive_fire_spent_this_off_turn
         )
 
+    def _friendly_turn_defensive_fire_status(self) -> bool:
+        return (
+            (self.move == 0 or self.current_turn_movement_points_remaining > 1)
+            and not self.forced_to_retreat_since_last_friendly_turn
+        )
+
+    def public_defensive_fire_status(
+            self,
+            current_player: Player | None = None,
+    ) -> bool:
+        if current_player is None:
+            return self.defensive_fire_available
+        if current_player.owns(self):
+            return self._friendly_turn_defensive_fire_status()
+        return self.has_defensive_fire(current_player)
+
     def set_defensive_fire_available(self, is_available: bool) -> None:
         self.defensive_fire_available = bool(is_available)
 
@@ -81,7 +97,9 @@ class Unit:
             self,
             current_player: Player | None = None,
     ) -> bool:
-        self.defensive_fire_available = self.has_defensive_fire(current_player)
+        self.defensive_fire_available = self.public_defensive_fire_status(
+            current_player
+        )
         return self.defensive_fire_available
 
     def record_friendly_turn_end(
