@@ -284,7 +284,7 @@ class TestFastAPI(unittest.TestCase):
             {"game": {"id": "game-456"}, "plans": [{"plan": 1}]},
         )
 
-    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
+    @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
     @patch('battle_hexes_api.main.ObjectiveScorer')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
@@ -293,13 +293,15 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo,
         mock_from_game,
         mock_scorer,
-        mock_apply_to_board,
+        mock_to_movement_plans,
     ):
         mock_game = MagicMock()
         mock_board = MagicMock()
+        mock_plans = [MagicMock()]
         mock_game.get_board.return_value = mock_board
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = {"id": "game-101"}
+        mock_to_movement_plans.return_value = mock_plans
 
         game_id = "game-101"
         sparse_board_data = {"units": []}
@@ -309,7 +311,8 @@ class TestFastAPI(unittest.TestCase):
             json=sparse_board_data,
         )
 
-        mock_apply_to_board.assert_called_once_with(mock_board)
+        mock_to_movement_plans.assert_called_once_with(mock_board)
+        mock_game.apply_movement_plans.assert_called_once_with(mock_plans)
         mock_scorer.return_value.award_hold_objectives.assert_called_once_with(
             mock_game
         )

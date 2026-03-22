@@ -5,6 +5,7 @@ from battle_hexes_api.schemas import (
     SparseBoard,
 )
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioTerrainType
@@ -126,6 +127,35 @@ class TestSparseBoard(unittest.TestCase):
             self.red_unit.forced_to_retreat_since_last_friendly_turn
         )
         self.assertFalse(self.red_unit.has_defensive_fire(self.blue_player))
+
+    def test_to_movement_plans_creates_plan_for_each_moved_unit(self):
+        self.board.add_unit(self.red_unit, 0, 4)
+        self.board.add_unit(self.blue_unit, 4, 0)
+
+        sparse_board_data = {
+            "units": [
+                {
+                    "id": str(self.red_unit.get_id()),
+                    "row": 1,
+                    "column": 4,
+                },
+                {
+                    "id": str(self.blue_unit.get_id()),
+                    "row": 4,
+                    "column": 0,
+                },
+            ]
+        }
+
+        plans = SparseBoard(**sparse_board_data).to_movement_plans(self.board)
+
+        self.assertEqual(len(plans), 1)
+        self.assertIsInstance(plans[0], UnitMovementPlan)
+        self.assertEqual(plans[0].unit, self.red_unit)
+        self.assertEqual(
+            [(hex_.row, hex_.column) for hex_ in plans[0].path],
+            [(0, 4), (1, 4)],
+        )
 
 
 class TestBoardModel(unittest.TestCase):
