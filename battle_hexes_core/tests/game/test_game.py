@@ -125,7 +125,7 @@ class TestGame(unittest.TestCase):
         self.assertTrue(unit1.has_defensive_fire(game.get_current_player()))
         self.assertFalse(unit2.has_defensive_fire(game.get_current_player()))
 
-    def test_game_initializes_public_defensive_fire_state_for_current_turn(self):
+    def test_game_inits_public_defensive_fire_state_for_current_turn(self):
         board = Board(5, 5)
         faction1 = Faction(id="f1", name="f1", color="#fff")
         faction2 = Faction(id="f2", name="f2", color="#000")
@@ -153,8 +153,6 @@ class TestGame(unittest.TestCase):
         )
         board.add_unit(unit1, 0, 0)
         board.add_unit(unit2, 4, 4)
-
-        game = Game([player1, player2], board)
 
         self.assertTrue(unit1.defensive_fire_available)
         self.assertTrue(unit2.defensive_fire_available)
