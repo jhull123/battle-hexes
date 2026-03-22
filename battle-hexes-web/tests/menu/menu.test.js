@@ -31,6 +31,7 @@ describe('auto new game persistence', () => {
       <div id="selHexTerrain"></div>
       <h4 id="selHexTerrainHeading"></h4>
       <div id="selHexObjectives"></div>
+      <div id="reactionStatus"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
       <div id="gameOverLabel"></div>
@@ -106,6 +107,26 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('scenarioOverviewDescription').textContent).toBe('Secure all objectives before the turn limit.');
     expect(document.getElementById('scenarioVictoryHeading').style.display).toBe('');
     expect(document.getElementById('scenarioVictoryDescription').textContent).toBe('Control every objective at the end of any turn.');
+  });
+
+  test('shows defensive fire messages from movement-phase reactions', async () => {
+    buildDom();
+
+    new Menu(fakeGame());
+    await flushPromises();
+
+    const defensiveFireListener = eventBus.on.mock.calls.find(
+      ([eventName]) => eventName === 'defensiveFireResolved'
+    )?.[1];
+
+    defensiveFireListener([
+      { message: 'Defensive fire forced the target to retreat to (0, 1).' },
+      { message: 'Defensive fire had no effect.' },
+    ]);
+
+    expect(document.getElementById('reactionStatus').textContent).toBe(
+      'Defensive fire forced the target to retreat to (0, 1). Defensive fire had no effect.'
+    );
   });
 
   test('falls back to scenario id and hides optional sections when details are missing', async () => {
@@ -533,7 +554,8 @@ describe('auto new game persistence', () => {
 
     new Menu(fakeGame());
 
-    const handler = eventBus.on.mock.calls.find(([eventName]) => eventName === 'defensiveFireResolved')[1];
+    const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
+    const handler = calls[calls.length - 1][1];
     handler([{ outcome: 'no_effect', message: 'Defensive fire had no effect.' }]);
 
     const reactionMessages = document.getElementById('reactionMessages');

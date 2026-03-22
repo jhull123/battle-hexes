@@ -92,6 +92,21 @@ export class Unit {
 
   getMovesRemaining() { return this.#movesRemaining; }
 
+  createMovementSnapshot() {
+    return {
+      containingHex: this.#containingHex,
+      movesRemaining: this.#movesRemaining,
+      defensiveFireAvailable: this.#defensiveFireAvailable,
+    };
+  }
+
+  restoreMovementSnapshot(snapshot) {
+    this.#containingHex = snapshot.containingHex;
+    this.#movesRemaining = snapshot.movesRemaining;
+    this.#defensiveFireAvailable = snapshot.defensiveFireAvailable;
+    this.#combatOpponents = [];
+  }
+
   canEnterHex(destinationHex) {
     const terrainMoveCost = destinationHex?.getTerrain()?.moveCost;
     const moveCost = Number.isFinite(terrainMoveCost) && terrainMoveCost > 0

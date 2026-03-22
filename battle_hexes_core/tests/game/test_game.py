@@ -125,6 +125,38 @@ class TestGame(unittest.TestCase):
         self.assertTrue(unit1.has_defensive_fire(game.get_current_player()))
         self.assertFalse(unit2.has_defensive_fire(game.get_current_player()))
 
+    def test_game_inits_public_defensive_fire_state_for_current_turn(self):
+        board = Board(5, 5)
+        faction1 = Faction(id="f1", name="f1", color="#fff")
+        faction2 = Faction(id="f2", name="f2", color="#000")
+        player1 = Player(name="P1", type=PlayerType.HUMAN, factions=[faction1])
+        player2 = Player(name="P2", type=PlayerType.CPU, factions=[faction2])
+        unit1 = Unit(
+            id="u1",
+            name="U1",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        unit2 = Unit(
+            id="u2",
+            name="U2",
+            faction=faction2,
+            player=player2,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        board.add_unit(unit1, 0, 0)
+        board.add_unit(unit2, 4, 4)
+
+        self.assertTrue(unit1.defensive_fire_available)
+        self.assertTrue(unit2.defensive_fire_available)
+
     def test_next_player_with_no_players_returns_none(self):
         board = Board(5, 5)
         game = Game([], board)
@@ -148,6 +180,7 @@ class TestGame(unittest.TestCase):
         game.apply_movement_plans([plan])
 
         self.assertEqual(unit.get_coords(), (0, 1))
+        self.assertFalse(unit.defensive_fire_available)
 
     def test_next_player_makes_unit_ineligible_with_one_move_remaining(self):
         board = Board(5, 5)
@@ -256,6 +289,41 @@ class TestGame(unittest.TestCase):
         game.turn_number = 2
 
         self.assertTrue(game.is_game_over())
+
+    def test_apply_movement_plans_preserve_points_across_calls(
+        self,
+    ):
+        board, player1, _player2, faction1, _faction2, game = (
+            self._make_two_player_game()
+        )
+        mover = Unit(
+            id="mover",
+            name="Mover",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        board.add_unit(mover, 0, 0)
+
+        first_plan = UnitMovementPlan(
+            mover,
+            [board.get_hex(0, 0), board.get_hex(0, 1)],
+        )
+        second_plan = UnitMovementPlan(
+            mover,
+            [board.get_hex(0, 1), board.get_hex(0, 2)],
+        )
+
+        game.apply_movement_plans([first_plan])
+        self.assertEqual(mover.current_turn_movement_points_remaining, 2)
+
+        game.apply_movement_plans([second_plan])
+
+        self.assertEqual(mover.get_coords(), (0, 2))
+        self.assertEqual(mover.current_turn_movement_points_remaining, 1)
 
     @patch(
         RANDOM_PATCH_TARGET,

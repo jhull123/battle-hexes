@@ -203,6 +203,23 @@ def generate_movement(game_id: str):
     )
 
 
+@app.post('/games/{game_id}/move')
+def resolve_human_move(game_id: str, sparse_board: SparseBoard = Body(...)):
+    """Resolve a human move during the movement phase without ending it."""
+    game = _get_game_or_404(game_id)
+
+    plans = sparse_board.to_movement_plans(game.get_board())
+    movement_resolution = game.apply_movement_plans(plans)
+
+    game_repo.update_game(game)
+    _call_end_game_callbacks(game)
+    return MovementResponseModel.from_movement_result(
+        game,
+        plans,
+        movement_resolution,
+    )
+
+
 @app.post('/games/{game_id}/end-movement')
 def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Update game state at the end of a player's movement phase."""

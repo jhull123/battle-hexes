@@ -115,6 +115,13 @@
   font-size: 0.85em;
 }
 
+#menu .reaction-status {
+  min-height: 1.25rem;
+  margin-top: 8px;
+  color: #7a2100;
+  font-weight: 600;
+}
+
 #phasesList span {
   font-style: italic;
 }

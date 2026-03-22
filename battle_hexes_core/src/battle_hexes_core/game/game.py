@@ -35,6 +35,7 @@ class Game:
         )
         self.turn_number = 1
         self.defensive_fire_resolver = DefensiveFireResolver(board)
+        self._refresh_defensive_fire_availability()
 
     def get_id(self):
         return self.id
@@ -65,6 +66,7 @@ class Game:
             if not plan.path:
                 continue
             self._apply_single_movement_plan(plan, movement, resolution)
+        self._refresh_defensive_fire_availability()
         self.get_current_player().movement_cb()
         return resolution
 
@@ -78,17 +80,22 @@ class Game:
         if unit.get_coords() is None:
             return
 
-        movement_points_spent = 0
+        movement_points_remaining = (
+            unit.current_turn_movement_points_remaining
+        )
         for from_hex, to_hex in zip(plan.path, plan.path[1:]):
             if unit.get_coords() != (from_hex.row, from_hex.column):
                 break
 
             was_adjacent = self.board.enemy_adjacent(unit, from_hex)
-            movement_points_spent += movement.move_cost(unit, from_hex, to_hex)
-            unit.set_coords(to_hex.row, to_hex.column)
-            unit.current_turn_movement_points_remaining = max(
-                unit.get_move() - movement_points_spent,
+            move_cost = movement.move_cost(unit, from_hex, to_hex)
+            movement_points_remaining = max(
+                movement_points_remaining - move_cost,
                 0,
+            )
+            unit.set_coords(to_hex.row, to_hex.column)
+            unit.current_turn_movement_points_remaining = (
+                movement_points_remaining
             )
 
             if was_adjacent:

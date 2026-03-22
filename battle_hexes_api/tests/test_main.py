@@ -378,6 +378,47 @@ class TestFastAPI(unittest.TestCase):
     @patch('battle_hexes_api.main.ObjectiveScorer')
     @patch('battle_hexes_api.main.GameModel.from_game')
     @patch('battle_hexes_api.main.game_repo')
+    def test_resolve_human_move_updates_game_without_ending_movement(
+        self,
+        mock_game_repo,
+        mock_from_game,
+        mock_scorer,
+        mock_to_movement_plans,
+        mock_from_board,
+    ):
+        mock_game = MagicMock()
+        mock_board = MagicMock()
+        mock_plan = MagicMock()
+        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_game.get_board.return_value = mock_board
+        mock_game_repo.get_game.return_value = mock_game
+        mock_from_game.return_value = self._game_model_payload()
+        mock_from_board.return_value = SparseBoard(units=[])
+        mock_to_movement_plans.return_value = [mock_plan]
+        mock_game.apply_movement_plans.return_value = (
+            MovementResolutionResult()
+        )
+        mock_game.get_score_tracker.return_value.get_scores.return_value = {
+            "Alice": 4,
+        }
+
+        response = self.client.post(
+            "/games/game-150/move",
+            json={"units": [{"id": "u-1", "row": 2, "column": 3}]},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mock_to_movement_plans.assert_called_once_with(mock_board)
+        mock_game.apply_movement_plans.assert_called_once_with([mock_plan])
+        mock_scorer.assert_not_called()
+        self.assertEqual(response.json()["defensive_fire_events"], [])
+        self.assertEqual(response.json()["scores"], {"Alice": 4})
+
+    @patch('battle_hexes_api.main.SparseBoard.from_board')
+    @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
+    @patch('battle_hexes_api.main.ObjectiveScorer')
+    @patch('battle_hexes_api.main.GameModel.from_game')
+    @patch('battle_hexes_api.main.game_repo')
     def test_end_movement_updates_game_and_scores(
         self,
         mock_game_repo,

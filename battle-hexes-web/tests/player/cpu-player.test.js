@@ -60,7 +60,7 @@ describe('CpuPlayer', () => {
       `${API_URL}/games/${game.getId()}/end-movement`,
       game.getBoard().sparseBoard()
     );
-    expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), [], { defensiveFireEvents: [] });
+    expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), []);
 
     // Combat phase: after 2s, resolveCombat
     await jest.runOnlyPendingTimersAsync();
