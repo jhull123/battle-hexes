@@ -13,6 +13,8 @@ import { Menu } from './menu.js';
 import { getCanvasDimensions } from './drawer/canvas-dimensions.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
+import { API_URL } from './model/battle-api.js';
+import { applyMovementResponse } from './model/movement-response-handler.js';
 import {
   getLastLoadedConfig,
   loadGameData,
@@ -33,6 +35,25 @@ new p5((p) => {
   let game = new GameCreator().createGame(gameData);
   let menu;
 
+  const configureMovementHandling = () => {
+    game.getBoard().setMovementHandler(async () => {
+      const response = await fetch(`${API_URL}/games/${game.getId()}/move`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(game.getBoard().sparseBoard()),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to resolve movement: ${response.status}`);
+      }
+
+      applyMovementResponse(game.getBoard(), await response.json());
+    });
+  };
+  configureMovementHandling();
+
   const createNewGameAndLoad = async () => {
     const cachedConfig = getLastLoadedConfig();
     const scenarioId = game.getScenarioId() ?? cachedConfig.scenarioId;
@@ -44,6 +65,7 @@ new p5((p) => {
     updateUrlWithGameId(newGameData.id);
     rememberLoadedGameData(newGameData);
     game = new GameCreator().createGame(newGameData);
+    configureMovementHandling();
     menu.setGame(game);
     p.resizeCanvas(getCanvasWidth(), getCanvasHeight());
 

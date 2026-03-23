@@ -112,3 +112,62 @@ describe('UnitDrawer.drawCounter echelon symbols', () => {
     expect(p5.text).toHaveBeenCalledWith('4-3-2', 100, expect.any(Number));
   });
 });
+
+describe('UnitDrawer.drawCounter defensive fire icon', () => {
+  const createP5Mock = () => ({
+    CENTER: 'CENTER',
+    stroke: jest.fn(),
+    strokeWeight: jest.fn(),
+    fill: jest.fn(),
+    rectMode: jest.fn(),
+    rect: jest.fn(),
+    line: jest.fn(),
+    noStroke: jest.fn(),
+    textSize: jest.fn(),
+    textAlign: jest.fn(),
+    text: jest.fn(),
+  });
+
+  const createUnit = (hasDefensiveFire = true) => ({
+    getFaction: () => ({
+      getCounterColor: () => '#808080',
+    }),
+    getAttack: () => 4,
+    getDefense: () => 3,
+    getMovement: () => 2,
+    getEchelon: () => 'division',
+    hasDefensiveFire: () => hasDefensiveFire,
+  });
+
+  test('draws a borderless inset icon with specified ammo-mark colors and line proportions', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit(), 100, 100);
+
+    const counterSide = 30 * 1.3;
+    const iconSide = counterSide * 0.18;
+    const iconPadding = counterSide * 0.08;
+    const iconX = 100 + counterSide / 2 - iconPadding - iconSide / 2;
+    const iconY = 100 - counterSide / 2 + iconPadding + iconSide / 2;
+
+    expect(p5.rect).toHaveBeenCalledWith(iconX, iconY, iconSide, iconSide);
+
+    expect(p5.noStroke).toHaveBeenCalled();
+    expect(p5.fill).toHaveBeenCalledWith('#2B2B2B');
+    expect(p5.fill).toHaveBeenCalledWith('#FAF9F6');
+  });
+
+
+  test('does not draw the defensive fire icon when unavailable', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit(false), 100, 100);
+
+    const counterSide = 30 * 1.3;
+    const iconSide = counterSide * 0.18;
+    expect(p5.rect).not.toHaveBeenCalledWith(expect.any(Number), expect.any(Number), iconSide, iconSide);
+  });
+});
+

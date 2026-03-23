@@ -2,13 +2,22 @@
 import axios from 'axios';
 import { Menu } from '../../src/menu';
 import { eventBus } from '../../src/event-bus.js';
+import { API_URL } from '../../src/model/battle-api.js';
+import { BoardUpdater } from '../../src/model/board-updater.js';
 
 jest.mock('axios');
 
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
     emit: jest.fn(),
+    on: jest.fn(),
   },
+}));
+
+jest.mock('../../src/model/board-updater.js', () => ({
+  BoardUpdater: jest.fn().mockImplementation(() => ({
+    updateBoard: jest.fn(),
+  })),
 }));
 
 describe('auto new game persistence', () => {
@@ -22,6 +31,7 @@ describe('auto new game persistence', () => {
       <div id="selHexTerrain"></div>
       <h4 id="selHexTerrainHeading"></h4>
       <div id="selHexObjectives"></div>
+      <div id="reactionStatus"></div>
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
       <div id="gameOverLabel"></div>
@@ -32,6 +42,7 @@ describe('auto new game persistence', () => {
       <div id="currentTurnLabel"></div>
       <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
+      <div id="reactionMessages"></div>
       <h3 id="scenarioOverviewHeading"></h3>
       <p id="scenarioOverviewDescription"></p>
       <h4 id="scenarioVictoryHeading"></h4>
@@ -67,6 +78,8 @@ describe('auto new game persistence', () => {
 
   beforeEach(() => {
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
     window.localStorage.clear();
     axios.post.mockReset();
     axios.get.mockReset();
@@ -94,6 +107,26 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('scenarioOverviewDescription').textContent).toBe('Secure all objectives before the turn limit.');
     expect(document.getElementById('scenarioVictoryHeading').style.display).toBe('');
     expect(document.getElementById('scenarioVictoryDescription').textContent).toBe('Control every objective at the end of any turn.');
+  });
+
+  test('shows defensive fire messages from movement-phase reactions', async () => {
+    buildDom();
+
+    new Menu(fakeGame());
+    await flushPromises();
+
+    const defensiveFireListener = eventBus.on.mock.calls.find(
+      ([eventName]) => eventName === 'defensiveFireResolved'
+    )?.[1];
+
+    defensiveFireListener([
+      { message: 'Defensive fire forced the target to retreat to (0, 1).' },
+      { message: 'Defensive fire had no effect.' },
+    ]);
+
+    expect(document.getElementById('reactionStatus').textContent).toBe(
+      'Defensive fire forced the target to retreat to (0, 1). Defensive fire had no effect.'
+    );
   });
 
   test('falls back to scenario id and hides optional sections when details are missing', async () => {
@@ -154,12 +187,16 @@ describe('auto new game persistence', () => {
     const coordsCheckbox = document.getElementById('showHexCoords');
 
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
     coordsCheckbox.checked = false;
     coordsCheckbox.dispatchEvent(new Event('change'));
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', false);
     expect(window.localStorage.getItem('battleHexes.showHexCoords')).toBe('false');
 
     eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
     coordsCheckbox.checked = true;
     coordsCheckbox.dispatchEvent(new Event('change'));
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', true);
@@ -468,6 +505,64 @@ describe('auto new game persistence', () => {
     expect(row.querySelector('.victory-swatch').style.backgroundColor).toBe('rgb(176, 176, 176)');
   });
 
+
+  test('applies authoritative end-movement board updates and defensive fire events', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const updateBoard = jest.fn();
+    BoardUpdater.mockImplementation(() => ({ updateBoard }));
+
+    const unit = { id: 'unit-1' };
+    const board = {
+      sparseBoard: () => ({ units: [{ id: 'unit-1', row: 4, column: 4 }] }),
+      getUnits: () => new Set([unit]),
+      getSelectedHex: () => null,
+      isOwnHexSelected: () => false,
+      hasCombat: () => false,
+    };
+    const game = fakeGame({
+      getCurrentPhase: () => 'Movement',
+      endPhase: () => false,
+      getBoard: () => board,
+    });
+
+    axios.post.mockResolvedValue({
+      data: {
+        sparse_board: {
+          units: [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }],
+        },
+        defensive_fire_events: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
+        scores: { 'Player 1': 2 },
+        turnLimit: 9,
+        turnNumber: 4,
+      },
+    });
+
+    const menu = new Menu(game);
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(updateBoard).toHaveBeenCalledWith(board, [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }], {
+      defensiveFireEvents: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
+    });
+  });
+
+  test('renders defensive fire messages from the event bus hook', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame());
+
+    const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
+    const handler = calls[calls.length - 1][1];
+    handler([{ outcome: 'no_effect', message: 'Defensive fire had no effect.' }]);
+
+    const reactionMessages = document.getElementById('reactionMessages');
+    expect(reactionMessages.textContent).toContain('Defensive fire had no effect.');
+    expect(reactionMessages.style.display).toBe('block');
+  });
+
   test('updates victory points after end of movement response', async () => {
     buildDom();
     history.replaceState(null, '', '/');
@@ -513,6 +608,81 @@ describe('auto new game persistence', () => {
     await flushPromises();
 
     expect(document.querySelector('.victory-score').textContent).toBe('4');
+  });
+
+  test('posts end-turn board state captured before endPhase resets moves', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const preResetPayload = {
+      units: [{ id: 'unit-1', defensive_fire_available: false }],
+    };
+    const postResetPayload = {
+      units: [{ id: 'unit-1', defensive_fire_available: true }],
+    };
+    let movesReset = false;
+    const currentPlayer = {
+      getName: () => 'Player 1',
+      isHuman: () => true,
+      play: jest.fn(),
+    };
+
+    const game = fakeGame({
+      getCurrentPhase: () => 'End Turn',
+      getCurrentPlayer: () => currentPlayer,
+      endPhase: () => {
+        movesReset = true;
+        return true;
+      },
+      getBoard: () => ({
+        sparseBoard: () => (movesReset ? postResetPayload : preResetPayload),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    axios.post.mockResolvedValue({ data: {} });
+
+    const menu = new Menu(game);
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(axios.post).toHaveBeenCalledWith(
+      `${API_URL}/games/game-id/end-turn`,
+      preResetPayload
+    );
+    expect(axios.post).not.toHaveBeenCalledWith(
+      `${API_URL}/games/game-id/end-turn`,
+      postResetPayload
+    );
+  });
+
+  test('redraws immediately after a turn switch so refreshed defensive fire icons are visible', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const game = fakeGame({
+      getCurrentPhase: () => 'End Turn',
+      endPhase: () => true,
+      getBoard: () => ({
+        sparseBoard: () => ({}),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    axios.post.mockResolvedValue({ data: {} });
+
+    const menu = new Menu(game);
+    eventBus.emit.mockClear();
+    eventBus.on.mockClear();
+    BoardUpdater.mockClear();
+
+    menu.doEndPhase();
+
+    expect(eventBus.emit).toHaveBeenCalledWith('redraw');
   });
 
   test('moves turn badge and highlight when current player changes', () => {

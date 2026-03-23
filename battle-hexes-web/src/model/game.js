@@ -46,11 +46,13 @@ export class Game {
     const newPhaseIdx = this.#phases.indexOf(this.#currentPhase) + 1;
     if (newPhaseIdx >= this.#phases.length) {
       this.#currentPhase = this.#phases[0];
-      const wrappedToFirstPlayer = this.#players.nextPlayer() === this.#players.getAllPlayers()[0];
+      const nextPlayer = this.#players.nextPlayer();
+      const wrappedToFirstPlayer = nextPlayer === this.#players.getAllPlayers()[0];
       if (wrappedToFirstPlayer) {
         this.#turnNumber += 1;
       }
-      this.#board.resetMovesRemaining();
+      this.#board.resetMovesRemaining(nextPlayer);
+      this.#board.resetDefensiveFire(nextPlayer);
       return true;
     } else {
       this.#currentPhase = this.#phases[newPhaseIdx];

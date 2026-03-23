@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { API_URL } from './model/battle-api.js';
 import { eventBus } from './event-bus.js';
+import { BoardUpdater } from './model/board-updater.js';
 
 export class Menu {
   #game;
@@ -10,6 +11,7 @@ export class Menu {
   #selHexUnitsHeading;
   #selHexTerrainHeading;
   #selHexObjectivesDiv;
+  #reactionStatusDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -23,6 +25,7 @@ export class Menu {
   #scenarioDetailsRequestId = 0;
   #autoReloadScheduled = false;
   #onNewGameRequested;
+  #reactionMessagesDiv;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
@@ -34,6 +37,7 @@ export class Menu {
     this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
     this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
+    this.#reactionStatusDiv = document.getElementById('reactionStatus');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -43,6 +47,7 @@ export class Menu {
     this.#scenarioOverviewDescription = document.getElementById('scenarioOverviewDescription');
     this.#scenarioVictoryHeading = document.getElementById('scenarioVictoryHeading');
     this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
+    this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
 
@@ -80,6 +85,11 @@ export class Menu {
     });
     this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
+    eventBus.on('defensiveFireResolved', (events) => {
+      this.#showDefensiveFireStatus(events);
+    });
+
+    eventBus.on?.('defensiveFireResolved', (events) => this.#showDefensiveFireEvents(events));
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -210,6 +220,20 @@ export class Menu {
     if (this.#selHexTerrainHeading) {
       this.#selHexTerrainHeading.style.display = displayValue;
     }
+  }
+
+  #showDefensiveFireStatus(events) {
+    if (!this.#reactionStatusDiv) {
+      return;
+    }
+
+    const eventMessages = Array.isArray(events)
+      ? events
+        .map((event) => event?.message)
+        .filter((message) => typeof message === 'string' && message.length > 0)
+      : [];
+
+    this.#reactionStatusDiv.textContent = eventMessages.join(' ');
   }
 
   #formatSelectedHexUnits(selectedHex) {
@@ -362,27 +386,29 @@ export class Menu {
 
   #finishPhase() {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
+
+    const endTurnPayload = this.#game.getCurrentPhase().toLowerCase() === 'end turn'
+      ? this.#game.getBoard().sparseBoard()
+      : null;
+
     if (this.#game.getCurrentPhase().toLowerCase() === 'movement') {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-movement`,
         this.#game.getBoard().sparseBoard()
       ).then((response) => {
-        this.#game.updateScores?.(response?.data?.scores);
-        this.#game.updateTurnState?.({
-          turnLimit: response?.data?.turnLimit,
-          turnNumber: response?.data?.turnNumber,
-        });
+        this.#applyMovementResponse(response?.data);
         this.updateMenu();
       }).catch(err => console.error('Failed to update movement state', err));
     }
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();
+    eventBus.emit('redraw');
     this.#disableOrEnableActionButton();
 
     if (switchedPlayers) {
       axios.post(
         `${API_URL}/games/${this.#game.getId()}/end-turn`,
-        this.#game.getBoard().sparseBoard()
+        endTurnPayload
       ).then((response) => {
         this.#game.updateScores?.(response?.data?.scores);
         this.#game.updateTurnState?.({
@@ -428,6 +454,36 @@ export class Menu {
   #postCombat() {
     console.log('Combat phase is over.')
     // TODO: update the menu area of the UI to show the results of the combat
+  }
+
+  #applyMovementResponse(responseData) {
+    const safeUnits = responseData?.sparse_board?.units ?? responseData?.game?.board?.units ?? [];
+    new BoardUpdater().updateBoard(this.#game.getBoard(), safeUnits, {
+      defensiveFireEvents: responseData?.defensive_fire_events ?? [],
+    });
+
+    this.#game.updateScores?.(responseData?.scores);
+    this.#game.updateTurnState?.({
+      turnLimit: responseData?.turnLimit,
+      turnNumber: responseData?.turnNumber,
+    });
+  }
+
+  #showDefensiveFireEvents(events = []) {
+    if (!this.#reactionMessagesDiv) {
+      return;
+    }
+
+    if (!Array.isArray(events) || events.length === 0) {
+      this.#reactionMessagesDiv.innerHTML = '';
+      this.#reactionMessagesDiv.style.display = 'none';
+      return;
+    }
+
+    this.#reactionMessagesDiv.innerHTML = events
+      .map((event) => `<div class="reaction-message reaction-message--${event.outcome ?? 'info'}">${event.message ?? 'Defensive fire resolved.'}</div>`)
+      .join('');
+    this.#reactionMessagesDiv.style.display = 'block';
   }
 
   #setCurrentTurn() {

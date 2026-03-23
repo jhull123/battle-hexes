@@ -119,8 +119,16 @@ export class GameCreator {
     for (let unitData of boardData.units) {
       const faction = factionMap.get(unitData.faction_id);
       const unit = new Unit(
-        unitData.id, unitData.name, faction, unitData.type, unitData.attack, 
-        unitData.defense, unitData.move, unitData.echelon);
+        unitData.id,
+        unitData.name,
+        faction,
+        unitData.type,
+        unitData.attack,
+        unitData.defense,
+        unitData.move,
+        unitData.echelon,
+        unitData.defensive_fire_available ?? true,
+      );
       board.addUnit(unit, unitData.row, unitData.column);
     }
   }

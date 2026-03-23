@@ -1,5 +1,6 @@
 import { Hex } from './hex.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
+import { eventBus } from '../event-bus.js';
 
 export class Board {
   #hexMap;
@@ -11,6 +12,8 @@ export class Board {
   #animator;
   #rows;
   #columns;
+  #movementHandler;
+  #movementInProgress = false;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
@@ -61,6 +64,10 @@ export class Board {
     return this.#rows;
   }
 
+  setMovementHandler(handler) {
+    this.#movementHandler = handler;
+  }
+
   getColumns() {
     return this.#columns;
   }
@@ -79,6 +86,7 @@ export class Board {
 
   selectHex(hexToSelect) {
     if (hexToSelect === this.#selectedHex) return;
+    if (this.#movementInProgress) return;
     
     const oldSelection = this.#selectedHex;
 
@@ -93,7 +101,7 @@ export class Board {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       const path = [oldSelection, hexToSelect];
-      this.#animator.animate(units[0], path, true);
+      this.#resolveMovement(units[0], path);
       oldSelection.setSelected(false);
       hexToSelect.setSelected(true);
       this.setHoverHex(undefined);
@@ -105,6 +113,43 @@ export class Board {
     if (hexToSelect) this.#selectedHex.setSelected(true);
     
     return oldSelection;
+  }
+
+  async #resolveMovement(unit, path) {
+    this.#movementInProgress = true;
+    const movementSnapshot = unit.createMovementSnapshot();
+
+    try {
+      await this.#animator.animate(unit, path, true);
+      if (this.#movementHandler) {
+        await this.#movementHandler({ unit, path });
+      }
+    } catch (error) {
+      this.#rollbackMovement(unit, path, movementSnapshot);
+      console.error('Failed to resolve movement.', error);
+    } finally {
+      this.#movementInProgress = false;
+      eventBus.emit('menuUpdate');
+    }
+  }
+
+  #rollbackMovement(unit, path, movementSnapshot) {
+    const startingHex = path[0];
+    const endingHex = path[path.length - 1];
+    const currentHex = unit.getContainingHex();
+
+    this.updateUnitPosition(unit, currentHex, startingHex);
+    unit.restoreMovementSnapshot(movementSnapshot);
+    this.refreshCombat();
+
+    if (this.#selectedHex === endingHex) {
+      endingHex?.setSelected(false);
+      this.#selectedHex = startingHex;
+      startingHex?.setSelected(true);
+    }
+
+    this.setHoverHex(undefined);
+    eventBus.emit('redraw');
   }
 
   moveUnit(unit, oldHex, newHex) {
@@ -205,9 +250,20 @@ export class Board {
     return this.#selectedHex;
   }
 
-  resetMovesRemaining() {
+  resetMovesRemaining(player = null) {
     for (let unit of this.#units) {
-      unit.resetMovesRemaining();
+      if (!player || unit.isOwnedBy(player)) {
+        unit.resetMovesRemaining();
+      }
+    }
+  }
+
+  resetDefensiveFire(player = null) {
+    console.log("Resetting defensive fire for " + player.getName());
+    for (let unit of this.#units) {
+      if (!player || unit.isOwnedBy(player)) {
+        unit.resetDefensiveFire();
+      }
     }
   }
 
@@ -269,7 +325,12 @@ export class Board {
     const sparseUnits = [];
     for (let unit of this.getUnits()) {
       let unitHex = unit.getContainingHex();
-      sparseUnits.push({id: unit.getId(), row: unitHex.getRow(), column: unitHex.getColumn()})
+      sparseUnits.push({
+        id: unit.getId(),
+        row: unitHex.getRow(),
+        column: unitHex.getColumn(),
+        defensive_fire_available: unit.hasDefensiveFire(),
+      })
     }
     return {
       units: sparseUnits

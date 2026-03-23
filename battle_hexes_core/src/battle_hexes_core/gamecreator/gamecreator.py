@@ -87,6 +87,7 @@ class GameCreator:
             turn_limit=scenario_obj.turn_limit,
         )
         game.victory = scenario_obj.victory
+        game.set_defensive_fire_settings(scenario_obj.defensive_fire)
 
         # Persist the original configuration on the ``Game`` instance so the
         # API can expose it when clients fetch the game later.  This allows
@@ -132,7 +133,12 @@ class GameCreator:
     ) -> dict[str, Terrain]:
         """Build Terrain instances keyed by their scenario terrain name."""
         return {
-            name: Terrain(name, terrain.color, terrain.move_cost)
+            name: Terrain(
+                name,
+                terrain.color,
+                terrain.move_cost,
+                terrain.defensive_fire_modifier,
+            )
             for name, terrain in scenario.terrain_types.items()
         }
 
@@ -259,6 +265,9 @@ class GameCreator:
                     unit_data.defense,
                     unit_data.movement,
                     echelon=unit_data.echelon,
+                )
+                unit.defensive_fire_modifier = (
+                    unit_data.defensive_fire_modifier
                 )
 
                 board.add_unit(unit, row, column)

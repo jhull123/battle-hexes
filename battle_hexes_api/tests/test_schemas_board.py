@@ -5,6 +5,7 @@ from battle_hexes_api.schemas import (
     SparseBoard,
 )
 from battle_hexes_core.game.board import Board
+from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioTerrainType
@@ -83,6 +84,78 @@ class TestSparseBoard(unittest.TestCase):
         # Verify unit positions were updated
         self.assertEqual(self.red_unit.get_coords(), (2, 3))
         self.assertEqual(self.blue_unit.get_coords(), (3, 2))
+
+    def test_update_board_tracks_movement_points_for_moved_unit(self):
+        self.board.add_unit(self.red_unit, 0, 4)
+
+        sparse_board_data = {
+            "units": [
+                {
+                    "id": str(self.red_unit.get_id()),
+                    "row": 1,
+                    "column": 4,
+                },
+            ]
+        }
+
+        SparseBoard(**sparse_board_data).apply_to_board(self.board)
+
+        self.assertEqual(
+            5,
+            self.red_unit.current_turn_movement_points_remaining,
+        )
+
+    def test_update_board_ignores_public_defensive_fire_flag(self):
+        self.board.add_unit(self.red_unit, 0, 4)
+        self.red_unit.record_friendly_turn_end(3, self.blue_player)
+        self.red_unit.record_forced_retreat(self.blue_player)
+
+        sparse_board_data = {
+            "units": [
+                {
+                    "id": str(self.red_unit.get_id()),
+                    "row": 0,
+                    "column": 4,
+                    "defensive_fire_available": True,
+                },
+            ]
+        }
+
+        SparseBoard(**sparse_board_data).apply_to_board(self.board)
+
+        self.assertTrue(
+            self.red_unit.forced_to_retreat_since_last_friendly_turn
+        )
+        self.assertFalse(self.red_unit.has_defensive_fire(self.blue_player))
+
+    def test_to_movement_plans_creates_plan_for_each_moved_unit(self):
+        self.board.add_unit(self.red_unit, 0, 4)
+        self.board.add_unit(self.blue_unit, 4, 0)
+
+        sparse_board_data = {
+            "units": [
+                {
+                    "id": str(self.red_unit.get_id()),
+                    "row": 1,
+                    "column": 4,
+                },
+                {
+                    "id": str(self.blue_unit.get_id()),
+                    "row": 4,
+                    "column": 0,
+                },
+            ]
+        }
+
+        plans = SparseBoard(**sparse_board_data).to_movement_plans(self.board)
+
+        self.assertEqual(len(plans), 1)
+        self.assertIsInstance(plans[0], UnitMovementPlan)
+        self.assertEqual(plans[0].unit, self.red_unit)
+        self.assertEqual(
+            [(hex_.row, hex_.column) for hex_ in plans[0].path],
+            [(0, 4), (1, 4)],
+        )
 
 
 class TestBoardModel(unittest.TestCase):

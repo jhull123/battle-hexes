@@ -1,9 +1,9 @@
 import { playerTypes, Player } from './player.js';
 import axios from 'axios';
 import { API_URL } from '../model/battle-api.js';
-import { BoardUpdater } from '../model/board-updater.js';
 import { eventBus } from '../event-bus.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
+import { applyMovementResponse } from '../model/movement-response-handler.js';
 
 export class CpuPlayer extends Player {
   static PHASE_DELAY_MS = 333;
@@ -39,11 +39,7 @@ export class CpuPlayer extends Player {
           }
         }
 
-        const boardUpdater = new BoardUpdater();
-        boardUpdater.updateBoard(
-          game.getBoard(),
-          response.data.game.board.units
-        );
+        applyMovementResponse(game.getBoard(), response.data);
 
         await axios.post(
           `${API_URL}/games/${game.getId()}/end-movement`,
@@ -51,6 +47,7 @@ export class CpuPlayer extends Player {
         );
 
         game.endPhase();
+        eventBus.emit('redraw');
         eventBus.emit('menuUpdate');
 
         return this.play(game);
@@ -62,6 +59,7 @@ export class CpuPlayer extends Player {
         await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
         await game.resolveCombat();
         game.endPhase();
+        eventBus.emit('redraw');
         eventBus.emit('menuUpdate');
 
         return this.play(game);
@@ -85,6 +83,7 @@ export class CpuPlayer extends Player {
         });
       }
       game.endPhase();
+      eventBus.emit('redraw');
       eventBus.emit('menuUpdate');
       if (!game.isGameOver()) {
         game.getCurrentPlayer().play(game);

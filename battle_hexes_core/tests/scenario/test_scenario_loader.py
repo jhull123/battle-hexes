@@ -41,6 +41,18 @@ def test_load_scenario_data_reads_optional_unit_echelon():
     assert scenario.units[0].echelon == "platoon"
 
 
+def test_load_scenario_data_reads_unit_defensive_fire_modifier():
+    scenario = load_scenario_data(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    feldwache = next(
+        unit for unit in scenario.units if unit.id == "Crossroads Feldwache"
+    )
+
+    assert feldwache.defensive_fire_modifier == 0.5
+
+
 def test_load_scenario_data_reads_victory_block():
     scenario = load_scenario_data(
         "d_day_crossroads", scenario_dir=_scenario_dir()
@@ -166,3 +178,15 @@ def test_load_scenario_with_turn_limit():
     scenario = load_scenario("d_day_crossroads", scenario_dir=_scenario_dir())
 
     assert scenario.turn_limit == 8
+
+
+def test_load_scenario_maps_unit_defensive_fire_modifier_to_core_type():
+    scenario = load_scenario(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    feldwache = next(
+        unit for unit in scenario.units if unit.id == "Crossroads Feldwache"
+    )
+
+    assert feldwache.defensive_fire_modifier == 0.5

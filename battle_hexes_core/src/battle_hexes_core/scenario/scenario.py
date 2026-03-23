@@ -30,6 +30,7 @@ class ScenarioUnit:
     defense: int
     movement: int
     echelon: str | None = None
+    defensive_fire_modifier: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,7 @@ class ScenarioTerrainType:
 
     color: str
     move_cost: int = 1
+    defensive_fire_modifier: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -77,6 +79,13 @@ class ScenarioVictory:
 
 
 @dataclass(frozen=True)
+class DefensiveFireConfig:
+    base_probability: float
+    minimum: float
+    maximum: float
+
+
+@dataclass(frozen=True)
 class Scenario:
     """Container for the data required to configure a game scenario."""
 
@@ -93,3 +102,4 @@ class Scenario:
     road_types: dict[str, ScenarioRoadType] = field(default_factory=dict)
     roads: tuple[ScenarioRoad, ...] = field(default_factory=tuple)
     hex_data: tuple[ScenarioHexData, ...] = field(default_factory=tuple)
+    defensive_fire: DefensiveFireConfig | None = None

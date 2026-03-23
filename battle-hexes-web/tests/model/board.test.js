@@ -1,7 +1,7 @@
 import { MovementAnimator } from '../../src/animation/movement-animator.js';
 jest.mock('../../src/animation/movement-animator.js', () => ({
   MovementAnimator: jest.fn().mockImplementation(() => ({
-    animate: jest.fn(),
+    animate: jest.fn().mockResolvedValue(),
   })),
 }));
 
@@ -116,6 +116,59 @@ describe('animator integration', () => {
     expect(animatorInstance.animate).toHaveBeenCalledWith(unit, [start, end], true);
   });
 
+  test('selectHex resolves movement during the movement phase', async () => {
+    const player = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00')];
+    factions[0].setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.setPlayers({ getCurrentPlayer: () => player });
+    const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
+    board.addUnit(unit, 0, 0);
+    const movementHandler = jest.fn().mockResolvedValue();
+    board.setMovementHandler(movementHandler);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+
+    board.selectHex(start);
+    board.selectHex(end);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(movementHandler).toHaveBeenCalledWith({
+      unit,
+      path: [start, end],
+    });
+  });
+
+
+
+  test('selectHex rolls back local movement when the movement handler fails', async () => {
+    const player = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00')];
+    factions[0].setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.setPlayers({ getCurrentPlayer: () => player });
+    const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 2);
+    board.addUnit(unit, 0, 0);
+    const movementHandler = jest.fn().mockRejectedValue(new Error('network'));
+    board.setMovementHandler(movementHandler);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+
+    board.selectHex(start);
+    board.selectHex(end);
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(unit.getContainingHex()).toBe(start);
+    expect(start.getUnits()).toContain(unit);
+    expect(end.getUnits()).not.toContain(unit);
+    expect(unit.getMovesRemaining()).toBe(2);
+    expect(board.getSelectedHex()).toBe(start);
+  });
 
   test('selectHex does not animate movement when destination terrain cost is unaffordable', () => {
     const player = { isHuman: () => true };

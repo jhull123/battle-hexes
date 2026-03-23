@@ -106,6 +106,10 @@ class Board:
     def get_units(self) -> List[Unit]:
         return list(self.units.values())
 
+    def get_units_for_player(self, player) -> List[Unit]:
+        """Return all board units owned by ``player``."""
+        return [unit for unit in self.get_units() if player.owns(unit)]
+
     def get_unit_at(self, row: int, column: int) -> Unit | None:
         """Return the unit occupying ``(row, column)`` if one exists."""
         for unit in self.units.values():
