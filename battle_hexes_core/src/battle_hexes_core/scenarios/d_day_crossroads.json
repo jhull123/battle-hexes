@@ -9,7 +9,7 @@
     "scoring_side": "Airborne"
   },
   "defensive_fire": {
-    "base_probability": 0.30,
+    "base_probability": 0.25,
     "minimum": 0.05,
     "maximum": 0.90
   },
@@ -139,7 +139,7 @@
       "attack": 1,
       "defense": 1,
       "movement": 0,
-      "defensive_fire_modifier": 0.67
+      "defensive_fire_modifier": 0.50
     },
     {
       "id": "MG Trupp A",
@@ -183,10 +183,12 @@
     }
   },
   "hex_data": [
+    { "coords": [0, 0], "terrain": "rough" },
     { "coords": [0, 8], "terrain": "forest" },
     { "coords": [0, 9], "terrain": "forest" },
     { "coords": [0, 10], "terrain": "forest" },
     { "coords": [0, 11], "terrain": "rough" },
+    { "coords": [0, 12], "terrain": "forest" },
     { "coords": [0, 15], "terrain": "forest" },
     { 
       "coords": [0, 16], 
@@ -196,12 +198,17 @@
       ] 
     },
     { "coords": [0, 17], "terrain": "forest" },
+    { "coords": [1, 0], "terrain": "rough" },
+    { "coords": [1, 7], "terrain": "forest" },
     { "coords": [1, 16] },
     {
       "coords": [2, 3], 
       "terrain": "village",
       "units": ["B / Inf. Zug"]
     },
+    { "coords": [2, 8], "terrain": "forest" },
+    { "coords": [2, 10], "terrain": "forest" },
+    { "coords": [3, 9], "terrain": "forest" },
     {
       "coords": [3, 15],
       "terrain": "village",
