@@ -50,7 +50,7 @@ def test_load_scenario_data_reads_unit_defensive_fire_modifier():
         unit for unit in scenario.units if unit.id == "Crossroads Feldwache"
     )
 
-    assert feldwache.defensive_fire_modifier == 0.67
+    assert feldwache.defensive_fire_modifier == 0.5
 
 
 def test_load_scenario_data_reads_victory_block():
@@ -189,4 +189,4 @@ def test_load_scenario_maps_unit_defensive_fire_modifier_to_core_type():
         unit for unit in scenario.units if unit.id == "Crossroads Feldwache"
     )
 
-    assert feldwache.defensive_fire_modifier == 0.67
+    assert feldwache.defensive_fire_modifier == 0.5
