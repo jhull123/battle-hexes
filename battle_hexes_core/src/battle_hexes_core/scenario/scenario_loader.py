@@ -63,6 +63,7 @@ class ScenarioUnitData(BaseModel):
     attack: int
     defense: int
     movement: int
+    defensive_fire_modifier: float = 1.0
 
 
 class DefensiveFireConfigData(BaseModel):
@@ -231,6 +232,7 @@ class ScenarioData(BaseModel):
                 attack=unit.attack,
                 defense=unit.defense,
                 movement=unit.movement,
+                defensive_fire_modifier=unit.defensive_fire_modifier,
             )
             for unit in self.units
         )

@@ -164,6 +164,7 @@ class TestGameCreator(unittest.TestCase):
                     defense=2,
                     movement=5,
                     echelon="platoon",
+                    defensive_fire_modifier=0.67,
                 ),
             ),
             hex_data=(
@@ -188,6 +189,7 @@ class TestGameCreator(unittest.TestCase):
         self.assertIs(unit.player, player1)
         self.assertEqual(player1.factions[0].id, unit.get_faction().id)
         self.assertEqual(unit.echelon, "platoon")
+        self.assertEqual(unit.defensive_fire_modifier, 0.67)
 
     def test_add_units_raises_for_unknown_faction(self):
         scenario = Scenario(

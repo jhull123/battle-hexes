@@ -30,6 +30,7 @@ class ScenarioUnit:
     defense: int
     movement: int
     echelon: str | None = None
+    defensive_fire_modifier: float = 1.0
 
 
 @dataclass(frozen=True)

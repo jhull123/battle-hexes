@@ -266,6 +266,9 @@ class GameCreator:
                     unit_data.movement,
                     echelon=unit_data.echelon,
                 )
+                unit.defensive_fire_modifier = (
+                    unit_data.defensive_fire_modifier
+                )
 
                 board.add_unit(unit, row, column)
 
