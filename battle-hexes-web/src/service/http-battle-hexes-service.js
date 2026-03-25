@@ -12,7 +12,14 @@ export class HttpBattleHexesService extends BattleHexesService {
     super();
     this.#apiBaseUrl = apiBaseUrl;
     this.#logServerResponses = logServerResponses;
-    this.fetchImpl = fetchImpl;
+
+    // In browsers, fetch is a host method that must be called with the global object
+    // as `this`; keep it bound to avoid "Illegal invocation" errors.
+    if (fetchImpl === fetch || fetchImpl === globalThis.fetch) {
+      this.fetchImpl = fetchImpl.bind(globalThis);
+    } else {
+      this.fetchImpl = fetchImpl;
+    }
   }
 
   async #get(path, methodName) {

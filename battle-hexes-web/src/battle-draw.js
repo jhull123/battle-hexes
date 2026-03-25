@@ -23,7 +23,6 @@ import {
 } from './model/game-loader.js';
 
 const gameData = await loadGameData();
-console.log('game data: ' + JSON.stringify(gameData));
 
 new p5((p) => {
   const hexRadius = 42;

@@ -42,4 +42,26 @@ describe('HttpBattleHexesService server response logging', () => {
 
     consoleInfoSpy.mockRestore();
   });
+
+  test('binds global fetch to avoid Illegal invocation', async () => {
+    const globalFetch = jest.fn(function () {
+      if (this === undefined) {
+        throw new Error('unbound fetch called with undefined this');
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ id: 'scenario-1', name: 'Scenario 1' }),
+      });
+    });
+
+    const service = new HttpBattleHexesService({
+      apiBaseUrl: 'http://localhost:8000',
+      fetchImpl: globalFetch,
+      logServerResponses: false,
+    });
+
+    await service.listScenarios();
+
+    expect(globalFetch).toHaveBeenCalled();
+  });
 });
