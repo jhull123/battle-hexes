@@ -1,12 +1,12 @@
 # AGENTS.md — Battle Hexes Web
 
-When making code changes in this web project, run:
+When making code changes in this web project, run the following to ensure the build and tests are successfull:
 
 ```bash
 npm run test-and-build
 ```
 
-When validating changes that do not require a live backend, prefer the offline mock-service mode:
+When validating changes that do not require a live backend (especially screen shots), prefer the offline mock-service mode:
 
 ```bash
 npm run build:mock
