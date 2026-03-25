@@ -1,4 +1,5 @@
 import { BattleHexesService } from './battle-hexes-service.js';
+import getGameResponse from './mock-responses/get-game.json';
 
 const MOCK_SCENARIOS = [
   {
@@ -43,16 +44,8 @@ export class MockBattleHexesService extends BattleHexesService {
 
   getGame(gameId) {
     console.log('Returning mock response for getGame.');
-    return Promise.resolve({
-      id: gameId || 'mock-game',
-      phases: ['Movement', 'Combat', 'End Turn'],
-      currentPhase: 'Movement',
-      players: [],
-      board: { rows: 1, columns: 1, hexes: [], units: [], roads: [] },
-      scores: {},
-      turnNumber: 1,
-      turnLimit: null,
-    });
+    void gameId;
+    return Promise.resolve(JSON.parse(JSON.stringify(getGameResponse)));
   }
 
   resolveHumanMove() {
