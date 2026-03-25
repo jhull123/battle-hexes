@@ -35,6 +35,29 @@ After building, open `dist/index.html` to view the title screen. The game board
 is now served from `dist/battle.html`, which you can reach via the "Enter
 Battle" button on the landing page or by navigating directly to the file.
 
+### Service Modes (HTTP vs Mock)
+
+The frontend supports two backend service modes:
+
+- `http` (default): uses `HttpBattleHexesService` and calls the backend API.
+- `mock`: uses `MockBattleHexesService` and returns local placeholder payloads
+  so you can run the UI without a backend.
+
+`API_URL` is used by `http` mode. It can still be set in `mock` mode for
+convenience, but mock mode does not call the backend.
+
+Run with the real backend (http://localhost:8000):
+
+    npm run build
+
+Run offline with the mock service:
+
+    npm run build:mock
+
+Or:
+
+    npm run build -- --env BATTLE_HEXES_SERVICE_MODE=mock
+
 ### Lint, Test, and Build
 
     npm run test-and-build
@@ -63,4 +86,3 @@ aws cloudformation deploy \
 
 After the stack completes, the site will be served from your specified
 domain using HTTPS.
-

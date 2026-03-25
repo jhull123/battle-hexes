@@ -6,6 +6,16 @@ import { jest } from '@jest/globals';
 
 jest.mock('p5', () => jest.fn());
 
+const mockService = {
+  listScenarios: jest.fn(),
+  listPlayerTypes: jest.fn(),
+  createGame: jest.fn(),
+};
+
+jest.mock('../../src/service/service-factory.js', () => ({
+  battleHexesService: mockService,
+}));
+
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 const originalLocation = window.location;
 
@@ -22,6 +32,12 @@ describe('title screen interactions', () => {
         <button id="enter-battle-button">Enter Battle</button>
       </main>
     `;
+
+    mockService.listScenarios.mockResolvedValue([{ id: 'elim_1', name: 'Scenario 1' }]);
+    mockService.listPlayerTypes.mockResolvedValue([
+      { id: 'human', name: 'Human' },
+      { id: 'random', name: 'Random' },
+    ]);
   });
 
   afterEach(() => {
@@ -29,44 +45,18 @@ describe('title screen interactions', () => {
     jest.clearAllMocks();
     delete window.location;
     window.location = originalLocation;
-    delete global.fetch;
   });
 
   test('creates a game and redirects to battle page', async () => {
-    const fetchImpl = jest.fn((url) => {
-      if (url.endsWith('/scenarios')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [{ id: 'elim_1', name: 'Scenario 1' }],
-        });
-      }
-      if (url.endsWith('/player-types')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [
-            { id: 'human', name: 'Human' },
-            { id: 'random', name: 'Random' },
-          ],
-        });
-      }
-      if (url.endsWith('/games')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ id: 'game-123' }),
-        });
-      }
-      throw new Error(`Unexpected URL ${url}`);
-    });
+    mockService.createGame.mockResolvedValue({ id: 'game-123' });
     delete window.location;
     window.location = {
       assign: jest.fn(),
       pathname: '/',
       search: '',
     };
-    global.fetch = fetchImpl;
 
     await import('../../src/title-screen.js');
-
     await flushPromises();
 
     document.getElementById('scenario-select').value = 'elim_1';
@@ -76,10 +66,7 @@ describe('title screen interactions', () => {
     document.getElementById('enter-battle-button').click();
     await flushPromises();
 
-    const createGameCall = fetchImpl.mock.calls.find(([url]) => url.endsWith('/games'));
-    expect(createGameCall).toBeTruthy();
-    const [, options] = createGameCall;
-    expect(JSON.parse(options.body)).toEqual({
+    expect(mockService.createGame).toHaveBeenCalledWith({
       scenarioId: 'elim_1',
       playerTypes: ['human', 'random'],
     });
@@ -87,34 +74,15 @@ describe('title screen interactions', () => {
   });
 
   test('shows error message when game creation fails', async () => {
-    const fetchImpl = jest.fn((url) => {
-      if (url.endsWith('/scenarios')) {
-        return Promise.resolve({ ok: true, json: async () => [{ id: 'elim_1', name: 'Scenario' }] });
-      }
-      if (url.endsWith('/player-types')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [
-            { id: 'human', name: 'Human' },
-            { id: 'random', name: 'Random' },
-          ],
-        });
-      }
-      if (url.endsWith('/games')) {
-        return Promise.resolve({ ok: false, status: 500 });
-      }
-      throw new Error(`Unexpected URL ${url}`);
-    });
+    mockService.createGame.mockRejectedValue(new Error('failed'));
     delete window.location;
     window.location = {
       assign: jest.fn(),
       pathname: '/',
       search: '',
     };
-    global.fetch = fetchImpl;
 
     await import('../../src/title-screen.js');
-
     await flushPromises();
 
     document.getElementById('scenario-select').value = 'elim_1';

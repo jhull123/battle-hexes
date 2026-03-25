@@ -37,16 +37,14 @@ describe('title screen scenario helpers', () => {
       { id: 'alpha', name: 'Alpha Strike' },
       { id: 'beta', name: 'Beta Shield' },
     ];
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => scenarios,
-    });
+    const service = {
+      listScenarios: jest.fn().mockResolvedValue(scenarios),
+    };
 
     const loadPromise = loadScenarios({
       selectElement,
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
     });
 
     expect(statusElement.textContent).toBe(LOADING_MESSAGE);
@@ -60,16 +58,14 @@ describe('title screen scenario helpers', () => {
   });
 
   test('loadScenarios handles empty response', async () => {
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    });
+    const service = {
+      listScenarios: jest.fn().mockResolvedValue([]),
+    };
 
     const result = await loadScenarios({
       selectElement,
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
     });
 
     expect(result).toEqual([]);
@@ -80,16 +76,14 @@ describe('title screen scenario helpers', () => {
 
   test('loadScenarios handles failed request', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-    });
+    const service = {
+      listScenarios: jest.fn().mockRejectedValue(new Error('500')),
+    };
 
     const result = await loadScenarios({
       selectElement,
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
     });
 
     expect(result).toEqual([]);

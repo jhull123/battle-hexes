@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { MovementAnimator } from '../../src/animation/movement-animator.js';
 jest.mock('../../src/animation/movement-animator.js', () => ({
   MovementAnimator: jest.fn().mockImplementation(() => ({
@@ -10,11 +9,9 @@ import { Game } from '../../src/model/game.js';
 import { Board } from '../../src/model/board.js';
 import { Unit } from '../../src/model/unit.js';
 import { Player, Players } from '../../src/player/player.js';
-import { API_URL } from '../../src/model/battle-api.js';
 import { BoardUpdater } from '../../src/model/board-updater.js';
 import { eventBus } from '../../src/event-bus.js';
 
-jest.mock('axios');
 const mockUpdateBoard = jest.fn();
 jest.mock('../../src/model/board-updater.js', () => ({
   BoardUpdater: jest.fn().mockImplementation(() => ({
@@ -27,22 +24,36 @@ jest.mock('../../src/event-bus.js', () => ({
   },
 }));
 
+const mockService = {
+  generateCpuMovement: jest.fn(),
+  endMovement: jest.fn(),
+  endTurn: jest.fn(),
+};
+
 describe('CpuPlayer', () => {
   let cpuPlayer;
   let game;
 
   beforeEach(() => {
-    axios.post.mockClear();
-    axios.post.mockResolvedValue({ data: { game: { board: { units: [] } }, plans: [] } });
+    mockService.generateCpuMovement.mockReset();
+    mockService.endMovement.mockReset();
+    mockService.endTurn.mockReset();
+    mockService.generateCpuMovement.mockResolvedValue({ game: { board: { units: [] } }, plans: [] });
+    mockService.endMovement.mockResolvedValue({});
+    mockService.endTurn.mockResolvedValue({});
     mockUpdateBoard.mockClear();
     MovementAnimator.mockClear();
     eventBus.emit.mockClear();
-    cpuPlayer = new CpuPlayer('CPU');
+    cpuPlayer = new CpuPlayer('CPU', undefined, { service: mockService });
     const board = new Board(1, 1);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
     game = new Game('game-1', ['Movement', 'Combat', 'End Turn'], players, board);
     jest.spyOn(game, 'isGameOver').mockReturnValue(false);
   });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
 
   test('calls movement endpoint during movement phase and advances phase based on combat', async () => {
     jest.useFakeTimers();
@@ -55,9 +66,9 @@ describe('CpuPlayer', () => {
     // Movement phase: after 2s, axios.post for movement
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
-    expect(axios.post).toHaveBeenCalledWith(`${API_URL}/games/${game.getId()}/movement`);
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-movement`,
+    expect(mockService.generateCpuMovement).toHaveBeenCalledWith(game.getId());
+    expect(mockService.endMovement).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
     expect(mockUpdateBoard).toHaveBeenCalledWith(game.getBoard(), []);
@@ -70,8 +81,8 @@ describe('CpuPlayer', () => {
     // End Turn phase: after 2s, axios.post for end-turn
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-turn`,
+    expect(mockService.endTurn).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
 
@@ -90,20 +101,19 @@ describe('CpuPlayer', () => {
     // Movement phase: after 2s, axios.post for movement
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/movement`
-    );
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-movement`,
+    expect(mockService.generateCpuMovement).toHaveBeenCalledWith(game.getId());
+    expect(mockService.endMovement).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
-    expect(axios.post).toHaveBeenCalledTimes(2);
+    expect(mockService.generateCpuMovement).toHaveBeenCalledTimes(1);
+    expect(mockService.endMovement).toHaveBeenCalledTimes(1);
 
     // End Turn phase: after 2s, axios.post for end-turn
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-turn`,
+    expect(mockService.endTurn).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
     await playPromise;
@@ -128,8 +138,8 @@ describe('CpuPlayer', () => {
     // End Turn phase: after 2s, axios.post for end-turn
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-turn`,
+    expect(mockService.endTurn).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
     await playPromise;
@@ -148,14 +158,14 @@ describe('CpuPlayer', () => {
     const updateScoresSpy = jest.spyOn(game, 'updateScores');
     const updateTurnStateSpy = jest.spyOn(game, 'updateTurnState');
 
-    axios.post.mockRejectedValueOnce(new Error('network down'));
+    mockService.endTurn.mockRejectedValueOnce(new Error('network down'));
 
     const playPromise = cpuPlayer.play(game);
     await jest.runOnlyPendingTimersAsync();
     await playPromise;
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-turn`,
+    expect(mockService.endTurn).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
     expect(updateScoresSpy).not.toHaveBeenCalled();
@@ -170,16 +180,14 @@ describe('CpuPlayer', () => {
     jest.spyOn(game, 'isGameOver').mockReturnValue(false);
     const unit = new Unit('unit-001');
     board.addUnit(unit, 0, 0);
-    axios.post.mockResolvedValueOnce({
-      data: {
-        game: { board: { units: [] } },
-        plans: [
-          {
-            unit_id: 'unit-001',
-            path: [ { row: 0, column: 0 }, { row: 0, column: 1 } ]
-          }
-        ]
-      }
+    mockService.generateCpuMovement.mockResolvedValueOnce({
+      game: { board: { units: [] } },
+      plans: [
+        {
+          unit_id: 'unit-001',
+          path: [ { row: 0, column: 0 }, { row: 0, column: 1 } ],
+        },
+      ],
     });
 
     const playPromise = cpuPlayer.play(game);
@@ -201,7 +209,9 @@ describe('CpuPlayer', () => {
 
     await cpuPlayer.play(game);
 
-    expect(axios.post).not.toHaveBeenCalled();
+    expect(mockService.generateCpuMovement).not.toHaveBeenCalled();
+    expect(mockService.endMovement).not.toHaveBeenCalled();
+    expect(mockService.endTurn).not.toHaveBeenCalled();
   });
 
   test('emits redraw after ending turn so defensive fire icons refresh for the next player', async () => {
@@ -231,11 +241,9 @@ describe('CpuPlayer', () => {
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/movement`
-    );
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/${game.getId()}/end-movement`,
+    expect(mockService.generateCpuMovement).toHaveBeenCalledWith(game.getId());
+    expect(mockService.endMovement).toHaveBeenCalledWith(
+      game.getId(),
       game.getBoard().sparseBoard()
     );
 
@@ -244,6 +252,7 @@ describe('CpuPlayer', () => {
 
     await playPromise;
 
-    expect(axios.post).toHaveBeenCalledTimes(2);
+    expect(mockService.generateCpuMovement).toHaveBeenCalledTimes(1);
+    expect(mockService.endMovement).toHaveBeenCalledTimes(1);
   });
 });

@@ -13,7 +13,7 @@ import { Menu } from './menu.js';
 import { getCanvasDimensions } from './drawer/canvas-dimensions.js';
 import './styles/menu.css';
 import { GameCreator } from './model/game-creator.js';
-import { API_URL } from './model/battle-api.js';
+import { battleHexesService } from './service/service-factory.js';
 import { applyMovementResponse } from './model/movement-response-handler.js';
 import {
   getLastLoadedConfig,
@@ -37,19 +37,12 @@ new p5((p) => {
 
   const configureMovementHandling = () => {
     game.getBoard().setMovementHandler(async () => {
-      const response = await fetch(`${API_URL}/games/${game.getId()}/move`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(game.getBoard().sparseBoard()),
-      });
+      const movementResponse = await battleHexesService.resolveHumanMove(
+        game.getId(),
+        game.getBoard().sparseBoard(),
+      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to resolve movement: ${response.status}`);
-      }
-
-      applyMovementResponse(game.getBoard(), await response.json());
+      applyMovementResponse(game.getBoard(), movementResponse);
     });
   };
   configureMovementHandling();
@@ -78,7 +71,7 @@ new p5((p) => {
     eventBus.emit('redraw');
   };
 
-  menu = new Menu(game, { onNewGameRequested: createNewGameAndLoad });
+  menu = new Menu(game, { onNewGameRequested: createNewGameAndLoad, service: battleHexesService });
 
   if (!game.getCurrentPlayer().isHuman()) {
     game.getCurrentPlayer().play(game);
