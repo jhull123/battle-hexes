@@ -60,8 +60,7 @@ const setErrorState = (selectElements, message) => {
 export const loadPlayerTypes = async ({
   selectElements = [],
   statusElement,
-  fetchImpl = fetch,
-  apiUrl,
+  service,
   defaultSelections = [],
 }) => {
   const selects = selectElements.filter(Boolean);
@@ -74,13 +73,7 @@ export const loadPlayerTypes = async ({
   setStatusMessage(statusElement, LOADING_MESSAGE);
 
   try {
-    const response = await fetchImpl(`${apiUrl}/player-types`);
-
-    if (!response.ok) {
-      throw new Error(`Unexpected status code ${response.status}`);
-    }
-
-    const playerTypes = await response.json();
+    const playerTypes = await service.listPlayerTypes();
 
     if (!Array.isArray(playerTypes) || playerTypes.length === 0) {
       setErrorState(selects, 'No player types available');
@@ -110,8 +103,7 @@ export const loadPlayerTypes = async ({
 
 export const initializePlayerTypePicker = ({
   documentRef = document,
-  fetchImpl = fetch,
-  apiUrl = process.env.API_URL,
+  service,
   defaultSelections = ['human', 'q-learning'],
 } = {}) => {
   const selectElements = [
@@ -128,8 +120,7 @@ export const initializePlayerTypePicker = ({
   loadPlayerTypes({
     selectElements,
     statusElement,
-    fetchImpl,
-    apiUrl,
+    service,
     defaultSelections,
   });
 

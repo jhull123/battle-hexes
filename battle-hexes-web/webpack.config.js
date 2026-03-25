@@ -37,6 +37,7 @@ module.exports = (env = {}) => ({
     }),
     new webpack.DefinePlugin({
       'process.env.API_URL': JSON.stringify(env.API_URL || 'http://localhost:8000'),
+      'process.env.BATTLE_HEXES_SERVICE_MODE': JSON.stringify(env.BATTLE_HEXES_SERVICE_MODE || 'http'),
     }),
   ],
 });

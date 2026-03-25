@@ -2,22 +2,20 @@ import p5 from 'p5';
 import { ScrollingHexLandscape, DEFAULT_SCROLL_SPEED } from './animation/scrolling-hex-landscape.js';
 import { initializePlayerTypePicker } from './title-screen-player-types.js';
 import { initializeScenarioPicker } from './title-screen-scenarios.js';
+import { battleHexesService } from './service/service-factory.js';
 
 export const initializeTitleScreen = ({
   documentRef = document,
-  fetchImpl = fetch,
-  apiUrl = process.env.API_URL,
+  service = battleHexesService,
   locationRef = window.location,
 } = {}) => {
   const scenarioPicker = initializeScenarioPicker({
     documentRef,
-    fetchImpl,
-    apiUrl,
+    service,
   });
   const playerPicker = initializePlayerTypePicker({
     documentRef,
-    fetchImpl,
-    apiUrl,
+    service,
   });
 
   const enterBattleButton = documentRef?.getElementById?.('enter-battle-button');
@@ -41,20 +39,10 @@ export const initializeTitleScreen = ({
       enterBattleButton.textContent = 'Preparing battle…';
 
       try {
-        const response = await fetchImpl(`${apiUrl}/games`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scenarioId,
-            playerTypes,
-          }),
+        const game = await service.createGame({
+          scenarioId,
+          playerTypes,
         });
-
-        if (!response.ok) {
-          throw new Error(`Unexpected status ${response.status}`);
-        }
-
-        const game = await response.json();
         locationRef.assign(`battle.html?gameId=${encodeURIComponent(game.id)}`);
       } catch (error) {
         console.error('Failed to create game', error);

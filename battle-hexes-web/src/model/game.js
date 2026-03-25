@@ -1,5 +1,4 @@
-import { API_URL } from './battle-api';
-import axios from 'axios';
+import { battleHexesService } from '../service/service-factory.js';
 import { CombatResolver } from './combat-resolver';
 
 export class Game {
@@ -30,7 +29,7 @@ export class Game {
     this.#board = board;
     this.#board.setPlayers(players);
 
-    this.#combatResolver = new CombatResolver(id, board);
+    this.#combatResolver = new CombatResolver(id, board, { service: battleHexesService });
     this.#scenarioId = typeof scenarioId === 'string' && scenarioId.trim().length > 0
       ? scenarioId
       : null;
@@ -154,16 +153,12 @@ export class Game {
   static async newGameFromServer({
     scenarioId = 'elim_1',
     playerTypes = ['human', 'random'],
+    service = battleHexesService,
   } = {}) {
-    const response = await axios.post(`${API_URL}/games`, {
-      scenarioId,
-      playerTypes,
-    });
-    return response.data;
+    return service.createGame({ scenarioId, playerTypes });
   }
 
-  static async fetchGameFromServer(gameId) {
-    const response = await axios.get(`${API_URL}/games/${gameId}`);
-    return response.data;
+  static async fetchGameFromServer(gameId, { service = battleHexesService } = {}) {
+    return service.getGame(gameId);
   }
 }
