@@ -58,6 +58,17 @@ Or:
 
     npm run build -- --env BATTLE_HEXES_SERVICE_MODE=mock
 
+### Optional HTTP Response Logging Mode
+
+When using `HttpBattleHexesService`, you can enable console logging for server
+responses at build time:
+
+    npm run build -- --env LOG_SERVER_RESPONSES=true
+
+When enabled, the service logs each successful JSON response in this format:
+
+    server response for [methodName]: [json as text]
+
 ### Lint, Test, and Build
 
     npm run test-and-build
