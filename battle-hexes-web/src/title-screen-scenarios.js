@@ -34,8 +34,7 @@ export const populateScenarioOptions = (selectElement, scenarios) => {
 export const loadScenarios = async ({
   selectElement,
   statusElement,
-  fetchImpl = fetch,
-  apiUrl,
+  service,
 }) => {
   if (!selectElement) {
     return [];
@@ -45,13 +44,7 @@ export const loadScenarios = async ({
   setStatusMessage(statusElement, LOADING_MESSAGE);
 
   try {
-    const response = await fetchImpl(`${apiUrl}/scenarios`);
-
-    if (!response.ok) {
-      throw new Error(`Unexpected status code ${response.status}`);
-    }
-
-    const scenarios = await response.json();
+    const scenarios = await service.listScenarios();
 
     if (!Array.isArray(scenarios) || scenarios.length === 0) {
       selectElement.innerHTML = '<option>No scenarios available</option>';
@@ -75,8 +68,7 @@ export const loadScenarios = async ({
 
 export const initializeScenarioPicker = ({
   documentRef = document,
-  fetchImpl = fetch,
-  apiUrl = process.env.API_URL,
+  service,
 } = {}) => {
   const selectElement = documentRef?.getElementById?.('scenario-select');
 
@@ -86,7 +78,7 @@ export const initializeScenarioPicker = ({
 
   const statusElement = documentRef.getElementById('scenario-status');
 
-  loadScenarios({ selectElement, statusElement, fetchImpl, apiUrl });
+  loadScenarios({ selectElement, statusElement, service });
 
   return { selectElement, statusElement };
 };

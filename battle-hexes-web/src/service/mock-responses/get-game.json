@@ -1,0 +1,686 @@
+{
+  "id": "fefea68e-b892-42ef-85b5-df45010aa523",
+  "players": [
+    {
+      "name": "Player 1",
+      "type": "Human",
+      "factions": [
+        {
+          "id": "Airborne",
+          "name": "Airborne",
+          "color": "#556B2F"
+        }
+      ]
+    },
+    {
+      "name": "Player 2",
+      "type": "Computer",
+      "factions": [
+        {
+          "id": "Wehrmacht",
+          "name": "Wehrmacht",
+          "color": "#5D6D7E"
+        }
+      ]
+    }
+  ],
+  "board": {
+    "rows": 18,
+    "columns": 18,
+    "units": [
+      {
+        "id": "StuG. III Zug A",
+        "name": "StuG. III Zug A",
+        "faction_id": "Wehrmacht",
+        "type": "Infantry",
+        "attack": 4,
+        "echelon": "platoon",
+        "defense": 4,
+        "move": 7,
+        "row": 0,
+        "column": 16,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "MG Trupp A",
+        "name": "MG Trupp A",
+        "faction_id": "Wehrmacht",
+        "type": "MG",
+        "attack": 1,
+        "echelon": "section",
+        "defense": 2,
+        "move": 3,
+        "row": 0,
+        "column": 16,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "B / Inf. Zug",
+        "name": "B / Inf. Zug",
+        "faction_id": "Wehrmacht",
+        "type": "Infantry",
+        "attack": 2,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 4,
+        "row": 2,
+        "column": 3,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "A / Inf. Zug",
+        "name": "A / Inf. Zug",
+        "faction_id": "Wehrmacht",
+        "type": "Infantry",
+        "attack": 2,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 4,
+        "row": 3,
+        "column": 15,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "C / Inf. Zug",
+        "name": "C / Inf. Zug",
+        "faction_id": "Wehrmacht",
+        "type": "Infantry",
+        "attack": 2,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 4,
+        "row": 4,
+        "column": 5,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Crossroads Feldwache",
+        "name": "Crossroads Feldwache",
+        "faction_id": "Wehrmacht",
+        "type": "Infantry",
+        "attack": 1,
+        "echelon": "section",
+        "defense": 1,
+        "move": 0,
+        "row": 6,
+        "column": 9,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Airborne Inf. B",
+        "name": "Airborne Inf. B",
+        "faction_id": "Airborne",
+        "type": "Infantry",
+        "attack": 3,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 5,
+        "row": 12,
+        "column": 7,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Airborne Inf. A",
+        "name": "Airborne Inf. A",
+        "faction_id": "Airborne",
+        "type": "Infantry",
+        "attack": 3,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 5,
+        "row": 12,
+        "column": 11,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Airborne Inf. C",
+        "name": "Airborne Inf. C",
+        "faction_id": "Airborne",
+        "type": "Infantry",
+        "attack": 3,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 5,
+        "row": 15,
+        "column": 16,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Airborne Inf. E",
+        "name": "Airborne Inf. E",
+        "faction_id": "Airborne",
+        "type": "Infantry",
+        "attack": 3,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 5,
+        "row": 16,
+        "column": 0,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Airborne Inf. D",
+        "name": "Airborne Inf. D",
+        "faction_id": "Airborne",
+        "type": "Infantry",
+        "attack": 3,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 5,
+        "row": 16,
+        "column": 1,
+        "defensive_fire_available": true
+      },
+      {
+        "id": "Airborne Inf. F",
+        "name": "Airborne Inf. F",
+        "faction_id": "Airborne",
+        "type": "Infantry",
+        "attack": 3,
+        "echelon": "platoon",
+        "defense": 2,
+        "move": 5,
+        "row": 16,
+        "column": 7,
+        "defensive_fire_available": true
+      }
+    ],
+    "terrain": {
+      "default": "open",
+      "types": {
+        "forest": {
+          "name": "forest",
+          "color": "#7F8C6A",
+          "move_cost": 3
+        },
+        "open": {
+          "name": "open",
+          "color": "#8F9779",
+          "move_cost": 1
+        },
+        "rough": {
+          "name": "rough",
+          "color": "#84876B",
+          "move_cost": 2
+        },
+        "village": {
+          "name": "village",
+          "color": "#9A8F7A",
+          "move_cost": 1
+        }
+      },
+      "hexes": [
+        {
+          "row": 0,
+          "column": 0,
+          "terrain": "rough"
+        },
+        {
+          "row": 0,
+          "column": 8,
+          "terrain": "forest"
+        },
+        {
+          "row": 0,
+          "column": 9,
+          "terrain": "forest"
+        },
+        {
+          "row": 0,
+          "column": 10,
+          "terrain": "forest"
+        },
+        {
+          "row": 0,
+          "column": 11,
+          "terrain": "rough"
+        },
+        {
+          "row": 0,
+          "column": 12,
+          "terrain": "forest"
+        },
+        {
+          "row": 0,
+          "column": 15,
+          "terrain": "forest"
+        },
+        {
+          "row": 0,
+          "column": 17,
+          "terrain": "forest"
+        },
+        {
+          "row": 1,
+          "column": 0,
+          "terrain": "rough"
+        },
+        {
+          "row": 1,
+          "column": 7,
+          "terrain": "forest"
+        },
+        {
+          "row": 2,
+          "column": 3,
+          "terrain": "village"
+        },
+        {
+          "row": 2,
+          "column": 8,
+          "terrain": "forest"
+        },
+        {
+          "row": 2,
+          "column": 10,
+          "terrain": "forest"
+        },
+        {
+          "row": 3,
+          "column": 9,
+          "terrain": "forest"
+        },
+        {
+          "row": 3,
+          "column": 15,
+          "terrain": "village"
+        },
+        {
+          "row": 5,
+          "column": 9,
+          "terrain": "rough"
+        },
+        {
+          "row": 6,
+          "column": 6,
+          "terrain": "forest"
+        },
+        {
+          "row": 6,
+          "column": 11,
+          "terrain": "forest"
+        },
+        {
+          "row": 8,
+          "column": 0,
+          "terrain": "forest"
+        },
+        {
+          "row": 8,
+          "column": 1,
+          "terrain": "rough"
+        },
+        {
+          "row": 8,
+          "column": 3,
+          "terrain": "forest"
+        },
+        {
+          "row": 8,
+          "column": 17,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 0,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 1,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 2,
+          "terrain": "rough"
+        },
+        {
+          "row": 9,
+          "column": 3,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 4,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 5,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 7,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 15,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 16,
+          "terrain": "forest"
+        },
+        {
+          "row": 9,
+          "column": 17,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 2,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 4,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 5,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 6,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 8,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 9,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 11,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 12,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 13,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 14,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 15,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 16,
+          "terrain": "forest"
+        },
+        {
+          "row": 10,
+          "column": 17,
+          "terrain": "forest"
+        },
+        {
+          "row": 11,
+          "column": 1,
+          "terrain": "rough"
+        },
+        {
+          "row": 11,
+          "column": 6,
+          "terrain": "forest"
+        },
+        {
+          "row": 11,
+          "column": 9,
+          "terrain": "forest"
+        },
+        {
+          "row": 11,
+          "column": 14,
+          "terrain": "forest"
+        },
+        {
+          "row": 11,
+          "column": 15,
+          "terrain": "forest"
+        },
+        {
+          "row": 11,
+          "column": 16,
+          "terrain": "forest"
+        },
+        {
+          "row": 12,
+          "column": 1,
+          "terrain": "forest"
+        },
+        {
+          "row": 12,
+          "column": 9,
+          "terrain": "rough"
+        },
+        {
+          "row": 12,
+          "column": 13,
+          "terrain": "rough"
+        },
+        {
+          "row": 13,
+          "column": 5,
+          "terrain": "forest"
+        },
+        {
+          "row": 13,
+          "column": 12,
+          "terrain": "rough"
+        },
+        {
+          "row": 16,
+          "column": 17,
+          "terrain": "forest"
+        },
+        {
+          "row": 17,
+          "column": 15,
+          "terrain": "forest"
+        },
+        {
+          "row": 17,
+          "column": 16,
+          "terrain": "forest"
+        },
+        {
+          "row": 17,
+          "column": 17,
+          "terrain": "forest"
+        }
+      ]
+    },
+    "road_types": {
+      "secondary": 1
+    },
+    "road_paths": [
+      {
+        "type": "secondary",
+        "path": [
+          {
+            "row": 17,
+            "column": 6
+          },
+          {
+            "row": 16,
+            "column": 6
+          },
+          {
+            "row": 15,
+            "column": 6
+          },
+          {
+            "row": 14,
+            "column": 7
+          },
+          {
+            "row": 14,
+            "column": 8
+          },
+          {
+            "row": 13,
+            "column": 9
+          },
+          {
+            "row": 13,
+            "column": 10
+          },
+          {
+            "row": 12,
+            "column": 10
+          },
+          {
+            "row": 11,
+            "column": 10
+          },
+          {
+            "row": 10,
+            "column": 10
+          },
+          {
+            "row": 9,
+            "column": 9
+          },
+          {
+            "row": 8,
+            "column": 9
+          },
+          {
+            "row": 7,
+            "column": 9
+          },
+          {
+            "row": 6,
+            "column": 9
+          },
+          {
+            "row": 6,
+            "column": 10
+          },
+          {
+            "row": 5,
+            "column": 11
+          },
+          {
+            "row": 5,
+            "column": 12
+          },
+          {
+            "row": 4,
+            "column": 13
+          },
+          {
+            "row": 4,
+            "column": 14
+          },
+          {
+            "row": 3,
+            "column": 15
+          },
+          {
+            "row": 3,
+            "column": 16
+          },
+          {
+            "row": 2,
+            "column": 17
+          }
+        ]
+      },
+      {
+        "type": "secondary",
+        "path": [
+          {
+            "row": 6,
+            "column": 9
+          },
+          {
+            "row": 6,
+            "column": 8
+          },
+          {
+            "row": 5,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 1,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 3
+          }
+        ]
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "row": 2,
+      "column": 3,
+      "points": 1,
+      "type": "occupy"
+    },
+    {
+      "row": 2,
+      "column": 15,
+      "points": 1,
+      "type": "occupy"
+    },
+    {
+      "row": 4,
+      "column": 9,
+      "points": 1,
+      "type": "occupy"
+    }
+  ],
+  "scores": {
+    "Player 1": 0,
+    "Player 2": 0
+  },
+  "scenarioId": "d_day_crossroads",
+  "turnLimit": 8,
+  "turnNumber": 1,
+  "playerTypeIds": [
+    "human",
+    "q-learning"
+  ]
+}

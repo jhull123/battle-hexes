@@ -1,6 +1,5 @@
 import { playerTypes, Player } from './player.js';
-import axios from 'axios';
-import { API_URL } from '../model/battle-api.js';
+import { battleHexesService } from '../service/service-factory.js';
 import { eventBus } from '../event-bus.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
 import { applyMovementResponse } from '../model/movement-response-handler.js';
@@ -8,8 +7,9 @@ import { applyMovementResponse } from '../model/movement-response-handler.js';
 export class CpuPlayer extends Player {
   static PHASE_DELAY_MS = 333;
 
-  constructor(name, factions) {
+  constructor(name, factions, { service = battleHexesService } = {}) {
     super(name, playerTypes.CPU, factions);
+    this.service = service;
   }
 
   async play(game) {
@@ -21,13 +21,11 @@ export class CpuPlayer extends Player {
     if (game.getCurrentPhase() === 'Movement') {
       try {
         await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
-        const response = await axios.post(
-          `${API_URL}/games/${game.getId()}/movement`
-        );
-        console.log('CPU movement plans:', response.data);
+        const responseData = await this.service.generateCpuMovement(game.getId());
+        console.log('CPU movement plans:', responseData);
 
         const animator = new MovementAnimator(game.getBoard());
-        for (const plan of response.data.plans) {
+        for (const plan of responseData.plans) {
           const unit = [...game.getBoard().getUnits()].find(
             u => u.getId() === plan.unit_id
           );
@@ -39,10 +37,10 @@ export class CpuPlayer extends Player {
           }
         }
 
-        applyMovementResponse(game.getBoard(), response.data);
+        applyMovementResponse(game.getBoard(), responseData);
 
-        await axios.post(
-          `${API_URL}/games/${game.getId()}/end-movement`,
+        await this.service.endMovement(
+          game.getId(),
           game.getBoard().sparseBoard()
         );
 
@@ -68,18 +66,18 @@ export class CpuPlayer extends Player {
       }
     } else if (game.getCurrentPhase() === 'End Turn') {
       await new Promise(resolve => setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS));
-      const endTurnResponse = await axios.post(
-        `${API_URL}/games/${game.getId()}/end-turn`,
+      const endTurnResponse = await this.service.endTurn(
+        game.getId(),
         game.getBoard().sparseBoard()
       ).catch(err => {
         console.error('Failed to update game state', err);
         return null;
       });
-      if (endTurnResponse?.data) {
-        game.updateScores?.(endTurnResponse.data.scores);
+      if (endTurnResponse) {
+        game.updateScores?.(endTurnResponse.scores);
         game.updateTurnState?.({
-          turnLimit: endTurnResponse.data.turnLimit,
-          turnNumber: endTurnResponse.data.turnNumber,
+          turnLimit: endTurnResponse.turnLimit,
+          turnNumber: endTurnResponse.turnNumber,
         });
       }
       game.endPhase();

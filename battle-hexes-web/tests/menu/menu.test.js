@@ -1,11 +1,6 @@
 /** @jest-environment jsdom */
-import axios from 'axios';
-import { Menu } from '../../src/menu';
 import { eventBus } from '../../src/event-bus.js';
-import { API_URL } from '../../src/model/battle-api.js';
 import { BoardUpdater } from '../../src/model/board-updater.js';
-
-jest.mock('axios');
 
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
@@ -14,11 +9,23 @@ jest.mock('../../src/event-bus.js', () => ({
   },
 }));
 
+const mockService = {
+  listScenarios: jest.fn(),
+  endMovement: jest.fn(),
+  endTurn: jest.fn(),
+};
+
+jest.mock('../../src/service/service-factory.js', () => ({
+  battleHexesService: mockService,
+}));
+
 jest.mock('../../src/model/board-updater.js', () => ({
   BoardUpdater: jest.fn().mockImplementation(() => ({
     updateBoard: jest.fn(),
   })),
 }));
+
+import { Menu } from '../../src/menu';
 
 describe('auto new game persistence', () => {
   const flushPromises = () => new Promise((resolve) => queueMicrotask(resolve));
@@ -81,26 +88,27 @@ describe('auto new game persistence', () => {
     eventBus.on.mockClear();
     BoardUpdater.mockClear();
     window.localStorage.clear();
-    axios.post.mockReset();
-    axios.get.mockReset();
-    axios.get.mockResolvedValue({ data: [] });
+    mockService.listScenarios.mockReset();
+    mockService.endMovement.mockReset();
+    mockService.endTurn.mockReset();
+    mockService.listScenarios.mockResolvedValue([]);
+    mockService.endMovement.mockResolvedValue({});
+    mockService.endTurn.mockResolvedValue({});
   });
 
   test('shows scenario heading from name with description and victory conditions', async () => {
     buildDom();
 
-    axios.get.mockResolvedValue({
-      data: [{
+    mockService.listScenarios.mockResolvedValue([{
         id: 'elim_1',
         name: 'Elimination One',
         description: 'Secure all objectives before the turn limit.',
         victory: {
           description: 'Control every objective at the end of any turn.',
         },
-      }],
-    });
+      }]);
 
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
     await flushPromises();
 
     expect(document.getElementById('scenarioOverviewHeading').textContent).toBe('Elimination One');
@@ -112,7 +120,7 @@ describe('auto new game persistence', () => {
   test('shows defensive fire messages from movement-phase reactions', async () => {
     buildDom();
 
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
     await flushPromises();
 
     const defensiveFireListener = eventBus.on.mock.calls.find(
@@ -132,13 +140,11 @@ describe('auto new game persistence', () => {
   test('falls back to scenario id and hides optional sections when details are missing', async () => {
     buildDom();
 
-    axios.get.mockResolvedValue({
-      data: [{
+    mockService.listScenarios.mockResolvedValue([{
         id: 'elim_1',
-      }],
-    });
+      }]);
 
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
     await flushPromises();
 
     expect(document.getElementById('scenarioOverviewHeading').textContent).toBe('elim_1');
@@ -152,14 +158,14 @@ describe('auto new game persistence', () => {
   test('checkbox reflects url parameter', () => {
     buildDom();
     history.replaceState(null, '', '?autoNewGame=1');
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
     expect(document.getElementById('autoNewGame').checked).toBe(true);
   });
 
   test('changing checkbox updates url parameter', () => {
     buildDom();
     history.replaceState(null, '', '/');
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
     const chk = document.getElementById('autoNewGame');
     chk.checked = true;
     chk.dispatchEvent(new Event('change'));
@@ -172,7 +178,7 @@ describe('auto new game persistence', () => {
   test('hex coordinate checkbox defaults to checked, persists, and emits initial state', () => {
     buildDom();
     history.replaceState(null, '', '/');
-    const menu = new Menu(fakeGame());
+    const menu = new Menu(fakeGame(), { service: mockService });
     const coordsCheckbox = document.getElementById('showHexCoords');
     expect(coordsCheckbox.checked).toBe(true);
     expect(eventBus.emit).toHaveBeenCalledWith('hexCoordsVisibilityChanged', true);
@@ -183,7 +189,7 @@ describe('auto new game persistence', () => {
   test('changing hex coordinate checkbox emits visibility changes', () => {
     buildDom();
     history.replaceState(null, '', '/');
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
     const coordsCheckbox = document.getElementById('showHexCoords');
 
     eventBus.emit.mockClear();
@@ -206,7 +212,7 @@ describe('auto new game persistence', () => {
   test('hex coordinate checkbox restores state from localStorage', () => {
     buildDom();
     window.localStorage.setItem('battleHexes.showHexCoords', 'false');
-    const menu = new Menu(fakeGame());
+    const menu = new Menu(fakeGame(), { service: mockService });
 
     const coordsCheckbox = document.getElementById('showHexCoords');
     expect(coordsCheckbox.checked).toBe(false);
@@ -220,7 +226,7 @@ describe('auto new game persistence', () => {
       history.replaceState(null, '', '/');
 
       const onNewGameRequested = jest.fn(() => Promise.resolve());
-      new Menu(fakeGame(), { onNewGameRequested });
+      new Menu(fakeGame(), { onNewGameRequested, service: mockService });
 
       const newGameBtn = document.getElementById('newGameBtn');
       expect(newGameBtn.disabled).toBe(false);
@@ -244,7 +250,7 @@ describe('auto new game persistence', () => {
         history.replaceState(null, '', '/');
 
         const onNewGameRequested = jest.fn(() => Promise.reject(new Error('boom')));
-        new Menu(fakeGame(), { onNewGameRequested });
+        new Menu(fakeGame(), { onNewGameRequested, service: mockService });
 
         const autoCheckbox = document.getElementById('autoNewGame');
         autoCheckbox.checked = true;
@@ -287,7 +293,7 @@ describe('auto new game persistence', () => {
         isOwnHexSelected: () => false,
         hasCombat: () => false,
       }),
-    }));
+    }), { service: mockService });
 
     menu.updateMenu();
 
@@ -326,7 +332,7 @@ describe('auto new game persistence', () => {
         isOwnHexSelected: () => false,
         hasCombat: () => false,
       }),
-    }));
+    }), { service: mockService });
 
     menu.updateMenu();
 
@@ -366,7 +372,7 @@ describe('auto new game persistence', () => {
         isOwnHexSelected: () => false,
         hasCombat: () => false,
       }),
-    }));
+    }), { service: mockService });
 
     menu.updateMenu();
 
@@ -380,7 +386,7 @@ describe('auto new game persistence', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
 
     expect(document.getElementById('selHexCoord').innerHTML).toBe('<em>No selection</em>');
     expect(document.getElementById('selHexUnitsHeading').style.display).toBe('none');
@@ -411,7 +417,7 @@ describe('auto new game persistence', () => {
         isOwnHexSelected: () => false,
         hasCombat: () => false,
       }),
-    }));
+    }), { service: mockService });
 
     menu.updateMenu();
 
@@ -446,7 +452,7 @@ describe('auto new game persistence', () => {
         'Player 1': 3,
         'Player 2': 1,
       }),
-    }));
+    }), { service: mockService });
 
     const rows = document.querySelectorAll('.victory-row');
     expect(rows).toHaveLength(2);
@@ -474,7 +480,7 @@ describe('auto new game persistence', () => {
     new Menu(fakeGame({
       getTurnLimit: () => 9,
       getTurnNumber: () => 10,
-    }));
+    }), { service: mockService });
 
     expect(document.getElementById('victoryTurnLabel').textContent).toBe('Turn 9 / 9');
   });
@@ -495,7 +501,7 @@ describe('auto new game persistence', () => {
         getAllPlayers: () => players,
       }),
       getScores: () => ({}),
-    }));
+    }), { service: mockService });
 
     menu.updateMenu();
 
@@ -511,7 +517,7 @@ describe('auto new game persistence', () => {
     history.replaceState(null, '', '/');
 
     const updateBoard = jest.fn();
-    BoardUpdater.mockImplementation(() => ({ updateBoard }));
+    BoardUpdater.mockImplementation(() => ({ updateBoard }), { service: mockService });
 
     const unit = { id: 'unit-1' };
     const board = {
@@ -527,19 +533,17 @@ describe('auto new game persistence', () => {
       getBoard: () => board,
     });
 
-    axios.post.mockResolvedValue({
-      data: {
-        sparse_board: {
+    mockService.endMovement.mockResolvedValue({
+      sparse_board: {
           units: [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }],
-        },
-        defensive_fire_events: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
+      },
+      defensive_fire_events: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
         scores: { 'Player 1': 2 },
         turnLimit: 9,
-        turnNumber: 4,
-      },
+      turnNumber: 4,
     });
 
-    const menu = new Menu(game);
+    const menu = new Menu(game, { service: mockService });
     menu.doEndPhase();
     await flushPromises();
 
@@ -552,7 +556,7 @@ describe('auto new game persistence', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
-    new Menu(fakeGame());
+    new Menu(fakeGame(), { service: mockService });
 
     const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
     const handler = calls[calls.length - 1][1];
@@ -593,15 +597,13 @@ describe('auto new game persistence', () => {
       }),
     });
 
-    axios.post.mockResolvedValue({
-      data: {
-        scores: {
-          'Player 1': 4,
-        },
+    mockService.endMovement.mockResolvedValue({
+      scores: {
+        'Player 1': 4,
       },
     });
 
-    const menu = new Menu(game);
+    const menu = new Menu(game, { service: mockService });
     expect(document.querySelector('.victory-score').textContent).toBe('0');
 
     menu.doEndPhase();
@@ -642,18 +644,18 @@ describe('auto new game persistence', () => {
       }),
     });
 
-    axios.post.mockResolvedValue({ data: {} });
+    mockService.endTurn.mockResolvedValue({});
 
-    const menu = new Menu(game);
+    const menu = new Menu(game, { service: mockService });
     menu.doEndPhase();
     await flushPromises();
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${API_URL}/games/game-id/end-turn`,
+    expect(mockService.endTurn).toHaveBeenCalledWith(
+      'game-id',
       preResetPayload
     );
-    expect(axios.post).not.toHaveBeenCalledWith(
-      `${API_URL}/games/game-id/end-turn`,
+    expect(mockService.endTurn).not.toHaveBeenCalledWith(
+      'game-id',
       postResetPayload
     );
   });
@@ -673,9 +675,9 @@ describe('auto new game persistence', () => {
       }),
     });
 
-    axios.post.mockResolvedValue({ data: {} });
+    mockService.endTurn.mockResolvedValue({});
 
-    const menu = new Menu(game);
+    const menu = new Menu(game, { service: mockService });
     eventBus.emit.mockClear();
     eventBus.on.mockClear();
     BoardUpdater.mockClear();
@@ -714,7 +716,7 @@ describe('auto new game persistence', () => {
         'Player 1': 3,
         'Player 2': 1,
       }),
-    }));
+    }), { service: mockService });
 
     let rows = document.querySelectorAll('.victory-row');
     expect(rows[0].classList.contains('victory-row-current')).toBe(true);

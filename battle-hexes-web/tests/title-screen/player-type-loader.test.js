@@ -40,16 +40,14 @@ describe('title screen player type helpers', () => {
       { id: 'human', name: 'Human' },
       { id: 'random', name: 'Random' },
     ];
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => playerTypes,
-    });
+    const service = {
+      listPlayerTypes: jest.fn().mockResolvedValue(playerTypes),
+    };
 
     const result = await loadPlayerTypes({
       selectElements: [player1Select, player2Select],
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
       defaultSelections: ['human', 'random'],
     });
 
@@ -66,16 +64,14 @@ describe('title screen player type helpers', () => {
       { id: 'human', name: 'Human' },
       { id: 'random', name: 'Random' },
     ];
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => playerTypes,
-    });
+    const service = {
+      listPlayerTypes: jest.fn().mockResolvedValue(playerTypes),
+    };
 
     await loadPlayerTypes({
       selectElements: [player1Select],
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
       defaultSelections: ['q-learning'],
     });
 
@@ -83,16 +79,14 @@ describe('title screen player type helpers', () => {
   });
 
   test('loadPlayerTypes handles empty response', async () => {
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    });
+    const service = {
+      listPlayerTypes: jest.fn().mockResolvedValue([]),
+    };
 
     const result = await loadPlayerTypes({
       selectElements: [player1Select],
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
     });
 
     expect(result).toEqual([]);
@@ -103,16 +97,14 @@ describe('title screen player type helpers', () => {
 
   test('loadPlayerTypes handles failed request', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-    });
+    const service = {
+      listPlayerTypes: jest.fn().mockRejectedValue(new Error('500')),
+    };
 
     const result = await loadPlayerTypes({
       selectElements: [player1Select, player2Select],
       statusElement,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
     });
 
     expect(result).toEqual([]);
@@ -142,18 +134,16 @@ describe('title screen player type helpers', () => {
       }),
     };
 
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    });
+    const service = {
+      listPlayerTypes: jest.fn().mockResolvedValue([]),
+    };
 
     const result = initializePlayerTypePicker({
       documentRef,
-      fetchImpl,
-      apiUrl: 'https://api.example.com',
+      service,
     });
 
     expect(result).not.toBeNull();
-    expect(fetchImpl).toHaveBeenCalled();
+    expect(service.listPlayerTypes).toHaveBeenCalled();
   });
 });

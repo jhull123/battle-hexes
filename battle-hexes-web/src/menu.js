@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_URL } from './model/battle-api.js';
+import { battleHexesService } from './service/service-factory.js';
 import { eventBus } from './event-bus.js';
 import { BoardUpdater } from './model/board-updater.js';
 
@@ -26,10 +25,11 @@ export class Menu {
   #autoReloadScheduled = false;
   #onNewGameRequested;
   #reactionMessagesDiv;
+  #service;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
-  constructor(game, { onNewGameRequested } = {}) {
+  constructor(game, { onNewGameRequested, service = battleHexesService } = {}) {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
@@ -50,6 +50,13 @@ export class Menu {
     this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
+    this.#service = service
+      ?? battleHexesService
+      ?? {
+        listScenarios: async () => [],
+        endMovement: async () => ({}),
+        endTurn: async () => ({}),
+      };
 
     // Initialize checkbox state from URL param
     const params = new URLSearchParams(window.location.search);
@@ -130,12 +137,12 @@ export class Menu {
 
     const requestId = this.#scenarioDetailsRequestId + 1;
     this.#scenarioDetailsRequestId = requestId;
-    axios.get(`${API_URL}/scenarios`)
-      .then((response) => {
+    this.#service.listScenarios()
+      .then((scenarios) => {
         if (requestId !== this.#scenarioDetailsRequestId) {
           return;
         }
-        const scenarios = Array.isArray(response?.data) ? response.data : [];
+        scenarios = Array.isArray(scenarios) ? scenarios : [];
         const scenario = scenarios.find((value) => value?.id === scenarioId);
         this.#renderScenarioOverview(scenario);
       })
@@ -392,11 +399,11 @@ export class Menu {
       : null;
 
     if (this.#game.getCurrentPhase().toLowerCase() === 'movement') {
-      axios.post(
-        `${API_URL}/games/${this.#game.getId()}/end-movement`,
+      this.#service.endMovement(
+        this.#game.getId(),
         this.#game.getBoard().sparseBoard()
-      ).then((response) => {
-        this.#applyMovementResponse(response?.data);
+      ).then((responseData) => {
+        this.#applyMovementResponse(responseData);
         this.updateMenu();
       }).catch(err => console.error('Failed to update movement state', err));
     }
@@ -406,14 +413,14 @@ export class Menu {
     this.#disableOrEnableActionButton();
 
     if (switchedPlayers) {
-      axios.post(
-        `${API_URL}/games/${this.#game.getId()}/end-turn`,
+      this.#service.endTurn(
+        this.#game.getId(),
         endTurnPayload
-      ).then((response) => {
-        this.#game.updateScores?.(response?.data?.scores);
+      ).then((responseData) => {
+        this.#game.updateScores?.(responseData?.scores);
         this.#game.updateTurnState?.({
-          turnLimit: response?.data?.turnLimit,
-          turnNumber: response?.data?.turnNumber,
+          turnLimit: responseData?.turnLimit,
+          turnNumber: responseData?.turnNumber,
         });
         this.updateMenu();
       }).catch(err => console.error('Failed to update game state', err))
