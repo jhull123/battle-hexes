@@ -26,11 +26,23 @@ const emptyMovementPayload = {
 };
 
 export class MockBattleHexesService extends BattleHexesService {
-  listScenarios() { return Promise.resolve([...MOCK_SCENARIOS]); }
-  listPlayerTypes() { return Promise.resolve([...MOCK_PLAYER_TYPES]); }
-  createGame() { return Promise.resolve({ id: 'mock-game' }); }
+  listScenarios() {
+    console.log('Returning mock response for listScenarios.');
+    return Promise.resolve([...MOCK_SCENARIOS]);
+  }
+
+  listPlayerTypes() {
+    console.log('Returning mock response for listPlayerTypes.');
+    return Promise.resolve([...MOCK_PLAYER_TYPES]);
+  }
+
+  createGame() {
+    console.log('Returning mock response for createGame.');
+    return Promise.resolve({ id: 'mock-game' });
+  }
 
   getGame(gameId) {
+    console.log('Returning mock response for getGame.');
     return Promise.resolve({
       id: gameId || 'mock-game',
       phases: ['Movement', 'Combat', 'End Turn'],
@@ -43,11 +55,23 @@ export class MockBattleHexesService extends BattleHexesService {
     });
   }
 
-  resolveHumanMove() { return Promise.resolve({ ...emptyMovementPayload }); }
-  generateCpuMovement() { return Promise.resolve({ ...emptyMovementPayload }); }
-  endMovement() { return Promise.resolve({ ...emptyMovementPayload }); }
+  resolveHumanMove() {
+    console.log('Returning mock response for resolveHumanMove.');
+    return Promise.resolve({ ...emptyMovementPayload });
+  }
+
+  generateCpuMovement() {
+    console.log('Returning mock response for generateCpuMovement.');
+    return Promise.resolve({ ...emptyMovementPayload });
+  }
+  
+  endMovement() {
+    console.log('Returning mock response for endMovement.');
+    return Promise.resolve({ ...emptyMovementPayload });
+  }
 
   resolveCombat() {
+    console.log('Returning mock response for resolveCombat.');
     return Promise.resolve({
       units: [],
       last_combat_results: [],
@@ -58,6 +82,7 @@ export class MockBattleHexesService extends BattleHexesService {
   }
 
   endTurn() {
+    console.log('Returning mock response for endTurn.');
     return Promise.resolve({
       scores: {},
       turnNumber: 1,

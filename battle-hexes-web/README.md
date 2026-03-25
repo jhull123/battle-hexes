@@ -46,13 +46,17 @@ The frontend supports two backend service modes:
 `API_URL` is used by `http` mode. It can still be set in `mock` mode for
 convenience, but mock mode does not call the backend.
 
-Run with the real backend:
+Run with the real backend (http://localhost:8000):
 
-    BATTLE_HEXES_SERVICE_MODE=http API_URL=http://localhost:8000 npm run build
+    npm run build
 
 Run offline with the mock service:
 
-    BATTLE_HEXES_SERVICE_MODE=mock API_URL=http://localhost:8000 npm run build
+    npm run build:mock
+
+Or:
+
+    npm run build -- --env BATTLE_HEXES_SERVICE_MODE=mock
 
 ### Lint, Test, and Build
 
