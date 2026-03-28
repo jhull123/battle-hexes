@@ -12,14 +12,31 @@ Web based UI for the Battle Hexes game.
 
     npm test
 
-### Running Integration Tests
+### Running Integration Tests (Playwright E2E)
 
-The web frontend now includes simple browser-based tests using Playwright.
+Playwright tests live in `battle-hexes-web/e2e` and run against the built frontend in **mock-service mode**.
 
-    # Install Playwright browsers if you haven't already
+`npm run test:e2e` uses `playwright.config.js` to:
+- build the app with `npm run build:mock`, and
+- serve `dist/` over `http://127.0.0.1:4173`.
+
+This means e2e tests do **not** require `battle_hexes_api` / `uvicorn`.
+
+    # Install Playwright browser binaries
     npx playwright install
-    
+
+    # Run e2e tests (build + local HTTP server are handled by Playwright config)
     npm run test:e2e
+
+If the browser install succeeds but test launch fails on Linux with missing system libraries, run:
+
+    npx playwright install-deps
+
+Or install the required packages with apt (example):
+
+    apt-get install libatk1.0-0t64 libatk-bridge2.0-0t64 libatspi2.0-0t64 \
+      libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 \
+      libasound2t64
 
 ### Building the App
 
