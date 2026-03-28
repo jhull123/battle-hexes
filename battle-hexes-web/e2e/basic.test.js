@@ -1,20 +1,17 @@
 import { test, expect } from '@playwright/test';
-import path from 'path';
-import { pathToFileURL } from 'url';
 
-const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
-const battlePath = path.join(__dirname, '..', 'dist', 'battle.html');
-const indexUrl = pathToFileURL(indexPath).href;
-const battleUrl = pathToFileURL(battlePath).href;
+test('title screen loads and can start a mock game', async ({ page }) => {
+  await page.goto('/');
 
-test('title screen links to the battle page', async ({ page }) => {
-  await page.goto(indexUrl);
-  await expect(page.locator('h1')).toHaveText('Battle Hexes');
-  await page.locator('a:has-text("Enter Battle")').click();
-  await expect(page).toHaveURL(battleUrl);
-});
+  await expect(page.getByRole('heading', { level: 1, name: 'Battle Hexes' })).toBeVisible();
 
-test('battle page still loads game menu', async ({ page }) => {
-  await page.goto(battleUrl);
-  await expect(page.locator('#menu')).toContainText('Battle Hexes');
+  await expect(page.locator('#scenario-select')).toHaveValue('mock_scenario');
+  await expect(page.locator('#player1-type')).toHaveValue('human');
+  await expect(page.locator('#player2-type')).toHaveValue('human');
+
+  await page.getByRole('button', { name: 'Enter Battle' }).click();
+
+  await expect(page).toHaveURL(/\/battle\.html\?gameId=mock-game$/);
+  await expect(page.locator('#menu')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Battle Hexes' })).toBeVisible();
 });

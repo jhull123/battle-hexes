@@ -4,10 +4,13 @@ const path = require('path');
 const config = {
   testDir: path.join(__dirname, 'e2e'),
   timeout: 30_000,
+  use: {
+    baseURL: 'http://127.0.0.1:4173',
+  },
   webServer: {
-    command: 'python -m uvicorn src.main:app --port 8000',
-    port: 8000,
-    cwd: path.join(__dirname, '..', 'battle_hexes_api'),
+    command: 'npm run build:mock && python -m http.server 4173 --directory dist',
+    url: 'http://127.0.0.1:4173',
+    cwd: __dirname,
     reuseExistingServer: !process.env.CI,
   },
 };
