@@ -7,7 +7,7 @@ test('title screen loads and can start a mock game', async ({ page }) => {
 
   await expect(page.locator('#scenario-select')).toHaveValue('mock_scenario');
   await expect(page.locator('#player1-type')).toHaveValue('human');
-  await expect(page.locator('#player2-type')).toHaveValue('random');
+  await expect(page.locator('#player2-type')).toHaveValue('human');
 
   await page.getByRole('button', { name: 'Enter Battle' }).click();
 
