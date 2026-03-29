@@ -1,6 +1,7 @@
 import { battleHexesService } from './service/service-factory.js';
 import { eventBus } from './event-bus.js';
 import { BoardUpdater } from './model/board-updater.js';
+import { SoundPlayer } from './sound/sound-player.js';
 
 export class Menu {
   #game;
@@ -21,15 +22,17 @@ export class Menu {
   #scenarioVictoryHeading;
   #scenarioVictoryDescription;
   #activeScenarioId;
+  #activeScenario;
   #scenarioDetailsRequestId = 0;
   #autoReloadScheduled = false;
   #onNewGameRequested;
   #reactionMessagesDiv;
   #service;
+  #soundPlayer;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
-  constructor(game, { onNewGameRequested, service = battleHexesService } = {}) {
+  constructor(game, { onNewGameRequested, service = battleHexesService, soundPlayer = new SoundPlayer() } = {}) {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
@@ -49,6 +52,7 @@ export class Menu {
     this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
     this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
+    this.#activeScenario = null;
     this.#onNewGameRequested = onNewGameRequested;
     this.#service = service
       ?? battleHexesService
@@ -57,6 +61,7 @@ export class Menu {
         endMovement: async () => ({}),
         endTurn: async () => ({}),
       };
+    this.#soundPlayer = soundPlayer;
 
     // Initialize checkbox state from URL param
     const params = new URLSearchParams(window.location.search);
@@ -108,6 +113,8 @@ export class Menu {
   }
 
   #renderScenarioOverview(scenario = null) {
+    this.#activeScenario = scenario;
+
     if (!this.#scenarioOverviewHeading || !this.#scenarioVictoryHeading) {
       return;
     }
@@ -491,6 +498,11 @@ export class Menu {
       .map((event) => `<div class="reaction-message reaction-message--${event.outcome ?? 'info'}">${event.message ?? 'Defensive fire resolved.'}</div>`)
       .join('');
     this.#reactionMessagesDiv.style.display = 'block';
+    this.#soundPlayer.playDefensiveFireEvents({
+      events,
+      game: this.#game,
+      scenario: this.#activeScenario,
+    });
   }
 
   #setCurrentTurn() {

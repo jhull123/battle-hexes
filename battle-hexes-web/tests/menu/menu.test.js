@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import { eventBus } from '../../src/event-bus.js';
 import { BoardUpdater } from '../../src/model/board-updater.js';
+import { SoundPlayer } from '../../src/sound/sound-player.js';
 
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
@@ -22,6 +23,12 @@ jest.mock('../../src/service/service-factory.js', () => ({
 jest.mock('../../src/model/board-updater.js', () => ({
   BoardUpdater: jest.fn().mockImplementation(() => ({
     updateBoard: jest.fn(),
+  })),
+}));
+
+jest.mock('../../src/sound/sound-player.js', () => ({
+  SoundPlayer: jest.fn().mockImplementation(() => ({
+    playDefensiveFireEvents: jest.fn(),
   })),
 }));
 
@@ -58,11 +65,19 @@ describe('auto new game persistence', () => {
   }
 
   function fakeGame(overrides = {}) {
+    const defaultFaction = {
+      getId: () => 'axis',
+    };
+    const defaultUnit = {
+      getId: () => 'firing-unit',
+      getFaction: () => defaultFaction,
+    };
     const baseGame = {
       getBoard: () => ({
         getSelectedHex: () => null,
         isOwnHexSelected: () => false,
         hasCombat: () => false,
+        getUnits: () => [defaultUnit],
       }),
       getPhases: () => ['Movement', 'Combat'],
       getCurrentPhase: () => 'Movement',
@@ -87,6 +102,7 @@ describe('auto new game persistence', () => {
     eventBus.emit.mockClear();
     eventBus.on.mockClear();
     BoardUpdater.mockClear();
+    SoundPlayer.mockClear();
     window.localStorage.clear();
     mockService.listScenarios.mockReset();
     mockService.endMovement.mockReset();
@@ -135,6 +151,67 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('reactionStatus').textContent).toBe(
       'Defensive fire forced the target to retreat to (0, 1). Defensive fire had no effect.'
     );
+  });
+
+  test('passes defensive fire events to sound player with game and scenario context', async () => {
+    buildDom();
+    mockService.listScenarios.mockResolvedValue([{
+      id: 'elim_1',
+      factions: [{
+        id: 'axis',
+        sounds: {
+          defensive_fire: {
+            effect: 'axis-effect.ogg',
+          },
+        },
+      }, {
+        id: 'allies',
+        sounds: {
+          defensive_fire: {
+            effect: 'allies-effect.ogg',
+          },
+        },
+      }],
+    }]);
+
+    const game = fakeGame();
+    new Menu(game, { service: mockService });
+    await flushPromises();
+
+    const defensiveFireListeners = eventBus.on.mock.calls
+      .filter(([eventName]) => eventName === 'defensiveFireResolved')
+      .map(([, listener]) => listener);
+
+    const events = [{
+      firing_unit_id: 'firing-unit',
+      outcome: 'retreat',
+      message: 'Defensive fire forced a retreat.',
+    }];
+    defensiveFireListeners.forEach((listener) => listener(events));
+
+    const soundPlayerInstance = SoundPlayer.mock.results[0].value;
+    expect(soundPlayerInstance.playDefensiveFireEvents).toHaveBeenCalledWith({
+      events,
+      game,
+      scenario: {
+        id: 'elim_1',
+        factions: [{
+          id: 'axis',
+          sounds: {
+            defensive_fire: {
+              effect: 'axis-effect.ogg',
+            },
+          },
+        }, {
+          id: 'allies',
+          sounds: {
+            defensive_fire: {
+              effect: 'allies-effect.ogg',
+            },
+          },
+        }],
+      },
+    });
   });
 
   test('falls back to scenario id and hides optional sections when details are missing', async () => {
