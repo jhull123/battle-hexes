@@ -120,16 +120,53 @@ The following decisions are needed before implementation details can be finalize
 
 1. **Outcome mapping source of truth**
    - Which exact event field/value in the defensive-fire payload distinguishes `effect` vs `no_effect`?
+   
+   Use the `outcome` field in the `defensive_fire_events` array, which is returned by `POST /games/{game_id}/move` and `POST /games/{game_id}/movement` endpoints.
+   ```json   
+       "defensive_fire_events": [
+        {
+            "firing_unit_id": "Crossroads Feldwache",
+            "target_unit_id": "Airborne Inf. A",
+            "trigger_hex": [
+                7,
+                9
+            ],
+            "target_hex_before": [
+                7,
+                9
+            ],
+            "outcome": "retreat",
+            "retreat_destination": [
+                8,
+                9
+            ],
+            "spent_defensive_fire": true,
+            "probability": 0.125,
+            "roll": 0.07586604005985398,
+            "message": "Defensive fire forced the target to retreat to (8, 9)."
+        }
+    ]
+   ```
 2. **Multiple events timing**
    - If multiple defensive-fire events resolve in one server response, should sounds:
      - play for every event,
      - be rate-limited,
      - or collapse to one sound per movement action?
+   
+   This will be possible in the future with "stack movement" where a stack of units can move together. The sound should follow the animation, which will be sequential - animate the defensive fire one after another and the sound will follow suit.
 3. **Concurrent playback policy**
    - If multiple sounds trigger close together, should they overlap, queue, or interrupt/replace?
+
+   See the above answer - the should be sequential.
 4. **Missing file telemetry**
    - Should missing audio files be logged to console only, reported through app telemetry, or fully silent?
+
+   Logged to console only.
 5. **User mute/settings behavior**
    - Should defensive-fire sounds obey an existing global mute/effects-volume setting, and if so, which control path is canonical?
+
+   There are no audio settings yet so don't worry about it.
 6. **Future key naming stability**
    - Is `defensive_fire.effect` / `defensive_fire.no_effect` considered stable contract, or should implementation support aliases for backward compatibility?
+
+   These are stable contracts and must be treated as such. No aliases needed or wanted.

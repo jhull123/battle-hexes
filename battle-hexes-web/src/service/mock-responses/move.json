@@ -1,0 +1,483 @@
+{
+    "game": {
+        "id": "253b7ff2-7a02-4c34-8975-a9086bb0f1b9",
+        "players": [
+            {
+                "name": "Player 1",
+                "type": "Human",
+                "factions": [
+                    {
+                        "id": "Airborne",
+                        "name": "Airborne",
+                        "color": "#556B2F"
+                    }
+                ]
+            },
+            {
+                "name": "Player 2",
+                "type": "Human",
+                "factions": [
+                    {
+                        "id": "Wehrmacht",
+                        "name": "Wehrmacht",
+                        "color": "#5D6D7E"
+                    }
+                ]
+            }
+        ],
+        "board": {
+            "rows": 18,
+            "columns": 18,
+            "units": [
+                {
+                    "id": "StuG. III Zug A",
+                    "name": "StuG. III Zug A",
+                    "faction_id": "Wehrmacht",
+                    "type": "Infantry",
+                    "attack": 4,
+                    "echelon": "platoon",
+                    "defense": 4,
+                    "move": 7,
+                    "row": 0,
+                    "column": 16,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "MG Trupp A",
+                    "name": "MG Trupp A",
+                    "faction_id": "Wehrmacht",
+                    "type": "MG",
+                    "attack": 1,
+                    "echelon": "section",
+                    "defense": 2,
+                    "move": 3,
+                    "row": 0,
+                    "column": 16,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "B / Inf. Zug",
+                    "name": "B / Inf. Zug",
+                    "faction_id": "Wehrmacht",
+                    "type": "Infantry",
+                    "attack": 2,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 4,
+                    "row": 2,
+                    "column": 3,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "A / Inf. Zug",
+                    "name": "A / Inf. Zug",
+                    "faction_id": "Wehrmacht",
+                    "type": "Infantry",
+                    "attack": 2,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 4,
+                    "row": 5,
+                    "column": 11,
+                    "defensive_fire_available": false
+                },
+                {
+                    "id": "C / Inf. Zug",
+                    "name": "C / Inf. Zug",
+                    "faction_id": "Wehrmacht",
+                    "type": "Infantry",
+                    "attack": 2,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 4,
+                    "row": 5,
+                    "column": 8,
+                    "defensive_fire_available": false
+                },
+                {
+                    "id": "Crossroads Feldwache",
+                    "name": "Crossroads Feldwache",
+                    "faction_id": "Wehrmacht",
+                    "type": "Infantry",
+                    "attack": 1,
+                    "echelon": "section",
+                    "defense": 1,
+                    "move": 0,
+                    "row": 6,
+                    "column": 9,
+                    "defensive_fire_available": false
+                },
+                {
+                    "id": "Airborne Inf. B",
+                    "name": "Airborne Inf. B",
+                    "faction_id": "Airborne",
+                    "type": "Infantry",
+                    "attack": 3,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 5,
+                    "row": 10,
+                    "column": 9,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "Airborne Inf. A",
+                    "name": "Airborne Inf. A",
+                    "faction_id": "Airborne",
+                    "type": "Infantry",
+                    "attack": 3,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 5,
+                    "row": 8,
+                    "column": 9,
+                    "defensive_fire_available": false
+                },
+                {
+                    "id": "Airborne Inf. C",
+                    "name": "Airborne Inf. C",
+                    "faction_id": "Airborne",
+                    "type": "Infantry",
+                    "attack": 3,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 5,
+                    "row": 15,
+                    "column": 16,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "Airborne Inf. E",
+                    "name": "Airborne Inf. E",
+                    "faction_id": "Airborne",
+                    "type": "Infantry",
+                    "attack": 3,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 5,
+                    "row": 16,
+                    "column": 0,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "Airborne Inf. D",
+                    "name": "Airborne Inf. D",
+                    "faction_id": "Airborne",
+                    "type": "Infantry",
+                    "attack": 3,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 5,
+                    "row": 16,
+                    "column": 1,
+                    "defensive_fire_available": true
+                },
+                {
+                    "id": "Airborne Inf. F",
+                    "name": "Airborne Inf. F",
+                    "faction_id": "Airborne",
+                    "type": "Infantry",
+                    "attack": 3,
+                    "echelon": "platoon",
+                    "defense": 2,
+                    "move": 5,
+                    "row": 16,
+                    "column": 7,
+                    "defensive_fire_available": true
+                }
+            ],
+            "terrain": {
+                "default": null,
+                "types": {},
+                "hexes": []
+            },
+            "road_types": {
+                "secondary": 1.0
+            },
+            "road_paths": [
+                {
+                    "type": "secondary",
+                    "path": [
+                        {
+                            "row": 17,
+                            "column": 6
+                        },
+                        {
+                            "row": 16,
+                            "column": 6
+                        },
+                        {
+                            "row": 15,
+                            "column": 6
+                        },
+                        {
+                            "row": 14,
+                            "column": 7
+                        },
+                        {
+                            "row": 14,
+                            "column": 8
+                        },
+                        {
+                            "row": 13,
+                            "column": 9
+                        },
+                        {
+                            "row": 13,
+                            "column": 10
+                        },
+                        {
+                            "row": 12,
+                            "column": 10
+                        },
+                        {
+                            "row": 11,
+                            "column": 10
+                        },
+                        {
+                            "row": 10,
+                            "column": 10
+                        },
+                        {
+                            "row": 9,
+                            "column": 9
+                        },
+                        {
+                            "row": 8,
+                            "column": 9
+                        },
+                        {
+                            "row": 7,
+                            "column": 9
+                        },
+                        {
+                            "row": 6,
+                            "column": 9
+                        },
+                        {
+                            "row": 6,
+                            "column": 10
+                        },
+                        {
+                            "row": 5,
+                            "column": 11
+                        },
+                        {
+                            "row": 5,
+                            "column": 12
+                        },
+                        {
+                            "row": 4,
+                            "column": 13
+                        },
+                        {
+                            "row": 4,
+                            "column": 14
+                        },
+                        {
+                            "row": 3,
+                            "column": 15
+                        },
+                        {
+                            "row": 3,
+                            "column": 16
+                        },
+                        {
+                            "row": 2,
+                            "column": 17
+                        }
+                    ]
+                },
+                {
+                    "type": "secondary",
+                    "path": [
+                        {
+                            "row": 6,
+                            "column": 9
+                        },
+                        {
+                            "row": 6,
+                            "column": 8
+                        },
+                        {
+                            "row": 5,
+                            "column": 7
+                        },
+                        {
+                            "row": 4,
+                            "column": 5
+                        },
+                        {
+                            "row": 4,
+                            "column": 4
+                        },
+                        {
+                            "row": 3,
+                            "column": 3
+                        },
+                        {
+                            "row": 2,
+                            "column": 3
+                        },
+                        {
+                            "row": 1,
+                            "column": 3
+                        },
+                        {
+                            "row": 0,
+                            "column": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        "objectives": [
+            {
+                "row": 2,
+                "column": 3,
+                "points": 1,
+                "type": "occupy"
+            },
+            {
+                "row": 2,
+                "column": 15,
+                "points": 1,
+                "type": "occupy"
+            },
+            {
+                "row": 4,
+                "column": 9,
+                "points": 1,
+                "type": "occupy"
+            }
+        ],
+        "scores": {
+            "Player 1": 0,
+            "Player 2": 3
+        },
+        "turn_limit": 8,
+        "turn_number": 2
+    },
+    "plans": [
+        {
+            "unit_id": "Airborne Inf. A",
+            "path": [
+                {
+                    "row": 8,
+                    "column": 10
+                },
+                {
+                    "row": 7,
+                    "column": 9
+                }
+            ]
+        }
+    ],
+    "sparse_board": {
+        "units": [
+            {
+                "id": "StuG. III Zug A",
+                "row": 0,
+                "column": 16,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "MG Trupp A",
+                "row": 0,
+                "column": 16,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "B / Inf. Zug",
+                "row": 2,
+                "column": 3,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "A / Inf. Zug",
+                "row": 5,
+                "column": 11,
+                "defensive_fire_available": false
+            },
+            {
+                "id": "C / Inf. Zug",
+                "row": 5,
+                "column": 8,
+                "defensive_fire_available": false
+            },
+            {
+                "id": "Crossroads Feldwache",
+                "row": 6,
+                "column": 9,
+                "defensive_fire_available": false
+            },
+            {
+                "id": "Airborne Inf. B",
+                "row": 10,
+                "column": 9,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "Airborne Inf. A",
+                "row": 8,
+                "column": 9,
+                "defensive_fire_available": false
+            },
+            {
+                "id": "Airborne Inf. C",
+                "row": 15,
+                "column": 16,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "Airborne Inf. E",
+                "row": 16,
+                "column": 0,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "Airborne Inf. D",
+                "row": 16,
+                "column": 1,
+                "defensive_fire_available": true
+            },
+            {
+                "id": "Airborne Inf. F",
+                "row": 16,
+                "column": 7,
+                "defensive_fire_available": true
+            }
+        ],
+        "last_combat_results": null,
+        "scores": null
+    },
+    "defensive_fire_events": [
+        {
+            "firing_unit_id": "Crossroads Feldwache",
+            "target_unit_id": "Airborne Inf. A",
+            "trigger_hex": [
+                7,
+                9
+            ],
+            "target_hex_before": [
+                7,
+                9
+            ],
+            "outcome": "retreat",
+            "retreat_destination": [
+                8,
+                9
+            ],
+            "spent_defensive_fire": true,
+            "probability": 0.125,
+            "roll": 0.07586604005985398,
+            "message": "Defensive fire forced the target to retreat to (8, 9)."
+        }
+    ],
+    "scores": {
+        "Player 1": 0,
+        "Player 2": 3
+    },
+    "turnLimit": 8,
+    "turnNumber": 2
+}
