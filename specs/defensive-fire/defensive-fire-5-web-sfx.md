@@ -2,171 +2,124 @@
 
 ## Purpose
 
-This document defines the frontend behavior for **defensive-fire sound playback** using scenario-authored faction sound mappings.
-
-It extends defensive-fire frontend behavior by adding sound hooks for defensive-fire outcomes.
+This document defines frontend behavior for defensive-fire sound playback using
+faction-authored sound mappings, while keeping UI classes (such as `Menu`)
+focused on presentation concerns.
 
 ## Scope
 
-This spec covers only:
+This spec covers:
 
-- selecting defensive-fire sounds from the scenario JSON,
-- playing the firing faction's configured sound for defensive-fire outcomes,
-- handling missing configuration by playing no sound.
+- where faction sound data comes from in the web app state,
+- how defensive-fire sounds are selected and played,
+- class responsibilities between `Menu`, `Game`/`Faction`, and `SoundPlayer`,
+- error tolerance and expected silent behavior for missing configuration.
 
-This spec does **not** define broader audio architecture changes outside defensive fire.
+This spec does **not** define audio settings UI, mixing policy beyond sequential
+event handling, or non-defensive-fire sound domains.
 
-## Scenario configuration contract
+## Data source and model contract (important)
 
-Each faction may define defensive-fire sounds under:
+### `GET /scenarios` is metadata-only
 
-- `factions[].sounds.defensive_fire.effect`
-- `factions[].sounds.defensive_fire.no_effect`
+The scenario list endpoint is intentionally sparse (id/name/description/victory
+metadata). It must **not** be treated as a source of faction sound mappings.
 
-Values map to files in:
+### Faction sounds must live in game state
 
-- `battle-hexes-web/public/sounds`
+Faction sound mappings must be available on the loaded game state and carried
+into frontend domain models:
 
-Example shape:
+- `Game` owns the scenario/faction sound data used during gameplay.
+- Each `Faction` instance should represent its own `sounds` mapping.
+- Defensive-fire sound resolution must read from the firing unit's `Faction`
+  model (or data already materialized from it), not from `Menu`-fetched
+  scenario metadata.
+
+## Faction sound configuration contract
+
+Each faction may define defensive-fire sounds at:
+
+- `faction.sounds.defensive_fire.effect`
+- `faction.sounds.defensive_fire.no_effect`
+
+Values are filenames under `battle-hexes-web/public/sounds`.
+
+Runtime asset path:
+
+- `/sounds/<filename>`
+
+Example faction:
 
 ```json
 {
+  "id": "german",
+  "name": "German",
   "sounds": {
     "defensive_fire": {
-      "effect": "m1_single_rifle_shot.ogg",
-      "no_effect": "m1_single_rifle_shot.ogg"
+      "effect": "k98_rifle.ogg",
+      "no_effect": "k98_distant.ogg"
     }
   }
 }
 ```
 
-## Required behavior
+## Required playback behavior
 
-## 1. Successful defensive fire uses `effect` sound
+1. **Outcome mapping**
+   - Use `defensive_fire_events[].outcome` from movement responses.
+   - If `outcome === "no_effect"`, use `no_effect`.
+   - Otherwise, use `effect`.
 
-When a defensive-fire event resolves with a successful outcome (an effect is applied), the frontend must:
+2. **Faction mapping**
+   - Determine firing faction from `firing_unit_id` by resolving the firing unit
+     in current game state.
+   - Play the firing faction's configured sound key exactly once per event.
 
-- identify the **firing faction** for that defensive-fire event,
-- read `factions[].sounds.defensive_fire.effect` for that faction from the loaded scenario,
-- play that sound exactly once for the event if configured.
+3. **Missing config**
+   - If the sound key is missing/empty, play nothing.
+   - Do not throw.
+   - Do not fallback to defaults or other factions.
 
-## 2. No-effect defensive fire uses `no_effect` sound
+4. **Load/play failures**
+   - If file loading or playback fails, gameplay and UI updates continue.
+   - Log warning to console only.
 
-When a defensive-fire event resolves with a no-effect outcome, the frontend must:
+5. **Multiple events**
+   - Play per-event sounds as events are processed in sequence with animation.
 
-- identify the **firing faction** for that defensive-fire event,
-- read `factions[].sounds.defensive_fire.no_effect` for that faction from the loaded scenario,
-- play that sound exactly once for the event if configured.
+## Class responsibility split
 
-## 3. Missing sound configuration results in silence
+### `Menu`
 
-If the required sound key is missing or empty for that faction/event outcome, the frontend must:
+- Displays defensive-fire messages/status in the UI.
+- Delegates sound effects to `SoundPlayer`.
+- Must not contain faction-resolution or sound-selection logic.
 
-- not throw,
-- not fall back to another faction,
-- not substitute a default defensive-fire sound,
-- continue processing gameplay normally,
-- play no sound.
+### `SoundPlayer`
 
-## 4. File lookup behavior
+- Owns game sound orchestration logic.
+- Provides reusable faction sound lookup support (generic nested key-path
+  retrieval, not hard-coded to defensive fire only).
+- Implements defensive-fire playback as first concrete use case.
+- Handles playback errors internally with warnings.
 
-When a sound value is present, treat it as a filename relative to `public/sounds`.
+### `Game` / `Faction`
 
-Expected asset path at runtime:
-
-- `/sounds/<filename>`
-
-If a referenced file does not exist or fails to load, gameplay must continue without blocking movement resolution.
-
-## Integration guidance
-
-Implementation is expected to integrate with existing movement/defensive-fire event handling by:
-
-- adding a defensive-fire sound selection helper that accepts:
-  - event outcome (`effect` or `no_effect`),
-  - firing faction id,
-  - scenario data,
-- routing playback through existing/standardized frontend audio utilities,
-- invoking playback at the same point where defensive-fire outcomes are surfaced to the user.
+- `Game` supplies authoritative, runtime scenario/faction data.
+- `Faction` exposes sound mappings so `SoundPlayer` can resolve per-faction
+  sounds without relying on `/scenarios` metadata responses.
 
 ## Testing requirements
 
-Add/adjust frontend tests to cover at minimum:
+Frontend tests should cover at minimum:
 
-1. **Effect outcome playback**
-   - Given an `effect` defensive-fire event and configured faction sound, playback is requested for `/sounds/<effect-file>`.
-2. **No-effect outcome playback**
-   - Given a `no_effect` defensive-fire event and configured faction sound, playback is requested for `/sounds/<no-effect-file>`.
-3. **Missing config**
-   - Given missing `defensive_fire`, missing outcome key, or empty filename, no playback is requested.
-4. **Faction-specific selection**
-   - With different sound mappings per faction, the firing faction's mapping is used.
-5. **Load/play failure tolerance**
-   - If playback utility reports an error, defensive-fire resolution and UI updates still complete.
+1. Effect outcome playback from firing faction mapping.
+2. No-effect outcome playback from firing faction mapping.
+3. Missing config (missing section/key/empty filename) produces silence.
+4. Faction-specific selection with multiple factions.
+5. Playback failure tolerance (warning + no gameplay/UI interruption).
+6. `Menu` delegates to `SoundPlayer` rather than implementing audio logic.
+7. Faction sounds are resolved from gameplay state models (`Game`/`Faction`),
+   not scenario-list metadata.
 
-## Out of scope
-
-This spec does not define:
-
-- volume balancing,
-- layered/multiple simultaneous defensive-fire mix rules,
-- user audio settings UI,
-- global fallback sound libraries,
-- non-defensive-fire sound effect behavior.
-
-## Open questions
-
-The following decisions are needed before implementation details can be finalized:
-
-1. **Outcome mapping source of truth**
-   - Which exact event field/value in the defensive-fire payload distinguishes `effect` vs `no_effect`?
-   
-   Use the `outcome` field in the `defensive_fire_events` array, which is returned by `POST /games/{game_id}/move` and `POST /games/{game_id}/movement` endpoints.
-   ```json   
-       "defensive_fire_events": [
-        {
-            "firing_unit_id": "Crossroads Feldwache",
-            "target_unit_id": "Airborne Inf. A",
-            "trigger_hex": [
-                7,
-                9
-            ],
-            "target_hex_before": [
-                7,
-                9
-            ],
-            "outcome": "retreat",
-            "retreat_destination": [
-                8,
-                9
-            ],
-            "spent_defensive_fire": true,
-            "probability": 0.125,
-            "roll": 0.07586604005985398,
-            "message": "Defensive fire forced the target to retreat to (8, 9)."
-        }
-    ]
-   ```
-2. **Multiple events timing**
-   - If multiple defensive-fire events resolve in one server response, should sounds:
-     - play for every event,
-     - be rate-limited,
-     - or collapse to one sound per movement action?
-   
-   This will be possible in the future with "stack movement" where a stack of units can move together. The sound should follow the animation, which will be sequential - animate the defensive fire one after another and the sound will follow suit.
-3. **Concurrent playback policy**
-   - If multiple sounds trigger close together, should they overlap, queue, or interrupt/replace?
-
-   See the above answer - the should be sequential.
-4. **Missing file telemetry**
-   - Should missing audio files be logged to console only, reported through app telemetry, or fully silent?
-
-   Logged to console only.
-5. **User mute/settings behavior**
-   - Should defensive-fire sounds obey an existing global mute/effects-volume setting, and if so, which control path is canonical?
-
-   There are no audio settings yet so don't worry about it.
-6. **Future key naming stability**
-   - Is `defensive_fire.effect` / `defensive_fire.no_effect` considered stable contract, or should implementation support aliases for backward compatibility?
-
-   These are stable contracts and must be treated as such. No aliases needed or wanted.
