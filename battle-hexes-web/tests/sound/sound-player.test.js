@@ -41,7 +41,7 @@ describe('SoundPlayer', () => {
 
   test('plays no_effect outcome sound for firing faction', async () => {
     const play = jest.fn(() => Promise.resolve());
-    const soundPlayer = new SoundPlayer({
+    const logger = { warn: jest.fn() };const soundPlayer = new SoundPlayer({
       audioFactory: (path) => ({
         play,
         path,
@@ -154,7 +154,10 @@ describe('SoundPlayer', () => {
   });
 
   test('logs warning and continues processing when playback fails', async () => {
-    const logger = { warn: jest.fn() };
+    const logger = { 
+      warn: jest.fn(),
+      info: jest.fn(),
+    };
     const soundPlayer = new SoundPlayer({
       audioFactory: () => ({
         play: jest.fn(() => Promise.reject(new Error('decode failed'))),

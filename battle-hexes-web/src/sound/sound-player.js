@@ -17,9 +17,14 @@ export class SoundPlayer {
       return null;
     }
 
+    this.#logger.info("===== SCENARIO =====");
+    this.#logger.info(JSON.stringify(scenario));
+
     const factions = Array.isArray(scenario.factions) ? scenario.factions : [];
+    this.#logger.info("Found " + factions.length + " factions.");
     const faction = factions.find((entry) => entry.id === factionId);
     if (!faction) {
+      this.#logger.warn("Did not find faction with factionId=" + factionId);
       return null;
     }
 
@@ -40,6 +45,7 @@ export class SoundPlayer {
   }
 
   playDefensiveFireEvents({ events, game, scenario }) {
+    this.#logger.info("Playing defensive fire sound fx for " + events.length + " events.");
     if (!Array.isArray(events) || events.length === 0) {
       return;
     }
@@ -52,7 +58,16 @@ export class SoundPlayer {
         factionId,
         soundPath: ['defensive_fire', outcomeKey],
       });
+      this.#logger.info(
+        "firing_unit_id=" + event?.firing_unit_id +
+        ", factionId=" + factionId + ", outcomeKey=" + outcomeKey +
+        ", soundPath=" + soundPath
+      );
       if (!soundPath) {
+        this.#logger.warn(
+          "No defensive fire sound found for factionId=" + factionId +
+          " and outcomeKey=" + outcomeKey
+        );
         continue;
       }
 
