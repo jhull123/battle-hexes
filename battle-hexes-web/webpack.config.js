@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = (env = {}) => ({
@@ -34,6 +35,18 @@ module.exports = (env = {}) => ({
       filename: 'battle.html',
       chunks: ['battle'],
       favicon: path.resolve(__dirname, '../favicon.ico'),
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, 'public/sounds'),
+          to: path.resolve(__dirname, 'dist/sounds'),
+          globOptions: {
+            dot: false,
+            gitignore: true,
+          },
+        },
+      ],
     }),
     new webpack.DefinePlugin({
       'process.env.API_URL': JSON.stringify(env.API_URL || 'http://localhost:8000'),
