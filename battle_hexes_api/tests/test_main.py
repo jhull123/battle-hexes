@@ -636,8 +636,18 @@ class TestFastAPI(unittest.TestCase):
         mock_list_player_types.assert_called_once_with()
 
     def test_serialize_game_serializes_factions_and_metadata(self):
-        faction_alpha = Faction(id="alpha", name="Alpha", color="#ff0000")
-        faction_beta = Faction(id="beta", name="Beta", color="#00ff00")
+        faction_alpha = Faction(
+            id="alpha",
+            name="Alpha",
+            color="#ff0000",
+            sounds={"defensive_fire": {"effect": "a.ogg"}},
+        )
+        faction_beta = Faction(
+            id="beta",
+            name="Beta",
+            color="#00ff00",
+            sounds={"defensive_fire": {"effect": "b.ogg"}},
+        )
 
         players = [
             Player(
@@ -694,14 +704,24 @@ class TestFastAPI(unittest.TestCase):
                     "name": "Alice",
                     "type": PlayerType.HUMAN.value,
                     "factions": [
-                        {"id": "alpha", "name": "Alpha", "color": "#ff0000"}
+                        {
+                            "id": "alpha",
+                            "name": "Alpha",
+                            "color": "#ff0000",
+                            "sounds": {"defensive_fire": {"effect": "a.ogg"}},
+                        }
                     ],
                 },
                 {
                     "name": "Bob",
                     "type": PlayerType.CPU.value,
                     "factions": [
-                        {"id": "beta", "name": "Beta", "color": "#00ff00"}
+                        {
+                            "id": "beta",
+                            "name": "Beta",
+                            "color": "#00ff00",
+                            "sounds": {"defensive_fire": {"effect": "b.ogg"}},
+                        }
                     ],
                 },
             ],

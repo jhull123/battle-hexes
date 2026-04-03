@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Tuple
+from typing import Any, Tuple
 
 from battle_hexes_core.game.objective import Objective
 
@@ -16,6 +16,7 @@ class ScenarioFaction:
     name: str
     color: str
     player: str
+    sounds: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

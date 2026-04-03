@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
     ValidationError,
 )
 
@@ -48,6 +49,7 @@ class ScenarioFactionData(BaseModel):
     name: str
     color: str
     player: str
+    sounds: dict[str, Any] = Field(default_factory=dict)
 
 
 class ScenarioUnitData(BaseModel):
@@ -215,6 +217,7 @@ class ScenarioData(BaseModel):
                 name=faction.name,
                 color=faction.color,
                 player=faction.player,
+                sounds=faction.sounds,
             )
             for faction in self.factions
         )

@@ -109,7 +109,7 @@ export class GameCreator {
   #getFactions(playerData) {
     const factions = new Array();
     for (let faction of playerData.factions) {
-      factions.push(new Faction(faction.id, faction.name, faction.color));
+      factions.push(new Faction(faction.id, faction.name, faction.color, faction.sounds));
     }
     return factions;
   }

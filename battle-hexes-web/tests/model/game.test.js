@@ -189,6 +189,20 @@ describe('resolveCombat', () => {
   });
 });
 
+
+  test('resolves firing faction from unit id in board state', () => {
+    const faction = new Faction('f1', 'Faction 1', '#f00', {
+      defensive_fire: { effect: 'f1_effect.ogg' },
+    });
+    faction.setOwningPlayer(player1);
+    const unit = new Unit('u1', 'Unit1', faction, null, 1, 1, 2);
+
+    game.getBoard().addUnit(unit, 0, 0);
+
+    expect(game.getFactionForUnitId('u1')).toBe(faction);
+    expect(game.getFactionForUnitId('missing')).toBeNull();
+  });
+
 describe('isGameOver', () => {
   test('returns false when multiple players have units', () => {
     const f1 = new Faction('f1', 'f1', '#f00');
