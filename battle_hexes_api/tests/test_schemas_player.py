@@ -20,13 +20,14 @@ def test_player_model_from_core_serializes_factions_and_type():
         "id": "alpha",
         "name": "Alpha",
         "color": "#ff0000",
+        "sounds": {},
     }
 
     assert model.model_dump() == {
         "name": "Alice",
         "type": PlayerType.HUMAN.value,
         "factions": [
-            {"id": "alpha", "name": "Alpha", "color": "#ff0000"},
+            {"id": "alpha", "name": "Alpha", "color": "#ff0000", "sounds": {}},
         ],
     }
 

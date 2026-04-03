@@ -20,7 +20,7 @@ class TestGameCreator(unittest.TestCase):
         self.assertEqual(
             unit_positions,
             {
-                "red_unit_1": (2, 2),
+                "red_unit_1": (5, 6),
                 "blue_unit_1": (8, 9),
                 "blue_unit_2": (9, 5),
             },

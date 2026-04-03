@@ -87,6 +87,25 @@ export class Game {
     return this.#board;
   }
 
+  getUnitById(unitId) {
+    if (typeof unitId !== 'string' || unitId.length === 0) {
+      return null;
+    }
+
+    for (const unit of this.#board.getUnits()) {
+      if (unit.getId() === unitId) {
+        return unit;
+      }
+    }
+
+    return null;
+  }
+
+  getFactionForUnitId(unitId) {
+    const unit = this.getUnitById(unitId);
+    return unit?.getFaction?.() ?? null;
+  }
+
   getScenarioId() {
     return this.#scenarioId;
   }

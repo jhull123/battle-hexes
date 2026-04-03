@@ -117,6 +117,27 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('scenarioVictoryDescription').textContent).toBe('Control every objective at the end of any turn.');
   });
 
+  test('delegates defensive fire sound playback to sound player', async () => {
+    buildDom();
+
+    const soundPlayer = {
+      playDefensiveFireEvents: jest.fn(),
+      setGame: jest.fn(),
+    };
+
+    new Menu(fakeGame(), { service: mockService, soundPlayer });
+    await flushPromises();
+
+    const defensiveFireListener = eventBus.on.mock.calls.find(
+      ([eventName]) => eventName === 'defensiveFireResolved'
+    )?.[1];
+
+    const events = [{ firing_unit_id: 'unit-1', outcome: 'retreat', message: 'Retreat.' }];
+    defensiveFireListener(events);
+
+    expect(soundPlayer.playDefensiveFireEvents).toHaveBeenCalledWith(events);
+  });
+
   test('shows defensive fire messages from movement-phase reactions', async () => {
     buildDom();
 

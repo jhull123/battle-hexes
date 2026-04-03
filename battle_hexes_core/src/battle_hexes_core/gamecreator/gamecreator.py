@@ -214,6 +214,7 @@ class GameCreator:
                 id=faction_data.id,
                 name=faction_data.name,
                 color=faction_data.color,
+                sounds=faction_data.sounds,
             )
             try:
                 player = player_map[faction_data.player]

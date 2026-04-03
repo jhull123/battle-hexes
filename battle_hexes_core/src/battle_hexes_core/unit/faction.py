@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(eq=False, slots=True)
@@ -12,6 +13,7 @@ class Faction:
     id: str
     name: str
     color: str
+    sounds: dict[str, Any] = field(default_factory=dict)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Faction) and self.id == other.id
