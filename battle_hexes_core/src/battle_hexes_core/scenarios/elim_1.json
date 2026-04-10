@@ -4,6 +4,11 @@
   "name": "Elimination Demo 1",
   "description": "A simple elimination scenario.",
   "board_size": [10, 10],
+  "defensive_fire": {
+    "base_probability": 0.50,
+    "minimum": 0.05,
+    "maximum": 0.90
+  },
   "factions": [
     {
       "id": "red faction",
@@ -12,7 +17,7 @@
       "player": "Player 1",
       "sounds": {
         "defensive_fire": {
-          "effect": "m1_single_rifle_shot.ogg",
+          "effect": "m1_trio_rifle_shots.ogg",
           "no_effect": "m1_single_rifle_shot.ogg"
         }
       }
@@ -24,7 +29,7 @@
       "player": "Player 2",
       "sounds": {
         "defensive_fire": {
-          "effect": "m1_single_rifle_shot.ogg",
+          "effect": "m1_trio_rifle_shots.ogg",
           "no_effect": "m1_single_rifle_shot.ogg"
         }
       }
