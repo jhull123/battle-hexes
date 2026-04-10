@@ -180,17 +180,20 @@
   "terrain_types": {
     "forest": {
       "color": "#7F8C6A",
+      "combat_odds_shift": -2,
       "defensive_fire_modifier": 0.75,
       "move_cost": 3
     },
     "open": { "color": "#8F9779" },
     "rough": {
-      "color": "#84876B", 
+      "color": "#84876B",
+      "combat_odds_shift": -1,
       "defensive_fire_modifier": 0.85,
       "move_cost": 2
     },
     "village": {
       "color": "#9A8F7A",
+      "combat_odds_shift": -1,
       "defensive_fire_modifier": 0.75
     }
   },
