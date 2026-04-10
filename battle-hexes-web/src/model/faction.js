@@ -1,13 +1,17 @@
+import { Utils } from './utils.js';
+
 export class Faction {
   #id;
   #name;
   #counterColor;
   #owningPlayer;
+  #sounds;
 
-  constructor(id, name, counterColor) {
+  constructor(id, name, counterColor, sounds = {}) {
     this.#id = id;
     this.#name = name;
     this.#counterColor = counterColor;
+    this.#sounds = Utils.cloneValue(sounds) ?? {};
   }
 
   setOwningPlayer(player) {
@@ -28,6 +32,10 @@ export class Faction {
 
   getOwningPlayer() {
     return this.#owningPlayer;
+  }
+
+  getSounds() {
+    return Utils.cloneValue(this.#sounds) ?? {};
   }
 
   toString() {

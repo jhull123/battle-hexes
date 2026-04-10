@@ -9,7 +9,8 @@
     "build:dev": "webpack --env API_URL=https://api-dev.battlehexes.com",
     "build:mock": "webpack --env BATTLE_HEXES_SERVICE_MODE=mock --env API_URL=http://localhost:8000",
     "test-and-build": "npm run lint && npm test && npm run build",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "serve": "python -m http.server 4173 --directory dist"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +30,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "style-loader": "^4.0.0",
     "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^5.1.4",
+    "copy-webpack-plugin": "^11.0.0"
   },
   "dependencies": {
     "axios": "^1.7.9",

@@ -48,9 +48,13 @@ Build for the dev API deployment:
 
     npm run build:dev
 
-After building, open `dist/index.html` to view the title screen. The game board
-is now served from `dist/battle.html`, which you can reach via the "Enter
-Battle" button on the landing page or by navigating directly to the file.
+### Serving the Built App
+
+    npm run serve
+
+Starts an HTTP server on port 4173 serving the `dist/` directory.
+
+Access the game via http://localhost:4173.
 
 ### Service Modes (HTTP vs Mock)
 

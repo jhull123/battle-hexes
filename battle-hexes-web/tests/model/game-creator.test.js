@@ -9,7 +9,7 @@ beforeEach(() => {
     '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b",' +
     '"scenarioId":"elem_test",' +
     '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
-    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010"}]},' +
+    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensive_fire":{"effect":"red_effect.ogg","no_effect":"red_no_effect.ogg"}}}]},' +
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
     '"board":{"rows":10,"columns":10,"units":[' +
     '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","faction_id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","echelon":"platoon","attack":2,"defense":2,"move":6,"row":6,"column":4,"defensive_fire_available":false},' +
@@ -44,6 +44,18 @@ describe("createGame", () => {
 
     expect(allPlayers[0].getFactions()[0].getCounterColor()).toBe("#C81010");
     expect(allPlayers[1].getFactions()[0].getCounterColor()).toBe("#4682B4");
+  });
+
+
+  test('create game maps faction sounds into faction models', () => {
+    const redFaction = game.getPlayers().getAllPlayers()[0].getFactions()[0];
+
+    expect(redFaction.getSounds()).toEqual({
+      defensive_fire: {
+        effect: 'red_effect.ogg',
+        no_effect: 'red_no_effect.ogg',
+      },
+    });
   });
 
   test("create game sets phases", () => {

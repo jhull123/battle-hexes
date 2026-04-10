@@ -1,6 +1,7 @@
 import { battleHexesService } from './service/service-factory.js';
 import { eventBus } from './event-bus.js';
 import { BoardUpdater } from './model/board-updater.js';
+import { SoundPlayer } from './sound-player.js';
 
 export class Menu {
   #game;
@@ -26,10 +27,11 @@ export class Menu {
   #onNewGameRequested;
   #reactionMessagesDiv;
   #service;
+  #soundPlayer;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
-  constructor(game, { onNewGameRequested, service = battleHexesService } = {}) {
+  constructor(game, { onNewGameRequested, service = battleHexesService, soundPlayer = null } = {}) {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
@@ -57,6 +59,7 @@ export class Menu {
         endMovement: async () => ({}),
         endTurn: async () => ({}),
       };
+    this.#soundPlayer = soundPlayer ?? new SoundPlayer(this.#game);
 
     // Initialize checkbox state from URL param
     const params = new URLSearchParams(window.location.search);
@@ -94,6 +97,7 @@ export class Menu {
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
     eventBus.on('defensiveFireResolved', (events) => {
       this.#showDefensiveFireStatus(events);
+      this.#soundPlayer.playDefensiveFireEvents(events);
     });
 
     eventBus.on?.('defensiveFireResolved', (events) => this.#showDefensiveFireEvents(events));
@@ -528,6 +532,7 @@ export class Menu {
 
   setGame(game) {
     this.#game = game;
+    this.#soundPlayer.setGame(this.#game);
     const scenarioId = this.#game.getScenarioId?.() ?? null;
     if (scenarioId !== this.#activeScenarioId) {
       this.#activeScenarioId = scenarioId;

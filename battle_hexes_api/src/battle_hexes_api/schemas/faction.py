@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from battle_hexes_core.unit.faction import Faction
 
@@ -15,6 +15,7 @@ class FactionModel(BaseModel):
     id: str
     name: str
     color: str
+    sounds: dict = Field(default_factory=dict)
 
     @classmethod
     def from_core(cls, faction: Faction) -> "FactionModel":
@@ -25,4 +26,9 @@ class FactionModel(BaseModel):
     def to_core(self) -> Faction:
         """Convert the Pydantic model back into a core :class:`Faction`."""
 
-        return Faction(id=self.id, name=self.name, color=self.color)
+        return Faction(
+            id=self.id,
+            name=self.name,
+            color=self.color,
+            sounds=self.sounds,
+        )
