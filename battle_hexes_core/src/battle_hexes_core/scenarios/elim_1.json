@@ -67,12 +67,19 @@
   "terrain_default": "open",
   "terrain_types": {
     "open": { "color": "#C6AA5C" },
-    "village": { "color": "#9A8F7A" }
+    "village": {
+      "color": "#9A8F7A",
+      "combat_odds_shift": -1
+    }
   },
   "hex_data": [
     { "coords": [5, 5], "terrain": "village" },
     { "coords": [5, 6], "units": ["red_unit_1"] },
-    { "coords": [8, 9], "units": ["blue_unit_1"] },
+    { 
+      "coords": [8, 9],
+      "terrain": "village",
+      "units": ["blue_unit_1"]
+    },
     { "coords": [9, 5], "units": ["blue_unit_2"] }
   ],
   "objectives": [
