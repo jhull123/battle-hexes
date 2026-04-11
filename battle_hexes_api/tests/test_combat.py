@@ -32,6 +32,8 @@ class TestCombatResultSchema(unittest.TestCase):
             odds=(3, 2),
             die_roll=4,
             combat_result=CombatResult.DEFENDER_ELIMINATED,
+            base_odds=(2, 1),
+            final_odds=(3, 2),
             no_retreat=[unit],
         )
 
@@ -40,5 +42,7 @@ class TestCombatResultSchema(unittest.TestCase):
         self.assertEqual(schema.combat_result_code, "DEFENDER_ELIMINATED")
         self.assertEqual(schema.combat_result_text, "Defender Eliminated")
         self.assertEqual(schema.odds, (3, 2))
+        self.assertEqual(schema.base_odds, (2, 1))
+        self.assertEqual(schema.final_odds, (3, 2))
         self.assertEqual(schema.die_roll, 4)
         self.assertEqual(schema.no_retreat_unit_ids, ("u4",))

@@ -23,7 +23,7 @@
       "player": "Player 1",
       "sounds": {
         "defensive_fire": {
-          "effect": "m1_single_rifle_shot.ogg",
+          "effect": "m1_trio_rifle_shots.ogg",
           "no_effect": "m1_single_rifle_shot.ogg"
         }
       }
@@ -35,7 +35,7 @@
       "player": "Player 2",
       "sounds": {
         "defensive_fire": {
-          "effect": "m1_single_rifle_shot.ogg",
+          "effect": "m1_trio_rifle_shots.ogg",
           "no_effect": "m1_single_rifle_shot.ogg"
         }
       }
@@ -180,17 +180,20 @@
   "terrain_types": {
     "forest": {
       "color": "#7F8C6A",
+      "combat_odds_shift": -2,
       "defensive_fire_modifier": 0.75,
       "move_cost": 3
     },
     "open": { "color": "#8F9779" },
     "rough": {
-      "color": "#84876B", 
+      "color": "#84876B",
+      "combat_odds_shift": -1,
       "defensive_fire_modifier": 0.85,
       "move_cost": 2
     },
     "village": {
       "color": "#9A8F7A",
+      "combat_odds_shift": -1,
       "defensive_fire_modifier": 0.75
     }
   },
@@ -285,8 +288,8 @@
   ],
   "objectives": [
     { "coords": [2, 3], "points": 1, "type": "occupy" },
-    { "coords": [2, 15], "points": 1, "type": "occupy" },
-    { "coords": [4, 9], "points": 1, "type": "occupy" }
+    { "coords": [3, 15], "points": 1, "type": "occupy" },
+    { "coords": [6, 9], "points": 1, "type": "occupy" }
   ],
   "road_types": {
     "secondary": {

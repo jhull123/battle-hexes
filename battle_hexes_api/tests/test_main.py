@@ -67,8 +67,23 @@ class TestFastAPI(unittest.TestCase):
             1,
         )
         self.assertEqual(
+            terrain.get("types", {}).get("open", {}).get(
+                "combat_odds_shift"
+            ),
+            0,
+        )
+        self.assertEqual(
+            terrain.get("types", {}).get("village", {}).get(
+                "combat_odds_shift"
+            ),
+            -1,
+        )
+        self.assertEqual(
             terrain.get("hexes"),
-            [{"row": 5, "column": 5, "terrain": "village"}],
+            [
+                {"row": 5, "column": 5, "terrain": "village"},
+                {"row": 8, "column": 9, "terrain": "village"},
+            ],
         )
         self.assertEqual(post_body.get("board", {}).get("road_types"), {})
         self.assertEqual(post_body.get("board", {}).get("road_paths"), [])
@@ -80,8 +95,19 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(get_body.get('scenarioId'), 'elim_1')
         self.assertEqual(
+            get_body.get("board", {})
+            .get("terrain", {})
+            .get("types", {})
+            .get("village", {})
+            .get("combat_odds_shift"),
+            -1,
+        )
+        self.assertEqual(
             get_body.get("board", {}).get("terrain", {}).get("hexes"),
-            [{"row": 5, "column": 5, "terrain": "village"}],
+            [
+                {"row": 5, "column": 5, "terrain": "village"},
+                {"row": 8, "column": 9, "terrain": "village"},
+            ],
         )
         self.assertEqual(get_body.get("board", {}).get("road_types"), {})
         self.assertEqual(get_body.get("board", {}).get("road_paths"), [])

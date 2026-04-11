@@ -53,6 +53,7 @@ class ScenarioTerrainType:
     color: str
     move_cost: int = 1
     defensive_fire_modifier: float = 1.0
+    combat_odds_shift: int = 0
 
 
 @dataclass(frozen=True)

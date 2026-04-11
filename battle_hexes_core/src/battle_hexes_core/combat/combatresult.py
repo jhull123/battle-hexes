@@ -26,8 +26,11 @@ class CombatResultData:
                 ]
             ] = None,
             no_retreat: Optional[Sequence['Unit']] = None,
+            base_odds: tuple | None = None,
+            final_odds: tuple | None = None,
     ):
-        self.odds = odds
+        self.base_odds = base_odds if base_odds is not None else odds
+        self.final_odds = final_odds if final_odds is not None else odds
         self.die_roll = die_roll
         self.combat_result = combat_result
         self._battle_participants: Optional[
@@ -40,10 +43,16 @@ class CombatResultData:
             self.set_no_retreat_units(no_retreat)
 
     def get_odds(self) -> tuple:
-        return self.odds
+        return self.final_odds
 
     def get_die_roll(self) -> int:
         return self.die_roll
+
+    def get_base_odds(self) -> tuple:
+        return self.base_odds
+
+    def get_final_odds(self) -> tuple:
+        return self.final_odds
 
     def get_combat_result(self) -> CombatResult:
         return self.combat_result
