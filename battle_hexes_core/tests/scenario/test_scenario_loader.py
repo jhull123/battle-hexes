@@ -102,6 +102,7 @@ def test_load_scenario_converts_core_types():
     assert scenario.terrain_default == "open"
     assert scenario.terrain_types["open"].color == "#C6AA5C"
     assert scenario.terrain_types["open"].move_cost == 1
+    assert scenario.terrain_types["open"].combat_odds_shift == 0
     assert scenario.hex_data[0].coords == (5, 5)
     assert scenario.hex_data[1].units == ("red_unit_1",)
     assert scenario.hex_data[0].objectives[0].type == "hold"
@@ -190,3 +191,40 @@ def test_load_scenario_maps_unit_defensive_fire_modifier_to_core_type():
     )
 
     assert feldwache.defensive_fire_modifier == 0.5
+
+
+def test_load_scenario_maps_terrain_combat_odds_shift_to_core_type():
+    scenario = load_scenario(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.terrain_types["rough"].combat_odds_shift == -1
+
+
+def test_load_scenario_data_defaults_terrain_combat_odds_shift_to_zero():
+    scenario = load_scenario_data(
+        "elim_1", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.terrain_types is not None
+    assert scenario.terrain_types["open"].combat_odds_shift == 0
+
+
+def test_load_scenario_data_reads_terrain_combat_odds_shift():
+    scenario = load_scenario_data(
+        "d_day_crossroads", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.terrain_types is not None
+    assert scenario.terrain_types["forest"].combat_odds_shift == -2
+
+
+def test_load_scenario_terrain_combat_odds_shift_invalid_type(tmp_path):
+    payload_path = _scenario_dir() / "elim_1.json"
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["terrain_types"]["open"]["combat_odds_shift"] = "bad"
+    scenario_path = tmp_path / "elim_1.json"
+    scenario_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="is not a valid scenario"):
+        load_scenario_data("elim_1", scenario_dir=tmp_path)

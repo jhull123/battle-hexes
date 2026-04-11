@@ -138,6 +138,7 @@ class GameCreator:
                 terrain.color,
                 terrain.move_cost,
                 terrain.defensive_fire_modifier,
+                terrain.combat_odds_shift,
             )
             for name, terrain in scenario.terrain_types.items()
         }

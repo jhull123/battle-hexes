@@ -15,6 +15,8 @@ class CombatResultSchema(BaseModel):
     combat_result_code: str
     combat_result_text: str
     odds: Tuple[int, int]
+    base_odds: Tuple[int, int]
+    final_odds: Tuple[int, int]
     die_roll: int
     no_retreat_unit_ids: Tuple[str, ...] = ()
 
@@ -28,7 +30,9 @@ class CombatResultSchema(BaseModel):
         return cls(
             combat_result_code=combat_result_data.get_combat_result().name,
             combat_result_text=combat_result_data.get_combat_result().value,
-            odds=tuple(combat_result_data.get_odds()),
+            odds=tuple(combat_result_data.get_final_odds()),
+            base_odds=tuple(combat_result_data.get_base_odds()),
+            final_odds=tuple(combat_result_data.get_final_odds()),
             die_roll=combat_result_data.get_die_roll(),
             no_retreat_unit_ids=tuple(
                 str(unit.get_id())

@@ -23,6 +23,8 @@ class TestCombatSolver(unittest.TestCase):
         self.combat_solver.set_static_die_roll(5)
         combat_result = self.combat_solver.solve_combat(12, 5)
         assert combat_result.get_odds() == (2, 1)
+        assert combat_result.get_base_odds() == (2, 1)
+        assert combat_result.get_final_odds() == (2, 1)
         assert combat_result.get_die_roll() == 5
         assert combat_result.get_combat_result() == CombatResult.EXCHANGE
 
@@ -32,3 +34,24 @@ class TestCombatSolver(unittest.TestCase):
         assert combat_result.get_die_roll() == -1
         assert combat_result.get_combat_result() \
             == CombatResult.ATTACKER_ELIMINATED
+
+    def test_solve_combat_applies_negative_odds_shift(self):
+        self.combat_solver.set_static_die_roll(3)
+
+        combat_result = self.combat_solver.solve_combat(
+            7,
+            3,
+            combat_odds_shift=-1,
+        )
+
+        assert combat_result.get_base_odds() == (2, 1)
+        assert combat_result.get_final_odds() == (1, 1)
+        assert combat_result.get_odds() == (1, 1)
+
+    def test_shift_odds_clamps_left_boundary(self):
+        shifted = self.combat_solver.shift_odds((1, 2), -99)
+        assert shifted == (1, 7)
+
+    def test_shift_odds_clamps_right_boundary(self):
+        shifted = self.combat_solver.shift_odds((6, 1), 99)
+        assert shifted == (7, 1)

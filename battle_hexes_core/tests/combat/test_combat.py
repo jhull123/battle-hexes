@@ -5,6 +5,7 @@ from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.combat.combat import Combat
 from battle_hexes_core.combat.combatresult import CombatResult
+from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
@@ -353,3 +354,92 @@ class TestCombat(unittest.TestCase):
             (self.blue_unit,),
             combat_result.get_battles()[0].get_no_retreat_units(),
         )
+
+    def test_combat_uses_defender_terrain_shift(self):
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.board.get_hex(6, 5).set_terrain(
+            Terrain(
+                name="forest",
+                hex_color="#3D5A2B",
+                combat_odds_shift=-1,
+            )
+        )
+        self.combat.set_static_die_roll(3)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual((2, 1), combat_result.get_base_odds())
+        self.assertEqual((1, 1), combat_result.get_final_odds())
+        self.assertEqual((1, 1), combat_result.get_odds())
+        self.assertEqual(
+            CombatResult.ATTACKER_RETREAT_2,
+            combat_result.get_combat_result(),
+        )
+
+    def test_combat_ignores_attacker_terrain_shift(self):
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.board.get_hex(6, 4).set_terrain(
+            Terrain(
+                name="hill",
+                hex_color="#B4A47A",
+                combat_odds_shift=2,
+            )
+        )
+        self.combat.set_static_die_roll(5)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual((2, 1), combat_result.get_base_odds())
+        self.assertEqual((2, 1), combat_result.get_final_odds())
+        self.assertEqual(
+            CombatResult.EXCHANGE,
+            combat_result.get_combat_result(),
+        )
+
+    def test_combat_uses_most_defensive_shift_for_multi_hex_defenders(self):
+        red_unit2 = Unit(
+            id=str(uuid.uuid4()),
+            name='Red Unit 2',
+            faction=self.red_faction,
+            player=self.red_player,
+            type='Infantry',
+            attack=4,
+            defense=4,
+            move=4,
+        )
+        blue_unit2 = Unit(
+            id=str(uuid.uuid4()),
+            name='Blue Unit 2',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Recon',
+            attack=2,
+            defense=2,
+            move=6,
+        )
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(red_unit2, 7, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.board.add_unit(blue_unit2, 5, 5)
+        self.board.get_hex(6, 5).set_terrain(
+            Terrain(
+                name="rough",
+                hex_color="#84876B",
+                combat_odds_shift=-1,
+            )
+        )
+        self.board.get_hex(5, 5).set_terrain(
+            Terrain(
+                name="forest",
+                hex_color="#7F8C6A",
+                combat_odds_shift=-2,
+            )
+        )
+        self.combat.set_static_die_roll(3)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual((2, 1), combat_result.get_base_odds())
+        self.assertEqual((1, 2), combat_result.get_final_odds())
