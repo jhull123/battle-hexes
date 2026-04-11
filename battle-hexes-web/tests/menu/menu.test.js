@@ -320,9 +320,37 @@ describe('auto new game persistence', () => {
 
     expect(document.getElementById('selHexCoord').innerHTML).toBe('Coords: (1, 2)');
     expect(document.getElementById('selHexContents').innerHTML).toBe('<em>None</em>');
-    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Open (cost=1)');
+    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Open (move=1)');
     expect(document.getElementById('selHexUnitsHeading').style.display).toBe('');
     expect(document.getElementById('selHexTerrainHeading').style.display).toBe('');
+  });
+
+  test('shows selected hex terrain CRT shift when non-zero', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const selectedHex = {
+      row: 3,
+      column: 15,
+      getUnits: () => [],
+      getTerrain: () => ({
+        name: 'village',
+        moveCost: 1,
+        combatOddsShift: -1,
+      }),
+    };
+
+    const menu = new Menu(fakeGame({
+      getBoard: () => ({
+        getSelectedHex: () => selectedHex,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    }), { service: mockService });
+
+    menu.updateMenu();
+
+    expect(document.getElementById('selHexTerrain').innerHTML).toBe('Village (move=1, CRT=-1)');
   });
 
 

@@ -144,7 +144,10 @@ export class GameCreator {
         const moveCost = Number.isFinite(value?.move_cost) && value.move_cost > 0
           ? value.move_cost
           : 1;
-        terrainTypes.set(key, new Terrain(name, color, moveCost));
+        const combatOddsShift = Number.isFinite(value?.combat_odds_shift)
+          ? value.combat_odds_shift
+          : 0;
+        terrainTypes.set(key, new Terrain(name, color, moveCost, combatOddsShift));
       }
     }
 

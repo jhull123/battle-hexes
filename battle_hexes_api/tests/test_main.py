@@ -67,6 +67,18 @@ class TestFastAPI(unittest.TestCase):
             1,
         )
         self.assertEqual(
+            terrain.get("types", {}).get("open", {}).get(
+                "combat_odds_shift"
+            ),
+            0,
+        )
+        self.assertEqual(
+            terrain.get("types", {}).get("village", {}).get(
+                "combat_odds_shift"
+            ),
+            -1,
+        )
+        self.assertEqual(
             terrain.get("hexes"),
             [
                 {"row": 5, "column": 5, "terrain": "village"},
@@ -82,6 +94,14 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(new_game_id, get_body.get('id'))
         self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(get_body.get('scenarioId'), 'elim_1')
+        self.assertEqual(
+            get_body.get("board", {})
+            .get("terrain", {})
+            .get("types", {})
+            .get("village", {})
+            .get("combat_odds_shift"),
+            -1,
+        )
         self.assertEqual(
             get_body.get("board", {}).get("terrain", {}).get("hexes"),
             [
