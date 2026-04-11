@@ -44,3 +44,8 @@ tests and linter across **all** Python packages. The script adjusts
 
 - Prefer small, focused methods; avoid introducing long methods when a few well-named helpers would make the logic easier to read.
 - Keep cyclomatic complexity reasonable by extracting branching logic into helper functions or dedicated classes when behavior grows beyond a straightforward flow.
+
+## Specification docs
+
+- Place all implementation/design specs in the repository `specs/` directory (use a feature-specific subdirectory when helpful).
+- Do not leave new spec files in project package directories unless explicitly requested.
