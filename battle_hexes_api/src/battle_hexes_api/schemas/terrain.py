@@ -16,6 +16,7 @@ class TerrainTypeModel(BaseModel):
     name: str
     color: str
     move_cost: int = 1
+    combat_odds_shift: int = 0
 
     @classmethod
     def from_scenario_type(
@@ -27,6 +28,7 @@ class TerrainTypeModel(BaseModel):
             name=name,
             color=terrain_type.color,
             move_cost=terrain_type.move_cost,
+            combat_odds_shift=terrain_type.combat_odds_shift,
         )
 
 
