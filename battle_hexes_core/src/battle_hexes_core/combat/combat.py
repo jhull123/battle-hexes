@@ -40,13 +40,37 @@ class Combat:
         attackers, defenders = battle_participants
         attack_factor = sum(unit.get_attack() for unit in attackers)
         defense_factor = sum(unit.get_defense() for unit in defenders)
+        combat_odds_shift = self._get_defender_terrain_shift(defenders)
         combat_result = self.combat_solver.solve_combat(
             attack_factor,
-            defense_factor
+            defense_factor,
+            combat_odds_shift=combat_odds_shift,
         )
         combat_result.set_battle_participants((attackers, defenders))
         self.__update_board_for_result((attackers, defenders), combat_result)
         return combat_result
+
+    def _get_defender_terrain_shift(self, defenders) -> int:
+        """Return the most defensive terrain shift across defender hexes."""
+        if not defenders:
+            return 0
+
+        defender_shifts: list[int] = []
+        for defender in defenders:
+            defender_coords = defender.get_coords()
+            if defender_coords is None:
+                continue
+
+            defender_hex = self.board.get_hex(*defender_coords)
+            if defender_hex is None or defender_hex.terrain is None:
+                continue
+
+            defender_shifts.append(defender_hex.terrain.combat_odds_shift)
+
+        if not defender_shifts:
+            return 0
+
+        return min(defender_shifts)
 
     def __update_board_for_result(
             self,

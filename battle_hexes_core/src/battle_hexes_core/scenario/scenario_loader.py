@@ -11,6 +11,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    StrictInt,
     ValidationError,
 )
 
@@ -86,6 +87,7 @@ class ScenarioTerrainTypeData(BaseModel):
     color: str
     move_cost: int = 1
     defensive_fire_modifier: float = 1.0
+    combat_odds_shift: StrictInt = 0
 
 
 class ScenarioHexDataEntry(BaseModel):
@@ -251,6 +253,7 @@ class ScenarioData(BaseModel):
                     defensive_fire_modifier=(
                         terrain_type.defensive_fire_modifier
                     ),
+                    combat_odds_shift=terrain_type.combat_odds_shift,
                 )
                 for key, terrain_type in self.terrain_types.items()
             }

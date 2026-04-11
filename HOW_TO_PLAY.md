@@ -18,7 +18,7 @@ must end its movement on that hex.
 
 Combat occurs between adjacent enemy units. Total the attack strength of the attacking units and the defense strength of the defending units, then convert that ratio to the closest supported column on the Combat Results Table (CRT).
 
-After determining the base odds, apply any terrain combat odds shift for the hex occupied by the defender. Terrain shifts modify the odds column, not the unit strengths. A negative shift moves the odds left on the CRT and favors the defender. For example, an attack at 2:1 against a defender in terrain with a -1 shift is resolved on the 1:1 column. Odds cannot shift beyond the leftmost or rightmost CRT column.
+After determining the base odds, apply any terrain combat odds shift for the hex occupied by the defender. Terrain shifts modify the odds column, not the unit strengths. A negative shift moves the odds left on the CRT and favors the defender. For example, an attack at 2:1 against a defender in terrain with a -1 shift is resolved on the 1:1 column. If defenders are spread across multiple hexes with different terrain shifts, use the most defensive shift (the lowest value, such as `-2` over `-1` or `0`). Odds cannot shift beyond the leftmost or rightmost CRT column.
 
 Once the final odds column is determined, roll one die and apply the result shown on the CRT.
 
