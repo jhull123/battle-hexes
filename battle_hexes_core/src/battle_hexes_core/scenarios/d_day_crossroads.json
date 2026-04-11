@@ -288,8 +288,8 @@
   ],
   "objectives": [
     { "coords": [2, 3], "points": 1, "type": "occupy" },
-    { "coords": [2, 15], "points": 1, "type": "occupy" },
-    { "coords": [4, 9], "points": 1, "type": "occupy" }
+    { "coords": [3, 15], "points": 1, "type": "occupy" },
+    { "coords": [6, 9], "points": 1, "type": "occupy" }
   ],
   "road_types": {
     "secondary": {
