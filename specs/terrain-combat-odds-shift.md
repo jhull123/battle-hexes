@@ -56,7 +56,7 @@
 
 ## 8. Combat resolution rules
 - Let CRT columns be ordered left-to-right (worst for attacker to best for attacker), e.g.:
-  `1:6, 1:5, 1:4, 1:3, 1:2, 1:1, 2:1, 3:1, 4:1, 5:1, 6:1`.
+  `1:7, 1:6, 1:5, 1:4, 1:3, 1:2, 1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1`.
 - Resolution steps:
   1. Compute base odds column from attacker/defender strengths using existing logic.
   2. Read defender terrain `combat_odds_shift` (default `0` if absent).
@@ -67,8 +67,8 @@
   - Base odds `2:1` (index 6 in the list above), defender terrain shift `-1` => final odds `1:1` (index 5).
 
 ## 9. Edge cases
-- Very negative shifts clamp to leftmost column (`1:6`).
-- Very positive shifts clamp to rightmost column (`6:1`).
+- Very negative shifts clamp to leftmost column (`1:7`).
+- Very positive shifts clamp to rightmost column (`7:1`).
 - Missing terrain definition field (`combat_odds_shift`) behaves as `0`.
 - If attacker and defender occupy different terrain types, only defender terrain applies.
 - If defender terrain lookup fails due to invalid scenario state, current engine error-handling behavior should remain unchanged (do not silently fabricate terrain).
@@ -103,8 +103,8 @@
 - Add unit tests for combat resolution:
   - No terrain shift: base odds and final odds are identical.
   - Negative shift: e.g., base `2:1`, shift `-1`, final `1:1`.
-  - Clamp at left boundary: base at/near left edge plus negative shift stays at leftmost column.
-  - Clamp at right boundary: base at/near right edge plus positive shift stays at rightmost column.
+  - Clamp at left boundary: base at/near left edge plus negative shift stays at leftmost column (including `1:7` deterministic outcome behavior).
+  - Clamp at right boundary: base at/near right edge plus positive shift stays at rightmost column (including `7:1` deterministic outcome behavior).
   - Defender terrain used instead of attacker terrain.
 - Add unit tests for scenario parsing/model:
   - Missing `combat_odds_shift` defaults to `0`.
