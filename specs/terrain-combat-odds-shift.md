@@ -115,6 +115,10 @@
 
 ## 12. Questions for Jason
 - Should this release expose both **base odds** and **final shifted odds** in combat result APIs/logs, or only final odds?
+Answer: base odds and final odds should be included in logs and api for explainability.
 - Should we require every terrain type to explicitly declare `combat_odds_shift` in scenario authoring guidelines, even though runtime default is `0`?
+Answer: No!
 - Do we want to reserve a future extension point for stacking multiple odds shifts (terrain + other effects), and if yes should we shape the internal API now?
+Answer: not needed
 - Should rulebook/docs include a standard terrain modifier table (example values) as part of this feature rollout?
+Answer: no.
