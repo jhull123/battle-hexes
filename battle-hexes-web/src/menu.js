@@ -279,7 +279,11 @@ export class Menu {
     const terrainName = terrain.name
       ? `${terrain.name.charAt(0).toUpperCase()}${terrain.name.slice(1)}`
       : 'Unknown';
-    return `${terrainName} (cost=${moveCost})`;
+    const combatOddsShift = Number.isFinite(terrain.combatOddsShift) ? terrain.combatOddsShift : 0;
+    if (combatOddsShift === 0) {
+      return `${terrainName} (move=${moveCost})`;
+    }
+    return `${terrainName} (move=${moveCost}, CRT=${combatOddsShift})`;
   }
 
   #formatObjectives(selectedHex) {
