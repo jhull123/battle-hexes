@@ -49,3 +49,6 @@ tests and linter across **all** Python packages. The script adjusts
 
 - Place all implementation/design specs in the repository `specs/` directory (use a feature-specific subdirectory when helpful).
 - Do not leave new spec files in project package directories unless explicitly requested.
+- Do not perform code changes when creating a specification unless explicitly requested.
+- Include an "Open Questions" section at the end of the spec to clarify any ambiguities that need to be resolved for implementation. If there are no such ambiguities then simply list state "No questions." in this section. Do not create questions just to fill out this section. The questions should be useful, essential, and limited. 
+
