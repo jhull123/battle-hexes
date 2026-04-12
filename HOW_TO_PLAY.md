@@ -29,6 +29,8 @@ Attacker Retreat 2: the attacking unit retreats 2 hexes.
 Attacker Eliminated: the attacking unit is removed.
 Exchange: both sides take the exchange result defined by the game system.
 
+**Note** Units with zero movement (fixed units such as garrisons) cannot retreat. These units are eliminated when forced to retreat. 
+
 ## Defensive Fire
 
 An off-turn unit may fire when an enemy moves into combat position (becomes
