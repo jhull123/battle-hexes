@@ -89,14 +89,7 @@ class Combat:
                 self.board.remove_units(attackers)
             case CombatResult.ATTACKER_RETREAT_2:
                 origin = defenders[0].get_coords()
-                removed = []
-                for attacker in attackers:
-                    attacker.record_forced_retreat(
-                        self.game.get_current_player()
-                    )
-                    success = attacker.forced_move(self.board, origin, 2)
-                    if not success:
-                        removed.append(attacker)
+                removed = self._resolve_forced_retreat(attackers, origin, 2)
                 if removed:
                     self.board.remove_units(removed)
                     combat_result.add_no_retreat_units(removed)
@@ -108,14 +101,7 @@ class Combat:
                 self.board.remove_units(defenders)
             case CombatResult.DEFENDER_RETREAT_2:
                 origin = attackers[0].get_coords()
-                removed = []
-                for defender in defenders:
-                    defender.record_forced_retreat(
-                        self.game.get_current_player()
-                    )
-                    success = defender.forced_move(self.board, origin, 2)
-                    if not success:
-                        removed.append(defender)
+                removed = self._resolve_forced_retreat(defenders, origin, 2)
                 if removed:
                     self.board.remove_units(removed)
                     combat_result.add_no_retreat_units(removed)
@@ -137,6 +123,23 @@ class Combat:
                     'Unhandled combat result:',
                     combat_result.get_combat_result(),
                 )
+
+    def _resolve_forced_retreat(
+            self,
+            units,
+            origin: tuple[int, int] | None,
+            distance: int,
+    ) -> list:
+        removed = []
+        for unit in units:
+            unit.record_forced_retreat(self.game.get_current_player())
+            if unit.get_move() == 0:
+                removed.append(unit)
+                continue
+            success = unit.forced_move(self.board, origin, distance)
+            if not success:
+                removed.append(unit)
+        return removed
 
     def _attackers_to_remove(self, attackers, defense_factor):
         """Return subset of attackers to remove for an exchange."""
