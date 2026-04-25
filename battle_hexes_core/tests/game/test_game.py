@@ -325,6 +325,63 @@ class TestGame(unittest.TestCase):
         self.assertEqual(mover.get_coords(), (0, 2))
         self.assertEqual(mover.current_turn_movement_points_remaining, 1)
 
+    def test_apply_movement_plans_respects_stacking_contention_order(self):
+        board, player1, _player2, faction1, _faction2, game = (
+            self._make_two_player_game()
+        )
+        board.set_stacking_limit(2)
+
+        occupant = Unit(
+            id="occupant",
+            name="Occupant",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        mover_one = Unit(
+            id="mover-one",
+            name="Mover One",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        mover_two = Unit(
+            id="mover-two",
+            name="Mover Two",
+            faction=faction1,
+            player=player1,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+
+        board.add_unit(occupant, 0, 1)
+        board.add_unit(mover_one, 0, 0)
+        board.add_unit(mover_two, 1, 0)
+
+        plans = [
+            UnitMovementPlan(
+                mover_one,
+                [board.get_hex(0, 0), board.get_hex(0, 1)],
+            ),
+            UnitMovementPlan(
+                mover_two,
+                [board.get_hex(1, 0), board.get_hex(0, 1)],
+            ),
+        ]
+
+        game.apply_movement_plans(plans)
+
+        self.assertEqual(mover_one.get_coords(), (0, 1))
+        self.assertEqual(mover_two.get_coords(), (1, 0))
+
     @patch(
         RANDOM_PATCH_TARGET,
         return_value=0.0,

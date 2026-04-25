@@ -31,6 +31,7 @@ class Board:
     def __init__(self, rows: int, columns: int):
         self.rows = rows
         self.columns = columns
+        self.stacking_limit: int | None = None
         self.units: dict[str, Unit] = {}
         self.road_types: dict[str, float] = {}
         self.road_paths: tuple[
@@ -85,6 +86,10 @@ class Board:
         """Return True if the coordinates are on the board."""
         return 0 <= row < self.rows and 0 <= column < self.columns
 
+    def set_stacking_limit(self, stacking_limit: int | None) -> None:
+        """Set optional scenario-level friendly stacking limit."""
+        self.stacking_limit = stacking_limit
+
     def add_unit(self, unit: Unit, row: int, column: int) -> None:
         if not (0 <= row < self.rows) or not (0 <= column < self.columns):
             raise ValueError("Unit is out of bounds")
@@ -116,6 +121,48 @@ class Board:
             if unit.get_coords() == (row, column):
                 return unit
         return None
+
+    def get_units_at(
+        self,
+        row: int,
+        column: int,
+        exclude_unit: Unit | None = None,
+    ) -> List[Unit]:
+        """Return all units occupying ``(row, column)``."""
+        return [
+            unit
+            for unit in self.units.values()
+            if unit is not exclude_unit
+            and unit.get_coords() == (row, column)
+        ]
+
+    def can_unit_enter_hex(
+        self,
+        unit: Unit,
+        row: int,
+        column: int,
+    ) -> bool:
+        """Return whether ``unit`` may legally enter ``(row, column)``."""
+        if not self.is_in_bounds(row, column):
+            return False
+
+        occupying_units = self.get_units_at(
+            row,
+            column,
+            exclude_unit=unit,
+        )
+        if any(not occupant.is_friendly(unit) for occupant in occupying_units):
+            return False
+
+        if self.stacking_limit is None:
+            return True
+
+        friendly_count = sum(
+            1
+            for occupant in occupying_units
+            if occupant.is_friendly(unit)
+        )
+        return friendly_count + 1 <= self.stacking_limit
 
     def get_unit_by_id(self, unit_id: str) -> Unit:
         if not isinstance(unit_id, str):
