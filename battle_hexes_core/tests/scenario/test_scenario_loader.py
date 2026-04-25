@@ -181,6 +181,52 @@ def test_load_scenario_with_turn_limit():
     assert scenario.turn_limit == 8
 
 
+def test_load_scenario_data_defaults_stacking_limit_to_none():
+    scenario = load_scenario_data(
+        "village_1", scenario_dir=_scenario_dir()
+    )
+
+    assert scenario.stacking_limit is None
+
+
+def test_load_scenario_maps_stacking_limit_to_core_type(tmp_path):
+    payload_path = _scenario_dir() / "elim_1.json"
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["stacking_limit"] = 3
+    scenario_path = tmp_path / "elim_1.json"
+    scenario_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    scenario = load_scenario("elim_1", scenario_dir=tmp_path)
+
+    assert scenario.stacking_limit == 3
+
+
+def test_load_scenario_data_accepts_null_stacking_limit(tmp_path):
+    payload_path = _scenario_dir() / "elim_1.json"
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["stacking_limit"] = None
+    scenario_path = tmp_path / "elim_1.json"
+    scenario_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    scenario = load_scenario_data("elim_1", scenario_dir=tmp_path)
+
+    assert scenario.stacking_limit is None
+
+
+@pytest.mark.parametrize("value", [0, -1, 1.5, "3"])
+def test_load_scenario_data_rejects_invalid_stacking_limit(
+    tmp_path, value
+):
+    payload_path = _scenario_dir() / "elim_1.json"
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["stacking_limit"] = value
+    scenario_path = tmp_path / "elim_1.json"
+    scenario_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="is not a valid scenario"):
+        load_scenario_data("elim_1", scenario_dir=tmp_path)
+
+
 def test_load_scenario_maps_unit_defensive_fire_modifier_to_core_type():
     scenario = load_scenario(
         "d_day_crossroads", scenario_dir=_scenario_dir()

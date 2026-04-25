@@ -44,6 +44,8 @@ tests and linter across **all** Python packages. The script adjusts
 
 - Prefer small, focused methods; avoid introducing long methods when a few well-named helpers would make the logic easier to read.
 - Keep cyclomatic complexity reasonable by extracting branching logic into helper functions or dedicated classes when behavior grows beyond a straightforward flow.
+- Prefer testing observable behavior and public contracts over incidental implementation details.
+- Do not add tests that assert exact log message text, private helper calls, or other brittle internals unless the log/output is itself part of documented behavior or an explicit operational requirement.
 
 ## Specification docs
 
@@ -51,4 +53,3 @@ tests and linter across **all** Python packages. The script adjusts
 - Do not leave new spec files in project package directories unless explicitly requested.
 - Do not perform code changes when creating a specification unless explicitly requested.
 - Include an "Open Questions" section at the end of the spec to clarify any ambiguities that need to be resolved for implementation. If there are no such ambiguities then simply list state "No questions." in this section. Do not create questions just to fill out this section. The questions should be useful, essential, and limited. 
-
