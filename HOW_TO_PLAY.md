@@ -15,9 +15,10 @@ units. If a path would cause a unit to become adjacent to an opponent, the unit
 must end its movement on that hex.
 
 ### Stacking Limit
-
-Each scenario defines a stacking limit: the maximum number of friendly units
+A scenario may define a stacking limit: the maximum number of friendly units
 that may occupy the same hex at one time.
+
+If a scenario does not define a stacking limit, there is no stacking limit.
 
 A unit may not move into a hex if doing so would exceed that hex's stacking
 limit. Enemy units may not occupy the same hex.
