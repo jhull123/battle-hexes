@@ -14,6 +14,14 @@ This rule means that movement plans cannot pass through hexes that border enemy
 units. If a path would cause a unit to become adjacent to an opponent, the unit
 must end its movement on that hex.
 
+### Stacking Limit
+
+Each scenario defines a stacking limit: the maximum number of friendly units
+that may occupy the same hex at one time.
+
+A unit may not move into a hex if doing so would exceed that hex's stacking
+limit. Enemy units may not occupy the same hex.
+
 ## Combat
 
 Combat occurs between adjacent enemy units. Total the attack strength of the attacking units and the defense strength of the defending units, then convert that ratio to the closest supported column on the Combat Results Table (CRT).
