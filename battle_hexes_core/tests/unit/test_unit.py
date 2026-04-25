@@ -112,6 +112,74 @@ class TestUnit(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual((2, 2), self.unit1.get_coords())
 
+    def test_forced_move_blocked_when_destination_exceeds_stacking_limit(self):
+        board = Board(6, 6)
+        board.set_stacking_limit(1)
+        board.add_unit(self.unit1, 2, 2)
+
+        enemy = Unit(
+            id=str(uuid.uuid4()),
+            name="Enemy",
+            player=self.player2,
+            faction=self.faction2,
+            type="Infantry",
+            attack=5,
+            defense=5,
+            move=3,
+        )
+        friendly_blocker = Unit(
+            id=str(uuid.uuid4()),
+            name="Friendly Blocker",
+            player=self.player1,
+            faction=self.faction1,
+            type="Infantry",
+            attack=5,
+            defense=5,
+            move=3,
+        )
+        board.add_unit(enemy, 2, 3)
+        board.add_unit(friendly_blocker, 1, 1)
+
+        result = self.unit1.forced_move(board, enemy.get_coords(), 1)
+
+        self.assertFalse(result)
+        self.assertEqual((2, 2), self.unit1.get_coords())
+
+    def test_forced_move_blocked_when_intermediate_step_exceeds_stacking_limit(
+        self,
+    ):
+        board = Board(6, 6)
+        board.set_stacking_limit(1)
+        board.add_unit(self.unit1, 2, 2)
+
+        enemy = Unit(
+            id=str(uuid.uuid4()),
+            name="Enemy",
+            player=self.player2,
+            faction=self.faction2,
+            type="Infantry",
+            attack=5,
+            defense=5,
+            move=3,
+        )
+        intermediate_blocker = Unit(
+            id=str(uuid.uuid4()),
+            name="Intermediate Blocker",
+            player=self.player1,
+            faction=self.faction1,
+            type="Infantry",
+            attack=5,
+            defense=5,
+            move=3,
+        )
+        board.add_unit(enemy, 2, 3)
+        board.add_unit(intermediate_blocker, 1, 1)
+
+        result = self.unit1.forced_move(board, enemy.get_coords(), 2)
+
+        self.assertFalse(result)
+        self.assertEqual((2, 2), self.unit1.get_coords())
+
     def test_turn_end_needs_more_than_one_move_remaining(self):
         self.unit1.record_friendly_turn_end(1, self.player2)
 

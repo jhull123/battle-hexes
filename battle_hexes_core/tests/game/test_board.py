@@ -318,6 +318,93 @@ class TestBoard(unittest.TestCase):
         path = self.board.shortest_path(self.red_unit, start_hex, end_hex)
         self.assertEqual(path, [])
 
+    def test_reachable_hexes_allow_unlimited_friendly_stacking_by_default(
+        self,
+    ):
+        self.board.add_unit(self.red_unit, 0, 0)
+        friendly = Unit(
+            id=str(uuid.uuid4()),
+            name="Friendly",
+            faction=self.red_faction,
+            player=self.red_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        self.board.add_unit(friendly, 0, 1)
+
+        start_hex = self.board.get_hex(0, 0)
+        reachable = self.board.get_reachable_hexes(
+            self.red_unit,
+            start_hex,
+            move_points=1,
+        )
+
+        self.assertIn(self.board.get_hex(0, 1), reachable)
+
+    def test_reachable_hexes_limit_one_blocks_friendly_occupied_hex(self):
+        self.board.set_stacking_limit(1)
+        self.board.add_unit(self.red_unit, 0, 0)
+        friendly = Unit(
+            id=str(uuid.uuid4()),
+            name="Friendly",
+            faction=self.red_faction,
+            player=self.red_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        self.board.add_unit(friendly, 0, 1)
+
+        start_hex = self.board.get_hex(0, 0)
+        reachable = self.board.get_reachable_hexes(
+            self.red_unit,
+            start_hex,
+            move_points=1,
+        )
+
+        self.assertNotIn(self.board.get_hex(0, 1), reachable)
+
+    def test_can_unit_enter_hex_limit_two_allows_two_but_blocks_three(self):
+        self.board.set_stacking_limit(2)
+        self.board.add_unit(self.red_unit, 0, 0)
+        friendly_one = Unit(
+            id=str(uuid.uuid4()),
+            name="Friendly 1",
+            faction=self.red_faction,
+            player=self.red_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        friendly_two = Unit(
+            id=str(uuid.uuid4()),
+            name="Friendly 2",
+            faction=self.red_faction,
+            player=self.red_player,
+            type="Infantry",
+            attack=1,
+            defense=1,
+            move=3,
+        )
+        self.board.add_unit(friendly_one, 0, 1)
+
+        self.assertTrue(self.board.can_unit_enter_hex(self.red_unit, 0, 1))
+
+        self.board.add_unit(friendly_two, 0, 1)
+
+        self.assertFalse(self.board.can_unit_enter_hex(self.red_unit, 0, 1))
+
+    def test_can_unit_enter_hex_enemy_occupancy_still_illegal(self):
+        self.board.set_stacking_limit(3)
+        self.board.add_unit(self.red_unit, 0, 0)
+        self.board.add_unit(self.blue_unit, 0, 1)
+
+        self.assertFalse(self.board.can_unit_enter_hex(self.red_unit, 0, 1))
+
     def test_get_reachable_hexes_respects_terrain_move_cost(self):
         self.board.add_unit(self.red_unit, 2, 2)
         start_hex = self.board.get_hex(2, 2)

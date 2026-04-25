@@ -49,6 +49,13 @@ class MovementCalculator:
                 continue
 
             for neighbor in self.board.get_neighboring_hexes(current_hex):
+                if not self.board.can_unit_enter_hex(
+                    unit,
+                    neighbor.row,
+                    neighbor.column,
+                ):
+                    continue
+
                 step_cost = self.move_cost(unit, current_hex, neighbor)
                 new_cost = current_cost + step_cost
                 if new_cost > move_points:
@@ -107,6 +114,13 @@ class MovementCalculator:
 
             for neighbor in self.board.get_neighboring_hexes(current_hex):
                 if neighbor not in reachable_hexes:
+                    continue
+
+                if not self.board.can_unit_enter_hex(
+                    unit,
+                    neighbor.row,
+                    neighbor.column,
+                ):
                     continue
 
                 step_cost = self.move_cost(unit, current_hex, neighbor)
