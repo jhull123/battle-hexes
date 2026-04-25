@@ -280,6 +280,34 @@ class TestCombat(unittest.TestCase):
             combat_result.get_battles()[0].get_no_retreat_units(),
         )
 
+    def test_attacker_retreat_eliminates_zero_movement_unit(self):
+        fixed_attacker = Unit(
+            id=str(uuid.uuid4()),
+            name='Fixed Red Unit',
+            faction=self.red_faction,
+            player=self.red_player,
+            type='Garrison',
+            attack=4,
+            defense=4,
+            move=0,
+        )
+        self.board.add_unit(fixed_attacker, 4, 4)
+        self.board.add_unit(self.blue_unit, 3, 5)
+        self.combat.set_static_die_roll(4)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual(1, len(self.board.get_units()))
+        self.assertEqual(self.blue_unit, self.board.get_units()[0])
+        self.assertEqual(
+            CombatResult.ATTACKER_ELIMINATED,
+            combat_result.get_combat_result(),
+        )
+        self.assertEqual(
+            (fixed_attacker,),
+            combat_result.get_no_retreat_units(),
+        )
+
     def test_attacker_retreat_blocked_by_enemy_eliminates_unit(self):
         blue_blocker = Unit(
             id=str(uuid.uuid4()),
@@ -353,6 +381,89 @@ class TestCombat(unittest.TestCase):
         self.assertEqual(
             (self.blue_unit,),
             combat_result.get_battles()[0].get_no_retreat_units(),
+        )
+
+    def test_defender_retreat_eliminates_zero_movement_unit(self):
+        fixed_defender = Unit(
+            id=str(uuid.uuid4()),
+            name='Fixed Blue Unit',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Garrison',
+            attack=2,
+            defense=2,
+            move=0,
+        )
+        self.board.add_unit(self.red_unit, 2, 5)
+        self.board.add_unit(fixed_defender, 3, 5)
+        self.combat.set_static_die_roll(3)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual(1, len(self.board.get_units()))
+        self.assertEqual(self.red_unit, self.board.get_units()[0])
+        self.assertEqual(
+            CombatResult.DEFENDER_ELIMINATED,
+            combat_result.get_combat_result(),
+        )
+        self.assertEqual(
+            (fixed_defender,),
+            combat_result.get_no_retreat_units(),
+        )
+
+    def test_defender_retreat_only_eliminates_zero_movement_units(self):
+        fixed_defender = Unit(
+            id=str(uuid.uuid4()),
+            name='Fixed Blue Unit',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Garrison',
+            attack=2,
+            defense=2,
+            move=0,
+        )
+        mobile_defender = Unit(
+            id=str(uuid.uuid4()),
+            name='Mobile Blue Unit',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Recon',
+            attack=2,
+            defense=2,
+            move=6,
+        )
+        red_support = Unit(
+            id=str(uuid.uuid4()),
+            name='Red Support Unit',
+            faction=self.red_faction,
+            player=self.red_player,
+            type='Infantry',
+            attack=4,
+            defense=4,
+            move=4,
+        )
+        self.board.add_unit(self.red_unit, 2, 5)
+        self.board.add_unit(red_support, 3, 4)
+        self.board.add_unit(fixed_defender, 3, 5)
+        self.board.add_unit(mobile_defender, 2, 6)
+        self.combat.set_static_die_roll(3)
+
+        combat_result = self.combat.resolve_combat().get_battles()[0]
+
+        units = self.board.get_units()
+        self.assertEqual(3, len(units))
+        self.assertCountEqual(
+            units,
+            [self.red_unit, red_support, mobile_defender],
+        )
+        self.assertNotEqual((2, 6), mobile_defender.get_coords())
+        self.assertEqual(
+            CombatResult.DEFENDER_RETREAT_2,
+            combat_result.get_combat_result(),
+        )
+        self.assertEqual(
+            (fixed_defender,),
+            combat_result.get_no_retreat_units(),
         )
 
     def test_combat_uses_defender_terrain_shift(self):
