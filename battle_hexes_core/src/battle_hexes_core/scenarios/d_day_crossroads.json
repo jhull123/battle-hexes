@@ -133,16 +133,6 @@
       "movement": 4
     },
     {
-      "id": "C / Inf. Zug",
-      "name": "C / Inf. Zug",
-      "faction": "Wehrmacht", 
-      "type": "Infantry",
-      "echelon": "platoon",
-      "attack": 2,
-      "defense": 2,
-      "movement": 4
-    },
-    {
       "id": "Crossroads Feldwache",
       "name": "Crossroads Feldwache",
       "faction": "Wehrmacht", 
@@ -218,8 +208,7 @@
     { "coords": [1, 16] },
     {
       "coords": [2, 3], 
-      "terrain": "village",
-      "units": ["B / Inf. Zug"]
+      "terrain": "village"
     },
     { "coords": [2, 8], "terrain": "forest" },
     { "coords": [2, 10], "terrain": "forest" },
@@ -229,7 +218,7 @@
       "terrain": "village",
       "units": ["A / Inf. Zug"]
     },
-    { "coords": [4, 5], "units": ["C / Inf. Zug"] },
+    { "coords": [4, 5], "units": ["B / Inf. Zug"] },
     { "coords": [5, 9], "terrain": "rough" },
     {
       "coords": [6, 9],
