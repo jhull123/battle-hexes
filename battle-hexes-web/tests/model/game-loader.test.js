@@ -7,10 +7,18 @@ jest.mock('../../src/model/game.js', () => ({
   },
 }));
 
+jest.mock('../../src/service/service-factory.js', () => ({
+  battleHexesService: {
+    listScenarios: jest.fn(),
+  },
+}));
+
 import { Game } from '../../src/model/game.js';
+import { battleHexesService } from '../../src/service/service-factory.js';
 import {
   extractGameIdFromLocation,
   getLastLoadedConfig,
+  hydrateGameDataWithScenarioMetadata,
   loadGameData,
   rememberLoadedGameData,
   updateUrlWithGameId,
@@ -22,6 +30,8 @@ describe('game loader helpers', () => {
   beforeEach(() => {
     Game.fetchGameFromServer.mockReset();
     Game.newGameFromServer.mockReset();
+    battleHexesService.listScenarios.mockReset();
+    battleHexesService.listScenarios.mockResolvedValue([]);
     history.replaceState(null, '', '/battle.html');
     rememberLoadedGameData({
       scenarioId: 'elim_1',
@@ -59,8 +69,12 @@ describe('game loader helpers', () => {
     history.replaceState(null, '', '/battle.html?gameId=existing-game');
     Game.fetchGameFromServer.mockResolvedValue({
       id: 'fetched-game',
+      scenarioId: 'elim_1',
       playerTypeIds: ['human', 'q-learning'],
     });
+    battleHexesService.listScenarios.mockResolvedValue([
+      { id: 'elim_1', stacking_limit: 2 },
+    ]);
     const replaceSpy = jest.spyOn(history, 'replaceState').mockImplementation(() => {});
 
     const gameData = await loadGameData();
@@ -70,7 +84,9 @@ describe('game loader helpers', () => {
     expect(Game.newGameFromServer).not.toHaveBeenCalled();
     expect(gameData).toEqual({
       id: 'fetched-game',
+      scenarioId: 'elim_1',
       playerTypeIds: ['human', 'q-learning'],
+      stackingLimit: 2,
     });
 
     const urlArg = replaceSpy.mock.calls[0][2];
@@ -89,8 +105,12 @@ describe('game loader helpers', () => {
     history.replaceState(null, '', '/battle.html');
     Game.newGameFromServer.mockResolvedValue({
       id: 'new-game',
+      scenarioId: 'elim_1',
       playerTypeIds: ['random', 'q-learning'],
     });
+    battleHexesService.listScenarios.mockResolvedValue([
+      { id: 'elim_1', stacking_limit: 3 },
+    ]);
     const replaceSpy = jest.spyOn(history, 'replaceState').mockImplementation(() => {});
 
     const gameData = await loadGameData();
@@ -100,7 +120,9 @@ describe('game loader helpers', () => {
     expect(Game.newGameFromServer).toHaveBeenCalledTimes(1);
     expect(gameData).toEqual({
       id: 'new-game',
+      scenarioId: 'elim_1',
       playerTypeIds: ['random', 'q-learning'],
+      stackingLimit: 3,
     });
 
     const urlArg = replaceSpy.mock.calls[0][2];
@@ -150,5 +172,14 @@ describe('game loader helpers', () => {
       scenarioId: 'elim_1',
       playerTypes: ['human', 'random'],
     });
+  });
+
+  test('hydrateGameDataWithScenarioMetadata leaves payload unchanged when already stacked-limited', async () => {
+    const input = { id: 'g1', scenarioId: 'elim_1', stackingLimit: 2 };
+
+    const hydrated = await hydrateGameDataWithScenarioMetadata(input);
+
+    expect(hydrated).toEqual(input);
+    expect(battleHexesService.listScenarios).not.toHaveBeenCalled();
   });
 });
