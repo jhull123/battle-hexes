@@ -8,6 +8,7 @@ beforeEach(() => {
   const gameData = JSON.parse(
     '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b",' +
     '"scenarioId":"elem_test",' +
+    '"stackingLimit":2,' +
     '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
     '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensive_fire":{"effect":"red_effect.ogg","no_effect":"red_no_effect.ogg"}}}]},' +
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
@@ -104,6 +105,29 @@ describe("createGame", () => {
     expect(game.getPlayerTypeIds()).toEqual(['human', 'q-learning']);
     expect(game.getTurnLimit()).toBe(9);
     expect(game.getTurnNumber()).toBe(2);
+  });
+
+  test('board exposes stacking limit from payload metadata', () => {
+    expect(game.getBoard().getStackingLimit()).toBe(2);
+  });
+
+  test('reads snake_case stacking_limit from payload', () => {
+    const gameCreator = new GameCreator();
+    const snakeCaseGame = gameCreator.createGame({
+      id: 'snake-case-stacking',
+      stacking_limit: 3,
+      players: [
+        { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#C81010' }] },
+        { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#4682B4' }] },
+      ],
+      board: {
+        rows: 1,
+        columns: 1,
+        units: [],
+      },
+    });
+
+    expect(snakeCaseGame.getBoard().getStackingLimit()).toBe(3);
   });
 
   test('defaults turn metadata when omitted from payload', () => {

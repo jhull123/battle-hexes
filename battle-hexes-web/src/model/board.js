@@ -12,6 +12,7 @@ export class Board {
   #animator;
   #rows;
   #columns;
+  #stackingLimit = null;
   #movementHandler;
   #movementInProgress = false;
 
@@ -68,6 +69,16 @@ export class Board {
     this.#movementHandler = handler;
   }
 
+  setStackingLimit(stackingLimit) {
+    this.#stackingLimit = Number.isInteger(stackingLimit) && stackingLimit > 0
+      ? stackingLimit
+      : null;
+  }
+
+  getStackingLimit() {
+    return this.#stackingLimit;
+  }
+
   getColumns() {
     return this.#columns;
   }
@@ -119,8 +130,29 @@ export class Board {
     return !sourceHex.isEmpty()
       && sourceHex.isAdjacent(destinationHex)
       && sourceHex.getUnits()[0].isMovable()
-      && sourceHex.getUnits()[0].canEnterHex(destinationHex)
+      && this.#canUnitEnterDestinationHex(sourceHex, destinationHex)
       && !this.isOppositionHex(destinationHex);
+  }
+
+  #canUnitEnterDestinationHex(sourceHex, destinationHex) {
+    const unit = sourceHex.getUnits()[0];
+    return unit.canEnterHex(destinationHex)
+      && this.#isDestinationWithinStackingLimit(unit, destinationHex);
+  }
+
+  #isDestinationWithinStackingLimit(unit, destinationHex) {
+    if (!Number.isInteger(this.#stackingLimit) || this.#stackingLimit <= 0) {
+      return true;
+    }
+
+    let friendlyCount = 0;
+    for (const occupyingUnit of destinationHex.getUnits()) {
+      if (occupyingUnit.getOwningPlayer() === unit.getOwningPlayer()) {
+        friendlyCount += 1;
+      }
+    }
+
+    return friendlyCount + 1 <= this.#stackingLimit;
   }
 
   async #resolveMovement(unit, path) {
@@ -198,7 +230,7 @@ export class Board {
     if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)
-        && this.#selectedHex.getUnits()[0].canEnterHex(this.#hoverHex)
+        && this.#canUnitEnterDestinationHex(this.#selectedHex, this.#hoverHex)
         && this.#hoverHex.getMoveHoverIllegalReason() !== 'STACKING_LIMIT_EXCEEDED'
         && this.isOwnHexSelected()
         && !this.isOppositionHex(hoverHex)) {
