@@ -12,6 +12,21 @@ function getPlanReasonCode(plan) {
   return plan.reason_code ?? plan.reason ?? plan.invalid_reason ?? plan.failure_reason ?? null;
 }
 
+function getRejectedPlans(response) {
+  if (!response || typeof response !== 'object') {
+    return [];
+  }
+
+  const preferredRejectedPlans = Array.isArray(response.rejected_plans)
+    ? response.rejected_plans
+    : [];
+  if (preferredRejectedPlans.length > 0) {
+    return preferredRejectedPlans;
+  }
+
+  return Array.isArray(response.plans) ? response.plans : [];
+}
+
 function getPlanDestinationHex(plan, board) {
   const path = Array.isArray(plan?.path) ? plan.path : [];
   if (path.length === 0) {
@@ -35,7 +50,7 @@ export function applyMovementResponse(board, response) {
     eventBus.emit('defensiveFireResolved', defensiveFireEvents);
   }
 
-  const rejectedPlans = (response?.plans ?? [])
+  const rejectedPlans = getRejectedPlans(response)
     .map((plan) => {
       const reasonCode = getPlanReasonCode(plan);
       return { plan, reasonCode };
