@@ -54,6 +54,7 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(post_response.status_code, 200)
         self.assertEqual(post_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(post_body.get('scenarioId'), 'elim_1')
+        self.assertEqual(post_body.get('stackingLimit'), 2)
         terrain = post_body.get("board", {}).get("terrain", {})
         self.assertEqual(terrain.get("default"), "open")
         self.assertIn("open", terrain.get("types", {}))
@@ -94,6 +95,7 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(new_game_id, get_body.get('id'))
         self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(get_body.get('scenarioId'), 'elim_1')
+        self.assertEqual(get_body.get('stackingLimit'), 2)
         self.assertEqual(
             get_body.get("board", {})
             .get("terrain", {})
@@ -161,12 +163,14 @@ class TestFastAPI(unittest.TestCase):
                     "name": "Test Scenario",
                     "description": None,
                     "victory": None,
+                    "stacking_limit": None,
                 },
                 {
                     "id": "test-2",
                     "name": "Another Scenario",
                     "description": None,
                     "victory": None,
+                    "stacking_limit": None,
                 },
             ],
         )

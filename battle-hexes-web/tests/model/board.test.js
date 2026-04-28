@@ -92,9 +92,9 @@ describe('sparseBoard', () => {
 });
 
 describe('animator integration', () => {
-  test('getAnimator returns animator instance from constructor', () => {
+  test('animator getter returns animator instance from constructor', () => {
     const board = new Board(1, 1);
-    expect(typeof board.getAnimator().animate).toBe('function');
+    expect(typeof board.animator.animate).toBe('function');
   });
 
   test('selectHex uses animator to animate movement', () => {
@@ -102,14 +102,14 @@ describe('animator integration', () => {
     const factions = [new Faction('f1', 'f1', '#f00')];
     factions[0].setOwningPlayer(player);
     const board = new Board(1, 2);
-    board.setPlayers({ getCurrentPlayer: () => player });
+    board.players = { getCurrentPlayer: () => player };
     const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
     board.addUnit(unit, 0, 0);
 
     const start = board.getHex(0, 0);
     const end = board.getHex(0, 1);
 
-    const animatorInstance = board.getAnimator();
+    const animatorInstance = board.animator;
     board.selectHex(start);
     board.selectHex(end);
 
@@ -121,11 +121,11 @@ describe('animator integration', () => {
     const factions = [new Faction('f1', 'f1', '#f00')];
     factions[0].setOwningPlayer(player);
     const board = new Board(1, 2);
-    board.setPlayers({ getCurrentPlayer: () => player });
+    board.players = { getCurrentPlayer: () => player };
     const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
     board.addUnit(unit, 0, 0);
     const movementHandler = jest.fn().mockResolvedValue();
-    board.setMovementHandler(movementHandler);
+    board.movementHandler = movementHandler;
 
     const start = board.getHex(0, 0);
     const end = board.getHex(0, 1);
@@ -148,11 +148,11 @@ describe('animator integration', () => {
     const factions = [new Faction('f1', 'f1', '#f00')];
     factions[0].setOwningPlayer(player);
     const board = new Board(1, 2);
-    board.setPlayers({ getCurrentPlayer: () => player });
+    board.players = { getCurrentPlayer: () => player };
     const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 2);
     board.addUnit(unit, 0, 0);
     const movementHandler = jest.fn().mockRejectedValue(new Error('network'));
-    board.setMovementHandler(movementHandler);
+    board.movementHandler = movementHandler;
 
     const start = board.getHex(0, 0);
     const end = board.getHex(0, 1);
@@ -167,7 +167,7 @@ describe('animator integration', () => {
     expect(start.getUnits()).toContain(unit);
     expect(end.getUnits()).not.toContain(unit);
     expect(unit.getMovesRemaining()).toBe(2);
-    expect(board.getSelectedHex()).toBe(start);
+    expect(board.selectedHex).toBe(start);
   });
 
   test('selectHex does not animate movement when destination terrain cost is unaffordable', () => {
@@ -175,7 +175,7 @@ describe('animator integration', () => {
     const factions = [new Faction('f1', 'f1', '#f00')];
     factions[0].setOwningPlayer(player);
     const board = new Board(1, 2);
-    board.setPlayers({ getCurrentPlayer: () => player });
+    board.players = { getCurrentPlayer: () => player };
     const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
     board.addUnit(unit, 0, 0);
 
@@ -183,7 +183,7 @@ describe('animator integration', () => {
     const end = board.getHex(0, 1);
     end.setTerrain({ moveCost: 2 });
 
-    const animatorInstance = board.getAnimator();
+    const animatorInstance = board.animator;
     board.selectHex(start);
     board.selectHex(end);
 
@@ -196,7 +196,7 @@ describe('board dimensions', () => {
   test('stores row and column counts from constructor', () => {
     const board = new Board(11, 18);
 
-    expect(board.getRows()).toBe(11);
-    expect(board.getColumns()).toBe(18);
+    expect(board.rows).toBe(11);
+    expect(board.columns).toBe(18);
   });
 });

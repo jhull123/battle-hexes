@@ -26,7 +26,7 @@ export class CpuPlayer extends Player {
 
         const animator = new MovementAnimator(game.getBoard());
         for (const plan of responseData.plans) {
-          const unit = [...game.getBoard().getUnits()].find(
+          const unit = [...game.getBoard().units].find(
             u => u.getId() === plan.unit_id
           );
           if (unit) {

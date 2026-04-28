@@ -8,6 +8,7 @@ beforeEach(() => {
   const gameData = JSON.parse(
     '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b",' +
     '"scenarioId":"elem_test",' +
+    '"stackingLimit":2,' +
     '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
     '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensive_fire":{"effect":"red_effect.ogg","no_effect":"red_no_effect.ogg"}}}]},' +
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
@@ -70,7 +71,7 @@ describe("createGame", () => {
   });
 
   test("board has two units", () => {
-    expect(game.getBoard().getUnits().size).toBe(2)
+    expect(game.getBoard().units.size).toBe(2)
   });
 
   test("board has units in correct hexes", () => {
@@ -104,6 +105,7 @@ describe("createGame", () => {
     expect(game.getPlayerTypeIds()).toEqual(['human', 'q-learning']);
     expect(game.getTurnLimit()).toBe(9);
     expect(game.getTurnNumber()).toBe(2);
+    expect(game.getBoard().stackingLimit).toBe(2);
   });
 
   test('defaults turn metadata when omitted from payload', () => {
@@ -181,7 +183,7 @@ describe("createGame", () => {
   });
 
   test('board loads roads from board payload', () => {
-    const roads = game.getBoard().getRoads();
+    const roads = game.getBoard().roads;
 
     expect(roads).toHaveLength(1);
     expect(roads[0].type).toBe('secondary');
@@ -207,7 +209,7 @@ describe("createGame", () => {
     };
 
     const legacyRoadGame = gameCreator.createGame(gameData);
-    const roads = legacyRoadGame.getBoard().getRoads();
+    const roads = legacyRoadGame.getBoard().roads;
 
     expect(roads).toHaveLength(1);
     expect(roads[0].path).toEqual([[0, 0], [0, 1]]);
