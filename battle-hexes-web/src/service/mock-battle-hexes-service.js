@@ -6,6 +6,7 @@ const MOCK_SCENARIOS = [
     id: 'mock_scenario',
     name: 'Mock Scenario',
     description: 'Offline placeholder scenario.',
+    stacking_limit: 2,
     victory: {
       description: 'Hold objectives until turn limit.',
     },

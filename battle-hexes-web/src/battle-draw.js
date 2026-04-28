@@ -17,6 +17,7 @@ import { battleHexesService } from './service/service-factory.js';
 import { applyMovementResponse } from './model/movement-response-handler.js';
 import {
   getLastLoadedConfig,
+  hydrateGameDataWithScenarioMetadata,
   loadGameData,
   rememberLoadedGameData,
   updateUrlWithGameId,
@@ -54,9 +55,10 @@ new p5((p) => {
       scenarioId,
       playerTypes,
     });
-    updateUrlWithGameId(newGameData.id);
-    rememberLoadedGameData(newGameData);
-    game = new GameCreator().createGame(newGameData);
+    const hydratedNewGameData = await hydrateGameDataWithScenarioMetadata(newGameData);
+    updateUrlWithGameId(hydratedNewGameData.id);
+    rememberLoadedGameData(hydratedNewGameData);
+    game = new GameCreator().createGame(hydratedNewGameData);
     configureMovementHandling();
     menu.setGame(game);
     p.resizeCanvas(getCanvasWidth(), getCanvasHeight());

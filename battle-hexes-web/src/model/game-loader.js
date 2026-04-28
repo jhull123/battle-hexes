@@ -1,4 +1,5 @@
 import { Game } from './game.js';
+import { battleHexesService } from '../service/service-factory.js';
 
 const DEFAULT_SCENARIO_ID = 'elim_1';
 const DEFAULT_PLAYER_TYPES = ['human', 'random'];
@@ -124,17 +125,83 @@ export const updateUrlWithGameId = (gameId) => {
   }
 };
 
+const extractScenarioId = (gameData) => {
+  const scenarioId = gameData?.scenarioId ?? gameData?.scenario_id ?? null;
+  return typeof scenarioId === 'string' && scenarioId.trim().length > 0
+    ? scenarioId
+    : null;
+};
+
+const extractStackingLimit = (scenario) => {
+  const candidates = [
+    scenario?.stackingLimit,
+    scenario?.stacking_limit,
+  ];
+
+  for (const candidate of candidates) {
+    if (Number.isInteger(candidate) && candidate > 0) {
+      return candidate;
+    }
+  }
+
+  return null;
+};
+
+export const hydrateGameDataWithScenarioMetadata = async (
+  gameData,
+  { service = battleHexesService } = {},
+) => {
+  if (!gameData || typeof gameData !== 'object') {
+    return gameData;
+  }
+
+  const hasStackingLimit =
+    (Number.isInteger(gameData.stackingLimit) && gameData.stackingLimit > 0)
+    || (Number.isInteger(gameData.stacking_limit) && gameData.stacking_limit > 0);
+  if (hasStackingLimit) {
+    return gameData;
+  }
+
+  const scenarioId = extractScenarioId(gameData);
+  if (!scenarioId) {
+    return gameData;
+  }
+
+  let scenarios;
+  try {
+    scenarios = await service.listScenarios();
+  } catch (error) {
+    console.warn('Failed to load scenario metadata for game data hydration.', error);
+    return gameData;
+  }
+
+  const scenario = Array.isArray(scenarios)
+    ? scenarios.find((candidate) => candidate?.id === scenarioId)
+    : null;
+  const stackingLimit = extractStackingLimit(scenario);
+  if (!stackingLimit) {
+    return gameData;
+  }
+
+  return {
+    ...gameData,
+    stackingLimit,
+  };
+};
+
 export const loadGameData = async () => {
   const existingGameId = extractGameIdFromLocation();
   if (existingGameId) {
     const gameData = await Game.fetchGameFromServer(existingGameId);
-    updateUrlWithGameId(gameData.id);
-    rememberLoadedGameData(gameData);
-    return gameData;
+    const hydratedGameData = await hydrateGameDataWithScenarioMetadata(gameData);
+    updateUrlWithGameId(hydratedGameData.id);
+    rememberLoadedGameData(hydratedGameData);
+    return hydratedGameData;
   }
 
   const defaultGame = await Game.newGameFromServer();
-  updateUrlWithGameId(defaultGame.id);
-  rememberLoadedGameData(defaultGame);
-  return defaultGame;
+  const hydratedDefaultGame = await hydrateGameDataWithScenarioMetadata(defaultGame);
+  updateUrlWithGameId(hydratedDefaultGame.id);
+  rememberLoadedGameData(hydratedDefaultGame);
+  return hydratedDefaultGame;
 };
