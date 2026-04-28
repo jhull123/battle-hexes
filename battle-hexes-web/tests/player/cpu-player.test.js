@@ -15,6 +15,7 @@ import { eventBus } from '../../src/event-bus.js';
 const mockUpdateBoard = jest.fn();
 jest.mock('../../src/model/board-updater.js', () => ({
   BoardUpdater: jest.fn().mockImplementation(() => ({
+    clearMoveHoverIllegalReasons: jest.fn(),
     updateBoard: mockUpdateBoard,
   })),
 }));

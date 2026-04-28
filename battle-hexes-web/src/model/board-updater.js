@@ -4,6 +4,12 @@ export class BoardUpdater {
   constructor() {
   }
 
+  clearMoveHoverIllegalReasons(board) {
+    for (const hex of board.getAllHexes()) {
+      hex.setMoveHoverIllegalReason(undefined);
+    }
+  }
+
   updateBoard(board, units = [], { defensiveFireEvents = [] } = {}) {
     const unitsById = new Map((units ?? []).map((unit) => [unit.id, unit]));
 

@@ -26,6 +26,7 @@ class ScenarioModel(BaseModel):
     name: str
     description: str | None = None
     victory: ScenarioVictoryModel | None = None
+    stacking_limit: int | None = None
 
     @classmethod
     def from_core(cls, scenario: Scenario) -> "ScenarioModel":

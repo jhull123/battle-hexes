@@ -191,6 +191,7 @@ export class Board {
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)
         && this.#selectedHex.getUnits()[0].canEnterHex(this.#hoverHex)
+        && this.#hoverHex.getMoveHoverIllegalReason() !== 'STACKING_LIMIT_EXCEEDED'
         && this.isOwnHexSelected()
         && !this.isOppositionHex(hoverHex)) {
       console.log(`We have a move hover hex! ${this.#hoverHex}`);

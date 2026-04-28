@@ -158,6 +158,26 @@ describe('auto new game persistence', () => {
     );
   });
 
+  test('shows stacking-limit movement rejection message in reaction status', async () => {
+    buildDom();
+
+    new Menu(fakeGame(), { service: mockService });
+    await flushPromises();
+
+    const movementRejectedListener = eventBus.on.mock.calls.find(
+      ([eventName]) => eventName === 'movementRejected'
+    )?.[1];
+
+    movementRejectedListener({
+      reasonCode: 'STACKING_LIMIT_EXCEEDED',
+      message: 'Destination hex is full due to the scenario stacking limit.',
+    });
+
+    expect(document.getElementById('reactionStatus').textContent).toBe(
+      'Destination hex is full due to the scenario stacking limit.'
+    );
+  });
+
   test('falls back to scenario id and hides optional sections when details are missing', async () => {
     buildDom();
 

@@ -4,6 +4,7 @@ import { eventBus } from '../../src/event-bus.js';
 
 jest.mock('../../src/model/board-updater.js', () => ({
   BoardUpdater: jest.fn().mockImplementation(() => ({
+    clearMoveHoverIllegalReasons: jest.fn(),
     updateBoard: jest.fn(),
   })),
 }));
@@ -36,6 +37,7 @@ describe('applyMovementResponse', () => {
     applyMovementResponse(board, response);
 
     const updater = BoardUpdater.mock.results[0].value;
+    expect(updater.clearMoveHoverIllegalReasons).toHaveBeenCalledWith(board);
     expect(updater.updateBoard).toHaveBeenCalledWith(board, response.game.board.units);
     expect(eventBus.emit).toHaveBeenCalledWith(
       'defensiveFireResolved',
@@ -55,7 +57,66 @@ describe('applyMovementResponse', () => {
     applyMovementResponse(board, response);
 
     const updater = BoardUpdater.mock.results[0].value;
+    expect(updater.clearMoveHoverIllegalReasons).toHaveBeenCalledWith(board);
     expect(updater.updateBoard).toHaveBeenCalledWith(board, response.sparse_board.units);
     expect(eventBus.emit).not.toHaveBeenCalled();
+  });
+
+  test('maps STACKING_LIMIT_EXCEEDED reason code from rejected_plans and tags destination hex', () => {
+    const stackingHex = { setMoveHoverIllegalReason: jest.fn() };
+    const board = {
+      id: 'board-1',
+      getHex: jest.fn().mockReturnValue(stackingHex),
+    };
+    const response = {
+      sparse_board: {
+        units: [{ id: 'unit-2', row: 3, column: 4 }],
+      },
+      rejected_plans: [{
+        unit_id: 'unit-2',
+        path: [{ row: 3, column: 3 }, { row: 3, column: 4 }],
+        reason_code: 'STACKING_LIMIT_EXCEEDED',
+      }],
+      plans: [{
+        unit_id: 'unit-2',
+        path: [{ row: 3, column: 3 }, { row: 3, column: 4 }],
+      }],
+    };
+
+    applyMovementResponse(board, response);
+
+    expect(board.getHex).toHaveBeenCalledWith(3, 4);
+    expect(stackingHex.setMoveHoverIllegalReason).toHaveBeenCalledWith('STACKING_LIMIT_EXCEEDED');
+    expect(eventBus.emit).toHaveBeenCalledWith('movementRejected', expect.objectContaining({
+      reasonCode: 'STACKING_LIMIT_EXCEEDED',
+      message: 'Destination hex is full due to the scenario stacking limit.',
+    }));
+  });
+
+  test('falls back to plans when rejected_plans is empty', () => {
+    const stackingHex = { setMoveHoverIllegalReason: jest.fn() };
+    const board = {
+      id: 'board-1',
+      getHex: jest.fn().mockReturnValue(stackingHex),
+    };
+    const response = {
+      sparse_board: {
+        units: [{ id: 'unit-2', row: 3, column: 4 }],
+      },
+      rejected_plans: [],
+      plans: [{
+        unit_id: 'unit-2',
+        path: [{ row: 3, column: 3 }, { row: 3, column: 4 }],
+        reason_code: 'STACKING_LIMIT_EXCEEDED',
+      }],
+    };
+
+    applyMovementResponse(board, response);
+
+    expect(board.getHex).toHaveBeenCalledWith(3, 4);
+    expect(stackingHex.setMoveHoverIllegalReason).toHaveBeenCalledWith('STACKING_LIMIT_EXCEEDED');
+    expect(eventBus.emit).toHaveBeenCalledWith('movementRejected', expect.objectContaining({
+      reasonCode: 'STACKING_LIMIT_EXCEEDED',
+    }));
   });
 });
