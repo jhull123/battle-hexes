@@ -3,6 +3,7 @@ export class Hex {
   #adjacentHexCoords;
   #selected;
   #moveHoverFromHex;
+  #moveHoverIllegalReason;
   #terrain;
   #objectives;
 
@@ -12,6 +13,7 @@ export class Hex {
     this.#units = [];
     this.#selected = false;
     this.#moveHoverFromHex = undefined;
+    this.#moveHoverIllegalReason = undefined;
     this.#terrain = undefined;
     this.#objectives = [];
 
@@ -98,6 +100,14 @@ export class Hex {
 
   getMoveHoverFromHex() {
     return this.#moveHoverFromHex;
+  }
+
+  setMoveHoverIllegalReason(reasonCode) {
+    this.#moveHoverIllegalReason = reasonCode;
+  }
+
+  getMoveHoverIllegalReason() {
+    return this.#moveHoverIllegalReason;
   }
 
   setTerrain(terrain) {

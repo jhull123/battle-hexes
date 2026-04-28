@@ -200,3 +200,25 @@ describe('board dimensions', () => {
     expect(board.getColumns()).toBe(18);
   });
 });
+
+describe('stacking limit hover rejection behavior', () => {
+  test('setHoverHex does not set move hover origin for stacking-illegal destination', () => {
+    const player = { isHuman: () => true };
+    const faction = new Faction('f1', 'f1', '#f00');
+    faction.setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.setPlayers({ getCurrentPlayer: () => player });
+
+    const unit = new Unit('u1', 'Unit', faction, null, 1, 1, 2);
+    board.addUnit(unit, 0, 0);
+
+    const start = board.getHex(0, 0);
+    const blockedDestination = board.getHex(0, 1);
+    blockedDestination.setMoveHoverIllegalReason('STACKING_LIMIT_EXCEEDED');
+
+    board.selectHex(start);
+    board.setHoverHex(blockedDestination);
+
+    expect(blockedDestination.getMoveHoverFromHex()).toBeUndefined();
+  });
+});

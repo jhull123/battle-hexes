@@ -34,6 +34,7 @@ class TestScenarioModel(unittest.TestCase):
         self.assertEqual(model.name, "Scenario 1")
         self.assertEqual(model.description, "Briefing text")
         self.assertIsNone(model.victory)
+        self.assertIsNone(model.stacking_limit)
 
         converted = model.to_core()
         self.assertEqual(converted, core_scenario)
@@ -43,6 +44,7 @@ class TestScenarioModel(unittest.TestCase):
             id="s2",
             name="Scenario 2",
             description="Hold crossroads.",
+            stacking_limit=2,
             victory=ScenarioVictory(
                 method="objective_control",
                 scoring_side="Allies",
@@ -54,6 +56,7 @@ class TestScenarioModel(unittest.TestCase):
 
         self.assertEqual(model.victory.method, "objective_control")
         self.assertEqual(model.victory.scoring_side, "Allies")
+        self.assertEqual(model.stacking_limit, 2)
         self.assertEqual(
             model.victory.description,
             "Allies win by holding the objective.",
@@ -63,6 +66,7 @@ class TestScenarioModel(unittest.TestCase):
         self.assertEqual(converted.id, "s2")
         self.assertEqual(converted.name, "Scenario 2")
         self.assertEqual(converted.description, "Hold crossroads.")
+        self.assertEqual(converted.stacking_limit, 2)
         self.assertEqual(converted.victory.method, "objective_control")
         self.assertEqual(converted.victory.scoring_side, "Allies")
         self.assertEqual(

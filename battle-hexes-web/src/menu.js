@@ -101,6 +101,7 @@ export class Menu {
     });
 
     eventBus.on?.('defensiveFireResolved', (events) => this.#showDefensiveFireEvents(events));
+    eventBus.on?.('movementRejected', (payload) => this.#showMovementRejectionStatus(payload));
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -266,6 +267,18 @@ export class Menu {
         return `<div class="selected-unit-row"><span class="victory-swatch selected-unit-swatch" style="background-color: ${color};"></span><span class="selected-unit-label" title="${tooltipText}">${unit.getName()} <span class="selected-unit-moves">(moves ${movesDisplay})</span></span></div>`;
       })
       .join('');
+  }
+
+  #showMovementRejectionStatus(payload) {
+    if (!this.#reactionStatusDiv) {
+      return;
+    }
+
+    const message = payload?.message;
+    if (typeof message !== 'string' || message.length === 0) {
+      return;
+    }
+    this.#reactionStatusDiv.textContent = message;
   }
 
   #formatSelectedHexTerrain(terrain) {

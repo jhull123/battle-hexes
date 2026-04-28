@@ -161,12 +161,14 @@ class TestFastAPI(unittest.TestCase):
                     "name": "Test Scenario",
                     "description": None,
                     "victory": None,
+                    "stacking_limit": None,
                 },
                 {
                     "id": "test-2",
                     "name": "Another Scenario",
                     "description": None,
                     "victory": None,
+                    "stacking_limit": None,
                 },
             ],
         )
