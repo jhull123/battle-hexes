@@ -11,6 +11,7 @@ import { Road, RoadType } from './road';
 export class GameCreator {
   createGame(gameData) {
     const board = new Board(gameData.board.rows, gameData.board.columns);
+    board.stackingLimit = this.#extractStackingLimit(gameData);
     const scenarioId = this.#extractScenarioId(gameData);
     const playerTypeIds = this.#extractPlayerTypeIds(gameData);
     const turnLimit = this.#extractTurnLimit(gameData);
@@ -73,6 +74,13 @@ export class GameCreator {
     }
 
     return 1;
+  }
+
+  #extractStackingLimit(gameData) {
+    const stackingLimit = gameData?.stackingLimit;
+    return Number.isInteger(stackingLimit) && stackingLimit > 0
+      ? stackingLimit
+      : null;
   }
 
   #extractPlayerTypeIds(gameData) {

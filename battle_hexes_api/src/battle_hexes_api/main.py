@@ -78,6 +78,9 @@ def _serialize_game(game) -> dict:
 
     if scenario_id is not None:
         model["scenarioId"] = scenario_id
+    if scenario is not None:
+        model["scenarioName"] = scenario.name
+        model["stackingLimit"] = scenario.stacking_limit
 
     model["turnLimit"] = model.pop("turn_limit", None)
     model["turnNumber"] = model.pop("turn_number", 1)
