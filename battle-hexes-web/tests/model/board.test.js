@@ -221,4 +221,27 @@ describe('stacking limit hover rejection behavior', () => {
 
     expect(blockedDestination.getMoveHoverFromHex()).toBeUndefined();
   });
+
+  test('selectHex does not initiate movement for stacking-illegal destination', () => {
+    const player = { isHuman: () => true };
+    const faction = new Faction('f1', 'f1', '#f00');
+    faction.setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.setPlayers({ getCurrentPlayer: () => player });
+
+    const unit = new Unit('u1', 'Unit', faction, null, 1, 1, 2);
+    board.addUnit(unit, 0, 0);
+
+    const start = board.getHex(0, 0);
+    const blockedDestination = board.getHex(0, 1);
+    blockedDestination.setMoveHoverIllegalReason('STACKING_LIMIT_EXCEEDED');
+    const animatorInstance = board.getAnimator();
+
+    board.selectHex(start);
+    board.selectHex(blockedDestination);
+
+    expect(animatorInstance.animate).not.toHaveBeenCalled();
+    expect(unit.getContainingHex()).toBe(start);
+    expect(unit.getMovesRemaining()).toBe(2);
+  });
 });

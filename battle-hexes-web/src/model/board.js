@@ -94,10 +94,7 @@ export class Board {
       // nothing
     } else if (this.isOppositionHex(oldSelection)) {
       oldSelection.setSelected(false);
-    } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
-        && oldSelection.getUnits()[0].isMovable()
-        && oldSelection.getUnits()[0].canEnterHex(hexToSelect)
-        && !this.isOppositionHex(hexToSelect)) {
+    } else if (this.#canInitiateMove(oldSelection, hexToSelect)) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       const path = [oldSelection, hexToSelect];
@@ -113,6 +110,17 @@ export class Board {
     if (hexToSelect) this.#selectedHex.setSelected(true);
     
     return oldSelection;
+  }
+
+  #canInitiateMove(sourceHex, destinationHex) {
+    if (destinationHex.getMoveHoverIllegalReason() === 'STACKING_LIMIT_EXCEEDED') {
+      return false;
+    }
+    return !sourceHex.isEmpty()
+      && sourceHex.isAdjacent(destinationHex)
+      && sourceHex.getUnits()[0].isMovable()
+      && sourceHex.getUnits()[0].canEnterHex(destinationHex)
+      && !this.isOppositionHex(destinationHex);
   }
 
   async #resolveMovement(unit, path) {
