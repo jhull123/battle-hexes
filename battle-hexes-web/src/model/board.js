@@ -131,8 +131,7 @@ export class Board {
       oldSelection.setSelected(false);
     } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
         && oldSelection.getUnits()[0].isMovable()
-        && oldSelection.getUnits()[0].canEnterHex(hexToSelect)
-        && !this.isOppositionHex(hexToSelect)) {
+        && this.canUnitLegallyEnterHex(oldSelection.getUnits()[0], hexToSelect)) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       const path = [oldSelection, hexToSelect];
@@ -214,6 +213,28 @@ export class Board {
     return this.#selectedHex !== undefined;
   }
 
+  // A legal entry requires sufficient movement, no enemy occupants, and staying within the optional friendly stacking cap.
+  canUnitLegallyEnterHex(unit, destinationHex) {
+    if (!unit.canEnterHex(destinationHex)) {
+      return false;
+    }
+
+    const destinationUnits = destinationHex.getUnits();
+    if (destinationUnits.length > 0 && destinationUnits[0].getOwningPlayer() !== unit.getOwningPlayer()) {
+      return false;
+    }
+
+    if (this.stackingLimit === null) {
+      return true;
+    }
+
+    const friendlyUnitsInDestination = destinationUnits.filter(
+      (destinationUnit) => destinationUnit.getOwningPlayer() === unit.getOwningPlayer(),
+    ).length;
+
+    return friendlyUnitsInDestination + 1 <= this.stackingLimit;
+  }
+
   updateHoverHex(hoverHex) {
     const oldHover = this.#hoverHex;
     this.#hoverHex = hoverHex;
@@ -225,9 +246,8 @@ export class Board {
     if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)
-        && this.#selectedHex.getUnits()[0].canEnterHex(this.#hoverHex)
         && this.isOwnHexSelected()
-        && !this.isOppositionHex(hoverHex)) {
+        && this.canUnitLegallyEnterHex(this.#selectedHex.getUnits()[0], this.#hoverHex)) {
       console.log(`We have a move hover hex! ${this.#hoverHex}`);
       this.#hoverHex.setMoveHoverFromHex(this.selectedHex);
     }

@@ -170,6 +170,54 @@ describe('animator integration', () => {
     expect(board.selectedHex).toBe(start);
   });
 
+
+  test('selectHex does not animate movement into enemy-occupied destination', () => {
+    const player = { isHuman: () => true };
+    const opposingPlayer = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00'), new Faction('f2', 'f2', '#00f')];
+    factions[0].setOwningPlayer(player);
+    factions[1].setOwningPlayer(opposingPlayer);
+    const board = new Board(1, 2);
+    board.players = { getCurrentPlayer: () => player };
+
+    const movingUnit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 2);
+    const blockingEnemy = new Unit('u2', 'Enemy', factions[1], null, 1, 1, 2);
+    board.addUnit(movingUnit, 0, 0);
+    board.addUnit(blockingEnemy, 0, 1);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+
+    const animatorInstance = board.animator;
+    board.selectHex(start);
+    board.selectHex(end);
+
+    expect(animatorInstance.animate).not.toHaveBeenCalled();
+  });
+
+  test('selectHex blocks movement when friendly stacking limit is reached', () => {
+    const player = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00')];
+    factions[0].setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.players = { getCurrentPlayer: () => player };
+    board.stackingLimit = 1;
+
+    const movingUnit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 2);
+    const friendlyUnit = new Unit('u2', 'Friend', factions[0], null, 1, 1, 2);
+    board.addUnit(movingUnit, 0, 0);
+    board.addUnit(friendlyUnit, 0, 1);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+
+    const animatorInstance = board.animator;
+    board.selectHex(start);
+    board.selectHex(end);
+
+    expect(animatorInstance.animate).not.toHaveBeenCalled();
+  });
+
   test('selectHex does not animate movement when destination terrain cost is unaffordable', () => {
     const player = { isHuman: () => true };
     const factions = [new Faction('f1', 'f1', '#f00')];
