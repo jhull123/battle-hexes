@@ -59,6 +59,7 @@ class GameCreator:
         )
 
         board = Board(*scenario_obj.board_size)
+        board.set_stacking_limit(scenario_obj.stacking_limit)
 
         players_list = list(players)
         for player in players_list:

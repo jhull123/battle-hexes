@@ -4,6 +4,7 @@
   "name": "Elimination Demo 1",
   "description": "A simple elimination scenario.",
   "board_size": [10, 10],
+  "stacking_limit": 2,
   "defensive_fire": {
     "base_probability": 0.50,
     "minimum": 0.05,

@@ -27,7 +27,7 @@ export class Game {
     this.#players = players;
 
     this.#board = board;
-    this.#board.setPlayers(players);
+    this.#board.players = players;
 
     this.#combatResolver = new CombatResolver(id, board, { service: battleHexesService });
     this.#scenarioId = typeof scenarioId === 'string' && scenarioId.trim().length > 0

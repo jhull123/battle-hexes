@@ -32,17 +32,25 @@ new p5((p) => {
   const canvasMargin = 20;
   
   let game = new GameCreator().createGame(gameData);
+  const logLoadedScenario = (gameDataPayload, gameInstance) => {
+    const scenarioName = gameDataPayload.scenarioName;
+    const scenarioId = gameDataPayload.scenarioId;
+    console.log(
+      `Scenario loaded: name=${scenarioName}, id=${scenarioId}, stackingLimit=${gameInstance.getBoard().stackingLimit}`,
+    );
+  };
+  logLoadedScenario(gameData, game);
   let menu;
 
   const configureMovementHandling = () => {
-    game.getBoard().setMovementHandler(async () => {
+    game.getBoard().movementHandler = async () => {
       const movementResponse = await battleHexesService.resolveHumanMove(
         game.getId(),
         game.getBoard().sparseBoard(),
       );
 
       applyMovementResponse(game.getBoard(), movementResponse);
-    });
+    };
   };
   configureMovementHandling();
 
@@ -57,6 +65,7 @@ new p5((p) => {
     updateUrlWithGameId(newGameData.id);
     rememberLoadedGameData(newGameData);
     game = new GameCreator().createGame(newGameData);
+    logLoadedScenario(newGameData, game);
     configureMovementHandling();
     menu.setGame(game);
     p.resizeCanvas(getCanvasWidth(), getCanvasHeight());
@@ -79,7 +88,7 @@ new p5((p) => {
   const hexDrawWithCoords = new HexDrawer(p, hexRadius);
   hexDrawWithCoords.setShowHexCoords(menu.getShowHexCoordsPreference());
   const hexDraw = new HexDrawer(p, hexRadius);
-  const roadDraw = new RoadDrawer(p, hexDraw, () => game.getBoard().getRoads());
+  const roadDraw = new RoadDrawer(p, hexDraw, () => game.getBoard().roads);
   const terrainOverlayDraw = new TerrainOverlayDrawer(p, hexDraw);
   
   const unitDraw = new UnitDrawer(p, hexDraw);
@@ -162,19 +171,19 @@ new p5((p) => {
   p.mouseMoved = function() {
     let mouseHexPos = pixelToHex(p.mouseX, p.mouseY);
     let hoverHex = game.getBoard().getHex(mouseHexPos.row, mouseHexPos.col);
-    let oldHover = game.getBoard().setHoverHex(hoverHex);
+    let oldHover = game.getBoard().updateHoverHex(hoverHex);
 
     if (oldHover === hoverHex) {
       return;
     }
 
-    drawHexNeighborhood([oldHover, hoverHex, game.getBoard().getSelectedHex()]);
+    drawHexNeighborhood([oldHover, hoverHex, game.getBoard().selectedHex]);
   }
 
   function getCanvasDimensionsForBoard() {
     return getCanvasDimensions({
-      rows: game.getBoard().getRows(),
-      columns: game.getBoard().getColumns(),
+      columns: game.getBoard().columns,
+      rows: game.getBoard().rows,
       hexRadius,
       windowWidth: p.windowWidth,
       menuWidth,

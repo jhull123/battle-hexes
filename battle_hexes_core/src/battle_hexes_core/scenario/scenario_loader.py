@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
@@ -27,6 +28,8 @@ from .scenario import (
     ScenarioUnit,
     ScenarioVictory,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -149,6 +152,7 @@ class ScenarioData(BaseModel):
     victory: ScenarioVictoryData | None = None
     defensive_fire: DefensiveFireConfigData | None = None
     turn_limit: int | None = None
+    stacking_limit: StrictInt | None = Field(default=None, ge=1)
     board_size: tuple[int, int]
     factions: list[ScenarioFactionData]
     units: list[ScenarioUnitData]
@@ -303,6 +307,7 @@ class ScenarioData(BaseModel):
                 else None
             ),
             turn_limit=self.turn_limit,
+            stacking_limit=self.stacking_limit,
             board_size=self.board_size,
             factions=self._build_factions(),
             units=self._build_units(),
@@ -364,6 +369,13 @@ def load_scenario_data(
             f"Scenario '{scenario_id}' does not match file contents "
             f"(found id '{scenario.id}')"
         )
+
+    LOGGER.info(
+        "Loaded scenario id=%s name=%s stacking_limit=%s",
+        scenario.id,
+        scenario.name,
+        scenario.stacking_limit,
+    )
 
     return scenario
 

@@ -95,7 +95,7 @@ describe('updateBoard', () => {
     const player2 = { isHuman: () => false };
     factions[0].setOwningPlayer(player1);
     factions[1].setOwningPlayer(player2);
-    board.setPlayers({ getCurrentPlayer: () => player1 });
+    board.players = { getCurrentPlayer: () => player1 };
 
     board.addUnit(redUnit, 2, 2);
     board.addUnit(blueUnit, 4, 4);

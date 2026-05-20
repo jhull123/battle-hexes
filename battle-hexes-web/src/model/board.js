@@ -12,6 +12,7 @@ export class Board {
   #animator;
   #rows;
   #columns;
+  #stackingLimit = null;
   #movementHandler;
   #movementInProgress = false;
 
@@ -30,8 +31,12 @@ export class Board {
     }
   }
 
-  setPlayers(players) {
+  set players(players) {
     this.#players = players;
+  }
+
+  setPlayers(players) {
+    this.players = players;
   }
 
   addUnit(unit, row, column) {
@@ -52,24 +57,54 @@ export class Board {
     unit.setContainingHex(null);
   }
 
-  getUnits() {
+  get units() {
     return this.#units;
   }
 
-  getAnimator() {
+  getUnits() {
+    return this.units;
+  }
+
+  get animator() {
     return this.#animator;
   }
 
-  getRows() {
+  getAnimator() {
+    return this.animator;
+  }
+
+  get rows() {
     return this.#rows;
   }
 
-  setMovementHandler(handler) {
+  getRows() {
+    return this.rows;
+  }
+
+  set movementHandler(handler) {
     this.#movementHandler = handler;
   }
 
-  getColumns() {
+  setMovementHandler(handler) {
+    this.movementHandler = handler;
+  }
+
+  get columns() {
     return this.#columns;
+  }
+
+  getColumns() {
+    return this.columns;
+  }
+
+  get stackingLimit() {
+    return this.#stackingLimit;
+  }
+
+  set stackingLimit(stackingLimit) {
+    this.#stackingLimit = Number.isInteger(stackingLimit) && stackingLimit > 0
+      ? stackingLimit
+      : null;
   }
 
   getHex(row, column) {
@@ -96,15 +131,14 @@ export class Board {
       oldSelection.setSelected(false);
     } else if (!oldSelection.isEmpty() && oldSelection.isAdjacent(hexToSelect)
         && oldSelection.getUnits()[0].isMovable()
-        && oldSelection.getUnits()[0].canEnterHex(hexToSelect)
-        && !this.isOppositionHex(hexToSelect)) {
+        && this.canUnitLegallyEnterHex(oldSelection.getUnits()[0], hexToSelect)) {
       const units = oldSelection.getUnits();
       console.log(`Moving unit ${units[0]}.`);
       const path = [oldSelection, hexToSelect];
       this.#resolveMovement(units[0], path);
       oldSelection.setSelected(false);
       hexToSelect.setSelected(true);
-      this.setHoverHex(undefined);
+      this.updateHoverHex(undefined);
     } else {
       oldSelection.setSelected(false);
     }
@@ -148,7 +182,7 @@ export class Board {
       startingHex?.setSelected(true);
     }
 
-    this.setHoverHex(undefined);
+    this.updateHoverHex(undefined);
     eventBus.emit('redraw');
   }
 
@@ -179,7 +213,29 @@ export class Board {
     return this.#selectedHex !== undefined;
   }
 
-  setHoverHex(hoverHex) {
+  // A legal entry requires sufficient movement, no enemy occupants, and staying within the optional friendly stacking cap.
+  canUnitLegallyEnterHex(unit, destinationHex) {
+    if (!unit.canEnterHex(destinationHex)) {
+      return false;
+    }
+
+    const destinationUnits = destinationHex.getUnits();
+    if (destinationUnits.length > 0 && destinationUnits[0].getOwningPlayer() !== unit.getOwningPlayer()) {
+      return false;
+    }
+
+    if (this.stackingLimit === null) {
+      return true;
+    }
+
+    const friendlyUnitsInDestination = destinationUnits.filter(
+      (destinationUnit) => destinationUnit.getOwningPlayer() === unit.getOwningPlayer(),
+    ).length;
+
+    return friendlyUnitsInDestination + 1 <= this.stackingLimit;
+  }
+
+  updateHoverHex(hoverHex) {
     const oldHover = this.#hoverHex;
     this.#hoverHex = hoverHex;
 
@@ -190,11 +246,10 @@ export class Board {
     if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)
-        && this.#selectedHex.getUnits()[0].canEnterHex(this.#hoverHex)
         && this.isOwnHexSelected()
-        && !this.isOppositionHex(hoverHex)) {
+        && this.canUnitLegallyEnterHex(this.#selectedHex.getUnits()[0], this.#hoverHex)) {
       console.log(`We have a move hover hex! ${this.#hoverHex}`);
-      this.#hoverHex.setMoveHoverFromHex(this.getSelectedHex());
+      this.#hoverHex.setMoveHoverFromHex(this.selectedHex);
     }
 
     if (oldHover) {
@@ -202,6 +257,10 @@ export class Board {
     }
 
     return oldHover;
+  }
+
+  setHoverHex(hoverHex) {
+    return this.updateHoverHex(hoverHex);
   }
 
   getHexAndAdjacent(aHex) {
@@ -246,8 +305,12 @@ export class Board {
     return allTheHexes;
   }
 
-  getSelectedHex() {
+  get selectedHex() {
     return this.#selectedHex;
+  }
+
+  getSelectedHex() {
+    return this.selectedHex;
   }
 
   resetMovesRemaining(player = null) {
@@ -293,18 +356,18 @@ export class Board {
 
   getOccupiedHexes() {
     const occupiedHexes = new Set();
-    for (let unit of this.getUnits()) {
+    for (let unit of this.units) {
       occupiedHexes.add(unit.getContainingHex());
     }
     return occupiedHexes;
   }
 
   refreshCombat() {
-    for (let unit of this.getUnits()) {
+    for (let unit of this.units) {
       unit.resetCombat();
     }
 
-    for (let unit of this.getUnits()) {
+    for (let unit of this.units) {
       const hex = unit.getContainingHex();
       if (hex) {
         unit.updateCombatOpponents(this.getAdjacentHexes(hex));
@@ -317,13 +380,17 @@ export class Board {
     console.log("There are " + this.#roads.length + " roads.");
   }
 
-  getRoads() {
+  get roads() {
     return [...this.#roads];
+  }
+
+  getRoads() {
+    return this.roads;
   }
 
   sparseBoard() {
     const sparseUnits = [];
-    for (let unit of this.getUnits()) {
+    for (let unit of this.units) {
       let unitHex = unit.getContainingHex();
       sparseUnits.push({
         id: unit.getId(),

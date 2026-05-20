@@ -226,8 +226,7 @@ class Unit:
                 self.row, self.column = original_position
                 return False
 
-            occupant = board.get_unit_at(next_row, next_col)
-            if occupant and not occupant.is_friendly(self):
+            if not board.can_unit_enter_hex(self, next_row, next_col):
                 self.row, self.column = original_position
                 return False
 

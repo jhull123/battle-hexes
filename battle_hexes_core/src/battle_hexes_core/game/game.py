@@ -87,6 +87,13 @@ class Game:
             if unit.get_coords() != (from_hex.row, from_hex.column):
                 break
 
+            if not self.board.can_unit_enter_hex(
+                unit,
+                to_hex.row,
+                to_hex.column,
+            ):
+                break
+
             was_adjacent = self.board.enemy_adjacent(unit, from_hex)
             move_cost = movement.move_cost(unit, from_hex, to_hex)
             movement_points_remaining = max(
