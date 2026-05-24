@@ -83,7 +83,7 @@ describe('UnitDrawer.drawCounter echelon symbols', () => {
     text: jest.fn(),
   });
 
-  const createUnit = (echelon) => ({
+  const createUnit = (echelon, type = 'infantry') => ({
     getFaction: () => ({
       getCounterColor: () => '#808080',
     }),
@@ -91,6 +91,26 @@ describe('UnitDrawer.drawCounter echelon symbols', () => {
     getDefense: () => 3,
     getMovement: () => 2,
     getEchelon: () => echelon,
+    getType: () => type,
+  });
+
+
+  test('draws infantry symbol for infantry units regardless of case', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit('division', 'InFaNtRy'), 100, 100);
+
+    expect(p5.line).toHaveBeenCalledTimes(2);
+  });
+
+  test('draws fallback symbol for non-infantry units', () => {
+    const p5 = createP5Mock();
+    const unitDrawer = new UnitDrawer(p5, createHexDrawer());
+
+    unitDrawer.drawCounter(createUnit('division', 'MG'), 100, 100);
+
+    expect(p5.line).not.toHaveBeenCalled();
   });
 
   test('draws echelon symbol for known echelons', () => {

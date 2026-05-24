@@ -1,3 +1,5 @@
+import { UnitTypeSymbolDrawer } from './unit-type-symbol-drawer.js';
+
 export class UnitDrawer {
   static ECHELON_SYMBOLS = {
     fireteam: 'Ø',
@@ -19,12 +21,14 @@ export class UnitDrawer {
   #hexDrawer;
   #counterSide;
   #counterSideThird;
+  #unitTypeSymbolDrawer;
 
   constructor(p, hexDrawer) {
     this.#p = p;
     this.#hexDrawer = hexDrawer;
     this.#counterSide = hexDrawer.getHexRadius() + hexDrawer.getHexRadius() * 0.3;
     this.#counterSideThird = this.#counterSide / 3;
+    this.#unitTypeSymbolDrawer = new UnitTypeSymbolDrawer(p);
   }
 
   draw(aHex) {
@@ -55,7 +59,7 @@ export class UnitDrawer {
     this.#p.rectMode(this.#p.CENTER);
     this.#p.rect(x, y, this.#counterSide, this.#counterSide, 3);
 
-    this.#drawInfantrySymbol(x, y, this.#counterSide / 2, this.#counterSideThird);
+    this.#unitTypeSymbolDrawer.draw(aUnit, x, y, this.#counterSide / 2, this.#counterSideThird);
     this.#drawUnitStats(aUnit, x, y);
     this.#drawUnitSize(aUnit, x, y);
     if (aUnit.hasDefensiveFire?.()) {
@@ -84,22 +88,7 @@ export class UnitDrawer {
     return halfHexColor;
   }
 
-  #drawInfantrySymbol(x, y, width, height) {
-    this.#p.stroke(255)
-    this.#p.strokeWeight(2);
-    this.#p.rect(x, y, width, height);
-  
-    let halfWidth = width / 2;
-    let halfHeight = height / 2;
-  
-    this.#p.stroke(255);
-    this.#p.strokeWeight(2);
-  
-    // Draw "X" by connecting the corners of the smaller rectangle
-    this.#p.line(x - halfWidth, y - halfHeight, x + halfWidth, y + halfHeight);
-    this.#p.line(x + halfWidth, y - halfHeight, x - halfWidth, y + halfHeight);
-  }
-  
+
   #drawUnitStats(aUnit, x, y) {
     this.#p.fill(255);
     this.#p.noStroke();
