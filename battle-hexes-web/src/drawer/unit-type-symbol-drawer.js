@@ -41,9 +41,14 @@ export class UnitTypeSymbolDrawer {
     this.#p.strokeWeight(2);
     this.#p.rect(x, y, width, height);
 
+    const trackWidth = width * 0.7;
+    const trackHeight = height * 0.4;
+    const cornerRadius = trackHeight / 2;
+
     this.#p.stroke(255);
     this.#p.strokeWeight(2);
-    this.#p.ellipse(x, y, width, height);
+    this.#p.noFill();
+    this.#p.rect(x, y, trackWidth, trackHeight, cornerRadius);
   }
 
   #drawFallbackUnitTypeSymbol(x, y, width, height) {
