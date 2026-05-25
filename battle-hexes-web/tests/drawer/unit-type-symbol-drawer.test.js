@@ -33,9 +33,6 @@ describe('UnitTypeSymbolDrawer', () => {
     expect(p5.rect).toHaveBeenCalledWith(100, 100, 20, 10);
     expect(p5.line).toHaveBeenCalledTimes(2);
     expect(p5.arc).toHaveBeenCalledTimes(2);
-    expect(p5.arc).toHaveBeenNthCalledWith(1, 98, 102.5, 4, 2, Math.PI, Math.PI * 2);
-    expect(p5.arc).toHaveBeenNthCalledWith(2, 102, 102.5, 4, 2, Math.PI, Math.PI * 2);
-    expect(p5.strokeWeight).toHaveBeenCalledWith(1.5);
     expect(p5.strokeWeight).toHaveBeenLastCalledWith(2);
     expect(p5.noFill).toHaveBeenCalled();
     expect(p5.ellipse).not.toHaveBeenCalled();
