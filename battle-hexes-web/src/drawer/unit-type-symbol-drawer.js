@@ -19,6 +19,11 @@ export class UnitTypeSymbolDrawer {
       return;
     }
 
+    if (normalizedUnitType === 'parachute infantry') {
+      this.#drawAirborneInfantrySymbol(x, y, width, height);
+      return;
+    }
+
     this.#drawFallbackUnitTypeSymbol(x, y, width, height);
   }
 
@@ -49,6 +54,24 @@ export class UnitTypeSymbolDrawer {
     this.#p.strokeWeight(2);
     this.#p.noFill();
     this.#p.rect(x, y, trackWidth, trackHeight, cornerRadius);
+  }
+
+  #drawAirborneInfantrySymbol(x, y, width, height) {
+    this.#drawInfantrySymbol(x, y, width, height);
+
+    const markerWidth = width * 0.4;
+    const humpWidth = markerWidth / 2;
+    const humpHeight = height * 0.2;
+    const markerCenterY = y + (height * 0.25);
+    const leftHumpCenterX = x - (humpWidth / 2);
+    const rightHumpCenterX = x + (humpWidth / 2);
+
+    this.#p.stroke(255);
+    this.#p.strokeWeight(1.5);
+    this.#p.noFill();
+    this.#p.arc(leftHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
+    this.#p.arc(rightHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
+    this.#p.strokeWeight(2);
   }
 
   #drawFallbackUnitTypeSymbol(x, y, width, height) {
