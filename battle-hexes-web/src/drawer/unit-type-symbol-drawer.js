@@ -59,15 +59,15 @@ export class UnitTypeSymbolDrawer {
   #drawAirborneInfantrySymbol(x, y, width, height) {
     this.#drawInfantrySymbol(x, y, width, height);
 
-    const markerWidth = width * 0.4;
-    const humpWidth = markerWidth / 2;
-    const humpHeight = height * 0.2;
-    const markerCenterY = y + (height * 0.25);
+    const markerWidth = width * 0.3;
+    const humpWidth = markerWidth / 1.8;
+    const humpHeight = height * 0.23;
+    const markerCenterY = y + (height * 0.36);
     const leftHumpCenterX = x - (humpWidth / 2);
     const rightHumpCenterX = x + (humpWidth / 2);
 
     this.#p.stroke(255);
-    this.#p.strokeWeight(1.5);
+    this.#p.strokeWeight(0.9);
     this.#p.noFill();
     this.#p.arc(leftHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
     this.#p.arc(rightHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
