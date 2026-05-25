@@ -24,16 +24,19 @@ describe('UnitTypeSymbolDrawer', () => {
     expect(p5.ellipse).not.toHaveBeenCalled();
   });
 
-  test('draws airborne infantry symbol with infantry X and parachute overlay', () => {
+  test('draws airborne infantry symbol with infantry X and a subtle double-hump marker', () => {
     const p5 = createP5Mock();
     const drawer = new UnitTypeSymbolDrawer(p5);
 
     drawer.draw({ getType: () => '  PaRaChUtE InFaNtRy  ' }, 100, 100, 20, 10);
 
     expect(p5.rect).toHaveBeenCalledWith(100, 100, 20, 10);
-    expect(p5.line).toHaveBeenCalledTimes(4);
-    expect(p5.arc).toHaveBeenCalledTimes(1);
-    expect(p5.arc).toHaveBeenCalledWith(100, 101.8, 8, 3.2, Math.PI, Math.PI * 2);
+    expect(p5.line).toHaveBeenCalledTimes(2);
+    expect(p5.arc).toHaveBeenCalledTimes(2);
+    expect(p5.arc).toHaveBeenNthCalledWith(1, 98, 102.5, 4, 2, Math.PI, Math.PI * 2);
+    expect(p5.arc).toHaveBeenNthCalledWith(2, 102, 102.5, 4, 2, Math.PI, Math.PI * 2);
+    expect(p5.strokeWeight).toHaveBeenCalledWith(1.5);
+    expect(p5.strokeWeight).toHaveBeenLastCalledWith(2);
     expect(p5.noFill).toHaveBeenCalled();
     expect(p5.ellipse).not.toHaveBeenCalled();
   });

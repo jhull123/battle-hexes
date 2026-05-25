@@ -59,16 +59,19 @@ export class UnitTypeSymbolDrawer {
   #drawAirborneInfantrySymbol(x, y, width, height) {
     this.#drawInfantrySymbol(x, y, width, height);
 
-    const canopyWidth = width * 0.4;
-    const canopyHeight = height * 0.16;
-    const canopyCenterY = y - (height / 2) + (height * 0.68);
-    const canopyBaseY = canopyCenterY + (canopyHeight / 2);
-    const suspensionBottomY = canopyBaseY + (height * 0.1);
+    const markerWidth = width * 0.4;
+    const humpWidth = markerWidth / 2;
+    const humpHeight = height * 0.2;
+    const markerCenterY = y + (height * 0.25);
+    const leftHumpCenterX = x - (humpWidth / 2);
+    const rightHumpCenterX = x + (humpWidth / 2);
 
+    this.#p.stroke(255);
+    this.#p.strokeWeight(1.5);
     this.#p.noFill();
-    this.#p.arc(x, canopyCenterY, canopyWidth, canopyHeight * 2, this.#p.PI, this.#p.TWO_PI);
-    this.#p.line(x - (canopyWidth * 0.25), canopyBaseY, x, suspensionBottomY);
-    this.#p.line(x + (canopyWidth * 0.25), canopyBaseY, x, suspensionBottomY);
+    this.#p.arc(leftHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
+    this.#p.arc(rightHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
+    this.#p.strokeWeight(2);
   }
 
   #drawFallbackUnitTypeSymbol(x, y, width, height) {
