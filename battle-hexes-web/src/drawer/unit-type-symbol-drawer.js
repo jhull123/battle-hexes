@@ -83,11 +83,11 @@ export class UnitTypeSymbolDrawer {
     this.#drawInfantrySymbol(x, y, width, height);
 
     const barWidth = width * 0.38;
-    const barY = y + (height * 0.2);
+    const barY = y + (height * 0.25);
     const barHalfWidth = barWidth / 2;
 
     this.#p.stroke(255);
-    this.#p.strokeWeight(1.2);
+    this.#p.strokeWeight(1.25);
     this.#p.line(x - barHalfWidth, barY, x + barHalfWidth, barY);
     this.#p.strokeWeight(2);
   }
