@@ -24,6 +24,11 @@ export class UnitTypeSymbolDrawer {
       return;
     }
 
+    if (normalizedUnitType === 'mg' || normalizedUnitType === 'machine gun') {
+      this.#drawMachineGunSymbol(x, y, width, height);
+      return;
+    }
+
     this.#drawFallbackUnitTypeSymbol(x, y, width, height);
   }
 
@@ -71,6 +76,19 @@ export class UnitTypeSymbolDrawer {
     this.#p.noFill();
     this.#p.arc(leftHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
     this.#p.arc(rightHumpCenterX, markerCenterY, humpWidth, humpHeight, this.#p.PI, this.#p.TWO_PI);
+    this.#p.strokeWeight(2);
+  }
+
+  #drawMachineGunSymbol(x, y, width, height) {
+    this.#drawInfantrySymbol(x, y, width, height);
+
+    const barWidth = width * 0.38;
+    const barY = y + (height * 0.25);
+    const barHalfWidth = barWidth / 2;
+
+    this.#p.stroke(255);
+    this.#p.strokeWeight(1.25);
+    this.#p.line(x - barHalfWidth, barY, x + barHalfWidth, barY);
     this.#p.strokeWeight(2);
   }
 

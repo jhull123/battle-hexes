@@ -56,10 +56,33 @@ describe('UnitTypeSymbolDrawer', () => {
     const p5 = createP5Mock();
     const drawer = new UnitTypeSymbolDrawer(p5);
 
-    drawer.draw({ getType: () => 'MG' }, 100, 100, 20, 10);
+    drawer.draw({ getType: () => 'engineer' }, 100, 100, 20, 10);
 
     expect(p5.rect).toHaveBeenCalledWith(100, 100, 20, 10);
     expect(p5.line).not.toHaveBeenCalled();
+    expect(p5.arc).not.toHaveBeenCalled();
+    expect(p5.ellipse).not.toHaveBeenCalled();
+  });
+
+  test('draws MG symbol as infantry with a thin lower-third support bar', () => {
+    const p5 = createP5Mock();
+    const drawer = new UnitTypeSymbolDrawer(p5);
+
+    drawer.draw({ getType: () => 'MG' }, 100, 100, 20, 10);
+
+    expect(p5.rect).toHaveBeenCalledWith(100, 100, 20, 10);
+    expect(p5.strokeWeight).toHaveBeenLastCalledWith(2);
+    expect(p5.arc).not.toHaveBeenCalled();
+    expect(p5.ellipse).not.toHaveBeenCalled();
+  });
+
+  test('draws machine gun symbol for "machine gun" unit type', () => {
+    const p5 = createP5Mock();
+    const drawer = new UnitTypeSymbolDrawer(p5);
+
+    drawer.draw({ getType: () => ' machine gun ' }, 100, 100, 20, 10);
+
+    expect(p5.line).toHaveBeenCalledTimes(3);
     expect(p5.arc).not.toHaveBeenCalled();
     expect(p5.ellipse).not.toHaveBeenCalled();
   });
