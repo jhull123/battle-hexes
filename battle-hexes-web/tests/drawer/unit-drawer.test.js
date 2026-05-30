@@ -108,7 +108,7 @@ describe('UnitDrawer.drawCounter echelon symbols', () => {
     const p5 = createP5Mock();
     const unitDrawer = new UnitDrawer(p5, createHexDrawer());
 
-    unitDrawer.drawCounter(createUnit('division', 'MG'), 100, 100);
+    unitDrawer.drawCounter(createUnit('division', 'engineer'), 100, 100);
 
     expect(p5.line).not.toHaveBeenCalled();
   });
