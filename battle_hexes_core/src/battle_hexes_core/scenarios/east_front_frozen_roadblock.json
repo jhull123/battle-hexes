@@ -43,6 +43,58 @@
     }
   ],
   "units": [
+    {
+      "name": "Grenadier Zug",
+      "id": "Grenadier Zug",
+      "faction": "Wehrmacht",
+      "type": "infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 2,
+      "movement": 3
+    },
+    {
+      "name": "MG Trupp",
+      "id": "MG Trupp",
+      "faction": "Wehrmacht",
+      "type": "MG",
+      "echelon": "section",
+      "attack": 1,
+      "defense": 2,
+      "movement": 2,
+      "defensive_fire_modifier": 1.25
+    },
+    {
+      "name": "Rifle Company",
+      "id": "Rifle Company",
+      "faction": "Soviet Army",
+      "type": "infantry",
+      "echelon": "company",
+      "attack": 3,
+      "defense": 2,
+      "movement": 3
+    },
+    {
+      "name": "Ski Detachment",
+      "id": "Ski Detachment",
+      "faction": "Soviet Army",
+      "type": "infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 1,
+      "movement": 5
+    },
+    {
+      "name": "Maxim MG Section",
+      "id": "Maxim MG Section",
+      "faction": "Soviet Army",
+      "type": "MG",
+      "echelon": "section",
+      "attack": 1,
+      "defense": 2,
+      "movement": 2,
+      "defensive_fire_modifier": 1.20
+    }
   ],
   "terrain_default": "open",
   "terrain_types": {
@@ -68,6 +120,28 @@
     }
   },
   "hex_data": [
+    {
+      "coords": [2, 3],
+      "terrain": "village",
+      "units": ["Grenadier Zug"]
+    },
+    {
+      "coords": [2, 4],
+      "terrain": "village",
+      "units": ["MG Trupp"]
+    },
+    {
+    "coords": [8, 7],
+      "units": ["Rifle Company"]
+    },
+    {
+      "coords": [8, 8],
+      "units": ["Maxim MG Section"]
+    },
+    {
+      "coords": [8, 6],
+      "units": ["Ski Detachment"]
+    }
   ],
     "road_types": {
     "secondary": {
@@ -75,5 +149,9 @@
     }
   },
   "roads": [
+    {
+      "type": "secondary",
+      "path": [[8,7],[7,7],[6,7],[5,7],[4,7],[4,6],[3,5],[3,4],[2,3],[1,3],[0,3]]
+    }
   ]
 }

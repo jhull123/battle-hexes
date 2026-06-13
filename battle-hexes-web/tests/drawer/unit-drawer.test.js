@@ -78,9 +78,10 @@ describe('UnitDrawer.drawCounter echelon symbols', () => {
     rect: jest.fn(),
     line: jest.fn(),
     noStroke: jest.fn(),
-    textSize: jest.fn(),
-    textAlign: jest.fn(),
     text: jest.fn(),
+    textAlign: jest.fn(),
+    textSize: jest.fn(),
+    textStyle: jest.fn(),
   });
 
   const createUnit = (echelon, type = 'infantry') => ({
@@ -143,9 +144,10 @@ describe('UnitDrawer.drawCounter defensive fire icon', () => {
     rect: jest.fn(),
     line: jest.fn(),
     noStroke: jest.fn(),
-    textSize: jest.fn(),
-    textAlign: jest.fn(),
     text: jest.fn(),
+    textAlign: jest.fn(),
+    textSize: jest.fn(),
+    textStyle: jest.fn(),
   });
 
   const createUnit = (hasDefensiveFire = true) => ({
@@ -190,4 +192,3 @@ describe('UnitDrawer.drawCounter defensive fire icon', () => {
     expect(p5.rect).not.toHaveBeenCalledWith(expect.any(Number), expect.any(Number), iconSide, iconSide);
   });
 });
-
