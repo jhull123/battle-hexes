@@ -129,6 +129,7 @@ Common API schema targets:
 | Scenario list metadata from `/scenarios` | `battle_hexes_api/src/battle_hexes_api/schemas/scenario.py` |
 | Created/fetched game payload from `/games` or `/games/{id}` | `battle_hexes_api/src/battle_hexes_api/schemas/game_model.py` and `battle_hexes_api/src/battle_hexes_api/main.py` |
 | Board-level values | `battle_hexes_api/src/battle_hexes_api/schemas/board.py` |
+| Faction values inside players | `battle_hexes_api/src/battle_hexes_api/schemas/player.py` and `battle_hexes_api/src/battle_hexes_api/schemas/faction.py` |
 | Terrain values | `battle_hexes_api/src/battle_hexes_api/schemas/terrain.py` |
 | Unit values | `battle_hexes_api/src/battle_hexes_api/schemas/unit.py` |
 | Objective values | `battle_hexes_api/src/battle_hexes_api/schemas/objective.py` |
@@ -159,6 +160,7 @@ Update `GameCreator.createGame()` and the relevant private helper to read the AP
 Examples of existing mapping patterns:
 
 - Top-level scenario/game metadata is extracted before constructing `Game`.
+- Player faction metadata is parsed in `#getFactions()` and converted into `Faction` instances.
 - Board terrain metadata is parsed in `#addTerrain()` and converted into `Terrain` instances.
 - Units are parsed in `#addUnits()` and converted into `Unit` instances.
 - Objectives are parsed in `#addObjectives()` and converted into `Objective` instances.
