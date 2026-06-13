@@ -47,6 +47,17 @@ tests and linter across **all** Python packages. The script adjusts
 - Prefer testing observable behavior and public contracts over incidental implementation details.
 - Do not add tests that assert exact log message text, private helper calls, or other brittle internals unless the log/output is itself part of documented behavior or an explicit operational requirement.
 
+## End-to-end scenario change guidance
+
+- Read `documentation/end-to-end-change-instructions.md` when a task adds,
+  removes, renames, or changes the behavior of data that starts in scenario JSON
+  and must flow through the core loader/domain model, API serialization, and the
+  web frontend.
+- You usually do not need to read it for isolated bug fixes, refactors, tests,
+  documentation-only work, UI changes that do not touch scenario-backed data, or
+  backend/frontend changes that do not alter scenario file properties. Prefer
+  skipping it in those cases to keep context and token usage focused on the task.
+
 ## Specification docs
 
 - Place all implementation/design specs in the repository `specs/` directory (use a feature-specific subdirectory when helpful).
