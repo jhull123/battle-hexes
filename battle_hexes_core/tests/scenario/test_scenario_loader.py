@@ -153,9 +153,13 @@ def test_iterators_yield_all_scenarios():
     }
 
     assert scenario_ids == {
-        "d_day_crossroads", "elim_1", "elim_2", "village_1"
+        "d_day_crossroads", "east_front_frozen_roadblock", "elim_1", "elim_2",
+        "village_1"
     }
-    assert core_ids == {"d_day_crossroads", "elim_1", "elim_2", "village_1"}
+    assert core_ids == {
+        "d_day_crossroads", "east_front_frozen_roadblock", "elim_1", "elim_2",
+        "village_1"
+    }
 
 
 def test_load_scenario_maps_victory_to_core_type():

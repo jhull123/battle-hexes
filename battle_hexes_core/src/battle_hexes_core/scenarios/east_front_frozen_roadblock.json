@@ -1,0 +1,157 @@
+{
+  "version": "1",
+  "id": "east_front_frozen_roadblock",
+  "name": "East Front: Frozen Roadblock",
+  "description": "In the frozen dawn outside Moscow, a battered German roadblock clings to a snowbound junction as Soviet riflemen and ski troops press forward to break the line before reinforcements can arrive.",
+  "victory": {
+    "description": "The Soviets win by clearing the German roadblock and occupying the junction before the turn limit; the Germans win by holding the junction or delaying the Soviet advance long enough for darkness and reinforcements.",
+    "method": "objective_control",
+    "scoring_side": "Soviet"
+  },
+  "defensive_fire": {
+    "base_probability": 0.25,
+    "minimum": 0.05,
+    "maximum": 0.90
+  },
+  "board_size": [9, 9],
+  "turn_limit": 2,
+  "stacking_limit": 2,
+ "factions": [
+    {
+      "id": "Soviet Army",
+      "name": "Soviet Army",
+      "color": "#6B6A3F",
+      "player": "Player 1",
+      "sounds": {
+        "defensive_fire": {
+          "effect": "m1_trio_rifle_shots.ogg",
+          "no_effect": "m1_single_rifle_shot.ogg"
+        }
+      }
+    },
+    {
+      "id": "Wehrmacht",
+      "name": "Wehrmacht",
+      "color": "#5D6D7E",
+      "player": "Player 2",
+      "sounds": {
+        "defensive_fire": {
+          "effect": "m1_trio_rifle_shots.ogg",
+          "no_effect": "m1_single_rifle_shot.ogg"
+        }
+      }
+    }
+  ],
+  "units": [
+    {
+      "name": "Grenadier Zug",
+      "id": "Grenadier Zug",
+      "faction": "Wehrmacht",
+      "type": "infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 2,
+      "movement": 3
+    },
+    {
+      "name": "MG Trupp",
+      "id": "MG Trupp",
+      "faction": "Wehrmacht",
+      "type": "MG",
+      "echelon": "section",
+      "attack": 1,
+      "defense": 2,
+      "movement": 2,
+      "defensive_fire_modifier": 1.25
+    },
+    {
+      "name": "Rifle Company",
+      "id": "Rifle Company",
+      "faction": "Soviet Army",
+      "type": "infantry",
+      "echelon": "company",
+      "attack": 3,
+      "defense": 2,
+      "movement": 3
+    },
+    {
+      "name": "Ski Detachment",
+      "id": "Ski Detachment",
+      "faction": "Soviet Army",
+      "type": "infantry",
+      "echelon": "platoon",
+      "attack": 2,
+      "defense": 1,
+      "movement": 5
+    },
+    {
+      "name": "Maxim MG Section",
+      "id": "Maxim MG Section",
+      "faction": "Soviet Army",
+      "type": "MG",
+      "echelon": "section",
+      "attack": 1,
+      "defense": 2,
+      "movement": 2,
+      "defensive_fire_modifier": 1.20
+    }
+  ],
+  "terrain_default": "open",
+  "terrain_types": {
+    "forest": {
+      "color": "#D8DDD6",
+      "combat_odds_shift": -2,
+      "defensive_fire_modifier": 0.75,
+      "move_cost": 3
+    },
+    "open": {
+      "color": "#D8DDD6"
+    },
+    "rough": {
+      "color": "#D8DDD6",
+      "combat_odds_shift": -1,
+      "defensive_fire_modifier": 0.85,
+      "move_cost": 2
+    },
+    "village": {
+      "color": "#D8DDD6",
+      "combat_odds_shift": -1,
+      "defensive_fire_modifier": 0.75
+    }
+  },
+  "hex_data": [
+    {
+      "coords": [2, 3],
+      "terrain": "village",
+      "units": ["Grenadier Zug"]
+    },
+    {
+      "coords": [2, 4],
+      "terrain": "village",
+      "units": ["MG Trupp"]
+    },
+    {
+    "coords": [8, 7],
+      "units": ["Rifle Company"]
+    },
+    {
+      "coords": [8, 8],
+      "units": ["Maxim MG Section"]
+    },
+    {
+      "coords": [8, 6],
+      "units": ["Ski Detachment"]
+    }
+  ],
+    "road_types": {
+    "secondary": {
+      "edge_move_cost": 1
+    }
+  },
+  "roads": [
+    {
+      "type": "secondary",
+      "path": [[8,7],[7,7],[6,7],[5,7],[4,7],[4,6],[3,5],[3,4],[2,3],[1,3],[0,3]]
+    }
+  ]
+}

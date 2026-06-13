@@ -108,11 +108,19 @@ export class UnitDrawer {
       return;
     }
 
+    // Limit style changes to this drawer only when supported by p5 mock
+    const hasPushPop = typeof this.#p.push === 'function' && typeof this.#p.pop === 'function';
+    if (hasPushPop) this.#p.push();
+    if (typeof this.#p.textFont === 'function') this.#p.textFont('Georgia');
+
     this.#p.fill(255);
     this.#p.noStroke();
-    this.#p.textSize(9);
+    this.#p.textSize(10);
+    this.#p.textStyle(this.#p.BOLD);
     this.#p.textAlign(this.#p.CENTER, this.#p.CENTER);
-    this.#p.text(echelonSymbol, x, y - this.#counterSideThird + this.#counterSideThird * 0.2);
+    this.#p.text(echelonSymbol, x, y - this.#counterSideThird + this.#counterSideThird * 0.12);
+
+    if (hasPushPop) this.#p.pop();
   }
 
   #drawDefensiveFireIcon(x, y) {
