@@ -31,35 +31,35 @@
       {
         "id": "red_unit_1",
         "name": "Red Unit",
-        "faction_id": "red faction",
         "type": "Infantry",
         "attack": 2,
         "defense": 2,
         "move": 6,
         "row": 2,
-        "column": 2
+        "column": 2,
+        "factionId": "red faction"
       },
       {
         "id": "blue_unit_1",
         "name": "Blue Unit",
-        "faction_id": "blue faction",
         "type": "Infantry",
         "attack": 4,
         "defense": 4,
         "move": 4,
         "row": 8,
-        "column": 9
+        "column": 9,
+        "factionId": "blue faction"
       },
       {
         "id": "blue_unit_2",
         "name": "Blue Two",
-        "faction_id": "blue faction",
         "type": "Scout",
         "attack": 2,
         "defense": 2,
         "move": 6,
         "row": 9,
-        "column": 5
+        "column": 5,
+        "factionId": "blue faction"
       }
     ],
     "terrain": {
@@ -81,7 +81,9 @@
           "terrain": "village"
         }
       ]
-    }
+    },
+    "roadTypes": {},
+    "roadPaths": []
   },
   "objectives": [
     {

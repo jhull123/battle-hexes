@@ -3,6 +3,7 @@ import unittest
 from battle_hexes_api.schemas import (
     CreateGameRequest,
     DefensiveFireEventModel,
+    FactionModel,
     GameModel,
     MovementResponseModel,
     ScenarioModel,
@@ -85,6 +86,31 @@ class TestApiAliases(unittest.TestCase):
         terrain = payload["board"]["terrain"]["types"]["open"]
         self.assertEqual(terrain["moveCost"], 1)
         self.assertEqual(terrain["combatOddsShift"], 0)
+
+    def test_faction_model_exposes_nested_sound_keys_as_camel_case(self):
+        faction = Faction(
+            id="allies",
+            name="Allies",
+            color="#556B2F",
+            sounds={
+                "defensive_fire": {
+                    "effect": "m1_single_rifle_shot.ogg",
+                    "no_effect": "m1_no_effect.ogg",
+                },
+            },
+        )
+
+        payload = FactionModel.from_core(faction).model_dump(by_alias=True)
+
+        self.assertEqual(
+            payload["sounds"],
+            {
+                "defensiveFire": {
+                    "effect": "m1_single_rifle_shot.ogg",
+                    "noEffect": "m1_no_effect.ogg",
+                },
+            },
+        )
 
 
 class TestScenarioModel(unittest.TestCase):

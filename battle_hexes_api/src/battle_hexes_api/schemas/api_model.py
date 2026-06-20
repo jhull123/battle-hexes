@@ -10,6 +10,19 @@ def to_camel(value: str) -> str:
     return words[0] + "".join(word.capitalize() for word in words[1:])
 
 
+def to_snake(value: str) -> str:
+    """Convert a lower camelCase field name to snake_case."""
+
+    output = []
+    for character in value:
+        if character.isupper():
+            output.append("_")
+            output.append(character.lower())
+        else:
+            output.append(character)
+    return "".join(output)
+
+
 class ApiBaseModel(BaseModel):
     """Base model that exposes camelCase JSON aliases for API payloads."""
 

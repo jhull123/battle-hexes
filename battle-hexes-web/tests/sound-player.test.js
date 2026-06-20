@@ -11,7 +11,7 @@ const createAudioFactory = (playImpl = () => Promise.resolve()) => {
 describe('SoundPlayer defensive fire playback', () => {
   test('plays effect sound from the firing unit faction for non-no_effect outcomes', async () => {
     const faction = new Faction('red', 'Red', '#f00', {
-      defensive_fire: {
+      defensiveFire: {
         effect: 'm1_single_rifle_shot.ogg',
       },
     });
@@ -29,8 +29,8 @@ describe('SoundPlayer defensive fire playback', () => {
 
   test('plays no_effect sound for no_effect outcomes', async () => {
     const faction = new Faction('red', 'Red', '#f00', {
-      defensive_fire: {
-        no_effect: 'k98_distant.ogg',
+      defensiveFire: {
+        noEffect: 'k98_distant.ogg',
       },
     });
     const game = {
@@ -46,7 +46,7 @@ describe('SoundPlayer defensive fire playback', () => {
 
   test('stays silent for missing defensive fire config or empty filename', async () => {
     const faction = new Faction('red', 'Red', '#f00', {
-      defensive_fire: {
+      defensiveFire: {
         effect: '',
       },
     });
@@ -66,10 +66,10 @@ describe('SoundPlayer defensive fire playback', () => {
 
   test('uses each firing unit faction mapping independently', async () => {
     const redFaction = new Faction('red', 'Red', '#f00', {
-      defensive_fire: { effect: 'red_effect.ogg' },
+      defensiveFire: { effect: 'red_effect.ogg' },
     });
     const blueFaction = new Faction('blue', 'Blue', '#00f', {
-      defensive_fire: { effect: 'blue_effect.ogg' },
+      defensiveFire: { effect: 'blue_effect.ogg' },
     });
     const game = {
       getFactionForUnitId: jest.fn((unitId) => (unitId === 'red-unit' ? redFaction : blueFaction)),
@@ -88,7 +88,7 @@ describe('SoundPlayer defensive fire playback', () => {
 
   test('logs warning and continues when playback fails', async () => {
     const faction = new Faction('red', 'Red', '#f00', {
-      defensive_fire: {
+      defensiveFire: {
         effect: 'red_effect.ogg',
       },
     });
