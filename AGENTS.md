@@ -47,6 +47,20 @@ tests and linter across **all** Python packages. The script adjusts
 - Prefer testing observable behavior and public contracts over incidental implementation details.
 - Do not add tests that assert exact log message text, private helper calls, or other brittle internals unless the log/output is itself part of documented behavior or an explicit operational requirement.
 
+## Naming and Casing
+
+This repository follows a canonical naming/casing policy. Follow these rules when
+adding or modifying code, samples, and tests:
+
+- **Python internals:** Use snake_case for variables, functions, methods, and
+  model/attribute names (including Pydantic model attributes).
+- **Scenario JSON:** Keep scenario files in snake_case; do not convert existing
+  scenario JSON to camelCase as part of normal changes.
+- **HTTP API JSON:** Use camelCase for request and response JSON (the
+  client-facing contract consumed by the frontend).
+- **Frontend / JavaScript:** Use camelCase for properties, method names, and
+  frontend model fields.
+
 ## End-to-end scenario change guidance
 
 - Read `documentation/end-to-end-change-instructions.md` when a task adds,
