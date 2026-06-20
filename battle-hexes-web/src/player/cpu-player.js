@@ -4,6 +4,8 @@ import { eventBus } from '../event-bus.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
 import { applyMovementResponse } from '../model/movement-response-handler.js';
 
+const getMovementPlanUnitId = (plan) => plan.unitId ?? plan.unit_id;
+
 export class CpuPlayer extends Player {
   static PHASE_DELAY_MS = 333;
 
@@ -27,7 +29,7 @@ export class CpuPlayer extends Player {
         const animator = new MovementAnimator(game.getBoard());
         for (const plan of responseData.plans) {
           const unit = [...game.getBoard().units].find(
-            u => u.getId() === plan.unitId
+            u => u.getId() === getMovementPlanUnitId(plan)
           );
           if (unit) {
             const path = plan.path.map(h =>
