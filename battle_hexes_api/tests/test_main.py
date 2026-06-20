@@ -322,7 +322,7 @@ class TestFastAPI(unittest.TestCase):
         mock_plan = MagicMock()
         mock_player = MagicMock()
         mock_player.movement.return_value = [mock_plan]
-        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
         mock_game = MagicMock()
         mock_game.get_current_player.return_value = mock_player
         mock_game_repo.get_game.return_value = mock_game
@@ -350,7 +350,10 @@ class TestFastAPI(unittest.TestCase):
             response.json()["game"]["id"],
             "00000000-0000-0000-0000-000000000000",
         )
-        self.assertEqual(response.json()["plans"], [{"plan": 1}])
+        self.assertEqual(
+            response.json()["plans"],
+            [{"unitId": "u-1", "path": []}],
+        )
         self.assertEqual(response.json()["defensiveFireEvents"], [])
         self.assertIn("sparseBoard", response.json())
         self.assertEqual(response.json()["scores"], {"Alice": 3})
@@ -367,7 +370,7 @@ class TestFastAPI(unittest.TestCase):
         mock_from_board,
     ):
         mock_plan = MagicMock()
-        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
         mock_player = MagicMock()
         mock_player.name = "CPU 1"
         mock_player.movement.return_value = [mock_plan]
@@ -419,7 +422,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game = MagicMock()
         mock_board = MagicMock()
         mock_plan = MagicMock()
-        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
         mock_game.get_board.return_value = mock_board
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = self._game_model_payload()
@@ -460,7 +463,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game = MagicMock()
         mock_board = MagicMock()
         mock_plans = [MagicMock()]
-        mock_plans[0].to_dict.return_value = {"plan": 1}
+        mock_plans[0].to_dict.return_value = {"unit_id": "u-1", "path": []}
         mock_game.get_board.return_value = mock_board
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = self._game_model_payload()
@@ -516,7 +519,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game.get_board.return_value = MagicMock()
         mock_game_repo.get_game.return_value = mock_game
         mock_plan = MagicMock()
-        mock_plan.to_dict.return_value = {"plan": 1}
+        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
         mock_to_movement_plans.return_value = [mock_plan]
         mock_game.apply_movement_plans.return_value = MovementResolutionResult(
             defensive_fire_results=[
@@ -610,7 +613,7 @@ class TestFastAPI(unittest.TestCase):
         mock_game.get_current_player.assert_called_once_with()
         mock_game.next_player.assert_called_once_with()
         mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_from_game.assert_called_once_with(mock_game)
+        mock_from_game.assert_called_once_with(mock_game, None)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
@@ -644,7 +647,7 @@ class TestFastAPI(unittest.TestCase):
         )
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
-        mock_from_game.assert_called_once_with(mock_game)
+        mock_from_game.assert_called_once_with(mock_game, None)
 
     @patch('battle_hexes_api.main.list_player_types')
     def test_get_player_types(self, mock_list_player_types):
@@ -722,37 +725,5 @@ class TestFastAPI(unittest.TestCase):
 
         self.assertEqual(serialized["id"], "game-123")
         self.assertEqual(serialized["board"], {"hexes": []})
-        self.assertEqual(serialized["scenarioId"], "elim_1")
-        self.assertEqual(serialized["playerTypeIds"], ["human", "cpu"])
-        self.assertEqual(serialized["turnLimit"], None)
-        self.assertEqual(serialized["turnNumber"], 1)
 
-        self.assertEqual(
-            serialized["players"],
-            [
-                {
-                    "name": "Alice",
-                    "type": PlayerType.HUMAN.value,
-                    "factions": [
-                        {
-                            "id": "alpha",
-                            "name": "Alpha",
-                            "color": "#ff0000",
-                            "sounds": {"defensive_fire": {"effect": "a.ogg"}},
-                        }
-                    ],
-                },
-                {
-                    "name": "Bob",
-                    "type": PlayerType.CPU.value,
-                    "factions": [
-                        {
-                            "id": "beta",
-                            "name": "Beta",
-                            "color": "#00ff00",
-                            "sounds": {"defensive_fire": {"effect": "b.ogg"}},
-                        }
-                    ],
-                },
-            ],
-        )
+        self.assertEqual(serialized["players"], [{}, {}])

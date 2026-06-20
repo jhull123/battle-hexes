@@ -32,7 +32,6 @@ from battle_hexes_api.schemas import (  # noqa: E402
     GameModel,
     MovementResponseModel,
     SparseBoard,
-    PlayerModel,
     PlayerTypeModel,
     ScenarioModel,
 )
@@ -81,26 +80,7 @@ def _serialize_game(game) -> dict:
             scenario = None
 
     game_model = GameModel.from_game(game, scenario)
-    model = _dump_api_model(game_model)
-    model["players"] = [
-        _dump_api_model(PlayerModel.from_core(player))
-        for player in game_model.players
-    ]
-
-    if scenario_id is not None:
-        model["scenarioId"] = scenario_id
-    if scenario is not None:
-        model["scenarioName"] = scenario.name
-        model["stackingLimit"] = scenario.stacking_limit
-
-    model.setdefault("turnLimit", None)
-    model.setdefault("turnNumber", 1)
-
-    player_type_ids = getattr(game, "player_type_ids", None)
-    if player_type_ids is not None:
-        model["playerTypeIds"] = list(player_type_ids)
-
-    return model
+    return _dump_api_model(game_model)
 
 
 @app.post('/games')
@@ -276,4 +256,4 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return _dump_api_model(GameModel.from_game(game))
+    return _serialize_game(game)

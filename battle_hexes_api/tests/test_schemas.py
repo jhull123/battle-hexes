@@ -174,7 +174,8 @@ class TestGameModel(unittest.TestCase):
         model = GameModel.from_game(game, scenario)
 
         self.assertEqual(model.id, game.get_id())
-        self.assertEqual(model.players, [player])
+        self.assertEqual(model.players[0].name, "Alice")
+        self.assertEqual(model.players[0].type, "Human")
         self.assertEqual(model.board.rows, 2)
         self.assertEqual(model.board.columns, 2)
         self.assertEqual(len(model.board.units), 1)
@@ -382,7 +383,11 @@ class TestMovementSchemas(unittest.TestCase):
             GameModel.from_game = original_from_game
             SparseBoard.from_board = original_from_board
 
-        self.assertEqual(response.plans, [{"unit_id": "u1", "path": []}])
+        self.assertEqual(response.plans[0].unit_id, "u1")
+        self.assertEqual(
+            response.model_dump(by_alias=True)["plans"],
+            [{"unitId": "u1", "path": []}],
+        )
         self.assertEqual(
             response.defensive_fire_events[0].outcome,
             "no_effect",
