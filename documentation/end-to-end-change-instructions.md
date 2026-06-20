@@ -150,7 +150,7 @@ Implementation notes:
 - Update `from_core()` / `from_*()` factory methods to populate the field.
 - Update `to_core()` if the schema supports round-tripping back to a core type.
 - If the frontend expects `camelCase` for a top-level game response field, update `_serialize_game()` in `battle_hexes_api/src/battle_hexes_api/main.py` to rename fields or add top-level aliases.
-- Nested schema fields often remain `snake_case` unless neighboring fields or compatibility requirements already use `camelCase`. Check the existing response shape at the same nesting level before choosing a name.
+- Treat existing nested `snake_case` API fields as current-state compatibility, not as the target convention for new fields. Before choosing any API response name, check `specs/naming-casing-cleanup.md`: HTTP API JSON and frontend mocks should move toward canonical `camelCase`, even for nested scenario-backed fields.
 - Decide whether the value appears in `/scenarios`, created game responses, fetched game responses, movement responses, combat responses, or all of them.
 
 Update tests such as:
