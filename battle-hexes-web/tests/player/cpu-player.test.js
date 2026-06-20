@@ -184,7 +184,7 @@ describe('CpuPlayer', () => {
       game: { board: { units: [] } },
       plans: [
         {
-          unit_id: 'unit-001',
+          unitId: 'unit-001',
           path: [ { row: 0, column: 0 }, { row: 0, column: 1 } ],
         },
       ],

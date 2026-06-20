@@ -67,7 +67,7 @@ export class MockBattleHexesService extends BattleHexesService {
     console.log('Returning mock response for resolveCombat.');
     return Promise.resolve({
       units: [],
-      last_combat_results: [],
+      lastCombatResults: [],
       scores: {},
       turnNumber: 1,
       turnLimit: null,

@@ -355,12 +355,12 @@
             "Player 1": 0,
             "Player 2": 3
         },
-        "turn_limit": 8,
+        "turnLimit": 8,
         "turnNumber": 2
     },
     "plans": [
         {
-            "unit_id": "Airborne Inf. A",
+            "unitId": "Airborne Inf. A",
             "path": [
                 {
                     "row": 8,
@@ -455,11 +455,11 @@
         {
             "firingUnitId": "Crossroads Feldwache",
             "targetUnitId": "Airborne Inf. A",
-            "trigger_hex": [
+            "triggerHex": [
                 7,
                 9
             ],
-            "target_hex_before": [
+            "targetHexBefore": [
                 7,
                 9
             ],
@@ -468,7 +468,7 @@
                 8,
                 9
             ],
-            "spent_defensive_fire": true,
+            "spentDefensiveFire": true,
             "probability": 0.125,
             "roll": 0.07586604005985398,
             "message": "Defensive fire forced the target to retreat to (8, 9)."

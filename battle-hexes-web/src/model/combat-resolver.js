@@ -16,7 +16,7 @@ export class CombatResolver {
     console.log(`${this.#gameId} - ${sparseBoard}`);
 
     const combatResult = await this.service.resolveCombat(this.#gameId, sparseBoard);
-    console.log('combat result: ', combatResult.last_combat_results);
+    console.log('combat result: ', combatResult.lastCombatResults);
     console.log('new board state: ', combatResult.units);
 
     const boardUpdater = new BoardUpdater();
