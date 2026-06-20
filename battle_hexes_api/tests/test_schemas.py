@@ -1,7 +1,9 @@
 import unittest
 
 from battle_hexes_api.schemas import (
+    CreateGameRequest,
     DefensiveFireEventModel,
+    FactionModel,
     GameModel,
     MovementResponseModel,
     ScenarioModel,
@@ -18,6 +20,97 @@ from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioVictory
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
+
+
+class TestApiAliases(unittest.TestCase):
+    def test_create_game_request_accepts_camel_case_aliases(self):
+        request = CreateGameRequest.model_validate({
+            "scenarioId": "elim_1",
+            "playerTypes": ["human", "random"],
+        })
+
+        self.assertEqual(request.scenario_id, "elim_1")
+        self.assertEqual(request.player_types, ["human", "random"])
+
+    def test_game_model_dumps_nested_camel_case_aliases(self):
+        model = GameModel(
+            id="00000000-0000-0000-0000-000000000000",
+            players=[],
+            board={
+                "rows": 1,
+                "columns": 1,
+                "units": [
+                    {
+                        "id": "unit-1",
+                        "name": "Unit 1",
+                        "factionId": "allies",
+                        "type": "Infantry",
+                        "attack": 2,
+                        "defense": 3,
+                        "move": 4,
+                        "row": 0,
+                        "column": 0,
+                    }
+                ],
+                "terrain": {
+                    "default": "open",
+                    "types": {
+                        "open": {
+                            "name": "Open",
+                            "color": "#C6AA5C",
+                            "moveCost": 1,
+                            "combatOddsShift": 0,
+                        }
+                    },
+                    "hexes": [],
+                },
+                "roadTypes": {"secondary": 1.0},
+                "roadPaths": [],
+            },
+            objectives=[],
+            scores={},
+            turn_limit=10,
+            turn_number=2,
+        )
+
+        payload = model.model_dump(by_alias=True)
+
+        self.assertEqual(payload["turnLimit"], 10)
+        self.assertEqual(payload["turnNumber"], 2)
+        self.assertIn("roadTypes", payload["board"])
+        self.assertIn("roadPaths", payload["board"])
+        self.assertEqual(
+            payload["board"]["units"][0]["factionId"],
+            "allies",
+        )
+        terrain = payload["board"]["terrain"]["types"]["open"]
+        self.assertEqual(terrain["moveCost"], 1)
+        self.assertEqual(terrain["combatOddsShift"], 0)
+
+    def test_faction_model_exposes_nested_sound_keys_as_camel_case(self):
+        faction = Faction(
+            id="allies",
+            name="Allies",
+            color="#556B2F",
+            sounds={
+                "defensive_fire": {
+                    "effect": "m1_single_rifle_shot.ogg",
+                    "no_effect": "m1_no_effect.ogg",
+                },
+            },
+        )
+
+        payload = FactionModel.from_core(faction).model_dump(by_alias=True)
+
+        self.assertEqual(
+            payload["sounds"],
+            {
+                "defensiveFire": {
+                    "effect": "m1_single_rifle_shot.ogg",
+                    "noEffect": "m1_no_effect.ogg",
+                },
+            },
+        )
 
 
 class TestScenarioModel(unittest.TestCase):
@@ -107,7 +200,8 @@ class TestGameModel(unittest.TestCase):
         model = GameModel.from_game(game, scenario)
 
         self.assertEqual(model.id, game.get_id())
-        self.assertEqual(model.players, [player])
+        self.assertEqual(model.players[0].name, "Alice")
+        self.assertEqual(model.players[0].type, "Human")
         self.assertEqual(model.board.rows, 2)
         self.assertEqual(model.board.columns, 2)
         self.assertEqual(len(model.board.units), 1)
@@ -315,7 +409,11 @@ class TestMovementSchemas(unittest.TestCase):
             GameModel.from_game = original_from_game
             SparseBoard.from_board = original_from_board
 
-        self.assertEqual(response.plans, [{"unit_id": "u1", "path": []}])
+        self.assertEqual(response.plans[0].unit_id, "u1")
+        self.assertEqual(
+            response.model_dump(by_alias=True)["plans"],
+            [{"unitId": "u1", "path": []}],
+        )
         self.assertEqual(
             response.defensive_fire_events[0].outcome,
             "no_effect",

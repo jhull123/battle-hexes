@@ -28,3 +28,39 @@ describe('MockBattleHexesService', () => {
     expect(secondResponse.board.units[0].name).not.toBe('changed');
   });
 });
+
+describe('mock API payload casing', () => {
+  const mockResponseDirectory = path.resolve('src/service/mock-responses');
+  const snakeCaseKeyPattern = /^[a-z][a-z0-9]*(_[a-z0-9]+)+$/;
+
+  function collectSnakeCaseKeys(value, pathSegments = []) {
+    if (Array.isArray(value)) {
+      return value.flatMap((item, index) => collectSnakeCaseKeys(item, [...pathSegments, `[${index}]`]));
+    }
+
+    if (!value || typeof value !== 'object') {
+      return [];
+    }
+
+    return Object.entries(value).flatMap(([key, nestedValue]) => {
+      const currentPath = [...pathSegments, key];
+      const matches = snakeCaseKeyPattern.test(key) ? [currentPath.join('.')] : [];
+      return [...matches, ...collectSnakeCaseKeys(nestedValue, currentPath)];
+    });
+  }
+
+  test('uses camelCase keys in frontend mock API responses', () => {
+    const mockResponseFiles = fs
+      .readdirSync(mockResponseDirectory)
+      .filter((fileName) => fileName.endsWith('.json'));
+
+    const snakeCaseKeys = mockResponseFiles.flatMap((fileName) => {
+      const payload = JSON.parse(
+        fs.readFileSync(path.join(mockResponseDirectory, fileName), 'utf8'),
+      );
+      return collectSnakeCaseKeys(payload).map((keyPath) => `${fileName}:${keyPath}`);
+    });
+
+    expect(snakeCaseKeys).toEqual([]);
+  });
+});

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from .api_model import ApiBaseModel
 
 from .game_model import GameModel
 from .sparseboard import SparseBoard
 
 
-class DefensiveFireEventModel(BaseModel):
+class DefensiveFireEventModel(ApiBaseModel):
     """Serialized defensive-fire event emitted during movement."""
 
     firing_unit_id: str
@@ -55,26 +57,38 @@ class DefensiveFireEventModel(BaseModel):
         return "Defensive fire had no effect."
 
 
-class MovementResponseModel(BaseModel):
+class MovementPathHexModel(ApiBaseModel):
+    """Coordinate in a serialized movement path."""
+
+    row: int
+    column: int
+
+
+class MovementPlanModel(ApiBaseModel):
+    """Serialized unit movement plan."""
+
+    unit_id: str
+    path: list[MovementPathHexModel] = Field(default_factory=list)
+
+    @classmethod
+    def from_plan(cls, plan: Any) -> "MovementPlanModel":
+        """Build a movement plan schema from a core movement plan."""
+
+        return cls.model_validate(plan.to_dict())
+
+
+class MovementResponseModel(ApiBaseModel):
     """Movement endpoint payload including board updates and reactions."""
 
-    model_config = ConfigDict(populate_by_name=True)
-
     game: GameModel
-    plans: list[dict[str, Any]] = Field(default_factory=list)
+    plans: list[MovementPlanModel] = Field(default_factory=list)
     sparse_board: SparseBoard
     defensive_fire_events: list[DefensiveFireEventModel] = Field(
         default_factory=list
     )
     scores: dict[str, int] = Field(default_factory=dict)
-    turn_limit: int | None = Field(
-        default=None,
-        serialization_alias="turnLimit",
-    )
-    turn_number: int = Field(
-        default=1,
-        serialization_alias="turnNumber",
-    )
+    turn_limit: int | None = None
+    turn_number: int = 1
 
     @classmethod
     def from_movement_result(
@@ -92,7 +106,7 @@ class MovementResponseModel(BaseModel):
         )
         return cls(
             game=GameModel.from_game(game),
-            plans=[plan.to_dict() for plan in plans],
+            plans=[MovementPlanModel.from_plan(plan) for plan in plans],
             sparse_board=SparseBoard.from_board(game.get_board()),
             defensive_fire_events=[
                 DefensiveFireEventModel.from_result(result)

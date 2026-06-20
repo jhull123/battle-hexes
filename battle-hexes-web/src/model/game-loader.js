@@ -1,7 +1,7 @@
-import { Game } from './game.js';
+import { Game } from "./game.js";
 
-const DEFAULT_SCENARIO_ID = 'elim_1';
-const DEFAULT_PLAYER_TYPES = ['human', 'random'];
+const DEFAULT_SCENARIO_ID = "elim_1";
+const DEFAULT_PLAYER_TYPES = ["human", "random"];
 
 let lastLoadedConfig = {
   scenarioId: DEFAULT_SCENARIO_ID,
@@ -14,12 +14,16 @@ const cloneConfig = (config) => ({
 });
 
 const isStringArray = (value) =>
-  Array.isArray(value)
-  && value.length > 0
-  && value.every((item) => typeof item === 'string' && item.trim().length > 0);
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every((item) => typeof item === "string" && item.trim().length > 0);
 
 const readNestedValue = (source, path) =>
-  path.reduce((value, key) => (value && value[key] !== undefined ? value[key] : undefined), source);
+  path.reduce(
+    (value, key) =>
+      value && value[key] !== undefined ? value[key] : undefined,
+    source,
+  );
 
 const derivePlayerTypesFromPlayers = (players) => {
   if (!Array.isArray(players) || players.length === 0) {
@@ -27,28 +31,28 @@ const derivePlayerTypesFromPlayers = (players) => {
   }
 
   const candidatePaths = [
-    ['typeId'],
-    ['type_id'],
-    ['playerTypeId'],
-    ['player_type_id'],
-    ['metadata', 'typeId'],
-    ['metadata', 'type_id'],
-    ['controller', 'id'],
-    ['controller', 'typeId'],
-    ['controller', 'type_id'],
+    ["typeId"],
+    ["playerTypeId"],
+    ["metadata", "typeId"],
+    ["controller", "id"],
+    ["controller", "typeId"],
   ];
 
   const candidateTypes = players.map((player) => {
     for (const path of candidatePaths) {
       const value = readNestedValue(player, path);
-      if (typeof value === 'string' && value.trim().length > 0) {
+      if (typeof value === "string" && value.trim().length > 0) {
         return value;
       }
     }
     return null;
   });
 
-  if (candidateTypes.every((typeId) => typeof typeId === 'string' && typeId.trim().length > 0)) {
+  if (
+    candidateTypes.every(
+      (typeId) => typeof typeId === "string" && typeId.trim().length > 0,
+    )
+  ) {
     return candidateTypes;
   }
 
@@ -56,15 +60,13 @@ const derivePlayerTypesFromPlayers = (players) => {
 };
 
 const derivePlayerTypes = (gameData) => {
-  if (!gameData || typeof gameData !== 'object') {
+  if (!gameData || typeof gameData !== "object") {
     return null;
   }
 
   const topLevelCandidates = [
     gameData.playerTypeIds,
     gameData.playerTypes,
-    gameData.player_type_ids,
-    gameData.player_types,
   ];
 
   for (const candidate of topLevelCandidates) {
@@ -82,12 +84,12 @@ const derivePlayerTypes = (gameData) => {
 };
 
 const updateLastLoadedConfig = (gameData) => {
-  const scenarioId = gameData?.scenarioId
-    ?? lastLoadedConfig?.scenarioId
-    ?? DEFAULT_SCENARIO_ID;
-  const derivedPlayerTypes = derivePlayerTypes(gameData)
-    ?? lastLoadedConfig?.playerTypes
-    ?? DEFAULT_PLAYER_TYPES;
+  const scenarioId =
+    gameData?.scenarioId ?? lastLoadedConfig?.scenarioId ?? DEFAULT_SCENARIO_ID;
+  const derivedPlayerTypes =
+    derivePlayerTypes(gameData) ??
+    lastLoadedConfig?.playerTypes ??
+    DEFAULT_PLAYER_TYPES;
 
   lastLoadedConfig = {
     scenarioId,
@@ -99,7 +101,8 @@ const updateLastLoadedConfig = (gameData) => {
 
 export const getLastLoadedConfig = () => cloneConfig(lastLoadedConfig);
 
-export const rememberLoadedGameData = (gameData) => updateLastLoadedConfig(gameData);
+export const rememberLoadedGameData = (gameData) =>
+  updateLastLoadedConfig(gameData);
 
 export const extractGameIdFromLocation = () => {
   const params = new URLSearchParams(window.location.search);
@@ -108,19 +111,23 @@ export const extractGameIdFromLocation = () => {
 
 export const updateUrlWithGameId = (gameId) => {
   const params = new URLSearchParams(window.location.search);
-  params.set('gameId', gameId);
+  params.set("gameId", gameId);
   const query = params.toString();
   let pathname = window.location.pathname;
 
   if (/battle(?:\.html)?\/[^/]+$/.test(pathname)) {
-    pathname = pathname.replace(/(battle(?:\.html)?\/)[^/]+$/, `$1${encodeURIComponent(gameId)}`);
+    pathname = pathname.replace(
+      /(battle(?:\.html)?\/)[^/]+$/,
+      `$1${encodeURIComponent(gameId)}`,
+    );
   }
 
   const canReplace =
-    window.location.protocol === 'http:' || window.location.protocol === 'https:';
+    window.location.protocol === "http:" ||
+    window.location.protocol === "https:";
 
-  if (canReplace && 'replaceState' in history) {
-    history.replaceState(null, '', `${pathname}${query ? `?${query}` : ''}`);
+  if (canReplace && "replaceState" in history) {
+    history.replaceState(null, "", `${pathname}${query ? `?${query}` : ""}`);
   }
 };
 

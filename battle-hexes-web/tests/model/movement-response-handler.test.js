@@ -25,10 +25,10 @@ describe('applyMovementResponse', () => {
     const response = {
       game: {
         board: {
-          units: [{ id: 'unit-1', row: 1, column: 2, defensive_fire_available: false }],
+          units: [{ id: 'unit-1', row: 1, column: 2, defensiveFireAvailable: false }],
         },
       },
-      defensive_fire_events: [
+      defensiveFireEvents: [
         { message: 'Defensive fire had no effect.' },
       ],
     };
@@ -39,23 +39,23 @@ describe('applyMovementResponse', () => {
     expect(updater.updateBoard).toHaveBeenCalledWith(board, response.game.board.units);
     expect(eventBus.emit).toHaveBeenCalledWith(
       'defensiveFireResolved',
-      response.defensive_fire_events
+      response.defensiveFireEvents
     );
   });
 
   test('falls back to sparse board units when game board units are unavailable', () => {
     const board = { id: 'board-1' };
     const response = {
-      sparse_board: {
+      sparseBoard: {
         units: [{ id: 'unit-2', row: 3, column: 4 }],
       },
-      defensive_fire_events: [],
+      defensiveFireEvents: [],
     };
 
     applyMovementResponse(board, response);
 
     const updater = BoardUpdater.mock.results[0].value;
-    expect(updater.updateBoard).toHaveBeenCalledWith(board, response.sparse_board.units);
+    expect(updater.updateBoard).toHaveBeenCalledWith(board, response.sparseBoard.units);
     expect(eventBus.emit).not.toHaveBeenCalled();
   });
 });

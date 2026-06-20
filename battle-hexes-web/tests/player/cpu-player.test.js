@@ -172,7 +172,7 @@ describe('CpuPlayer', () => {
     expect(updateTurnStateSpy).not.toHaveBeenCalled();
   });
 
-  test('animates movement plans returned from server', async () => {
+  test('animates movement plans returned from server using canonical camelCase keys', async () => {
     jest.useFakeTimers();
     const board = new Board(1, 2);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
@@ -184,7 +184,7 @@ describe('CpuPlayer', () => {
       game: { board: { units: [] } },
       plans: [
         {
-          unit_id: 'unit-001',
+          unitId: 'unit-001',
           path: [ { row: 0, column: 0 }, { row: 0, column: 1 } ],
         },
       ],

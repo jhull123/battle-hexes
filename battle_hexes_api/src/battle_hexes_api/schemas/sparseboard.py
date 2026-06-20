@@ -5,7 +5,9 @@ from typing import List, Optional, TYPE_CHECKING
 from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .api_model import ApiBaseModel
 
 from .combat import CombatResultSchema
 
@@ -15,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.game.board import Board
 
 
-class SparseBoard(BaseModel):
+class SparseBoard(ApiBaseModel):
     """A lightweight representation of the game board used by the API."""
 
     units: List[SparseUnit] = Field(default_factory=list)

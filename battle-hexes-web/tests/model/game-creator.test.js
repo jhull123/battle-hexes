@@ -10,14 +10,14 @@ beforeEach(() => {
     '"scenarioId":"elem_test",' +
     '"stackingLimit":2,' +
     '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
-    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensive_fire":{"effect":"red_effect.ogg","no_effect":"red_no_effect.ogg"}}}]},' +
+    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensiveFire":{"effect":"red_effect.ogg","noEffect":"red_noEffect.ogg"}}}]},' +
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
     '"board":{"rows":10,"columns":10,"units":[' +
-    '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","faction_id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","echelon":"platoon","attack":2,"defense":2,"move":6,"row":6,"column":4,"defensive_fire_available":false},' +
-    '{"id":"c9a440d2-2b0a-4730-b4c6-da394b642c61","name":"Blue Unit","faction_id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","type":"Infantry","attack":4,"defense":4,"move":4,"row":3,"column":5}],' +
-    '"terrain":{"default":"open","types":{"open":{"name":"open","color":"#C6AA5C"},"village":{"name":"village","color":"#9A8F7A","move_cost":2,"combat_odds_shift":-1}},"hexes":[{"row":6,"column":4,"terrain":"village"}]},' +
-    '"road_types":{"secondary":1.0},' +
-    '"road_paths":[{"type":"secondary","path":[{"row":5,"column":0},{"row":5,"column":1},{"row":6,"column":2}]}]},' +
+    '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","factionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","echelon":"platoon","attack":2,"defense":2,"move":6,"row":6,"column":4,"defensiveFireAvailable":false},' +
+    '{"id":"c9a440d2-2b0a-4730-b4c6-da394b642c61","name":"Blue Unit","factionId":"38400000-8cf0-41bd-b23e-10b96e4ef00d","type":"Infantry","attack":4,"defense":4,"move":4,"row":3,"column":5}],' +
+    '"terrain":{"default":"open","types":{"open":{"name":"open","color":"#C6AA5C"},"village":{"name":"village","color":"#9A8F7A","moveCost":2,"combatOddsShift":-1}},"hexes":[{"row":6,"column":4,"terrain":"village"}]},' +
+    '"roadTypes":{"secondary":1.0},' +
+    '"roadPaths":[{"type":"secondary","path":[{"row":5,"column":0},{"row":5,"column":1},{"row":6,"column":2}]}]},' +
     '"objectives":[{"row":6,"column":4,"points":3,"type":"hold"}]}'
   );
   game = gameCreator.createGame(gameData);
@@ -52,9 +52,9 @@ describe("createGame", () => {
     const redFaction = game.getPlayers().getAllPlayers()[0].getFactions()[0];
 
     expect(redFaction.getSounds()).toEqual({
-      defensive_fire: {
+      defensiveFire: {
         effect: 'red_effect.ogg',
-        no_effect: 'red_no_effect.ogg',
+        noEffect: 'red_noEffect.ogg',
       },
     });
   });
@@ -204,8 +204,8 @@ describe("createGame", () => {
         columns: 2,
         units: [],
       },
-      road_types: { secondary: 1.0 },
-      road_paths: [{ type: 'secondary', path: [{ row: 0, column: 0 }, { row: 0, column: 1 }] }],
+      roadTypes: { secondary: 1.0 },
+      roadPaths: [{ type: 'secondary', path: [{ row: 0, column: 0 }, { row: 0, column: 1 }] }],
     };
 
     const legacyRoadGame = gameCreator.createGame(gameData);

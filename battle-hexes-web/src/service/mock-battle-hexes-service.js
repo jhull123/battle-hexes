@@ -19,7 +19,7 @@ const MOCK_PLAYER_TYPES = [
 
 const emptyMovementPayload = {
   plans: [],
-  sparse_board: { units: [] },
+  sparseBoard: { units: [] },
   game: { board: { units: [] } },
   scores: {},
   turnNumber: 1,
@@ -67,7 +67,7 @@ export class MockBattleHexesService extends BattleHexesService {
     console.log('Returning mock response for resolveCombat.');
     return Promise.resolve({
       units: [],
-      last_combat_results: [],
+      lastCombatResults: [],
       scores: {},
       turnNumber: 1,
       turnLimit: null,
