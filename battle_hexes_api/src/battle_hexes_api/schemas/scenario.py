@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from .api_model import ApiBaseModel
 
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioVictory
 
 
-class ScenarioVictoryModel(BaseModel):
+class ScenarioVictoryModel(ApiBaseModel):
     """Pydantic representation of :class:`ScenarioVictory`."""
 
     model_config = ConfigDict(from_attributes=True)
@@ -17,7 +19,7 @@ class ScenarioVictoryModel(BaseModel):
     description: str | None = None
 
 
-class ScenarioModel(BaseModel):
+class ScenarioModel(ApiBaseModel):
     """Pydantic representation of :class:`Scenario`."""
 
     model_config = ConfigDict(from_attributes=True)

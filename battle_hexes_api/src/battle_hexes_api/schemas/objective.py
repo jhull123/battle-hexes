@@ -2,13 +2,13 @@
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from .api_model import ApiBaseModel
 
 if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.game.objective import Objective
 
 
-class ObjectiveModel(BaseModel):
+class ObjectiveModel(ApiBaseModel):
     """Serialized representation of a board objective."""
 
     row: int

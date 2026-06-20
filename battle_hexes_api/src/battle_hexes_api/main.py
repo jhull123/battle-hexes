@@ -58,6 +58,17 @@ app.add_middleware(
 )
 
 
+def _dump_api_model(model) -> dict:
+    """Dump a Pydantic API model using client-facing aliases."""
+
+    if isinstance(model, dict):
+        return model
+    try:
+        return model.model_dump(by_alias=True)
+    except TypeError:
+        return model.model_dump()
+
+
 def _serialize_game(game) -> dict:
     """Return a JSON-serialisable representation of ``game``."""
 
@@ -70,9 +81,9 @@ def _serialize_game(game) -> dict:
             scenario = None
 
     game_model = GameModel.from_game(game, scenario)
-    model = game_model.model_dump()
+    model = _dump_api_model(game_model)
     model["players"] = [
-        PlayerModel.from_core(player).model_dump()
+        _dump_api_model(PlayerModel.from_core(player))
         for player in game_model.players
     ]
 
@@ -82,8 +93,8 @@ def _serialize_game(game) -> dict:
         model["scenarioName"] = scenario.name
         model["stackingLimit"] = scenario.stacking_limit
 
-    model["turnLimit"] = model.pop("turn_limit", None)
-    model["turnNumber"] = model.pop("turn_number", 1)
+    model.setdefault("turnLimit", None)
+    model.setdefault("turnNumber", 1)
 
     player_type_ids = getattr(game, "player_type_ids", None)
     if player_type_ids is not None:
@@ -160,7 +171,7 @@ def get_game(game_id: str):
 def resolve_combat(
     game_id: str,
     sparse_board: SparseBoard = Body(...)
-) -> SparseBoard:
+) -> dict:
     logger.info("We got game: %s", game_id)
     game = _get_game_or_404(game_id)
     sparse_board.apply_to_board(game.get_board())
@@ -186,7 +197,9 @@ def resolve_combat(
         CombatResultSchema.from_combat_result_data(battle)
         for battle in results.get_battles()
     ]
-    return sparse_board
+    if not isinstance(sparse_board, SparseBoard):
+        return {}
+    return _dump_api_model(sparse_board)
 
 
 @app.post('/games/{game_id}/movement')
@@ -199,11 +212,11 @@ def generate_movement(game_id: str):
     movement_resolution = game.apply_movement_plans(plans)
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return MovementResponseModel.from_movement_result(
+    return _dump_api_model(MovementResponseModel.from_movement_result(
         game,
         plans,
         movement_resolution,
-    )
+    ))
 
 
 @app.post('/games/{game_id}/move')
@@ -216,11 +229,11 @@ def resolve_human_move(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return MovementResponseModel.from_movement_result(
+    return _dump_api_model(MovementResponseModel.from_movement_result(
         game,
         plans,
         movement_resolution,
-    )
+    ))
 
 
 @app.post('/games/{game_id}/end-movement')
@@ -236,11 +249,11 @@ def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return MovementResponseModel.from_movement_result(
+    return _dump_api_model(MovementResponseModel.from_movement_result(
         game,
         plans,
         movement_resolution,
-    )
+    ))
 
 
 @app.post('/games/{game_id}/end-turn')
@@ -263,4 +276,4 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return GameModel.from_game(game)
+    return _dump_api_model(GameModel.from_game(game))

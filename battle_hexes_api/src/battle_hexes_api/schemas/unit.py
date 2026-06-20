@@ -2,13 +2,13 @@
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from .api_model import ApiBaseModel
 
 if TYPE_CHECKING:  # pragma: no cover - imported for typing only
     from battle_hexes_core.unit.unit import Unit
 
 
-class UnitModel(BaseModel):
+class UnitModel(ApiBaseModel):
     """Model representing a unit's complete state."""
     id: str
     name: str
@@ -41,7 +41,7 @@ class UnitModel(BaseModel):
         )
 
 
-class SparseUnit(BaseModel):
+class SparseUnit(ApiBaseModel):
     """Model representing a unit's minimal state for position updates."""
     id: str
     row: int

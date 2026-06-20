@@ -57,7 +57,7 @@ describe('updateBoard', () => {
       id: 'unit-001',
       row: 4,
       column: 5,
-      defensive_fire_available: false,
+      defensiveFireAvailable: false,
     }]);
 
     expect(redUnit.hasDefensiveFire()).toBe(false);
@@ -67,8 +67,8 @@ describe('updateBoard', () => {
     board.addUnit(redUnit, 4, 5);
 
     const defensiveFireEvents = [{
-      firing_unit_id: 'unit-002',
-      target_unit_id: 'unit-001',
+      firingUnitId: 'unit-002',
+      targetUnitId: 'unit-001',
       outcome: 'retreat',
       message: 'Defensive fire forced the target to retreat to (3, 5).',
     }];

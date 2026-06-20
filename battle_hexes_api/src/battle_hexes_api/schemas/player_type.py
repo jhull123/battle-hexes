@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from .api_model import ApiBaseModel
 
 from battle_hexes_api.player_types import PlayerTypeDefinition
 
 
-class PlayerTypeModel(BaseModel):
+class PlayerTypeModel(ApiBaseModel):
     """Serialize player type definitions for API responses."""
 
     id: str

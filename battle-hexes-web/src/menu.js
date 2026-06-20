@@ -472,9 +472,9 @@ export class Menu {
   }
 
   #applyMovementResponse(responseData) {
-    const safeUnits = responseData?.sparse_board?.units ?? responseData?.game?.board?.units ?? [];
+    const safeUnits = responseData?.sparseBoard?.units ?? responseData?.game?.board?.units ?? [];
     new BoardUpdater().updateBoard(this.#game.getBoard(), safeUnits, {
-      defensiveFireEvents: responseData?.defensive_fire_events ?? [],
+      defensiveFireEvents: responseData?.defensiveFireEvents ?? [],
     });
 
     this.#game.updateScores?.(responseData?.scores);

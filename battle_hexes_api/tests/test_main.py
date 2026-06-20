@@ -30,8 +30,8 @@ class TestFastAPI(unittest.TestCase):
                 "columns": 1,
                 "units": [],
                 "terrain": {"default": None, "types": {}, "hexes": []},
-                "road_types": {},
-                "road_paths": [],
+                "roadTypes": {},
+                "roadPaths": [],
             },
             objectives=[],
             scores={},
@@ -64,18 +64,18 @@ class TestFastAPI(unittest.TestCase):
             "#C6AA5C",
         )
         self.assertEqual(
-            terrain.get("types", {}).get("open", {}).get("move_cost"),
+            terrain.get("types", {}).get("open", {}).get("moveCost"),
             1,
         )
         self.assertEqual(
             terrain.get("types", {}).get("open", {}).get(
-                "combat_odds_shift"
+                "combatOddsShift"
             ),
             0,
         )
         self.assertEqual(
             terrain.get("types", {}).get("village", {}).get(
-                "combat_odds_shift"
+                "combatOddsShift"
             ),
             -1,
         )
@@ -86,8 +86,8 @@ class TestFastAPI(unittest.TestCase):
                 {"row": 8, "column": 9, "terrain": "village"},
             ],
         )
-        self.assertEqual(post_body.get("board", {}).get("road_types"), {})
-        self.assertEqual(post_body.get("board", {}).get("road_paths"), [])
+        self.assertEqual(post_body.get("board", {}).get("roadTypes"), {})
+        self.assertEqual(post_body.get("board", {}).get("roadPaths"), [])
 
         get_response = self.client.get(f'/games/{new_game_id}')
         get_body = get_response.json()
@@ -101,7 +101,7 @@ class TestFastAPI(unittest.TestCase):
             .get("terrain", {})
             .get("types", {})
             .get("village", {})
-            .get("combat_odds_shift"),
+            .get("combatOddsShift"),
             -1,
         )
         self.assertEqual(
@@ -111,8 +111,8 @@ class TestFastAPI(unittest.TestCase):
                 {"row": 8, "column": 9, "terrain": "village"},
             ],
         )
-        self.assertEqual(get_body.get("board", {}).get("road_types"), {})
-        self.assertEqual(get_body.get("board", {}).get("road_paths"), [])
+        self.assertEqual(get_body.get("board", {}).get("roadTypes"), {})
+        self.assertEqual(get_body.get("board", {}).get("roadPaths"), [])
 
     def test_create_game_invalid_scenario_returns_404(self):
         payload = {
@@ -163,14 +163,14 @@ class TestFastAPI(unittest.TestCase):
                     "name": "Test Scenario",
                     "description": None,
                     "victory": None,
-                    "stacking_limit": None,
+                    "stackingLimit": None,
                 },
                 {
                     "id": "test-2",
                     "name": "Another Scenario",
                     "description": None,
                     "victory": None,
-                    "stacking_limit": None,
+                    "stackingLimit": None,
                 },
             ],
         )
@@ -351,8 +351,8 @@ class TestFastAPI(unittest.TestCase):
             "00000000-0000-0000-0000-000000000000",
         )
         self.assertEqual(response.json()["plans"], [{"plan": 1}])
-        self.assertEqual(response.json()["defensive_fire_events"], [])
-        self.assertIn("sparse_board", response.json())
+        self.assertEqual(response.json()["defensiveFireEvents"], [])
+        self.assertIn("sparseBoard", response.json())
         self.assertEqual(response.json()["scores"], {"Alice": 3})
         self.assertEqual(response.json()["turnLimit"], 7)
         self.assertEqual(response.json()["turnNumber"], 2)
@@ -396,11 +396,11 @@ class TestFastAPI(unittest.TestCase):
         response = self.client.post("/games/game-789/movement")
 
         self.assertEqual(response.status_code, 200)
-        event = response.json()["defensive_fire_events"][0]
-        self.assertEqual(event["firing_unit_id"], "df-1")
-        self.assertEqual(event["target_unit_id"], "m-1")
+        event = response.json()["defensiveFireEvents"][0]
+        self.assertEqual(event["firingUnitId"], "df-1")
+        self.assertEqual(event["targetUnitId"], "m-1")
         self.assertEqual(event["outcome"], "retreat")
-        self.assertEqual(event["retreat_destination"], [0, 1])
+        self.assertEqual(event["retreatDestination"], [0, 1])
         self.assertIn("forced the target to retreat", event["message"])
 
     @patch('battle_hexes_api.main.SparseBoard.from_board')
@@ -441,7 +441,7 @@ class TestFastAPI(unittest.TestCase):
         mock_to_movement_plans.assert_called_once_with(mock_board)
         mock_game.apply_movement_plans.assert_called_once_with([mock_plan])
         mock_scorer.assert_not_called()
-        self.assertEqual(response.json()["defensive_fire_events"], [])
+        self.assertEqual(response.json()["defensiveFireEvents"], [])
         self.assertEqual(response.json()["scores"], {"Alice": 4})
 
     @patch('battle_hexes_api.main.SparseBoard.from_board')
@@ -494,7 +494,7 @@ class TestFastAPI(unittest.TestCase):
             response.json()["game"]["id"],
             "00000000-0000-0000-0000-000000000000",
         )
-        self.assertEqual(response.json()["defensive_fire_events"], [])
+        self.assertEqual(response.json()["defensiveFireEvents"], [])
         self.assertEqual(response.json()["scores"], {"Alice": 5})
         self.assertEqual(response.json()["turnLimit"], 9)
         self.assertEqual(response.json()["turnNumber"], 4)
@@ -539,7 +539,7 @@ class TestFastAPI(unittest.TestCase):
                     "id": "m-2",
                     "row": 2,
                     "column": 2,
-                    "defensive_fire_available": False,
+                    "defensiveFireAvailable": False,
                 }
             ]
         )
@@ -554,16 +554,16 @@ class TestFastAPI(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.json()["sparse_board"]["units"][0],
+            response.json()["sparseBoard"]["units"][0],
             {
                 "id": "m-2",
                 "row": 2,
                 "column": 2,
-                "defensive_fire_available": False,
+                "defensiveFireAvailable": False,
             },
         )
         self.assertEqual(
-            response.json()["defensive_fire_events"][0]["outcome"],
+            response.json()["defensiveFireEvents"][0]["outcome"],
             "no_effect",
         )
         self.assertEqual(response.json()["scores"], {"Alice": 5})
