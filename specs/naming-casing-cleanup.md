@@ -216,8 +216,12 @@ separate spec to decide whether scenario authoring should also move to
 
 1. Are there any external clients beyond the bundled web frontend that currently
    depend on `snake_case` API response fields?
+   ANSWER: No
 2. Should `/scenarios` responses also become fully `camelCase`, or should they
    continue to mirror scenario JSON more closely because they describe authoring
    metadata?
+   ANSWER: Anything coming from the API, including scenario data, must be `camelCase`.
 3. What compatibility window is acceptable before removing frontend reads for old
    `snake_case` API response fields?
+   ANSWER: No compabibility window is needed.
+
