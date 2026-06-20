@@ -1,6 +1,7 @@
 import unittest
 
 from battle_hexes_api.schemas import (
+    CreateGameRequest,
     DefensiveFireEventModel,
     GameModel,
     MovementResponseModel,
@@ -18,6 +19,72 @@ from battle_hexes_core.game.terrain import Terrain
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioVictory
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
+
+
+class TestApiAliases(unittest.TestCase):
+    def test_create_game_request_accepts_camel_case_aliases(self):
+        request = CreateGameRequest.model_validate({
+            "scenarioId": "elim_1",
+            "playerTypes": ["human", "random"],
+        })
+
+        self.assertEqual(request.scenario_id, "elim_1")
+        self.assertEqual(request.player_types, ["human", "random"])
+
+    def test_game_model_dumps_nested_camel_case_aliases(self):
+        model = GameModel(
+            id="00000000-0000-0000-0000-000000000000",
+            players=[],
+            board={
+                "rows": 1,
+                "columns": 1,
+                "units": [
+                    {
+                        "id": "unit-1",
+                        "name": "Unit 1",
+                        "factionId": "allies",
+                        "type": "Infantry",
+                        "attack": 2,
+                        "defense": 3,
+                        "move": 4,
+                        "row": 0,
+                        "column": 0,
+                    }
+                ],
+                "terrain": {
+                    "default": "open",
+                    "types": {
+                        "open": {
+                            "name": "Open",
+                            "color": "#C6AA5C",
+                            "moveCost": 1,
+                            "combatOddsShift": 0,
+                        }
+                    },
+                    "hexes": [],
+                },
+                "roadTypes": {"secondary": 1.0},
+                "roadPaths": [],
+            },
+            objectives=[],
+            scores={},
+            turn_limit=10,
+            turn_number=2,
+        )
+
+        payload = model.model_dump(by_alias=True)
+
+        self.assertEqual(payload["turnLimit"], 10)
+        self.assertEqual(payload["turnNumber"], 2)
+        self.assertIn("roadTypes", payload["board"])
+        self.assertIn("roadPaths", payload["board"])
+        self.assertEqual(
+            payload["board"]["units"][0]["factionId"],
+            "allies",
+        )
+        terrain = payload["board"]["terrain"]["types"]["open"]
+        self.assertEqual(terrain["moveCost"], 1)
+        self.assertEqual(terrain["combatOddsShift"], 0)
 
 
 class TestScenarioModel(unittest.TestCase):
