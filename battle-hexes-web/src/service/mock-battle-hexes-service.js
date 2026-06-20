@@ -19,7 +19,7 @@ const MOCK_PLAYER_TYPES = [
 
 const emptyMovementPayload = {
   plans: [],
-  sparse_board: { units: [] },
+  sparseBoard: { units: [] },
   game: { board: { units: [] } },
   scores: {},
   turnNumber: 1,

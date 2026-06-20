@@ -21,7 +21,7 @@ describe('SoundPlayer defensive fire playback', () => {
     const audioFactory = createAudioFactory();
 
     const soundPlayer = new SoundPlayer(game, { audioFactory });
-    await soundPlayer.playDefensiveFireEvents([{ firing_unit_id: 'unit-1', outcome: 'retreat' }]);
+    await soundPlayer.playDefensiveFireEvents([{ firingUnitId: 'unit-1', outcome: 'retreat' }]);
 
     expect(game.getFactionForUnitId).toHaveBeenCalledWith('unit-1');
     expect(audioFactory).toHaveBeenCalledWith('/sounds/m1_single_rifle_shot.ogg');
@@ -39,7 +39,7 @@ describe('SoundPlayer defensive fire playback', () => {
     const audioFactory = createAudioFactory();
 
     const soundPlayer = new SoundPlayer(game, { audioFactory });
-    await soundPlayer.playDefensiveFireEvents([{ firing_unit_id: 'unit-1', outcome: 'no_effect' }]);
+    await soundPlayer.playDefensiveFireEvents([{ firingUnitId: 'unit-1', outcome: 'no_effect' }]);
 
     expect(audioFactory).toHaveBeenCalledWith('/sounds/k98_distant.ogg');
   });
@@ -57,8 +57,8 @@ describe('SoundPlayer defensive fire playback', () => {
 
     const soundPlayer = new SoundPlayer(game, { audioFactory });
     await soundPlayer.playDefensiveFireEvents([
-      { firing_unit_id: 'unit-1', outcome: 'retreat' },
-      { firing_unit_id: 'unit-2', outcome: 'no_effect' },
+      { firingUnitId: 'unit-1', outcome: 'retreat' },
+      { firingUnitId: 'unit-2', outcome: 'no_effect' },
     ]);
 
     expect(audioFactory).not.toHaveBeenCalled();
@@ -78,8 +78,8 @@ describe('SoundPlayer defensive fire playback', () => {
 
     const soundPlayer = new SoundPlayer(game, { audioFactory });
     await soundPlayer.playDefensiveFireEvents([
-      { firing_unit_id: 'red-unit', outcome: 'retreat' },
-      { firing_unit_id: 'blue-unit', outcome: 'retreat' },
+      { firingUnitId: 'red-unit', outcome: 'retreat' },
+      { firingUnitId: 'blue-unit', outcome: 'retreat' },
     ]);
 
     expect(audioFactory).toHaveBeenNthCalledWith(1, '/sounds/red_effect.ogg');
@@ -101,8 +101,8 @@ describe('SoundPlayer defensive fire playback', () => {
 
     const soundPlayer = new SoundPlayer(game, { audioFactory, logger });
     await expect(soundPlayer.playDefensiveFireEvents([
-      { firing_unit_id: 'unit-1', outcome: 'retreat' },
-      { firing_unit_id: 'unit-1', outcome: 'retreat' },
+      { firingUnitId: 'unit-1', outcome: 'retreat' },
+      { firingUnitId: 'unit-1', outcome: 'retreat' },
     ])).resolves.toBeUndefined();
 
     expect(logger.warn).toHaveBeenCalledTimes(2);

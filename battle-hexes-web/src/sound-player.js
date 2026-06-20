@@ -38,7 +38,7 @@ export class SoundPlayer {
   }
 
   #resolveFactionSoundForEvent(event, soundPath) {
-    const firingUnitId = event?.firing_unit_id;
+    const firingUnitId = event?.firingUnitId;
     if (typeof firingUnitId !== 'string' || firingUnitId.length === 0) {
       return null;
     }

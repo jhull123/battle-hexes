@@ -3,7 +3,9 @@
 from typing import List, TYPE_CHECKING
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from .api_model import ApiBaseModel
 
 from battle_hexes_core.game.player import Player
 
@@ -15,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.scenario.scenario import Scenario
 
 
-class GameModel(BaseModel):
+class GameModel(ApiBaseModel):
     """Serialized representation of the core ``Game`` object."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

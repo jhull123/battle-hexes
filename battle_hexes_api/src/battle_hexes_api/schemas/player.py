@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from .api_model import ApiBaseModel
 
 from battle_hexes_core.game.player import Player, PlayerType
 
 from .faction import FactionModel
 
 
-class PlayerModel(BaseModel):
+class PlayerModel(ApiBaseModel):
     """Pydantic representation of a core :class:`Player`."""
 
     model_config = ConfigDict(from_attributes=True)

@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from .api_model import ApiBaseModel
 
 from .terrain import TerrainSummaryModel
 from .unit import UnitModel
@@ -12,21 +12,21 @@ if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.scenario.scenario import Scenario
 
 
-class RoadPathCoordinateModel(BaseModel):
+class RoadPathCoordinateModel(ApiBaseModel):
     """Coordinate point for a serialized road path."""
 
     row: int
     column: int
 
 
-class RoadPathModel(BaseModel):
+class RoadPathModel(ApiBaseModel):
     """Serialized representation of a road path."""
 
     type: str
     path: list[RoadPathCoordinateModel]
 
 
-class BoardModel(BaseModel):
+class BoardModel(ApiBaseModel):
     """Serialized representation of the in-memory board."""
 
     rows: int

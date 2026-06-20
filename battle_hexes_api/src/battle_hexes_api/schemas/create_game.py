@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import List
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
+
+from .api_model import ApiBaseModel
 
 
-class CreateGameRequest(BaseModel):
+class CreateGameRequest(ApiBaseModel):
     """Request body for the ``POST /games`` endpoint."""
 
     scenario_id: str = Field(alias="scenarioId")

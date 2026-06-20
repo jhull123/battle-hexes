@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Tuple
 
-from pydantic import BaseModel
+from .api_model import ApiBaseModel
 
 from battle_hexes_core.combat.combatresult import CombatResultData
 
 
-class CombatResultSchema(BaseModel):
+class CombatResultSchema(ApiBaseModel):
     """API representation of a single combat resolution."""
 
     combat_result_code: str

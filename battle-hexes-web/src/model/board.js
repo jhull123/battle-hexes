@@ -396,7 +396,7 @@ export class Board {
         id: unit.getId(),
         row: unitHex.getRow(),
         column: unitHex.getColumn(),
-        defensive_fire_available: unit.hasDefensiveFire(),
+        defensiveFireAvailable: unit.hasDefensiveFire(),
       })
     }
     return {

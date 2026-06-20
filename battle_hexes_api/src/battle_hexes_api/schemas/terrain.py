@@ -2,7 +2,9 @@
 
 from typing import Dict, List, Optional, TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .api_model import ApiBaseModel
 
 from battle_hexes_core.scenario.scenario import Scenario, ScenarioTerrainType
 
@@ -10,7 +12,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.game.board import Board
 
 
-class TerrainTypeModel(BaseModel):
+class TerrainTypeModel(ApiBaseModel):
     """Representation of a terrain type."""
 
     name: str
@@ -32,7 +34,7 @@ class TerrainTypeModel(BaseModel):
         )
 
 
-class TerrainHexModel(BaseModel):
+class TerrainHexModel(ApiBaseModel):
     """Sparse terrain hex override used by the frontend."""
 
     row: int
@@ -40,7 +42,7 @@ class TerrainHexModel(BaseModel):
     terrain: str
 
 
-class TerrainSummaryModel(BaseModel):
+class TerrainSummaryModel(ApiBaseModel):
     """Container for terrain defaults, types, and hex overrides."""
 
     default: Optional[str] = None

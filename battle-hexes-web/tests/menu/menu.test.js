@@ -132,7 +132,7 @@ describe('auto new game persistence', () => {
       ([eventName]) => eventName === 'defensiveFireResolved'
     )?.[1];
 
-    const events = [{ firing_unit_id: 'unit-1', outcome: 'retreat', message: 'Retreat.' }];
+    const events = [{ firingUnitId: 'unit-1', outcome: 'retreat', message: 'Retreat.' }];
     defensiveFireListener(events);
 
     expect(soundPlayer.playDefensiveFireEvents).toHaveBeenCalledWith(events);
@@ -583,10 +583,10 @@ describe('auto new game persistence', () => {
     });
 
     mockService.endMovement.mockResolvedValue({
-      sparse_board: {
-          units: [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }],
+      sparseBoard: {
+          units: [{ id: 'unit-1', row: 3, column: 4, defensiveFireAvailable: false }],
       },
-      defensive_fire_events: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
+      defensiveFireEvents: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
         scores: { 'Player 1': 2 },
         turnLimit: 9,
       turnNumber: 4,
@@ -596,7 +596,7 @@ describe('auto new game persistence', () => {
     menu.doEndPhase();
     await flushPromises();
 
-    expect(updateBoard).toHaveBeenCalledWith(board, [{ id: 'unit-1', row: 3, column: 4, defensive_fire_available: false }], {
+    expect(updateBoard).toHaveBeenCalledWith(board, [{ id: 'unit-1', row: 3, column: 4, defensiveFireAvailable: false }], {
       defensiveFireEvents: [{ outcome: 'retreat', message: 'Defensive fire forced the target to retreat to (3, 4).' }],
     });
   });
@@ -666,10 +666,10 @@ describe('auto new game persistence', () => {
     history.replaceState(null, '', '/');
 
     const preResetPayload = {
-      units: [{ id: 'unit-1', defensive_fire_available: false }],
+      units: [{ id: 'unit-1', defensiveFireAvailable: false }],
     };
     const postResetPayload = {
-      units: [{ id: 'unit-1', defensive_fire_available: true }],
+      units: [{ id: 'unit-1', defensiveFireAvailable: true }],
     };
     let movesReset = false;
     const currentPlayer = {

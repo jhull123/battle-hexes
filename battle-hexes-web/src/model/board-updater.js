@@ -20,8 +20,8 @@ export class BoardUpdater {
           board.getAnimator?.().interrupt?.(boardUnit);
         }
         board.updateUnitPosition(boardUnit, containingHex, destinationHex);
-        if (Object.hasOwn(unit, 'defensive_fire_available')) {
-          boardUnit.setDefensiveFireAvailable(unit.defensive_fire_available);
+        if (Object.hasOwn(unit, 'defensiveFireAvailable')) {
+          boardUnit.setDefensiveFireAvailable(unit.defensiveFireAvailable);
         }
       }
     }

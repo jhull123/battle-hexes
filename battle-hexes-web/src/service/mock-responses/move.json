@@ -32,7 +32,7 @@
                 {
                     "id": "StuG. III Zug A",
                     "name": "StuG. III Zug A",
-                    "faction_id": "Wehrmacht",
+                    "factionId": "Wehrmacht",
                     "type": "Infantry",
                     "attack": 4,
                     "echelon": "platoon",
@@ -40,12 +40,12 @@
                     "move": 7,
                     "row": 0,
                     "column": 16,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "MG Trupp A",
                     "name": "MG Trupp A",
-                    "faction_id": "Wehrmacht",
+                    "factionId": "Wehrmacht",
                     "type": "MG",
                     "attack": 1,
                     "echelon": "section",
@@ -53,12 +53,12 @@
                     "move": 3,
                     "row": 0,
                     "column": 16,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "B / Inf. Zug",
                     "name": "B / Inf. Zug",
-                    "faction_id": "Wehrmacht",
+                    "factionId": "Wehrmacht",
                     "type": "Infantry",
                     "attack": 2,
                     "echelon": "platoon",
@@ -66,12 +66,12 @@
                     "move": 4,
                     "row": 2,
                     "column": 3,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "A / Inf. Zug",
                     "name": "A / Inf. Zug",
-                    "faction_id": "Wehrmacht",
+                    "factionId": "Wehrmacht",
                     "type": "Infantry",
                     "attack": 2,
                     "echelon": "platoon",
@@ -79,12 +79,12 @@
                     "move": 4,
                     "row": 5,
                     "column": 11,
-                    "defensive_fire_available": false
+                    "defensiveFireAvailable": false
                 },
                 {
                     "id": "C / Inf. Zug",
                     "name": "C / Inf. Zug",
-                    "faction_id": "Wehrmacht",
+                    "factionId": "Wehrmacht",
                     "type": "Infantry",
                     "attack": 2,
                     "echelon": "platoon",
@@ -92,12 +92,12 @@
                     "move": 4,
                     "row": 5,
                     "column": 8,
-                    "defensive_fire_available": false
+                    "defensiveFireAvailable": false
                 },
                 {
                     "id": "Crossroads Feldwache",
                     "name": "Crossroads Feldwache",
-                    "faction_id": "Wehrmacht",
+                    "factionId": "Wehrmacht",
                     "type": "Infantry",
                     "attack": 1,
                     "echelon": "section",
@@ -105,12 +105,12 @@
                     "move": 0,
                     "row": 6,
                     "column": 9,
-                    "defensive_fire_available": false
+                    "defensiveFireAvailable": false
                 },
                 {
                     "id": "Airborne Inf. B",
                     "name": "Airborne Inf. B",
-                    "faction_id": "Airborne",
+                    "factionId": "Airborne",
                     "type": "Infantry",
                     "attack": 3,
                     "echelon": "platoon",
@@ -118,12 +118,12 @@
                     "move": 5,
                     "row": 10,
                     "column": 9,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "Airborne Inf. A",
                     "name": "Airborne Inf. A",
-                    "faction_id": "Airborne",
+                    "factionId": "Airborne",
                     "type": "Infantry",
                     "attack": 3,
                     "echelon": "platoon",
@@ -131,12 +131,12 @@
                     "move": 5,
                     "row": 8,
                     "column": 9,
-                    "defensive_fire_available": false
+                    "defensiveFireAvailable": false
                 },
                 {
                     "id": "Airborne Inf. C",
                     "name": "Airborne Inf. C",
-                    "faction_id": "Airborne",
+                    "factionId": "Airborne",
                     "type": "Infantry",
                     "attack": 3,
                     "echelon": "platoon",
@@ -144,12 +144,12 @@
                     "move": 5,
                     "row": 15,
                     "column": 16,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "Airborne Inf. E",
                     "name": "Airborne Inf. E",
-                    "faction_id": "Airborne",
+                    "factionId": "Airborne",
                     "type": "Infantry",
                     "attack": 3,
                     "echelon": "platoon",
@@ -157,12 +157,12 @@
                     "move": 5,
                     "row": 16,
                     "column": 0,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "Airborne Inf. D",
                     "name": "Airborne Inf. D",
-                    "faction_id": "Airborne",
+                    "factionId": "Airborne",
                     "type": "Infantry",
                     "attack": 3,
                     "echelon": "platoon",
@@ -170,12 +170,12 @@
                     "move": 5,
                     "row": 16,
                     "column": 1,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 },
                 {
                     "id": "Airborne Inf. F",
                     "name": "Airborne Inf. F",
-                    "faction_id": "Airborne",
+                    "factionId": "Airborne",
                     "type": "Infantry",
                     "attack": 3,
                     "echelon": "platoon",
@@ -183,7 +183,7 @@
                     "move": 5,
                     "row": 16,
                     "column": 7,
-                    "defensive_fire_available": true
+                    "defensiveFireAvailable": true
                 }
             ],
             "terrain": {
@@ -191,10 +191,10 @@
                 "types": {},
                 "hexes": []
             },
-            "road_types": {
+            "roadTypes": {
                 "secondary": 1.0
             },
-            "road_paths": [
+            "roadPaths": [
                 {
                     "type": "secondary",
                     "path": [
@@ -356,7 +356,7 @@
             "Player 2": 3
         },
         "turn_limit": 8,
-        "turn_number": 2
+        "turnNumber": 2
     },
     "plans": [
         {
@@ -373,88 +373,88 @@
             ]
         }
     ],
-    "sparse_board": {
+    "sparseBoard": {
         "units": [
             {
                 "id": "StuG. III Zug A",
                 "row": 0,
                 "column": 16,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "MG Trupp A",
                 "row": 0,
                 "column": 16,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "B / Inf. Zug",
                 "row": 2,
                 "column": 3,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "A / Inf. Zug",
                 "row": 5,
                 "column": 11,
-                "defensive_fire_available": false
+                "defensiveFireAvailable": false
             },
             {
                 "id": "C / Inf. Zug",
                 "row": 5,
                 "column": 8,
-                "defensive_fire_available": false
+                "defensiveFireAvailable": false
             },
             {
                 "id": "Crossroads Feldwache",
                 "row": 6,
                 "column": 9,
-                "defensive_fire_available": false
+                "defensiveFireAvailable": false
             },
             {
                 "id": "Airborne Inf. B",
                 "row": 10,
                 "column": 9,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "Airborne Inf. A",
                 "row": 8,
                 "column": 9,
-                "defensive_fire_available": false
+                "defensiveFireAvailable": false
             },
             {
                 "id": "Airborne Inf. C",
                 "row": 15,
                 "column": 16,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "Airborne Inf. E",
                 "row": 16,
                 "column": 0,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "Airborne Inf. D",
                 "row": 16,
                 "column": 1,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             },
             {
                 "id": "Airborne Inf. F",
                 "row": 16,
                 "column": 7,
-                "defensive_fire_available": true
+                "defensiveFireAvailable": true
             }
         ],
-        "last_combat_results": null,
+        "lastCombatResults": null,
         "scores": null
     },
-    "defensive_fire_events": [
+    "defensiveFireEvents": [
         {
-            "firing_unit_id": "Crossroads Feldwache",
-            "target_unit_id": "Airborne Inf. A",
+            "firingUnitId": "Crossroads Feldwache",
+            "targetUnitId": "Airborne Inf. A",
             "trigger_hex": [
                 7,
                 9
@@ -464,7 +464,7 @@
                 9
             ],
             "outcome": "retreat",
-            "retreat_destination": [
+            "retreatDestination": [
                 8,
                 9
             ],

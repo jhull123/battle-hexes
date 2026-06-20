@@ -40,7 +40,6 @@ export class GameCreator {
   #extractScenarioId(gameData) {
     const candidates = [
       gameData?.scenarioId,
-      gameData?.scenario_id,
     ];
 
     return candidates.find((value) => typeof value === 'string' && value.trim().length > 0) ?? null;
@@ -49,7 +48,6 @@ export class GameCreator {
   #extractTurnLimit(gameData) {
     const candidates = [
       gameData?.turnLimit,
-      gameData?.turn_limit,
     ];
 
     for (const candidate of candidates) {
@@ -64,7 +62,6 @@ export class GameCreator {
   #extractTurnNumber(gameData) {
     const candidates = [
       gameData?.turnNumber,
-      gameData?.turn_number,
     ];
 
     for (const candidate of candidates) {
@@ -88,8 +85,6 @@ export class GameCreator {
     const candidates = [
       gameData?.playerTypeIds,
       gameData?.playerTypes,
-      gameData?.player_type_ids,
-      gameData?.player_types,
     ];
 
     for (const candidate of candidates) {
@@ -125,7 +120,7 @@ export class GameCreator {
   #addUnits(board, players, boardData) {
     const factionMap = this.#getFactionMap(players);
     for (let unitData of boardData.units) {
-      const faction = factionMap.get(unitData.faction_id);
+      const faction = factionMap.get(unitData.factionId);
       const unit = new Unit(
         unitData.id,
         unitData.name,
@@ -135,7 +130,7 @@ export class GameCreator {
         unitData.defense,
         unitData.move,
         unitData.echelon,
-        unitData.defensive_fire_available ?? true,
+        unitData.defensiveFireAvailable ?? true,
       );
       board.addUnit(unit, unitData.row, unitData.column);
     }
@@ -149,11 +144,11 @@ export class GameCreator {
       for (const [key, value] of Object.entries(terrainData.types)) {
         const name = value?.name ?? key;
         const color = value?.color ?? '#F0F0F0';
-        const moveCost = Number.isFinite(value?.move_cost) && value.move_cost > 0
-          ? value.move_cost
+        const moveCost = Number.isFinite(value?.moveCost) && value.moveCost > 0
+          ? value.moveCost
           : 1;
-        const combatOddsShift = Number.isFinite(value?.combat_odds_shift)
-          ? value.combat_odds_shift
+        const combatOddsShift = Number.isFinite(value?.combatOddsShift)
+          ? value.combatOddsShift
           : 0;
         terrainTypes.set(key, new Terrain(name, color, moveCost, combatOddsShift));
       }
@@ -216,17 +211,17 @@ export class GameCreator {
     }
 
     const boardRoadData = gameData?.board && typeof gameData.board === 'object' ? gameData.board : null;
-    const roadData = Array.isArray(boardRoadData?.road_paths)
+    const roadData = Array.isArray(boardRoadData?.roadPaths)
       ? boardRoadData
       : gameData;
 
-    if (!Array.isArray(roadData.road_paths)) {
+    if (!Array.isArray(roadData.roadPaths)) {
       return;
     }
 
-    const roadTypeMap = this.#createRoadTypes(roadData.road_types);
+    const roadTypeMap = this.#createRoadTypes(roadData.roadTypes);
 
-    for (const roadPathData of roadData.road_paths) {
+    for (const roadPathData of roadData.roadPaths) {
       const road = this.#createRoad(roadPathData, roadTypeMap);
       if (road) {
         board.addRoad(road);

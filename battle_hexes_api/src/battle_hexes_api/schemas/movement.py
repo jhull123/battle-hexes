@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from .api_model import ApiBaseModel
 
 from .game_model import GameModel
 from .sparseboard import SparseBoard
 
 
-class DefensiveFireEventModel(BaseModel):
+class DefensiveFireEventModel(ApiBaseModel):
     """Serialized defensive-fire event emitted during movement."""
 
     firing_unit_id: str
@@ -55,7 +57,7 @@ class DefensiveFireEventModel(BaseModel):
         return "Defensive fire had no effect."
 
 
-class MovementResponseModel(BaseModel):
+class MovementResponseModel(ApiBaseModel):
     """Movement endpoint payload including board updates and reactions."""
 
     model_config = ConfigDict(populate_by_name=True)
