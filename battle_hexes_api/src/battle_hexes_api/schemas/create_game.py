@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import Field, field_validator
 
 from .api_model import ApiBaseModel
 
@@ -12,13 +12,11 @@ from .api_model import ApiBaseModel
 class CreateGameRequest(ApiBaseModel):
     """Request body for the ``POST /games`` endpoint."""
 
-    scenario_id: str = Field(alias="scenarioId")
+    scenario_id: str
     player_types: List[str] = Field(
-        alias="playerTypes", min_length=2, max_length=2,
+        min_length=2, max_length=2,
         description="Identifiers for the desired player implementations.",
     )
-
-    model_config = ConfigDict(populate_by_name=True)
 
     @field_validator("player_types")
     def _validate_player_types(cls, value: List[str]) -> List[str]:
