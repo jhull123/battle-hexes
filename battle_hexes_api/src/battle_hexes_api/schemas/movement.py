@@ -57,11 +57,31 @@ class DefensiveFireEventModel(ApiBaseModel):
         return "Defensive fire had no effect."
 
 
+class MovementPathHexModel(ApiBaseModel):
+    """Coordinate in a serialized movement path."""
+
+    row: int
+    column: int
+
+
+class MovementPlanModel(ApiBaseModel):
+    """Serialized unit movement plan."""
+
+    unit_id: str
+    path: list[MovementPathHexModel] = Field(default_factory=list)
+
+    @classmethod
+    def from_plan(cls, plan: Any) -> "MovementPlanModel":
+        """Build a movement plan schema from a core movement plan."""
+
+        return cls.model_validate(plan.to_dict())
+
+
 class MovementResponseModel(ApiBaseModel):
     """Movement endpoint payload including board updates and reactions."""
 
     game: GameModel
-    plans: list[dict[str, Any]] = Field(default_factory=list)
+    plans: list[MovementPlanModel] = Field(default_factory=list)
     sparse_board: SparseBoard
     defensive_fire_events: list[DefensiveFireEventModel] = Field(
         default_factory=list
@@ -86,7 +106,7 @@ class MovementResponseModel(ApiBaseModel):
         )
         return cls(
             game=GameModel.from_game(game),
-            plans=[plan.to_dict() for plan in plans],
+            plans=[MovementPlanModel.from_plan(plan) for plan in plans],
             sparse_board=SparseBoard.from_board(game.get_board()),
             defensive_fire_events=[
                 DefensiveFireEventModel.from_result(result)
