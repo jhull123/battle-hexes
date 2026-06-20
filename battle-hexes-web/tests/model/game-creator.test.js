@@ -10,7 +10,7 @@ beforeEach(() => {
     '"scenarioId":"elem_test",' +
     '"stackingLimit":2,' +
     '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
-    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensive_fire":{"effect":"red_effect.ogg","no_effect":"red_no_effect.ogg"}}}]},' +
+    '"players":[{"name":"Player 1","type":"Human","factions":[{"id":"f47ac10b-58cc-4372-a567-0e02b2c3d479","name":"Red Faction","color":"#C81010","sounds":{"defensiveFire":{"effect":"red_effect.ogg","noEffect":"red_noEffect.ogg"}}}]},' +
     '{"name":"Player 2","type":"Computer","factions":[{"id":"38400000-8cf0-41bd-b23e-10b96e4ef00d","name":"Blue Faction","color":"#4682B4"}]}],' +
     '"board":{"rows":10,"columns":10,"units":[' +
     '{"id":"a22c90d0-db87-41d0-8c3a-00c04fd708be","name":"Red Unit","factionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","type":"Infantry","echelon":"platoon","attack":2,"defense":2,"move":6,"row":6,"column":4,"defensiveFireAvailable":false},' +
@@ -52,9 +52,9 @@ describe("createGame", () => {
     const redFaction = game.getPlayers().getAllPlayers()[0].getFactions()[0];
 
     expect(redFaction.getSounds()).toEqual({
-      defensive_fire: {
+      defensiveFire: {
         effect: 'red_effect.ogg',
-        no_effect: 'red_no_effect.ogg',
+        noEffect: 'red_noEffect.ogg',
       },
     });
   });

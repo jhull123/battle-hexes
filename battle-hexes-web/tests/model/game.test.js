@@ -192,7 +192,7 @@ describe('resolveCombat', () => {
 
   test('resolves firing faction from unit id in board state', () => {
     const faction = new Faction('f1', 'Faction 1', '#f00', {
-      defensive_fire: { effect: 'f1_effect.ogg' },
+      defensiveFire: { effect: 'f1_effect.ogg' },
     });
     faction.setOwningPlayer(player1);
     const unit = new Unit('u1', 'Unit1', faction, null, 1, 1, 2);

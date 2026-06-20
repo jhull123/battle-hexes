@@ -33,8 +33,8 @@ export class SoundPlayer {
   }
 
   #resolveDefensiveFireSoundFilename(event) {
-    const soundKey = event?.outcome === 'no_effect' ? 'no_effect' : 'effect';
-    return this.#resolveFactionSoundForEvent(event, ['defensive_fire', soundKey]);
+    const soundKey = event?.outcome === 'no_effect' ? 'noEffect' : 'effect';
+    return this.#resolveFactionSoundForEvent(event, ['defensiveFire', soundKey]);
   }
 
   #resolveFactionSoundForEvent(event, soundPath) {
