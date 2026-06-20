@@ -147,7 +147,10 @@
     "secondary": {
       "edge_move_cost": 1
     }
-  },
+  },  
+  "objectives": [
+    { "coords": [2, 3], "points": 1, "type": "occupy" }
+  ],
   "roads": [
     {
       "type": "secondary",
