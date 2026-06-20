@@ -172,7 +172,39 @@ describe('CpuPlayer', () => {
     expect(updateTurnStateSpy).not.toHaveBeenCalled();
   });
 
-  test('animates movement plans returned from server', async () => {
+  test('animates movement plans returned from server using canonical camelCase keys', async () => {
+    jest.useFakeTimers();
+    const board = new Board(1, 2);
+    const players = new Players([cpuPlayer, new Player('Dummy')]);
+    game = new Game('g2', ['Movement', 'End Turn'], players, board);
+    jest.spyOn(game, 'isGameOver').mockReturnValue(false);
+    const unit = new Unit('unit-001');
+    board.addUnit(unit, 0, 0);
+    mockService.generateCpuMovement.mockResolvedValueOnce({
+      game: { board: { units: [] } },
+      plans: [
+        {
+          unitId: 'unit-001',
+          path: [ { row: 0, column: 0 }, { row: 0, column: 1 } ],
+        },
+      ],
+    });
+
+    const playPromise = cpuPlayer.play(game);
+    await Promise.resolve();
+
+    await jest.runOnlyPendingTimersAsync();
+    await Promise.resolve();
+
+    expect(MovementAnimator).toHaveBeenCalledWith(game.getBoard());
+    expect(MovementAnimator.mock.calls.length).toBeGreaterThan(1);
+    expect(mockUpdateBoard).toHaveBeenCalled();
+
+    await jest.runOnlyPendingTimersAsync();
+    await playPromise;
+  });
+
+  test('animates movement plans returned from current HTTP API snake_case keys', async () => {
     jest.useFakeTimers();
     const board = new Board(1, 2);
     const players = new Players([cpuPlayer, new Player('Dummy')]);
