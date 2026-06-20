@@ -39,7 +39,15 @@ Before editing code, decide:
 - Whether the property is required or optional.
 - The default for existing scenario files.
 - Validation rules (integer vs float, non-empty string, minimum value, allowed enum values, nullable values, etc.).
-- Whether the value is only display metadata or must affect gameplay rules.
+- Whether the value is only display metadata, setup-time data, or must affect gameplay rules.
+
+Use this distinction to decide how far the property must travel:
+
+| Property purpose | Runtime/domain object update? | Typical API source |
+| --- | --- | --- |
+| Display-only scenario metadata | Usually no; keep it on scenario definitions unless runtime code also needs it. | Scenario object attached to the game response, scenario list metadata, or frontend mock data. |
+| Setup-time input that changes initial board/game creation | Maybe; apply it during game creation, but only persist it on runtime objects if later rules or responses need it. | Scenario object during game creation and any resulting runtime state. |
+| Gameplay rule/state property used after creation | Yes; add it to the relevant runtime object or rule service as well as scenario definitions. | Runtime game, board, unit, terrain, objective, movement, or combat objects, sometimes supplemented by scenario metadata. |
 
 ### 2. Add the property to scenario JSON files
 
@@ -133,7 +141,7 @@ Common API schema targets:
 | Terrain values | `battle_hexes_api/src/battle_hexes_api/schemas/terrain.py` |
 | Unit values | `battle_hexes_api/src/battle_hexes_api/schemas/unit.py` |
 | Objective values | `battle_hexes_api/src/battle_hexes_api/schemas/objective.py` |
-| Movement/combat response values | `battle_hexes_api/src/battle_hexes_api/schemas/movement.py` or `combat.py` |
+| Movement/combat response values | `battle_hexes_api/src/battle_hexes_api/schemas/movement.py`, `combat.py`, or `sparseboard.py` |
 | Create-game request inputs | `battle_hexes_api/src/battle_hexes_api/schemas/create_game.py` |
 
 Implementation notes:
@@ -141,7 +149,8 @@ Implementation notes:
 - Add Pydantic fields to the schema that directly represents the data.
 - Update `from_core()` / `from_*()` factory methods to populate the field.
 - Update `to_core()` if the schema supports round-tripping back to a core type.
-- If the frontend expects `camelCase`, update `_serialize_game()` in `battle_hexes_api/src/battle_hexes_api/main.py` to rename fields or add top-level aliases.
+- If the frontend expects `camelCase` for a top-level game response field, update `_serialize_game()` in `battle_hexes_api/src/battle_hexes_api/main.py` to rename fields or add top-level aliases.
+- Nested schema fields often remain `snake_case` unless neighboring fields or compatibility requirements already use `camelCase`. Check the existing response shape at the same nesting level before choosing a name.
 - Decide whether the value appears in `/scenarios`, created game responses, fetched game responses, movement responses, combat responses, or all of them.
 
 Update tests such as:
@@ -272,6 +281,9 @@ Suppose a scenario terrain type adds `display_priority` and the frontend uses it
 9. Update `battle-hexes-web/src/model/game-creator.js` `#addTerrain()` to pass `value.display_priority` into `new Terrain(...)`.
 10. Update frontend tests in `game-creator.test.js` and `terrain.test.js`.
 11. Update drawers/overlay code to sort or render by `terrain.displayPriority`.
+
+    Because this example property only controls frontend rendering order, it can remain scenario/API/frontend metadata and does not need to be added to the core runtime `Terrain` class unless backend rules also consume it.
+
 12. Add the new property to mock responses.
 13. Run backend and frontend checks.
 
@@ -282,6 +294,6 @@ Suppose a scenario terrain type adds `display_priority` and the frontend uses it
 - **Forgetting API naming conventions.** Python fields are often `snake_case`, while selected frontend-facing fields are `camelCase` after `_serialize_game()`.
 - **Updating `/scenarios` but not `/games`.** Scenario list cards and active game payloads are different API shapes.
 - **Updating created games but not fetched games.** The same serializer should usually support both `/games` and `/games/{id}`.
-- **Forgetting movement/combat responses.** If a property changes during play or must persist after an action, make sure movement/combat schemas and frontend response handlers carry it forward.
+- **Forgetting movement/combat responses.** If a property changes during play or must persist after an action, make sure movement, combat, sparse-board schemas, and frontend response handlers carry it forward.
 - **Leaving mock-service responses stale.** Web tests or mock builds may still pass old data unless fixtures are updated.
 - **Testing implementation details instead of behavior.** Prefer tests that prove the value is visible in core objects, API JSON, and frontend models/behavior.
