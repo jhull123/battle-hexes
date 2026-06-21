@@ -74,10 +74,12 @@ describe('game over dialog', () => {
     const onNewGameRequested = jest.fn(() => Promise.resolve());
 
     new GameOverDialog({ eventBus, onNewGameRequested });
+    gameOverListener(eventBus)({ gameId: 'game-id' });
     document.getElementById('gameOverNewGameBtn').click();
 
     expect(onNewGameRequested).toHaveBeenCalledTimes(1);
     expect(document.getElementById('gameOverNewGameBtn').disabled).toBe(true);
+    expect(document.getElementById('gameOverDialog').style.display).toBe('none');
 
     await flushPromises();
 

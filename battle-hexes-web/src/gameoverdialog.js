@@ -45,6 +45,8 @@ export class GameOverDialog {
   }
 
   #handleNewGameRequest() {
+    this.#hide();
+
     if (!this.#onNewGameRequested) {
       return;
     }
