@@ -31,7 +31,11 @@ export class Menu {
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
-  constructor(game, { onNewGameRequested, service = battleHexesService, soundPlayer = null } = {}) {
+  constructor(game, {
+    onNewGameRequested,
+    service = battleHexesService,
+    soundPlayer = null,
+  } = {}) {
     this.#game = game;
     this.#selHexContentsDiv = document.getElementById('selHexContents');
     this.#selHexCoordDiv = document.getElementById('selHexCoord');
@@ -525,6 +529,7 @@ export class Menu {
       this.#newGameBtn.style.display = 'none';
       this.#scheduleAutoNewGame();
     } else {
+      eventBus.emit('gameOver', { gameId: this.#game.getId() });
       this.#newGameBtn.style.display = 'block';
     }
   }
