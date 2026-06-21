@@ -42,6 +42,13 @@ describe('auto new game persistence', () => {
       <div id="unitMovesLeftDiv"></div>
       <button id="newGameBtn"></button>
       <div id="gameOverLabel"></div>
+      <div id="gameOverDialog" style="display: none;">
+        <h2 id="gameOverDialogTitle">Game Over</h2>
+        <p id="gameOverDialogMessage">The game is over.</p>
+        <button id="gameOverNewGameBtn">New Game</button>
+        <button id="gameOverMainMenuBtn">Main Menu</button>
+        <button id="gameOverCloseBtn">Close</button>
+      </div>
       <input type="checkbox" id="autoNewGame">
       <input type="checkbox" id="showHexCoords">
       <div id="phasesList"></div>
@@ -291,6 +298,15 @@ describe('auto new game persistence', () => {
         setTimeoutSpy.mockRestore();
         consoleErrorSpy.mockRestore();
       }
+    });
+
+    test('emits a game over event when the game ends', () => {
+      buildDom();
+      history.replaceState(null, '', '/');
+
+      new Menu(fakeGame({ isGameOver: () => true }), { service: mockService });
+
+      expect(eventBus.emit).toHaveBeenCalledWith('gameOver', { gameId: 'game-id' });
     });
   });
 

@@ -10,8 +10,10 @@ import { MoveArrowDrawer } from './drawer/move-arrow-drawer.js';
 import { RoadDrawer } from './drawer/road-drawer.js';
 import { TerrainOverlayDrawer } from './drawer/terrain-overlay-drawer.js';
 import { Menu } from './menu.js';
+import { GameOverDialog } from './gameoverdialog.js';
 import { getCanvasDimensions } from './drawer/canvas-dimensions.js';
 import './styles/menu.css';
+import './styles/gameoverdialog.css';
 import { GameCreator } from './model/game-creator.js';
 import { battleHexesService } from './service/service-factory.js';
 import { applyMovementResponse } from './model/movement-response-handler.js';
@@ -79,6 +81,7 @@ new p5((p) => {
     eventBus.emit('redraw');
   };
 
+  new GameOverDialog({ onNewGameRequested: createNewGameAndLoad });
   menu = new Menu(game, { onNewGameRequested: createNewGameAndLoad, service: battleHexesService });
 
   if (!game.getCurrentPlayer().isHuman()) {
