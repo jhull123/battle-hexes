@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from battle_hexes_api.schemas import (
     BoardModel,
@@ -244,3 +245,44 @@ class TestBoardModel(unittest.TestCase):
             ],
             [(1, 1), (1, 2), (2, 2)],
         )
+
+    def test_sparse_board_serializes_game_status_with_camel_case(self):
+        sparse_board = SparseBoard(
+            units=[],
+            gameStatus={
+                "state": "completed",
+                "winnerPlayerName": "Alice",
+                "winnerFactionId": "f1",
+                "reason": "unit_elimination",
+                "message": "Alice wins.",
+            },
+        )
+
+        payload = sparse_board.model_dump(by_alias=True)
+
+        self.assertEqual(payload["gameStatus"]["state"], "completed")
+        self.assertEqual(
+            payload["gameStatus"]["winnerPlayerName"], "Alice"
+        )
+        self.assertEqual(payload["gameStatus"]["winnerFactionId"], "f1")
+
+    def test_api_schemas_do_not_import_game_status_evaluator(self):
+        schema_dir = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "battle_hexes_api"
+            / "schemas"
+        )
+
+        for schema_file in schema_dir.glob("*.py"):
+            self.assertNotIn("GameStatusEvaluator", schema_file.read_text())
+
+    def test_api_main_does_not_import_game_status_evaluator(self):
+        api_main = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "battle_hexes_api"
+            / "main.py"
+        )
+
+        self.assertNotIn("GameStatusEvaluator", api_main.read_text())

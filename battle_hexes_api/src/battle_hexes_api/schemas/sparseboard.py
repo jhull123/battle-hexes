@@ -10,6 +10,7 @@ from pydantic import Field
 from .api_model import ApiBaseModel
 
 from .combat import CombatResultSchema
+from .game_status import GameStatus
 
 from .unit import SparseUnit
 
@@ -23,6 +24,7 @@ class SparseBoard(ApiBaseModel):
     units: List[SparseUnit] = Field(default_factory=list)
     last_combat_results: Optional[List[CombatResultSchema]] = None
     scores: Optional[dict[str, int]] = None
+    game_status: Optional[GameStatus] = None
 
     def add_unit(self, unit: SparseUnit) -> None:
         self.units.append(unit)
@@ -31,10 +33,40 @@ class SparseBoard(ApiBaseModel):
         return self.units
 
     @classmethod
+    def from_game(
+        cls,
+        game,
+        include_scores: bool = False,
+        combat_results=None,
+        game_status=None,
+    ) -> "SparseBoard":
+        """Create a sparse board from a game with computed status."""
+
+        sparse_board = cls.from_board(game.get_board())
+        if not isinstance(sparse_board, cls):
+            sparse_board = cls()
+        status = game_status
+        if status is None:
+            status = game.get_game_status()
+        sparse_board.game_status = GameStatus.from_core(status)
+        if include_scores:
+            scores = game.get_score_tracker().get_scores()
+            sparse_board.scores = scores if isinstance(scores, dict) else {}
+        if combat_results is not None:
+            sparse_board.last_combat_results = [
+                CombatResultSchema.from_combat_result_data(battle)
+                for battle in combat_results.get_battles()
+            ]
+        return sparse_board
+
+    @classmethod
     def from_board(cls, board: "Board") -> "SparseBoard":
         """Create a ``SparseBoard`` from the provided ``Board``."""
 
-        units = [SparseUnit.from_unit(unit) for unit in board.get_units()]
+        board_units = board.get_units()
+        if not isinstance(board_units, (list, tuple)):
+            board_units = []
+        units = [SparseUnit.from_unit(unit) for unit in board_units]
         return cls(units=units)
 
     def apply_to_board(self, board: "Board") -> None:

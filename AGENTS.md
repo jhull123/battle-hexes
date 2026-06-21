@@ -32,6 +32,15 @@ tests and linter across **all** Python packages. The script adjusts
   PR to ensure tests and linting pass. If `flake8` is missing from the
   environment, install it before running the checks (e.g. `pip install flake8`).
 
+
+### API/Core/Schema Boundaries
+
+- Core owns game rules, scoring, victory detection, and the timing of game-status evaluation.
+- API routes orchestrate requests and core operations but do not execute or invoke game-rule evaluators.
+- Code under `battle_hexes_api/.../schemas` contains API data models, validation, serialization, and conversion from already-computed core results.
+- Schema modules must not execute game logic.
+- `main.py` should remain thin and must not contain schema assembly helpers or import core evaluators such as `GameStatusEvaluator`.
+
 ### Working with the Web Frontend
 
 - Install Node dependencies inside `battle-hexes-web` with `npm install`.

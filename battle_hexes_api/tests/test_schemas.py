@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 from battle_hexes_api.schemas import (
     CreateGameRequest,
@@ -369,7 +370,14 @@ class TestMovementSchemas(unittest.TestCase):
                         outcome="no_effect",
                         retreat_destination=None,
                     )
-                ]
+                ],
+                "game_status": SimpleNamespace(
+                    state="completed",
+                    winner_player_name="Alice",
+                    winner_faction_id="f1",
+                    reason="unit_elimination",
+                    message="Alice wins.",
+                ),
             },
         )()
 
@@ -417,6 +425,11 @@ class TestMovementSchemas(unittest.TestCase):
         self.assertEqual(
             response.defensive_fire_events[0].outcome,
             "no_effect",
+        )
+        self.assertEqual(response.sparse_board.game_status.state, "completed")
+        self.assertEqual(
+            response.sparse_board.game_status.winner_player_name,
+            "Alice",
         )
         self.assertEqual(response.scores, {"Alice": 4})
         self.assertEqual(response.model_dump(by_alias=True)["turnLimit"], 6)
