@@ -525,11 +525,11 @@ export class Menu {
 
   #showGameOver() {
     this.#gameOverLabel.style.display = 'block';
-    eventBus.emit('gameOver', { gameId: this.#game.getId() });
     if (this.#autoNewGameChk.checked) {
       this.#newGameBtn.style.display = 'none';
       this.#scheduleAutoNewGame();
     } else {
+      eventBus.emit('gameOver', { gameId: this.#game.getId() });
       this.#newGameBtn.style.display = 'block';
     }
   }

@@ -308,6 +308,21 @@ describe('auto new game persistence', () => {
 
       expect(eventBus.emit).toHaveBeenCalledWith('gameOver', { gameId: 'game-id' });
     });
+
+    test('does not emit a game over event when auto new game is enabled', () => {
+      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(() => 0);
+
+      try {
+        buildDom();
+        history.replaceState(null, '', '/?autoNewGame=1');
+
+        new Menu(fakeGame({ isGameOver: () => true }), { service: mockService });
+
+        expect(eventBus.emit).not.toHaveBeenCalledWith('gameOver', { gameId: 'game-id' });
+      } finally {
+        setTimeoutSpy.mockRestore();
+      }
+    });
   });
 
   test('shows selected hex coord, units fallback, terrain move cost, and headings', () => {
