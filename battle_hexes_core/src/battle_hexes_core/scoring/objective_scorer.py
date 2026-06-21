@@ -13,12 +13,15 @@ class ObjectiveScorer:
 
     def recalculate_scenario_victory(self, game: Game) -> int | None:
         """Recalculate scenario-driven victory scoring when configured."""
-        return self._award_scenario_objective_control(game)
+        points = self._award_scenario_objective_control(game)
+        game.update_game_status()
+        return points
 
     def award_hold_objectives(self, game: Game) -> int:
         """Award points for the active scenario scoring method."""
         scenario_points = self._award_scenario_objective_control(game)
         if scenario_points is not None:
+            game.update_game_status()
             return scenario_points
 
         current_player = game.get_current_player()
@@ -35,6 +38,7 @@ class ObjectiveScorer:
                 current_player.name, total_points, held_objectives
             )
 
+        game.update_game_status()
         return total_points
 
     def award_hold_objectives_after_combat(
@@ -43,6 +47,7 @@ class ObjectiveScorer:
         """Award points for surviving attackers on objectives."""
         scenario_points = self._award_scenario_objective_control(game)
         if scenario_points is not None:
+            game.update_game_status()
             return scenario_points
 
         current_player = game.get_current_player()
@@ -59,6 +64,7 @@ class ObjectiveScorer:
             self._log_awarded_points(
                 current_player.name, total_points, held_objectives
             )
+        game.update_game_status()
         return total_points
 
     def _award_scenario_objective_control(self, game: Game) -> int | None:
