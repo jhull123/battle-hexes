@@ -8,6 +8,7 @@ from pydantic import ConfigDict
 from .api_model import ApiBaseModel
 
 from .board import BoardModel
+from .game_status import GameStatus
 from .objective import ObjectiveModel
 from .player import PlayerModel
 
@@ -32,6 +33,7 @@ class GameModel(ApiBaseModel):
     scenario_name: str | None = None
     stacking_limit: int | None = None
     player_type_ids: list[str] | None = None
+    game_status: GameStatus | None = None
 
     @classmethod
     def from_game(
@@ -57,4 +59,5 @@ class GameModel(ApiBaseModel):
             scenario_name=getattr(scenario, "name", None),
             stacking_limit=getattr(scenario, "stacking_limit", None),
             player_type_ids=getattr(game, "player_type_ids", None),
+            game_status=GameStatus.from_core(game.get_game_status()),
         )

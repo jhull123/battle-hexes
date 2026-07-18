@@ -78,6 +78,7 @@ class TestApiAliases(unittest.TestCase):
 
         self.assertEqual(payload["turnLimit"], 10)
         self.assertEqual(payload["turnNumber"], 2)
+        self.assertIsNone(payload["gameStatus"])
         self.assertIn("roadTypes", payload["board"])
         self.assertIn("roadPaths", payload["board"])
         self.assertEqual(
@@ -204,6 +205,7 @@ class TestGameModel(unittest.TestCase):
         self.assertEqual(model.players[0].name, "Alice")
         self.assertEqual(model.players[0].type, "Human")
         self.assertEqual(model.board.rows, 2)
+        self.assertEqual(model.game_status.state, "completed")
         self.assertEqual(model.board.columns, 2)
         self.assertEqual(len(model.board.units), 1)
         self.assertEqual(model.board.terrain.default, "open")
