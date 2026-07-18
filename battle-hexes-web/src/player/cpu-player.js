@@ -42,11 +42,13 @@ export class CpuPlayer extends Player {
         }
 
         applyMovementResponse(game.getBoard(), responseData);
+        game.applyApiState?.(responseData);
 
-        await this.service.endMovement(
+        const endMovementResponse = await this.service.endMovement(
           game.getId(),
           game.getBoard().sparseBoard(),
         );
+        game.applyApiState?.(endMovementResponse);
 
         game.endPhase();
         eventBus.emit("redraw");
@@ -81,11 +83,7 @@ export class CpuPlayer extends Player {
           return null;
         });
       if (endTurnResponse) {
-        game.updateScores?.(endTurnResponse.scores);
-        game.updateTurnState?.({
-          turnLimit: endTurnResponse.turnLimit,
-          turnNumber: endTurnResponse.turnNumber,
-        });
+        game.applyApiState?.(endTurnResponse);
       }
       game.endPhase();
       eventBus.emit("redraw");

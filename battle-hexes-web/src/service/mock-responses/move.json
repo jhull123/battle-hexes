@@ -449,7 +449,14 @@
             }
         ],
         "lastCombatResults": null,
-        "scores": null
+        "scores": null,
+        "gameStatus": {
+            "state": "in_progress",
+            "winnerPlayerName": null,
+            "winnerFactionId": null,
+            "reason": null,
+            "message": "Game in progress."
+        }
     },
     "defensiveFireEvents": [
         {
@@ -479,5 +486,12 @@
         "Player 2": 3
     },
     "turnLimit": 8,
-    "turnNumber": 2
+    "turnNumber": 2,
+    "gameStatus": {
+        "state": "in_progress",
+        "winnerPlayerName": null,
+        "winnerFactionId": null,
+        "reason": null,
+        "message": "Game in progress."
+    }
 }
