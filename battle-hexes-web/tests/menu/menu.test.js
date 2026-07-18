@@ -825,6 +825,38 @@ describe('auto new game persistence', () => {
     );
   });
 
+
+  test('preserves top-level units from authoritative end-turn responses', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const updateBoard = jest.fn();
+    BoardUpdater.mockImplementation(() => ({ updateBoard }));
+
+    const board = {
+      sparseBoard: () => ({ units: [{ id: 'unit-1', row: 1, column: 1 }] }),
+      getSelectedHex: () => null,
+      isOwnHexSelected: () => false,
+      hasCombat: () => false,
+    };
+    const game = fakeGame({
+      getCurrentPhase: () => 'End Turn',
+      endPhase: () => true,
+      getBoard: () => board,
+    });
+    const authoritativeUnits = [{ id: 'unit-1', row: 2, column: 3 }];
+
+    mockService.endTurn.mockResolvedValue({ units: authoritativeUnits });
+
+    const menu = new Menu(game, { service: mockService });
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(updateBoard).toHaveBeenCalledWith(board, authoritativeUnits, {
+      defensiveFireEvents: [],
+    });
+  });
+
   test('redraws immediately after a turn switch so refreshed defensive fire icons are visible', () => {
     buildDom();
     history.replaceState(null, '', '/');
