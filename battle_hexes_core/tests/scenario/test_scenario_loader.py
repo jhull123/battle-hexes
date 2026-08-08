@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -171,6 +172,15 @@ def test_load_scenario_maps_victory_to_core_type():
     assert scenario.victory.method == "objective_control"
     assert scenario.victory.scoring_side == "Airborne"
     assert scenario.victory.description is not None
+
+
+def test_load_scenario_uses_scenario_validator():
+    with patch(
+        "battle_hexes_core.scenario.scenario_loader.ScenarioValidator"
+    ) as validator_type:
+        scenario = load_scenario("elim_1", scenario_dir=_scenario_dir())
+
+    validator_type.return_value.validate.assert_called_once_with(scenario)
 
 
 def test_load_scenario_keeps_victory_optional_for_legacy_scenarios():
