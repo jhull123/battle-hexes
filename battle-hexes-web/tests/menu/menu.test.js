@@ -649,6 +649,23 @@ describe('auto new game persistence', () => {
     expect(reactionMessages.style.display).toBe('block');
   });
 
+  test('clears defensive fire status when a new game is loaded', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const menu = new Menu(fakeGame(), { service: mockService });
+    const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
+    calls.forEach(([, handler]) => handler([
+      { outcome: 'no_effect', message: 'Defensive fire had no effect.' },
+    ]));
+
+    menu.setGame(fakeGame({ getId: () => 'new-game-id' }));
+
+    expect(document.getElementById('reactionStatus').textContent).toBe('');
+    expect(document.getElementById('reactionMessages').textContent).toBe('');
+    expect(document.getElementById('reactionMessages').style.display).toBe('none');
+  });
+
   test('updates victory points after end of movement response', async () => {
     buildDom();
     history.replaceState(null, '', '/');
