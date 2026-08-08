@@ -825,7 +825,6 @@ describe('auto new game persistence', () => {
     );
   });
 
-
   test('preserves top-level units from authoritative end-turn responses', async () => {
     buildDom();
     history.replaceState(null, '', '/');

@@ -478,7 +478,10 @@ export class Menu {
   }
 
   #applyGameStateResponse(responseData) {
-    const safeUnits = responseData?.sparseBoard?.units ?? responseData?.game?.board?.units ?? responseData?.units ?? [];
+    const safeUnits = responseData?.sparseBoard?.units
+      ?? responseData?.game?.board?.units
+      ?? responseData?.units
+      ?? [];
     new BoardUpdater().updateBoard(this.#game.getBoard(), safeUnits, {
       defensiveFireEvents: responseData?.defensiveFireEvents ?? [],
     });
