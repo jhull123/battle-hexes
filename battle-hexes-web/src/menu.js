@@ -486,7 +486,7 @@ export class Menu {
       defensiveFireEvents: responseData?.defensiveFireEvents ?? [],
     });
 
-    this.#game.applyApiState?.(responseData);
+    this.#game.applyApiState(responseData);
   }
 
   #processGameStatus() {

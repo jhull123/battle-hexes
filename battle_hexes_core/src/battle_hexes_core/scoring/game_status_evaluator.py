@@ -34,6 +34,14 @@ class GameStatusEvaluator:
 
     def evaluate(self, game: Game) -> GameStatus:
         """Return the current status for ``game``."""
+        if not self._active_players(game):
+            return self._completed(
+                game,
+                None,
+                self.UNIT_ELIMINATION,
+                "Game completed in a draw after all units were eliminated.",
+            )
+
         elimination_winner = self._unit_elimination_winner(game)
         if elimination_winner is not None:
             return self._completed(

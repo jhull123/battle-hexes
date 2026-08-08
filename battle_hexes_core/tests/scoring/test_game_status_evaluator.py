@@ -56,6 +56,17 @@ class TestGameStatusEvaluator(unittest.TestCase):
         self.assertEqual(status.winner_player_name, "Alice")
         self.assertEqual(status.winner_faction_id, "f1")
 
+    def test_completed_draw_when_all_players_are_eliminated(self):
+        self.unit_one.set_coords(None, None)
+        self.unit_two.set_coords(None, None)
+
+        status = self.evaluator.evaluate(self.game)
+
+        self.assertEqual(status.state, "completed")
+        self.assertEqual(status.reason, "draw")
+        self.assertIsNone(status.winner_player_name)
+        self.assertIsNone(status.winner_faction_id)
+
     def test_completed_at_turn_limit_with_score_winner(self):
         self.game.turn_limit = 1
         self.game.turn_number = 2
