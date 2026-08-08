@@ -684,10 +684,10 @@
     "q-learning"
   ],
   "gameStatus": {
-    "state": "in_progress",
-    "winnerPlayerName": null,
-    "winnerFactionId": null,
-    "reason": null,
-    "message": "Game in progress."
+    "state": "completed",
+    "winnerPlayerName": "Player 1",
+    "winnerFactionId": "allies",
+    "reason": "elimination",
+    "message": "Player 1 wins by eliminating all opposing units."
   }
 }

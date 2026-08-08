@@ -203,50 +203,31 @@ describe('resolveCombat', () => {
     expect(game.getFactionForUnitId('missing')).toBeNull();
   });
 
-describe('isGameOver', () => {
-  test('returns false when multiple players have units', () => {
-    const f1 = new Faction('f1', 'f1', '#f00');
-    const f2 = new Faction('f2', 'f2', '#0f0');
-    f1.setOwningPlayer(player1);
-    f2.setOwningPlayer(player2);
-
-    const u1 = new Unit('u1', 'Unit1', f1, null, 1, 1, 1);
-    const u2 = new Unit('u2', 'Unit2', f2, null, 1, 1, 1);
-    game.getBoard().addUnit(u1, 0, 0);
-    game.getBoard().addUnit(u2, 0, 1);
+describe('game status', () => {
+  test('is not over when backend status is in progress regardless of local board state', () => {
+    game.updateGameStatus({ state: 'in_progress' });
 
     expect(game.isGameOver()).toBe(false);
   });
 
-  test('returns true when only one player has units', () => {
-    const f1 = new Faction('f1', 'f1', '#f00');
-    f1.setOwningPlayer(player1);
-    const u1 = new Unit('u1', 'Unit1', f1, null, 1, 1, 1);
-    game.getBoard().addUnit(u1, 0, 0);
+  test('is over only when backend status is completed', () => {
+    game.updateGameStatus({ state: 'completed', message: 'Done.' });
 
     expect(game.isGameOver()).toBe(true);
+    expect(game.getGameStatus()).toEqual({ state: 'completed', message: 'Done.' });
   });
 
+  test('does not infer game over from turn limits or remaining unit owners', () => {
+    const limitedGame = new Game('game-id', phases, players, new Board(10, 10), {
+      turnLimit: 1,
+      turnNumber: 2,
+      gameStatus: { state: 'in_progress' },
+    });
 
-  test('returns true when turn limit is exceeded', () => {
-    const limitedGame = new Game('game-id', phases, players, new Board(10, 10), { turnLimit: 1, turnNumber: 2 });
-
-    expect(limitedGame.isGameOver()).toBe(true);
-  });
-
-  test('returns true after a unit is eliminated leaving one player', () => {
     const f1 = new Faction('f1', 'f1', '#f00');
-    const f2 = new Faction('f2', 'f2', '#0f0');
     f1.setOwningPlayer(player1);
-    f2.setOwningPlayer(player2);
+    limitedGame.getBoard().addUnit(new Unit('u1', 'Unit1', f1, null, 1, 1, 1), 0, 0);
 
-    const u1 = new Unit('u1', 'Unit1', f1, null, 1, 1, 1);
-    const u2 = new Unit('u2', 'Unit2', f2, null, 1, 1, 1);
-    game.getBoard().addUnit(u1, 0, 0);
-    game.getBoard().addUnit(u2, 0, 1);
-
-    game.getBoard().removeUnit(u2);
-
-    expect(game.isGameOver()).toBe(true);
+    expect(limitedGame.isGameOver()).toBe(false);
   });
 });

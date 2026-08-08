@@ -52,6 +52,7 @@ new p5((p) => {
       );
 
       applyMovementResponse(game.getBoard(), movementResponse);
+      game.applyApiState?.(movementResponse);
     };
   };
   configureMovementHandling();

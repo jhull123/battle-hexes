@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from battle_hexes_api.main import app, _serialize_game
+from battle_hexes_api.main import app, _serialize_game, game_repo
 from battle_hexes_api.schemas import GameModel
 from battle_hexes_core.defensivefire.defensive_fire import (
     DefensiveFireResult,
@@ -14,6 +14,7 @@ from battle_hexes_core.defensivefire.defensive_fire import (
 from battle_hexes_api.schemas import SparseBoard
 from battle_hexes_api.player_types import PlayerTypeDefinition
 from battle_hexes_core.game.player import Player, PlayerType
+from battle_hexes_core.scoring.game_status_evaluator import GameStatus
 from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.unit.faction import Faction
 
@@ -67,6 +68,10 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(post_body.get('playerTypeIds'), ['human', 'random'])
         self.assertEqual(post_body.get('scenarioId'), 'elim_1')
         self.assertEqual(post_body.get('stackingLimit'), 2)
+        self.assertEqual(
+            post_body.get('gameStatus', {}).get('state'),
+            'in_progress',
+        )
         terrain = post_body.get("board", {}).get("terrain", {})
         self.assertEqual(terrain.get("default"), "open")
         self.assertIn("open", terrain.get("types", {}))
@@ -109,6 +114,10 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(get_body.get('scenarioId'), 'elim_1')
         self.assertEqual(get_body.get('stackingLimit'), 2)
         self.assertEqual(
+            get_body.get('gameStatus', {}).get('state'),
+            'in_progress',
+        )
+        self.assertEqual(
             get_body.get("board", {})
             .get("terrain", {})
             .get("types", {})
@@ -125,6 +134,38 @@ class TestFastAPI(unittest.TestCase):
         )
         self.assertEqual(get_body.get("board", {}).get("roadTypes"), {})
         self.assertEqual(get_body.get("board", {}).get("roadPaths"), [])
+
+    def test_get_game_preserves_completed_status(self):
+        create_response = self.client.post(
+            '/games',
+            json={
+                "scenarioId": "elim_1",
+                "playerTypes": ["human", "random"],
+            },
+        )
+        game_id = create_response.json()["id"]
+        game = game_repo.get_game(game_id)
+        game.game_status = GameStatus(
+            state="completed",
+            winner_player_name="Player 1",
+            winner_faction_id="allies",
+            reason="unit_elimination",
+            message="Player 1 wins.",
+        )
+
+        response = self.client.get(f'/games/{game_id}')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["gameStatus"],
+            {
+                "state": "completed",
+                "winnerPlayerName": "Player 1",
+                "winnerFactionId": "allies",
+                "reason": "unit_elimination",
+                "message": "Player 1 wins.",
+            },
+        )
 
     def test_create_game_invalid_scenario_returns_404(self):
         payload = {

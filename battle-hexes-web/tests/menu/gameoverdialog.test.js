@@ -32,11 +32,31 @@ describe('game over dialog', () => {
     const eventBus = fakeEventBus();
 
     new GameOverDialog({ eventBus });
-    gameOverListener(eventBus)({ gameId: 'game-id' });
+    gameOverListener(eventBus)({
+      gameId: 'game-id',
+      gameStatus: {
+        state: 'completed',
+        winnerPlayerName: 'Player 1',
+        message: 'Player 1 wins by objective control.',
+      },
+    });
 
     expect(document.getElementById('gameOverDialog').style.display).toBe('flex');
     expect(document.getElementById('gameOverDialogTitle').textContent).toBe('Game Over');
-    expect(document.getElementById('gameOverDialogMessage').textContent).toBe('The game is over.');
+    expect(document.getElementById('gameOverDialogMessage').textContent).toBe('Player 1 wins by objective control. Winner: Player 1');
+  });
+
+  test('handles completed games without a winner', () => {
+    buildDom();
+    const eventBus = fakeEventBus();
+
+    new GameOverDialog({ eventBus });
+    gameOverListener(eventBus)({
+      gameId: 'draw-game-id',
+      gameStatus: { state: 'completed', message: 'The game ends in a draw.' },
+    });
+
+    expect(document.getElementById('gameOverDialogMessage').textContent).toBe('The game ends in a draw.');
   });
 
   test('does not reopen after it is closed for the same game ending', () => {

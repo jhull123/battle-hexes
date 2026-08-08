@@ -220,11 +220,7 @@ export class Menu {
     this.#updatePhasesStyling();
     this.#disableOrEnableActionButton();
 
-    if (this.#game.isGameOver()) {
-      this.#showGameOver();
-    } else {
-      this.#hideGameOver();
-    }
+    this.#processGameStatus();
   }
 
   #toggleSelectedHexHeadings(isVisible) {
@@ -387,6 +383,10 @@ export class Menu {
   }
 
   doEndPhase() {
+    if (this.#game.isGameOver()) {
+      return;
+    }
+
     if (this.#isCombatPhase()) {
       this.#handleCombatPhase();
     } else {
@@ -400,7 +400,13 @@ export class Menu {
 
   #handleCombatPhase() {
     console.log('Resolving combat.');
-    this.#game.resolveCombat(this.#postCombat).then(() => this.#finishPhase());
+    this.#game.resolveCombat(this.#postCombat).then(() => {
+      if (!this.#game.isGameOver()) {
+        this.#finishPhase();
+      } else {
+        this.updateMenu();
+      }
+    });
   }
 
   #finishPhase() {
@@ -415,7 +421,7 @@ export class Menu {
         this.#game.getId(),
         this.#game.getBoard().sparseBoard()
       ).then((responseData) => {
-        this.#applyMovementResponse(responseData);
+        this.#applyGameStateResponse(responseData);
         this.updateMenu();
       }).catch(err => console.error('Failed to update movement state', err));
     }
@@ -429,11 +435,7 @@ export class Menu {
         this.#game.getId(),
         endTurnPayload
       ).then((responseData) => {
-        this.#game.updateScores?.(responseData?.scores);
-        this.#game.updateTurnState?.({
-          turnLimit: responseData?.turnLimit,
-          turnNumber: responseData?.turnNumber,
-        });
+        this.#applyGameStateResponse(responseData);
         this.updateMenu();
       }).catch(err => console.error('Failed to update game state', err))
        .finally(() => {
@@ -475,17 +477,24 @@ export class Menu {
     // TODO: update the menu area of the UI to show the results of the combat
   }
 
-  #applyMovementResponse(responseData) {
-    const safeUnits = responseData?.sparseBoard?.units ?? responseData?.game?.board?.units ?? [];
+  #applyGameStateResponse(responseData) {
+    const safeUnits = responseData?.sparseBoard?.units
+      ?? responseData?.game?.board?.units
+      ?? responseData?.units
+      ?? [];
     new BoardUpdater().updateBoard(this.#game.getBoard(), safeUnits, {
       defensiveFireEvents: responseData?.defensiveFireEvents ?? [],
     });
 
-    this.#game.updateScores?.(responseData?.scores);
-    this.#game.updateTurnState?.({
-      turnLimit: responseData?.turnLimit,
-      turnNumber: responseData?.turnNumber,
-    });
+    this.#game.applyApiState?.(responseData);
+  }
+
+  #processGameStatus() {
+    if (this.#game.isGameOver()) {
+      this.#showGameOver();
+    } else {
+      this.#hideGameOver();
+    }
   }
 
   #showDefensiveFireEvents(events = []) {
@@ -529,7 +538,10 @@ export class Menu {
       this.#newGameBtn.style.display = 'none';
       this.#scheduleAutoNewGame();
     } else {
-      eventBus.emit('gameOver', { gameId: this.#game.getId() });
+      eventBus.emit('gameOver', {
+        gameId: this.#game.getId(),
+        gameStatus: this.#game.getGameStatus?.() ?? null,
+      });
       this.#newGameBtn.style.display = 'block';
     }
   }

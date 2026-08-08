@@ -116,6 +116,27 @@ describe('animator integration', () => {
     expect(animatorInstance.animate).toHaveBeenCalledWith(unit, [start, end], true);
   });
 
+
+  test('selectHex blocks gameplay movement when completed', () => {
+    const player = { isHuman: () => true };
+    const factions = [new Faction('f1', 'f1', '#f00')];
+    factions[0].setOwningPlayer(player);
+    const board = new Board(1, 2);
+    board.players = { getCurrentPlayer: () => player };
+    board.setGameplayBlockedProvider(() => true);
+    const unit = new Unit('u1', 'Unit', factions[0], null, 1, 1, 1);
+    board.addUnit(unit, 0, 0);
+
+    const start = board.getHex(0, 0);
+    const end = board.getHex(0, 1);
+
+    const animatorInstance = board.animator;
+    board.selectHex(start);
+    board.selectHex(end);
+
+    expect(animatorInstance.animate).not.toHaveBeenCalled();
+  });
+
   test('selectHex resolves movement during the movement phase', async () => {
     const player = { isHuman: () => true };
     const factions = [new Faction('f1', 'f1', '#f00')];

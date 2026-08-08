@@ -83,6 +83,8 @@ describe('auto new game persistence', () => {
       }),
       getScores: () => ({}),
       isGameOver: () => false,
+      getGameStatus: () => null,
+      applyApiState: jest.fn(),
       getId: () => 'game-id',
       getScenarioId: () => 'elim_1',
     };
@@ -306,7 +308,7 @@ describe('auto new game persistence', () => {
 
       new Menu(fakeGame({ isGameOver: () => true }), { service: mockService });
 
-      expect(eventBus.emit).toHaveBeenCalledWith('gameOver', { gameId: 'game-id' });
+      expect(eventBus.emit).toHaveBeenCalledWith('gameOver', { gameId: 'game-id', gameStatus: null });
     });
 
     test('does not emit a game over event when auto new game is enabled', () => {
@@ -667,6 +669,9 @@ describe('auto new game persistence', () => {
       updateScores: (scores) => {
         currentScores = { ...scores };
       },
+      applyApiState: (responseData) => {
+        currentScores = { ...responseData.scores };
+      },
       getCurrentPhase: () => 'Movement',
       endPhase: () => false,
       getBoard: () => ({
@@ -690,6 +695,86 @@ describe('auto new game persistence', () => {
     await flushPromises();
 
     expect(document.querySelector('.victory-score').textContent).toBe('4');
+  });
+
+
+  test('in-progress API status does not open the game over dialog event', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    let status = { state: 'in_progress', message: 'Keep playing.' };
+    const game = fakeGame({
+      getCurrentPhase: () => 'Movement',
+      endPhase: () => false,
+      isGameOver: () => status.state === 'completed',
+      getGameStatus: () => status,
+      applyApiState: (responseData) => { status = responseData.gameStatus; },
+      getBoard: () => ({
+        sparseBoard: () => ({}),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    mockService.endMovement.mockResolvedValue({ gameStatus: status });
+
+    const menu = new Menu(game, { service: mockService });
+    eventBus.emit.mockClear();
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(eventBus.emit).not.toHaveBeenCalledWith('gameOver', expect.anything());
+  });
+
+  test('completed API status opens the game over dialog event with backend data', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    let status = { state: 'in_progress' };
+    const completedStatus = {
+      state: 'completed',
+      winnerPlayerName: 'Player 1',
+      message: 'Player 1 wins.',
+    };
+    const game = fakeGame({
+      getCurrentPhase: () => 'Movement',
+      endPhase: () => false,
+      isGameOver: () => status.state === 'completed',
+      getGameStatus: () => status,
+      applyApiState: (responseData) => { status = responseData.gameStatus; },
+      getBoard: () => ({
+        sparseBoard: () => ({}),
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => false,
+      }),
+    });
+
+    mockService.endMovement.mockResolvedValue({ gameStatus: completedStatus });
+
+    const menu = new Menu(game, { service: mockService });
+    eventBus.emit.mockClear();
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(eventBus.emit).toHaveBeenCalledWith('gameOver', {
+      gameId: 'game-id',
+      gameStatus: completedStatus,
+    });
+  });
+
+  test('blocks end phase gameplay after completion', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const game = fakeGame({ isGameOver: () => true });
+    const menu = new Menu(game, { service: mockService });
+    eventBus.emit.mockClear();
+    menu.doEndPhase();
+
+    expect(mockService.endMovement).not.toHaveBeenCalled();
+    expect(mockService.endTurn).not.toHaveBeenCalled();
   });
 
   test('posts end-turn board state captured before endPhase resets moves', async () => {
@@ -738,6 +823,37 @@ describe('auto new game persistence', () => {
       'game-id',
       postResetPayload
     );
+  });
+
+  test('preserves top-level units from authoritative end-turn responses', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    const updateBoard = jest.fn();
+    BoardUpdater.mockImplementation(() => ({ updateBoard }));
+
+    const board = {
+      sparseBoard: () => ({ units: [{ id: 'unit-1', row: 1, column: 1 }] }),
+      getSelectedHex: () => null,
+      isOwnHexSelected: () => false,
+      hasCombat: () => false,
+    };
+    const game = fakeGame({
+      getCurrentPhase: () => 'End Turn',
+      endPhase: () => true,
+      getBoard: () => board,
+    });
+    const authoritativeUnits = [{ id: 'unit-1', row: 2, column: 3 }];
+
+    mockService.endTurn.mockResolvedValue({ units: authoritativeUnits });
+
+    const menu = new Menu(game, { service: mockService });
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(updateBoard).toHaveBeenCalledWith(board, authoritativeUnits, {
+      defensiveFireEvents: [],
+    });
   });
 
   test('redraws immediately after a turn switch so refreshed defensive fire icons are visible', () => {
