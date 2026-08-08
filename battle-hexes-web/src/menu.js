@@ -554,6 +554,8 @@ export class Menu {
   setGame(game) {
     this.#game = game;
     this.#soundPlayer.setGame(this.#game);
+    this.#showDefensiveFireStatus([]);
+    this.#showDefensiveFireEvents([]);
     const scenarioId = this.#game.getScenarioId?.() ?? null;
     if (scenarioId !== this.#activeScenarioId) {
       this.#activeScenarioId = scenarioId;
