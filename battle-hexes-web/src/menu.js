@@ -375,9 +375,10 @@ export class Menu {
   #updateCombatIndicator() {
     const combatElem = document.getElementById("phasesListCombat");
 
+    const isCombatPhase = this.#game.getCurrentPhase().toLowerCase() === 'combat';
     const hasPendingCombat = this.#game.hasPendingCombat?.()
       ?? this.#game.getBoard().hasCombat();
-    if (hasPendingCombat) {
+    if (isCombatPhase || hasPendingCombat) {
       combatElem.classList.remove("disabled-phase");
     } else {
       combatElem.classList.add("disabled-phase");
@@ -403,11 +404,8 @@ export class Menu {
   #handleCombatPhase() {
     console.log('Resolving combat.');
     this.#game.resolveCombat(this.#postCombat).then(() => {
-      if (!this.#game.isGameOver()) {
-        this.#finishPhase();
-      } else {
-        this.updateMenu();
-      }
+      this.updateMenu();
+      eventBus.emit('redraw');
     });
   }
 

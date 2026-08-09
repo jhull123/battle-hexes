@@ -634,6 +634,47 @@ describe('auto new game persistence', () => {
     });
   });
 
+  test('shows Combat as enabled when the authoritative phase is Combat', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame({
+      getCurrentPhase: () => 'Combat',
+      hasPendingCombat: () => false,
+    }), { service: mockService });
+
+    expect(document.getElementById('phasesListCombat').classList)
+      .not.toContain('disabled-phase');
+  });
+
+  test('stays in End Turn after combat instead of advancing the player', async () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    let phase = 'Combat';
+    const endPhase = jest.fn();
+    const resolveCombat = jest.fn().mockImplementation(async () => {
+      phase = 'End Turn';
+    });
+    const game = fakeGame({
+      getCurrentPhase: () => phase,
+      hasPendingCombat: () => phase === 'Combat',
+      resolveCombat,
+      endPhase,
+    });
+
+    const menu = new Menu(game, { service: mockService });
+    menu.doEndPhase();
+    await flushPromises();
+
+    expect(resolveCombat).toHaveBeenCalledTimes(1);
+    expect(phase).toBe('End Turn');
+    expect(endPhase).not.toHaveBeenCalled();
+    expect(mockService.endTurn).not.toHaveBeenCalled();
+    expect(document.getElementById('endPhaseBtn').textContent)
+      .toBe('End Turn');
+  });
+
   test('renders defensive fire messages from the event bus hook', () => {
     buildDom();
     history.replaceState(null, '', '/');
