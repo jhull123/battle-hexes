@@ -148,10 +148,15 @@ class Game:
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
+        self._reset_movement_for_new_turn(self.current_player)
         self._reset_defensive_fire_off_turn_usage(self.current_player)
         self._refresh_defensive_fire_availability()
         self.update_game_status()
         return self.current_player
+
+    def _reset_movement_for_new_turn(self, player: Player) -> None:
+        for unit in self.get_board().get_units_for_player(player):
+            unit.current_turn_movement_points_remaining = unit.get_move()
 
     def end_turn(self) -> EndTurnResult:
         """Advance the turn and return the resulting core state."""

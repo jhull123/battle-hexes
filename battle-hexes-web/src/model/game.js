@@ -167,7 +167,12 @@ export class Game {
       this.#currentPhase = this.#phaseFromApi(state.currentPhase) ?? this.#currentPhase;
     }
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'activePlayer')) {
+      const previousPlayer = this.#players.getCurrentPlayer();
       this.#players.setCurrentPlayer(state.activePlayer);
+      const activePlayer = this.#players.getCurrentPlayer();
+      if (activePlayer !== previousPlayer) {
+        this.#board.resetMovesRemaining(activePlayer);
+      }
     }
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'pendingCombats')) {
       this.#pendingCombats = Array.isArray(state.pendingCombats)

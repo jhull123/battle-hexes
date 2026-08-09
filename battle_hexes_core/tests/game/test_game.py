@@ -148,9 +148,11 @@ class TestGame(unittest.TestCase):
         board.add_unit(unit1, 0, 0)
         board.add_unit(unit2, 4, 4)
         game = Game([player1, player2], board)
+        unit2.current_turn_movement_points_remaining = 0
 
         game.next_player()
 
+        self.assertEqual(unit2.current_turn_movement_points_remaining, 3)
         self.assertTrue(unit1.has_defensive_fire(game.get_current_player()))
         self.assertFalse(unit2.has_defensive_fire(game.get_current_player()))
 

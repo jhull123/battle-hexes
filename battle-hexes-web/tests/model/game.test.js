@@ -124,6 +124,27 @@ describe('configuration metadata', () => {
   });
 });
 
+describe('authoritative turn state', () => {
+  test('resets movement when the backend changes the active player', () => {
+    const firstPlayer = new Player('First');
+    const nextPlayer = new Player('Next');
+    const turnPlayers = new Players([firstPlayer, nextPlayer]);
+    const board = new Board(2, 2);
+    const faction = new Faction('next', 'Next faction', '#00f');
+    faction.setOwningPlayer(nextPlayer);
+    const unit = new Unit('u1', 'Unit', faction, null, 1, 1, 2);
+    board.addUnit(unit, 0, 0);
+    unit.move(board.getHex(0, 0), []);
+    unit.move(board.getHex(0, 0), []);
+    const turnGame = new Game('turn-state', phases, turnPlayers, board);
+
+    turnGame.applyApiState({ activePlayer: 'Next' });
+
+    expect(turnGame.getCurrentPlayer()).toBe(nextPlayer);
+    expect(unit.getMovesRemaining()).toBe(2);
+  });
+});
+
 describe('endPhase', () => {
   test('moves to combat when there is combat', () => {
     jest.spyOn(game.getBoard(), 'hasCombat').mockReturnValue(true);
