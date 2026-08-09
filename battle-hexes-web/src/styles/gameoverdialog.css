@@ -1,0 +1,51 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.modal-card {
+  width: min(680px, calc(100vw - 48px));
+  padding: 18px 22px 28px;
+  border: 2px solid #333;
+  border-radius: 6px;
+  background: #f8f5ec;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.modal-card h2 {
+  margin: 0 0 12px;
+  font-size: 2rem;
+}
+
+.modal-card p {
+  margin: 26px 0 32px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 14px 18px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #f8f8f8;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-actions button.primary-action {
+  background: #627d3f;
+  color: #fff;
+}

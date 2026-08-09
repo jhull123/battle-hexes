@@ -15,6 +15,7 @@ export class Board {
   #stackingLimit = null;
   #movementHandler;
   #movementInProgress = false;
+  #gameplayBlockedProvider = () => false;
 
   constructor(rows, columns) {
     this.#hexMap = new Map();
@@ -89,6 +90,10 @@ export class Board {
     this.movementHandler = handler;
   }
 
+  setGameplayBlockedProvider(provider) {
+    this.#gameplayBlockedProvider = provider;
+  }
+
   get columns() {
     return this.#columns;
   }
@@ -121,7 +126,7 @@ export class Board {
 
   selectHex(hexToSelect) {
     if (hexToSelect === this.#selectedHex) return;
-    if (this.#movementInProgress) return;
+    if (this.#movementInProgress || this.#gameplayBlockedProvider()) return;
     
     const oldSelection = this.#selectedHex;
 
@@ -243,7 +248,7 @@ export class Board {
       return oldHover;
     }
 
-    if (this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
+    if (!this.#gameplayBlockedProvider() && this.#hoverHex && this.hasSelection() && !this.#selectedHex.isEmpty()
         && !this.#selectedHex.hasUnitMoves() 
         && this.#hoverHex.isAdjacent(this.#selectedHex)
         && this.isOwnHexSelected()

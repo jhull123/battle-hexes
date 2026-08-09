@@ -13,6 +13,7 @@ export class Game {
   #scores;
   #turnLimit;
   #turnNumber;
+  #gameStatus;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
@@ -20,6 +21,7 @@ export class Game {
     scores = {},
     turnLimit = null,
     turnNumber = 1,
+    gameStatus = null,
   } = {}) {
     this.#id = id;
     this.#phases = phases;
@@ -39,6 +41,8 @@ export class Game {
     this.#scores = { ...scores };
     this.#turnLimit = Number.isInteger(turnLimit) && turnLimit > 0 ? turnLimit : null;
     this.#turnNumber = Number.isInteger(turnNumber) && turnNumber > 0 ? turnNumber : 1;
+    this.#gameStatus = this.#normalizeGameStatus(gameStatus);
+    this.#board.setGameplayBlockedProvider?.(() => this.isGameOver());
   }
 
   endPhase() {
@@ -145,23 +149,55 @@ export class Game {
     this.#turnNumber = Number.isInteger(turnNumber) && turnNumber > 0 ? turnNumber : 1;
   }
 
-  isGameOver() {
-    if (Number.isInteger(this.#turnLimit) && this.#turnNumber > this.#turnLimit) {
-      return true;
-    }
+  getGameStatus() {
+    return this.#gameStatus ? { ...this.#gameStatus } : null;
+  }
 
-    const owners = new Set();
-    for (const unit of this.#board.getUnits()) {
-      if (unit.getContainingHex()) {
-        owners.add(unit.getOwningPlayer());
-      }
+  updateGameStatus(gameStatus) {
+    this.#gameStatus = this.#normalizeGameStatus(gameStatus);
+  }
+
+  applyApiState(responseData = {}) {
+    if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'scores')) {
+      this.updateScores(responseData.scores);
     }
-    return owners.size <= 1;
+    if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'turnLimit')
+        || Object.prototype.hasOwnProperty.call(responseData ?? {}, 'turnNumber')) {
+      this.updateTurnState({
+        turnLimit: responseData?.turnLimit,
+        turnNumber: responseData?.turnNumber,
+      });
+    }
+    const gameStatus = this.#extractGameStatus(responseData);
+    if (gameStatus !== undefined) {
+      this.updateGameStatus(gameStatus);
+    }
+  }
+
+  isGameOver() {
+    return this.#gameStatus?.state === 'completed';
+  }
+
+  #extractGameStatus(responseData) {
+    if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'gameStatus')) {
+      return responseData.gameStatus;
+    }
+    if (Object.prototype.hasOwnProperty.call(responseData?.sparseBoard ?? {}, 'gameStatus')) {
+      return responseData.sparseBoard.gameStatus;
+    }
+    return undefined;
+  }
+
+  #normalizeGameStatus(gameStatus) {
+    if (!gameStatus || typeof gameStatus !== 'object') {
+      return null;
+    }
+    return { ...gameStatus };
   }
 
   resolveCombat(finishedCb) {
     return this.#combatResolver.resolveCombat().then((combatResult) => {
-      this.updateScores(combatResult?.scores);
+      this.applyApiState(combatResult);
       if (finishedCb) {
         finishedCb(combatResult);
       }

@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 from battle_hexes_api.schemas import (
     CreateGameRequest,
@@ -77,6 +78,7 @@ class TestApiAliases(unittest.TestCase):
 
         self.assertEqual(payload["turnLimit"], 10)
         self.assertEqual(payload["turnNumber"], 2)
+        self.assertIsNone(payload["gameStatus"])
         self.assertIn("roadTypes", payload["board"])
         self.assertIn("roadPaths", payload["board"])
         self.assertEqual(
@@ -203,6 +205,7 @@ class TestGameModel(unittest.TestCase):
         self.assertEqual(model.players[0].name, "Alice")
         self.assertEqual(model.players[0].type, "Human")
         self.assertEqual(model.board.rows, 2)
+        self.assertEqual(model.game_status.state, "completed")
         self.assertEqual(model.board.columns, 2)
         self.assertEqual(len(model.board.units), 1)
         self.assertEqual(model.board.terrain.default, "open")
@@ -369,7 +372,14 @@ class TestMovementSchemas(unittest.TestCase):
                         outcome="no_effect",
                         retreat_destination=None,
                     )
-                ]
+                ],
+                "game_status": SimpleNamespace(
+                    state="completed",
+                    winner_player_name="Alice",
+                    winner_faction_id="f1",
+                    reason="unit_elimination",
+                    message="Alice wins.",
+                ),
             },
         )()
 
@@ -417,6 +427,11 @@ class TestMovementSchemas(unittest.TestCase):
         self.assertEqual(
             response.defensive_fire_events[0].outcome,
             "no_effect",
+        )
+        self.assertEqual(response.sparse_board.game_status.state, "completed")
+        self.assertEqual(
+            response.sparse_board.game_status.winner_player_name,
+            "Alice",
         )
         self.assertEqual(response.scores, {"Alice": 4})
         self.assertEqual(response.model_dump(by_alias=True)["turnLimit"], 6)

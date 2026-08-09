@@ -6,6 +6,7 @@ from .create_game import CreateGameRequest
 from .faction import FactionModel
 from .movement import DefensiveFireEventModel, MovementResponseModel
 from .game_model import GameModel
+from .game_status import GameStatus
 from .objective import ObjectiveModel
 from .player import PlayerModel
 from .player_type import PlayerTypeModel
@@ -21,6 +22,7 @@ __all__ = [
     "FactionModel",
     "DefensiveFireEventModel",
     "GameModel",
+    "GameStatus",
     "MovementResponseModel",
     "ObjectiveModel",
     "PlayerModel",

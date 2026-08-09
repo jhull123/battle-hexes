@@ -104,10 +104,14 @@ class MovementResponseModel(ApiBaseModel):
             "defensive_fire_results",
             [],
         )
+        sparse_board = SparseBoard.from_game(
+            game,
+            game_status=getattr(movement_resolution, "game_status", None),
+        )
         return cls(
             game=GameModel.from_game(game),
             plans=[MovementPlanModel.from_plan(plan) for plan in plans],
-            sparse_board=SparseBoard.from_board(game.get_board()),
+            sparse_board=sparse_board,
             defensive_fire_events=[
                 DefensiveFireEventModel.from_result(result)
                 for result in defensive_fire_results

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -28,3 +29,4 @@ class MovementResolutionResult:
     defensive_fire_results: list[DefensiveFireResult] = field(
         default_factory=list
     )
+    game_status: Any | None = None

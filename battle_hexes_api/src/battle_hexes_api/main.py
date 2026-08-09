@@ -27,7 +27,6 @@ from battle_hexes_core.scenario.scenarioregistry import (  # noqa: E402
 from battle_hexes_api.player_types import list_player_types  # noqa: E402
 from battle_hexes_api.gamecreator import GameCreator  # noqa: E402
 from battle_hexes_api.schemas import (  # noqa: E402
-    CombatResultSchema,
     CreateGameRequest,
     GameModel,
     MovementResponseModel,
@@ -171,15 +170,11 @@ def resolve_combat(
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    sparse_board = SparseBoard.from_board(game.get_board())
-    sparse_board.scores = game.get_score_tracker().get_scores()
-    sparse_board.last_combat_results = [
-        CombatResultSchema.from_combat_result_data(battle)
-        for battle in results.get_battles()
-    ]
-    if not isinstance(sparse_board, SparseBoard):
-        return {}
-    return _dump_api_model(sparse_board)
+    return _dump_api_model(SparseBoard.from_game(
+        game,
+        include_scores=True,
+        combat_results=results,
+    ))
 
 
 @app.post('/games/{game_id}/movement')
@@ -246,14 +241,13 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     ObjectiveScorer().recalculate_scenario_victory(game)
 
-    old_player = game.get_current_player()
-    new_player = game.next_player()
+    end_turn_result = game.end_turn()
     logger.info(
         "The turn has ended for player: %s. Now it's %s's turn.",
-        old_player.name,
-        new_player.name,
+        end_turn_result.previous_player.name,
+        end_turn_result.current_player.name,
     )
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return _serialize_game(game)
+    return _dump_api_model(SparseBoard.from_game(game, include_scores=True))

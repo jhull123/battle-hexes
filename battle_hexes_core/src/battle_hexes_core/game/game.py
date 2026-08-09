@@ -1,5 +1,6 @@
 import uuid
-from typing import List
+from dataclasses import dataclass
+from typing import List, Any
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.defensivefire.defensive_fire import (
@@ -13,6 +14,13 @@ from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.scoretracker import ScoreTracker
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
+
+
+@dataclass
+class EndTurnResult:
+    previous_player: Player | None
+    current_player: Player | None
+    game_status: Any
 
 
 class Game:
@@ -36,6 +44,8 @@ class Game:
         self.turn_number = 1
         self.defensive_fire_resolver = DefensiveFireResolver(board)
         self._refresh_defensive_fire_availability()
+        self.game_status = None
+        self.update_game_status()
 
     def get_id(self):
         return self.id
@@ -68,6 +78,7 @@ class Game:
             self._apply_single_movement_plan(plan, movement, resolution)
         self._refresh_defensive_fire_availability()
         self.get_current_player().movement_cb()
+        resolution.game_status = self.update_game_status()
         return resolution
 
     def _apply_single_movement_plan(
@@ -137,7 +148,33 @@ class Game:
         self.current_player = self.players[next_idx]
         self._reset_defensive_fire_off_turn_usage(self.current_player)
         self._refresh_defensive_fire_availability()
+        self.update_game_status()
         return self.current_player
+
+    def end_turn(self) -> EndTurnResult:
+        """Advance the turn and return the resulting core state."""
+        previous_player = self.get_current_player() if self.players else None
+        current_player = self.next_player()
+        return EndTurnResult(
+            previous_player=previous_player,
+            current_player=current_player,
+            game_status=self.get_game_status(),
+        )
+
+    def update_game_status(self):
+        """Evaluate and store the current core game status."""
+        from battle_hexes_core.scoring.game_status_evaluator import (
+            GameStatusEvaluator,
+        )
+
+        self.game_status = GameStatusEvaluator().evaluate(self)
+        return self.game_status
+
+    def get_game_status(self):
+        """Return the latest core game status for this game."""
+        if self.game_status is None:
+            return self.update_game_status()
+        return self.game_status
 
     def _snapshot_defensive_fire_eligibility(
             self,

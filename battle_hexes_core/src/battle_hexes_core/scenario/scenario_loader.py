@@ -28,6 +28,7 @@ from .scenario import (
     ScenarioUnit,
     ScenarioVictory,
 )
+from .scenario_validator import ScenarioValidator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -389,7 +390,9 @@ def load_scenario(
     scenario_data = load_scenario_data(
         scenario_id, scenario_dir=scenario_dir
     )
-    return scenario_data.to_core()
+    scenario = scenario_data.to_core()
+    ScenarioValidator().validate(scenario)
+    return scenario
 
 
 def iter_scenario_data(

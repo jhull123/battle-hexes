@@ -28,6 +28,7 @@ export class GameCreator {
         scores: this.#getScores(gameData),
         turnLimit,
         turnNumber,
+        gameStatus: gameData?.gameStatus ?? null,
       },
     );
     this.#addTerrain(board, gameData.board);
