@@ -376,9 +376,9 @@ export class Menu {
     const combatElem = document.getElementById("phasesListCombat");
 
     const isCombatPhase = this.#game.getCurrentPhase().toLowerCase() === 'combat';
-    const hasPendingCombat = this.#game.hasPendingCombat?.()
-      ?? this.#game.getBoard().hasCombat();
-    if (isCombatPhase || hasPendingCombat) {
+    const hasPendingCombat = this.#game.hasPendingCombat?.() ?? false;
+    const hasEngagedUnits = this.#game.getBoard().hasCombat();
+    if (isCombatPhase || hasPendingCombat || hasEngagedUnits) {
       combatElem.classList.remove("disabled-phase");
     } else {
       combatElem.classList.add("disabled-phase");

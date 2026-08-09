@@ -647,6 +647,23 @@ describe('auto new game persistence', () => {
       .not.toContain('disabled-phase');
   });
 
+  test('shows Combat as enabled when the board displays engaged units', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+
+    new Menu(fakeGame({
+      hasPendingCombat: () => false,
+      getBoard: () => ({
+        getSelectedHex: () => null,
+        isOwnHexSelected: () => false,
+        hasCombat: () => true,
+      }),
+    }), { service: mockService });
+
+    expect(document.getElementById('phasesListCombat').classList)
+      .not.toContain('disabled-phase');
+  });
+
   test('stays in End Turn after combat instead of advancing the player', async () => {
     buildDom();
     history.replaceState(null, '', '/');
