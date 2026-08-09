@@ -43,15 +43,18 @@ class GameStatusEvaluator:
             )
 
         elimination_winner = self._unit_elimination_winner(game)
-        if elimination_winner is not None:
+        if (
+            elimination_winner is not None
+            and self._elimination_satisfies_victory(
+                game,
+                elimination_winner,
+            )
+        ):
             return self._completed(
                 game,
                 elimination_winner,
                 self.UNIT_ELIMINATION,
-                (
-                    f"{elimination_winner.name} wins by eliminating "
-                    "all enemy units."
-                ),
+                self._elimination_message(game, elimination_winner),
             )
 
         if self._turn_limit_reached(game):
@@ -87,6 +90,42 @@ class GameStatusEvaluator:
         if len(active_players) == 1:
             return active_players[0]
         return None
+
+    def _elimination_satisfies_victory(
+        self,
+        game: Game,
+        winner: Player,
+    ) -> bool:
+        """Require full objective control for objective-control victories."""
+        victory = getattr(game, "victory", None)
+        if victory is None or victory.method != self.OBJECTIVE_CONTROL:
+            return True
+        if not self._player_matches_side(winner, victory.scoring_side):
+            return False
+
+        board = game.get_board()
+        return all(
+            any(
+                unit.get_coords() == objective.coords
+                for unit in board.get_units_for_player(winner)
+            )
+            for objective in board.get_objectives()
+        )
+
+    def _player_matches_side(self, player: Player, scoring_side: str) -> bool:
+        return any(
+            scoring_side in (faction.id, faction.name)
+            for faction in player.factions
+        )
+
+    def _elimination_message(self, game: Game, winner: Player) -> str:
+        victory = getattr(game, "victory", None)
+        if victory is not None and victory.method == self.OBJECTIVE_CONTROL:
+            return (
+                f"{winner.name} wins by eliminating all enemy units and "
+                "controlling all objectives."
+            )
+        return f"{winner.name} wins by eliminating all enemy units."
 
     def _score_winner(self, game: Game) -> Player | None:
         players = game.get_players() if hasattr(game, "get_players") else []

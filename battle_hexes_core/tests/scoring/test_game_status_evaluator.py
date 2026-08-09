@@ -2,6 +2,7 @@ import unittest
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
+from battle_hexes_core.game.objective import Objective
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.scenario.scenario import ScenarioVictory
 from battle_hexes_core.scoring.game_status_evaluator import GameStatusEvaluator
@@ -55,6 +56,10 @@ class TestGameStatusEvaluator(unittest.TestCase):
         self.assertEqual(status.reason, "unit_elimination")
         self.assertEqual(status.winner_player_name, "Alice")
         self.assertEqual(status.winner_faction_id, "f1")
+        self.assertEqual(
+            status.message,
+            "Alice wins by eliminating all enemy units.",
+        )
 
     def test_completed_draw_when_all_players_are_eliminated(self):
         self.unit_one.set_coords(None, None)
@@ -66,6 +71,58 @@ class TestGameStatusEvaluator(unittest.TestCase):
         self.assertEqual(status.reason, "draw")
         self.assertIsNone(status.winner_player_name)
         self.assertIsNone(status.winner_faction_id)
+
+    def test_objective_control_does_not_end_on_elimination_alone(self):
+        self.game.victory = ScenarioVictory(
+            method="objective_control",
+            scoring_side="Alpha",
+        )
+        self.board.get_hex(0, 1).objectives.append(
+            Objective(coords=(0, 1), points=1, type="occupy")
+        )
+        self.unit_two.set_coords(None, None)
+
+        status = self.evaluator.evaluate(self.game)
+
+        self.assertEqual(status.state, "in_progress")
+        self.assertIsNone(status.winner_player_name)
+
+    def test_objective_control_ends_when_enemies_eliminated_and_all_held(self):
+        self.game.victory = ScenarioVictory(
+            method="objective_control",
+            scoring_side="Alpha",
+        )
+        self.board.get_hex(0, 0).objectives.append(
+            Objective(coords=(0, 0), points=1, type="occupy")
+        )
+        self.unit_two.set_coords(None, None)
+
+        status = self.evaluator.evaluate(self.game)
+
+        self.assertEqual(status.state, "completed")
+        self.assertEqual(status.reason, "unit_elimination")
+        self.assertEqual(status.winner_player_name, "Alice")
+        self.assertEqual(
+            status.message,
+            (
+                "Alice wins by eliminating all enemy units and controlling "
+                "all objectives."
+            ),
+        )
+
+    def test_objective_control_does_not_give_elimination_win_to_other_side(
+        self,
+    ):
+        self.game.victory = ScenarioVictory(
+            method="objective_control",
+            scoring_side="Alpha",
+        )
+        self.unit_one.set_coords(None, None)
+
+        status = self.evaluator.evaluate(self.game)
+
+        self.assertEqual(status.state, "in_progress")
+        self.assertIsNone(status.winner_player_name)
 
     def test_completed_at_turn_limit_with_score_winner(self):
         self.game.turn_limit = 1
