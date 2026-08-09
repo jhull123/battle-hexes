@@ -25,6 +25,9 @@ class SparseBoard(ApiBaseModel):
     last_combat_results: Optional[List[CombatResultSchema]] = None
     scores: Optional[dict[str, int]] = None
     game_status: Optional[GameStatus] = None
+    active_player: Optional[str] = None
+    current_phase: Optional[str] = None
+    pending_combats: List[dict[str, List[str]]] = Field(default_factory=list)
 
     def add_unit(self, unit: SparseUnit) -> None:
         self.units.append(unit)
@@ -49,6 +52,23 @@ class SparseBoard(ApiBaseModel):
         if status is None:
             status = game.get_game_status()
         sparse_board.game_status = GameStatus.from_core(status)
+        current_player = (
+            game.get_current_player()
+            if hasattr(game, "get_current_player")
+            else None
+        )
+        player_name = getattr(current_player, "name", None)
+        sparse_board.active_player = (
+            player_name if isinstance(player_name, str) else None
+        )
+        phase = getattr(game, "current_phase", None)
+        sparse_board.current_phase = (
+            phase if isinstance(phase, str) else "movement"
+        )
+        combats = getattr(game, "pending_combats", None)
+        sparse_board.pending_combats = (
+            combats if isinstance(combats, list) else []
+        )
         if include_scores:
             scores = game.get_score_tracker().get_scores()
             sparse_board.scores = scores if isinstance(scores, dict) else {}

@@ -14,6 +14,7 @@ export class Game {
   #turnLimit;
   #turnNumber;
   #gameStatus;
+  #pendingCombats;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
@@ -22,10 +23,12 @@ export class Game {
     turnLimit = null,
     turnNumber = 1,
     gameStatus = null,
+    currentPhase = null,
+    pendingCombats = null,
   } = {}) {
     this.#id = id;
     this.#phases = phases;
-    this.#currentPhase = phases[0];
+    this.#currentPhase = this.#phaseFromApi(currentPhase) ?? phases[0];
     this.#players = players;
 
     this.#board = board;
@@ -42,6 +45,7 @@ export class Game {
     this.#turnLimit = Number.isInteger(turnLimit) && turnLimit > 0 ? turnLimit : null;
     this.#turnNumber = Number.isInteger(turnNumber) && turnNumber > 0 ? turnNumber : 1;
     this.#gameStatus = this.#normalizeGameStatus(gameStatus);
+    this.#pendingCombats = Array.isArray(pendingCombats) ? [...pendingCombats] : null;
     this.#board.setGameplayBlockedProvider?.(() => this.isGameOver());
   }
 
@@ -60,7 +64,7 @@ export class Game {
     } else {
       this.#currentPhase = this.#phases[newPhaseIdx];
       if (this.#currentPhase.toLowerCase() === 'combat'
-          && !this.#board.hasCombat()) {
+          && !this.hasPendingCombat()) {
         return this.endPhase();
       }
       return false;
@@ -158,6 +162,18 @@ export class Game {
   }
 
   applyApiState(responseData = {}) {
+    const state = responseData?.game ?? responseData?.sparseBoard ?? responseData;
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'currentPhase')) {
+      this.#currentPhase = this.#phaseFromApi(state.currentPhase) ?? this.#currentPhase;
+    }
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'activePlayer')) {
+      this.#players.setCurrentPlayer(state.activePlayer);
+    }
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'pendingCombats')) {
+      this.#pendingCombats = Array.isArray(state.pendingCombats)
+        ? [...state.pendingCombats]
+        : [];
+    }
     if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'scores')) {
       this.updateScores(responseData.scores);
     }
@@ -172,6 +188,22 @@ export class Game {
     if (gameStatus !== undefined) {
       this.updateGameStatus(gameStatus);
     }
+  }
+
+  hasPendingCombat() {
+    return this.#pendingCombats === null
+      ? this.#board.hasCombat()
+      : this.#pendingCombats.length > 0;
+  }
+
+  #phaseFromApi(phase) {
+    if (typeof phase !== 'string') {
+      return null;
+    }
+    const normalized = phase.replaceAll('_', ' ').toLowerCase();
+    return this.#phases.find(
+      (candidate) => candidate.toLowerCase() === normalized,
+    ) ?? null;
   }
 
   isGameOver() {

@@ -16,11 +16,12 @@ export class GameCreator {
     const playerTypeIds = this.#extractPlayerTypeIds(gameData);
     const turnLimit = this.#extractTurnLimit(gameData);
     const turnNumber = this.#extractTurnNumber(gameData);
+    const players = this.#getPlayers(gameData);
 
     const game = new Game(
       gameData.id,
       ['Movement', 'Combat', 'End Turn'],
-      this.#getPlayers(gameData),
+      players,
       board,
       {
         scenarioId,
@@ -29,10 +30,13 @@ export class GameCreator {
         turnLimit,
         turnNumber,
         gameStatus: gameData?.gameStatus ?? null,
+        currentPhase: gameData?.currentPhase,
+        pendingCombats: gameData?.pendingCombats ?? [],
       },
     );
     this.#addTerrain(board, gameData.board);
     this.#addUnits(board, game.getPlayers(), gameData.board);
+    board.refreshCombat();
     this.#addRoads(board, gameData);
     this.#addObjectives(board, gameData);
     return game;
@@ -107,7 +111,7 @@ export class GameCreator {
           playerData.name, playerData.type, this.#getFactions(playerData)));
     }
 
-    return new Players(players);
+    return new Players(players, gameData.activePlayer);
   }
 
   #getFactions(playerData) {

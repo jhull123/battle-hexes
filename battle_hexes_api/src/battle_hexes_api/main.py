@@ -156,6 +156,7 @@ def resolve_combat(
     sparse_board.apply_to_board(game.get_board())
 
     results = Combat(game).resolve_combat()
+    game.end_combat()
     logger.info('Combat results: %s', results)
 
     scorer = ObjectiveScorer()
@@ -221,6 +222,7 @@ def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     scorer = ObjectiveScorer()
     scorer.award_hold_objectives(game)
+    game.end_movement()
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
