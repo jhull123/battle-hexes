@@ -66,6 +66,27 @@ describe("createGame", () => {
     expect(game.getPhases()[2]).toBe("End Turn");
   });
 
+  test('restores authoritative combat phase and active CPU player', () => {
+    const gameCreator = new GameCreator();
+    const gameData = {
+      id: 'reload-game',
+      activePlayer: 'Player 2',
+      currentPhase: 'combat',
+      pendingCombats: [{ attackerUnitIds: ['red-unit'], defenderUnitIds: ['blue-unit'] }],
+      players: [
+        { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#f00' }] },
+        { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#00f' }] },
+      ],
+      board: { rows: 2, columns: 2, units: [] },
+    };
+
+    const restoredGame = gameCreator.createGame(gameData);
+
+    expect(restoredGame.getCurrentPhase()).toBe('Combat');
+    expect(restoredGame.getCurrentPlayer().getName()).toBe('Player 2');
+    expect(restoredGame.hasPendingCombat()).toBe(true);
+  });
+
   test("board size is set", () => {
     expect(game.getBoard().getHex(9, 9)).toBeInstanceOf(Hex); 
   });

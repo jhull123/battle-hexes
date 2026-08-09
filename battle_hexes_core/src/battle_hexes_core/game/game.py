@@ -42,6 +42,8 @@ class Game:
             else None
         )
         self.turn_number = 1
+        self.current_phase = "movement"
+        self.pending_combats = []
         self.defensive_fire_resolver = DefensiveFireResolver(board)
         self._refresh_defensive_fire_availability()
         self.game_status = None
@@ -146,20 +148,51 @@ class Game:
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
+        self._reset_movement_for_new_turn(self.current_player)
         self._reset_defensive_fire_off_turn_usage(self.current_player)
         self._refresh_defensive_fire_availability()
         self.update_game_status()
         return self.current_player
 
+    def _reset_movement_for_new_turn(self, player: Player) -> None:
+        for unit in self.get_board().get_units_for_player(player):
+            unit.current_turn_movement_points_remaining = unit.get_move()
+
     def end_turn(self) -> EndTurnResult:
         """Advance the turn and return the resulting core state."""
         previous_player = self.get_current_player() if self.players else None
         current_player = self.next_player()
+        self.current_phase = "movement"
+        self.pending_combats = []
         return EndTurnResult(
             previous_player=previous_player,
             current_player=current_player,
             game_status=self.get_game_status(),
         )
+
+    def end_movement(self) -> None:
+        """Finish movement and persist the combats that must be resolved."""
+        from battle_hexes_core.combat.combat import Combat
+
+        self.pending_combats = [
+            {
+                "attacker_unit_ids": [
+                    str(unit.get_id()) for unit in attackers
+                ],
+                "defender_unit_ids": [
+                    str(unit.get_id()) for unit in defenders
+                ],
+            }
+            for attackers, defenders in Combat(self).find_combat()
+        ]
+        self.current_phase = (
+            "combat" if self.pending_combats else "end_turn"
+        )
+
+    def end_combat(self) -> None:
+        """Record that all pending combat has been resolved."""
+        self.pending_combats = []
+        self.current_phase = "end_turn"
 
     def update_game_status(self):
         """Evaluate and store the current core game status."""

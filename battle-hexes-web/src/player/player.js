@@ -37,10 +37,12 @@ export class Players {
   #players;
   #currentPlayer;
 
-  constructor(players) {
+  constructor(players, activePlayerName = null) {
     this.#players = players;
     if (players) {
-      this.#currentPlayer = players[0];
+      this.#currentPlayer = players.find(
+        (player) => player.getName() === activePlayerName,
+      ) ?? players[0];
     } else {
       throw new Error('Players cannot be null or undefined.');
     }
@@ -62,6 +64,15 @@ export class Players {
 
   getAllPlayers() {
     return this.#players;
+  }
+
+  setCurrentPlayer(playerName) {
+    const player = this.#players.find(
+      (candidate) => candidate.getName() === playerName,
+    );
+    if (player) {
+      this.#currentPlayer = player;
+    }
   }
 }
 

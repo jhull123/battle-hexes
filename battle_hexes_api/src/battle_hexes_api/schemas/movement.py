@@ -89,6 +89,9 @@ class MovementResponseModel(ApiBaseModel):
     scores: dict[str, int] = Field(default_factory=dict)
     turn_limit: int | None = None
     turn_number: int = 1
+    active_player: str = ""
+    current_phase: str = "movement"
+    pending_combats: list[dict[str, list[str]]] = Field(default_factory=list)
 
     @classmethod
     def from_movement_result(
@@ -108,6 +111,12 @@ class MovementResponseModel(ApiBaseModel):
             game,
             game_status=getattr(movement_resolution, "game_status", None),
         )
+        current_player = (
+            game.get_current_player()
+            if hasattr(game, "get_current_player")
+            else None
+        )
+        player_name = getattr(current_player, "name", None)
         return cls(
             game=GameModel.from_game(game),
             plans=[MovementPlanModel.from_plan(plan) for plan in plans],
@@ -119,4 +128,19 @@ class MovementResponseModel(ApiBaseModel):
             scores=game.get_score_tracker().get_scores(),
             turn_limit=getattr(game, "turn_limit", None),
             turn_number=getattr(game, "turn_number", 1),
+            active_player=(
+                player_name
+                if isinstance(player_name, str)
+                else ""
+            ),
+            current_phase=(
+                game.current_phase
+                if isinstance(getattr(game, "current_phase", None), str)
+                else "movement"
+            ),
+            pending_combats=(
+                game.pending_combats
+                if isinstance(getattr(game, "pending_combats", None), list)
+                else []
+            ),
         )

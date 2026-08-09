@@ -3,7 +3,7 @@
 from typing import List, TYPE_CHECKING
 import uuid
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from .api_model import ApiBaseModel
 
@@ -34,6 +34,9 @@ class GameModel(ApiBaseModel):
     stacking_limit: int | None = None
     player_type_ids: list[str] | None = None
     game_status: GameStatus | None = None
+    active_player: str = ""
+    current_phase: str = "movement"
+    pending_combats: list[dict[str, list[str]]] = Field(default_factory=list)
 
     @classmethod
     def from_game(
@@ -60,4 +63,7 @@ class GameModel(ApiBaseModel):
             stacking_limit=getattr(scenario, "stacking_limit", None),
             player_type_ids=getattr(game, "player_type_ids", None),
             game_status=GameStatus.from_core(game.get_game_status()),
+            active_player=game.get_current_player().name,
+            current_phase=getattr(game, "current_phase", "movement"),
+            pending_combats=getattr(game, "pending_combats", []),
         )

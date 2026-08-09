@@ -174,7 +174,7 @@ export class Menu {
       const phaseElem = document.createElement('span');
       phaseElem.id = 'phasesList' + this.#game.getPhases()[i];
       
-      if (i === 0) {
+      if (this.#game.getPhases()[i] === this.#game.getCurrentPhase()) {
         phaseElem.classList.add('current-phase');
       }
 
@@ -190,7 +190,7 @@ export class Menu {
   }
 
   #initPhaseEndButton() {
-    document.getElementById('endPhaseBtn').textContent = 'End ' + this.#game.getPhases()[0];
+    document.getElementById('endPhaseBtn').textContent = 'End ' + this.#game.getCurrentPhase();
   }
 
   updateMenu() {
@@ -375,7 +375,10 @@ export class Menu {
   #updateCombatIndicator() {
     const combatElem = document.getElementById("phasesListCombat");
 
-    if (this.#game.getBoard().hasCombat()) {
+    const isCombatPhase = this.#game.getCurrentPhase().toLowerCase() === 'combat';
+    const hasPendingCombat = this.#game.hasPendingCombat?.() ?? false;
+    const hasEngagedUnits = this.#game.getBoard().hasCombat();
+    if (isCombatPhase || hasPendingCombat || hasEngagedUnits) {
       combatElem.classList.remove("disabled-phase");
     } else {
       combatElem.classList.add("disabled-phase");
@@ -401,15 +404,12 @@ export class Menu {
   #handleCombatPhase() {
     console.log('Resolving combat.');
     this.#game.resolveCombat(this.#postCombat).then(() => {
-      if (!this.#game.isGameOver()) {
-        this.#finishPhase();
-      } else {
-        this.updateMenu();
-      }
+      this.updateMenu();
+      eventBus.emit('redraw');
     });
   }
 
-  #finishPhase() {
+  async #finishPhase() {
     console.log('Ending phase ' + this.#game.getCurrentPhase() + '.');
 
     const endTurnPayload = this.#game.getCurrentPhase().toLowerCase() === 'end turn'
@@ -417,13 +417,18 @@ export class Menu {
       : null;
 
     if (this.#game.getCurrentPhase().toLowerCase() === 'movement') {
-      this.#service.endMovement(
-        this.#game.getId(),
-        this.#game.getBoard().sparseBoard()
-      ).then((responseData) => {
+      try {
+        const responseData = await this.#service.endMovement(
+          this.#game.getId(),
+          this.#game.getBoard().sparseBoard(),
+        );
         this.#applyGameStateResponse(responseData);
         this.updateMenu();
-      }).catch(err => console.error('Failed to update movement state', err));
+        eventBus.emit('redraw');
+      } catch (err) {
+        console.error('Failed to update movement state', err);
+      }
+      return;
     }
     const switchedPlayers = this.#game.endPhase();
     this.updateMenu();

@@ -44,6 +44,35 @@ class TestGame(unittest.TestCase):
         self.assertIs(game.get_board(), board,
                       "Game board should be initialized")
 
+    def test_end_movement_persists_adjacent_combat(self):
+        board, player1, player2, faction1, faction2, game = (
+            self._make_two_player_game()
+        )
+        attacker = Unit(
+            "a", "attacker", faction1, player1, "infantry", 2, 2, 4
+        )
+        defender = Unit(
+            "d", "defender", faction2, player2, "infantry", 2, 2, 4
+        )
+        board.add_unit(attacker, 1, 1)
+        board.add_unit(defender, 1, 2)
+
+        game.end_movement()
+
+        self.assertEqual(game.current_phase, "combat")
+        self.assertEqual(game.pending_combats, [{
+            "attacker_unit_ids": ["a"],
+            "defender_unit_ids": ["d"],
+        }])
+
+    def test_end_movement_skips_combat_without_engagement(self):
+        _, _, _, _, _, game = self._make_two_player_game()
+
+        game.end_movement()
+
+        self.assertEqual(game.current_phase, "end_turn")
+        self.assertEqual(game.pending_combats, [])
+
     def test_next_player_cycles_through_players(self):
         # Create mock players
         class MockPlayer:
@@ -119,9 +148,11 @@ class TestGame(unittest.TestCase):
         board.add_unit(unit1, 0, 0)
         board.add_unit(unit2, 4, 4)
         game = Game([player1, player2], board)
+        unit2.current_turn_movement_points_remaining = 0
 
         game.next_player()
 
+        self.assertEqual(unit2.current_turn_movement_points_remaining, 3)
         self.assertTrue(unit1.has_defensive_fire(game.get_current_player()))
         self.assertFalse(unit2.has_defensive_fire(game.get_current_player()))
 

@@ -50,7 +50,9 @@ export class CpuPlayer extends Player {
         );
         game.applyApiState(endMovementResponse);
 
-        game.endPhase();
+        if (game.getCurrentPhase() === "Movement") {
+          game.endPhase();
+        }
         eventBus.emit("redraw");
         eventBus.emit("menuUpdate");
 
@@ -64,7 +66,9 @@ export class CpuPlayer extends Player {
           setTimeout(resolve, CpuPlayer.PHASE_DELAY_MS),
         );
         await game.resolveCombat();
-        game.endPhase();
+        if (game.getCurrentPhase() === "Combat") {
+          game.endPhase();
+        }
         eventBus.emit("redraw");
         eventBus.emit("menuUpdate");
 
@@ -85,7 +89,9 @@ export class CpuPlayer extends Player {
       if (endTurnResponse) {
         game.applyApiState(endTurnResponse);
       }
-      game.endPhase();
+      if (game.getCurrentPhase() === "End Turn") {
+        game.endPhase();
+      }
       eventBus.emit("redraw");
       eventBus.emit("menuUpdate");
       if (!game.isGameOver()) {
