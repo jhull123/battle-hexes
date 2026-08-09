@@ -56,6 +56,10 @@ class TestGameStatusEvaluator(unittest.TestCase):
         self.assertEqual(status.reason, "unit_elimination")
         self.assertEqual(status.winner_player_name, "Alice")
         self.assertEqual(status.winner_faction_id, "f1")
+        self.assertEqual(
+            status.message,
+            "Alice wins by eliminating all enemy units.",
+        )
 
     def test_completed_draw_when_all_players_are_eliminated(self):
         self.unit_one.set_coords(None, None)
@@ -98,6 +102,13 @@ class TestGameStatusEvaluator(unittest.TestCase):
         self.assertEqual(status.state, "completed")
         self.assertEqual(status.reason, "unit_elimination")
         self.assertEqual(status.winner_player_name, "Alice")
+        self.assertEqual(
+            status.message,
+            (
+                "Alice wins by eliminating all enemy units and controlling "
+                "all objectives."
+            ),
+        )
 
     def test_objective_control_does_not_give_elimination_win_to_other_side(
         self,

@@ -54,10 +54,7 @@ class GameStatusEvaluator:
                 game,
                 elimination_winner,
                 self.UNIT_ELIMINATION,
-                (
-                    f"{elimination_winner.name} wins by eliminating "
-                    "all enemy units."
-                ),
+                self._elimination_message(game, elimination_winner),
             )
 
         if self._turn_limit_reached(game):
@@ -120,6 +117,15 @@ class GameStatusEvaluator:
             scoring_side in (faction.id, faction.name)
             for faction in player.factions
         )
+
+    def _elimination_message(self, game: Game, winner: Player) -> str:
+        victory = getattr(game, "victory", None)
+        if victory is not None and victory.method == self.OBJECTIVE_CONTROL:
+            return (
+                f"{winner.name} wins by eliminating all enemy units and "
+                "controlling all objectives."
+            )
+        return f"{winner.name} wins by eliminating all enemy units."
 
     def _score_winner(self, game: Game) -> Player | None:
         players = game.get_players() if hasattr(game, "get_players") else []
