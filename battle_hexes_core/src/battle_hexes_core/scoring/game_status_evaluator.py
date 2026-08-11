@@ -32,7 +32,7 @@ class GameStatusEvaluator:
     UNIT_ELIMINATION = "unit_elimination"
     DRAW = "draw"
 
-    def evaluate(self, game: Game) -> GameStatus:
+    def evaluate(self, game: Game, *, turn_ended: bool = False) -> GameStatus:
         """Return the current status for ``game``."""
         if not self._active_players(game):
             return self._completed(
@@ -57,7 +57,7 @@ class GameStatusEvaluator:
                 self._elimination_message(game, elimination_winner),
             )
 
-        if self._turn_limit_reached(game):
+        if self._turn_limit_reached(game, turn_ended):
             winner = self._score_winner(game)
             reason = self._turn_limit_reason(game)
             message = self._score_message(game, winner)
@@ -65,7 +65,7 @@ class GameStatusEvaluator:
 
         return GameStatus(state=self.IN_PROGRESS)
 
-    def _turn_limit_reached(self, game: Game) -> bool:
+    def _turn_limit_reached(self, game: Game, turn_ended: bool) -> bool:
         turn_limit = getattr(game, "turn_limit", None)
         if turn_limit is None:
             turn_limit = game.get_turn_limit()
@@ -77,7 +77,14 @@ class GameStatusEvaluator:
             and isinstance(turn_number, int)
         ):
             return False
-        return turn_number > turn_limit
+        if turn_number > turn_limit:
+            return True
+        return (
+            turn_ended
+            and turn_number == turn_limit
+            and bool(game.get_players())
+            and game.get_current_player() is game.get_players()[-1]
+        )
 
     def _turn_limit_reason(self, game: Game) -> str:
         victory = getattr(game, "victory", None)

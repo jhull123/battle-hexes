@@ -34,8 +34,8 @@ class GameModel(ApiBaseModel):
     stacking_limit: int | None = None
     player_type_ids: list[str] | None = None
     game_status: GameStatus | None = None
-    active_player: str = ""
-    current_phase: str = "movement"
+    active_player: str | None = None
+    current_phase: str | None = None
     pending_combats: list[dict[str, list[str]]] = Field(default_factory=list)
 
     @classmethod
@@ -63,7 +63,7 @@ class GameModel(ApiBaseModel):
             stacking_limit=getattr(scenario, "stacking_limit", None),
             player_type_ids=getattr(game, "player_type_ids", None),
             game_status=GameStatus.from_core(game.get_game_status()),
-            active_player=game.get_current_player().name,
-            current_phase=getattr(game, "current_phase", "movement"),
+            active_player=getattr(game.get_current_player(), "name", None),
+            current_phase=getattr(game, "current_phase", None),
             pending_combats=getattr(game, "pending_combats", []),
         )

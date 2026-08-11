@@ -28,8 +28,13 @@ export class Game {
   } = {}) {
     this.#id = id;
     this.#phases = phases;
-    this.#currentPhase = this.#phaseFromApi(currentPhase) ?? phases[0];
+    this.#currentPhase = gameStatus?.state === 'completed'
+      ? null
+      : this.#phaseFromApi(currentPhase) ?? phases[0];
     this.#players = players;
+    if (gameStatus?.state === 'completed') {
+      this.#players.setCurrentPlayer(null);
+    }
 
     this.#board = board;
     this.#board.players = players;
@@ -50,6 +55,9 @@ export class Game {
   }
 
   endPhase() {
+    if (this.isGameOver()) {
+      return false;
+    }
     const newPhaseIdx = this.#phases.indexOf(this.#currentPhase) + 1;
     if (newPhaseIdx >= this.#phases.length) {
       this.#currentPhase = this.#phases[0];
@@ -163,14 +171,25 @@ export class Game {
 
   applyApiState(responseData = {}) {
     const state = responseData?.game ?? responseData?.sparseBoard ?? responseData;
+    const gameStatus = this.#extractGameStatus(responseData);
+    if (gameStatus !== undefined) {
+      this.updateGameStatus(gameStatus);
+    }
+    if (this.isGameOver()) {
+      this.#currentPhase = null;
+      this.#players.setCurrentPlayer(null);
+      this.#pendingCombats = [];
+    }
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'currentPhase')) {
-      this.#currentPhase = this.#phaseFromApi(state.currentPhase) ?? this.#currentPhase;
+      this.#currentPhase = state.currentPhase === null
+        ? null
+        : this.#phaseFromApi(state.currentPhase) ?? this.#currentPhase;
     }
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'activePlayer')) {
       const previousPlayer = this.#players.getCurrentPlayer();
       this.#players.setCurrentPlayer(state.activePlayer);
       const activePlayer = this.#players.getCurrentPlayer();
-      if (activePlayer !== previousPlayer) {
+      if (activePlayer && activePlayer !== previousPlayer) {
         this.#board.resetMovesRemaining(activePlayer);
       }
     }
@@ -188,10 +207,6 @@ export class Game {
         turnLimit: responseData?.turnLimit,
         turnNumber: responseData?.turnNumber,
       });
-    }
-    const gameStatus = this.#extractGameStatus(responseData);
-    if (gameStatus !== undefined) {
-      this.updateGameStatus(gameStatus);
     }
   }
 
