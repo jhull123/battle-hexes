@@ -43,12 +43,22 @@ export class CpuPlayer extends Player {
 
         applyMovementResponse(game.getBoard(), responseData);
         game.applyApiState(responseData);
+        if (game.isGameOver()) {
+          eventBus.emit("redraw");
+          eventBus.emit("menuUpdate");
+          return;
+        }
 
         const endMovementResponse = await this.service.endMovement(
           game.getId(),
           game.getBoard().sparseBoard(),
         );
         game.applyApiState(endMovementResponse);
+        if (game.isGameOver()) {
+          eventBus.emit("redraw");
+          eventBus.emit("menuUpdate");
+          return;
+        }
 
         if (game.getCurrentPhase() === "Movement") {
           game.endPhase();

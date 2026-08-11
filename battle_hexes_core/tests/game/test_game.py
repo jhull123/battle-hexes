@@ -73,6 +73,66 @@ class TestGame(unittest.TestCase):
         self.assertEqual(game.current_phase, "end_turn")
         self.assertEqual(game.pending_combats, [])
 
+    def test_final_player_ends_final_turn_without_rotating(self):
+        board, player1, player2, faction1, faction2, game = (
+            self._make_two_player_game()
+        )
+        board.add_unit(
+            Unit("u1", "one", faction1, player1, "infantry", 1, 1, 1),
+            0, 0,
+        )
+        board.add_unit(
+            Unit("u2", "two", faction2, player2, "infantry", 1, 1, 1),
+            4, 4,
+        )
+        game.update_game_status()
+        game.turn_limit = 8
+        game.turn_number = 8
+        game.current_player = player2
+        game.current_phase = "end_turn"
+        game.pending_combats = [{"attacker_unit_ids": ["u2"]}]
+        game.get_score_tracker().set_score(player1, 3)
+        game.get_score_tracker().set_score(player2, 1)
+
+        result = game.end_turn()
+
+        self.assertEqual(game.turn_number, 8)
+        self.assertIsNone(game.get_current_player())
+        self.assertIsNone(game.current_phase)
+        self.assertEqual(game.pending_combats, [])
+        self.assertIsNone(result.current_player)
+        self.assertEqual(result.game_status.state, "completed")
+        self.assertEqual(result.game_status.winner_player_name, "P1")
+        self.assertEqual(
+            game.get_score_tracker().get_scores(),
+            {"P1": 3, "P2": 1},
+        )
+        with self.assertRaisesRegex(RuntimeError, "already completed"):
+            game.end_turn()
+
+    def test_earlier_player_on_final_turn_advances_normally(self):
+        board, player1, player2, faction1, faction2, game = (
+            self._make_two_player_game()
+        )
+        board.add_unit(
+            Unit("u1", "one", faction1, player1, "infantry", 1, 1, 1),
+            0, 0,
+        )
+        board.add_unit(
+            Unit("u2", "two", faction2, player2, "infantry", 1, 1, 1),
+            4, 4,
+        )
+        game.update_game_status()
+        game.turn_limit = 8
+        game.turn_number = 8
+
+        result = game.end_turn()
+
+        self.assertIs(result.current_player, player2)
+        self.assertEqual(game.turn_number, 8)
+        self.assertEqual(game.current_phase, "movement")
+        self.assertEqual(result.game_status.state, "in_progress")
+
     def test_next_player_cycles_through_players(self):
         # Create mock players
         class MockPlayer:

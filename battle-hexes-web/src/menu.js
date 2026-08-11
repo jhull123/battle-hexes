@@ -190,7 +190,8 @@ export class Menu {
   }
 
   #initPhaseEndButton() {
-    document.getElementById('endPhaseBtn').textContent = 'End ' + this.#game.getCurrentPhase();
+    const phase = this.#game.getCurrentPhase();
+    document.getElementById('endPhaseBtn').textContent = phase ? `End ${phase}` : 'Game Complete';
   }
 
   updateMenu() {
@@ -375,7 +376,7 @@ export class Menu {
   #updateCombatIndicator() {
     const combatElem = document.getElementById("phasesListCombat");
 
-    const isCombatPhase = this.#game.getCurrentPhase().toLowerCase() === 'combat';
+    const isCombatPhase = this.#game.getCurrentPhase()?.toLowerCase() === 'combat';
     const hasPendingCombat = this.#game.hasPendingCombat?.() ?? false;
     const hasEngagedUnits = this.#game.getBoard().hasCombat();
     if (isCombatPhase || hasPendingCombat || hasEngagedUnits) {
@@ -453,7 +454,8 @@ export class Menu {
 
   #disableOrEnableActionButton() {
     const endPhaseBtn = document.getElementById('endPhaseBtn');
-    endPhaseBtn.disabled = !this.#game.getCurrentPlayer().isHuman() || this.#game.isGameOver();
+    endPhaseBtn.disabled = this.#game.isGameOver()
+      || !this.#game.getCurrentPlayer().isHuman();
   }
 
   #getStoredShowHexCoords() {
@@ -520,10 +522,12 @@ export class Menu {
   }
 
   #setCurrentTurn() {
-    document.getElementById('currentTurnLabel').innerHTML = this.#game.getCurrentPlayer().getName();
-    document.getElementById('endPhaseBtn').textContent = 
-        (this.#game.getCurrentPhase().startsWith('End ')? '' : 'End ') + 
-            this.#game.getCurrentPhase();
+    const player = this.#game.getCurrentPlayer();
+    const phase = this.#game.getCurrentPhase();
+    document.getElementById('currentTurnLabel').textContent = player?.getName() ?? '';
+    document.getElementById('endPhaseBtn').textContent = phase
+      ? `${phase.startsWith('End ') ? '' : 'End '}${phase}`
+      : 'Game Complete';
   }
 
   #updatePhasesStyling() {

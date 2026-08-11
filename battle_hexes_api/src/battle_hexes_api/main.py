@@ -141,6 +141,16 @@ def _call_end_game_callbacks(game) -> None:
             player.end_game_cb()
 
 
+def _reject_completed_game(game) -> None:
+    """Reject gameplay requests before any submitted state is applied."""
+    status = game.get_game_status()
+    if getattr(status, "state", None) == "completed":
+        raise HTTPException(
+            status_code=409,
+            detail="Game is already completed",
+        )
+
+
 @app.get('/games/{game_id}')
 def get_game(game_id: str):
     return _serialize_game(_get_game_or_404(game_id))
@@ -153,6 +163,7 @@ def resolve_combat(
 ) -> dict:
     logger.info("We got game: %s", game_id)
     game = _get_game_or_404(game_id)
+    _reject_completed_game(game)
     sparse_board.apply_to_board(game.get_board())
 
     results = Combat(game).resolve_combat()
@@ -182,6 +193,7 @@ def resolve_combat(
 def generate_movement(game_id: str):
     """Generate and apply movement plans for the current player."""
     game = _get_game_or_404(game_id)
+    _reject_completed_game(game)
     current_player = game.get_current_player()
     logger.info("Generating movement for player: %s", current_player.name)
     plans = current_player.movement()
@@ -199,6 +211,7 @@ def generate_movement(game_id: str):
 def resolve_human_move(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Resolve a human move during the movement phase without ending it."""
     game = _get_game_or_404(game_id)
+    _reject_completed_game(game)
 
     plans = sparse_board.to_movement_plans(game.get_board())
     movement_resolution = game.apply_movement_plans(plans)
@@ -216,6 +229,7 @@ def resolve_human_move(game_id: str, sparse_board: SparseBoard = Body(...)):
 def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Update game state at the end of a player's movement phase."""
     game = _get_game_or_404(game_id)
+    _reject_completed_game(game)
 
     plans = sparse_board.to_movement_plans(game.get_board())
     movement_resolution = game.apply_movement_plans(plans)
@@ -237,6 +251,7 @@ def end_movement(game_id: str, sparse_board: SparseBoard = Body(...)):
 def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     """Update game state at the end of a player's turn."""
     game = _get_game_or_404(game_id)
+    _reject_completed_game(game)
 
     # sync the server-side board state with the client provided one
     sparse_board.apply_to_board(game.get_board())
@@ -247,7 +262,7 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
     logger.info(
         "The turn has ended for player: %s. Now it's %s's turn.",
         end_turn_result.previous_player.name,
-        end_turn_result.current_player.name,
+        getattr(end_turn_result.current_player, "name", "no one"),
     )
 
     game_repo.update_game(game)
