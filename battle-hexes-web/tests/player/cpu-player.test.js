@@ -242,10 +242,7 @@ describe('CpuPlayer', () => {
     await Promise.resolve();
 
     expect(mockService.generateCpuMovement).toHaveBeenCalledWith(game.getId());
-    expect(mockService.endMovement).toHaveBeenCalledWith(
-      game.getId(),
-      game.getBoard().sparseBoard()
-    );
+    expect(mockService.endMovement).not.toHaveBeenCalled();
 
     await jest.runOnlyPendingTimersAsync();
     await Promise.resolve();
@@ -253,6 +250,6 @@ describe('CpuPlayer', () => {
     await playPromise;
 
     expect(mockService.generateCpuMovement).toHaveBeenCalledTimes(1);
-    expect(mockService.endMovement).toHaveBeenCalledTimes(1);
+    expect(mockService.endMovement).not.toHaveBeenCalled();
   });
 });

@@ -67,6 +67,10 @@ export class Players {
   }
 
   setCurrentPlayer(playerName) {
+    if (playerName === null) {
+      this.#currentPlayer = null;
+      return;
+    }
     const player = this.#players.find(
       (candidate) => candidate.getName() === playerName,
     );

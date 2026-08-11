@@ -47,6 +47,7 @@ class Game:
         self.defensive_fire_resolver = DefensiveFireResolver(board)
         self._refresh_defensive_fire_availability()
         self.game_status = None
+        self._terminal = False
         self.update_game_status()
 
     def get_id(self):
@@ -72,6 +73,7 @@ class Game:
         plans: List["UnitMovementPlan"],
     ) -> MovementResolutionResult:
         """Apply movement plans incrementally and resolve defensive fire."""
+        self._require_in_progress()
         movement = MovementCalculator(self.get_board())
         resolution = MovementResolutionResult()
         for plan in plans:
@@ -80,7 +82,7 @@ class Game:
             self._apply_single_movement_plan(plan, movement, resolution)
         self._refresh_defensive_fire_availability()
         self.get_current_player().movement_cb()
-        resolution.game_status = self.update_game_status()
+        resolution.game_status = self.update_game_status(finalize=True)
         return resolution
 
     def _apply_single_movement_plan(
@@ -151,7 +153,7 @@ class Game:
         self._reset_movement_for_new_turn(self.current_player)
         self._reset_defensive_fire_off_turn_usage(self.current_player)
         self._refresh_defensive_fire_availability()
-        self.update_game_status()
+        self.update_game_status(finalize=True)
         return self.current_player
 
     def _reset_movement_for_new_turn(self, player: Player) -> None:
@@ -160,7 +162,19 @@ class Game:
 
     def end_turn(self) -> EndTurnResult:
         """Advance the turn and return the resulting core state."""
+        self._require_in_progress()
         previous_player = self.get_current_player() if self.players else None
+        self.update_game_status(turn_ended=True, finalize=True)
+        if self.is_game_over():
+            self._terminal = True
+            self.current_player = None
+            self.current_phase = None
+            self.pending_combats = []
+            return EndTurnResult(
+                previous_player=previous_player,
+                current_player=None,
+                game_status=self.get_game_status(),
+            )
         current_player = self.next_player()
         self.current_phase = "movement"
         self.pending_combats = []
@@ -172,6 +186,7 @@ class Game:
 
     def end_movement(self) -> None:
         """Finish movement and persist the combats that must be resolved."""
+        self._require_in_progress()
         from battle_hexes_core.combat.combat import Combat
 
         self.pending_combats = [
@@ -191,16 +206,32 @@ class Game:
 
     def end_combat(self) -> None:
         """Record that all pending combat has been resolved."""
+        self._require_in_progress()
         self.pending_combats = []
         self.current_phase = "end_turn"
 
-    def update_game_status(self):
+    def update_game_status(
+        self,
+        *,
+        turn_ended: bool = False,
+        finalize: bool = False,
+    ):
         """Evaluate and store the current core game status."""
         from battle_hexes_core.scoring.game_status_evaluator import (
             GameStatusEvaluator,
         )
 
-        self.game_status = GameStatusEvaluator().evaluate(self)
+        previous_state = getattr(self.game_status, "state", None)
+        self.game_status = GameStatusEvaluator().evaluate(
+            self,
+            turn_ended=turn_ended,
+        )
+        if (
+            finalize
+            and previous_state == "in_progress"
+            and self.game_status.state == "completed"
+        ):
+            self._terminal = True
         return self.game_status
 
     def get_game_status(self):
@@ -249,6 +280,8 @@ class Game:
 
     def is_game_over(self) -> bool:
         """Return True if zero/one players remain or turn limit was reached."""
+        if self._terminal:
+            return True
         if self.turn_limit is not None and self.turn_number > self.turn_limit:
             return True
 
@@ -258,3 +291,8 @@ class Game:
             if unit.get_coords() is not None
         }
         return len(active_players) <= 1
+
+    def _require_in_progress(self) -> None:
+        """Reject mutations after the game reaches a terminal state."""
+        if self._terminal:
+            raise RuntimeError("Game is already completed")

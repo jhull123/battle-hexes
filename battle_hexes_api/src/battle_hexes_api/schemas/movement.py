@@ -89,8 +89,8 @@ class MovementResponseModel(ApiBaseModel):
     scores: dict[str, int] = Field(default_factory=dict)
     turn_limit: int | None = None
     turn_number: int = 1
-    active_player: str = ""
-    current_phase: str = "movement"
+    active_player: str | None = None
+    current_phase: str | None = None
     pending_combats: list[dict[str, list[str]]] = Field(default_factory=list)
 
     @classmethod
@@ -131,12 +131,12 @@ class MovementResponseModel(ApiBaseModel):
             active_player=(
                 player_name
                 if isinstance(player_name, str)
-                else ""
+                else None
             ),
             current_phase=(
                 game.current_phase
                 if isinstance(getattr(game, "current_phase", None), str)
-                else "movement"
+                else None
             ),
             pending_combats=(
                 game.pending_combats
