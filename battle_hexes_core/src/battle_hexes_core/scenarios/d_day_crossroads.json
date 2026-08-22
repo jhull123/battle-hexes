@@ -157,6 +157,17 @@
       "defensive_fire_modifier": 1.33
     }
   ],
+  "reinforcements": [
+    {
+      "id": "wehrmacht_stug_column",
+      "units": ["StuG. III Zug A", "MG Trupp A"],
+      "arrival_turn": 3,
+      "entry_location": {
+        "mode": "fixed",
+        "coords": [0, 16]
+      }
+    }
+  ],
   "terrain_default": "open",
   "terrain_types": {
     "forest": {
@@ -186,13 +197,7 @@
     { "coords": [0, 11], "terrain": "rough" },
     { "coords": [0, 12], "terrain": "forest" },
     { "coords": [0, 15], "terrain": "forest" },
-    { 
-      "coords": [0, 16], 
-      "units": [
-        "StuG. III Zug A",
-        "MG Trupp A"
-      ] 
-    },
+    { "coords": [0, 16] },
     { "coords": [0, 17], "terrain": "forest" },
     { "coords": [1, 0], "terrain": "rough" },
     { "coords": [1, 7], "terrain": "forest" },
