@@ -8,8 +8,8 @@ player choice, random entry, zones, and other modes are out of scope.
 
 ## Scenario Contract
 
-Add an optional top-level `reinforcements` array to scenario JSON. Each entry
-defines one atomic group:
+Add support for an optional top-level `reinforcements` array to scenario JSON. 
+Each entry defines one atomic group:
 
 ```json
 {
@@ -35,12 +35,12 @@ defines one atomic group:
 
 Scenario loading must reject a reinforcement definition when:
 
-- its ID is duplicate or invalid;
+- its ID is duplicate or invalid (empty);
 - it has no units, references an unknown unit, or repeats a unit ID;
-- `arrival_turn` is not a positive integer;
+- `arrival_turn` is not a positive integer less than or equal to the turn limit (if defined);
 - its fixed coordinates are out of bounds; or
-- a referenced unit is also listed in `hex_data.units` or another
-  reinforcement group.
+- a referenced unit is also listed in `hex_data.units` or another reinforcement group.
+- units beling to more that one player
 
 A scenario may define units that are never deployed. A defined unit may be
 assigned to at most one deployment source.
@@ -89,6 +89,8 @@ A blocked group that has not entered by game end is not placed.
 - Reuse existing occupancy and stacking rules for entry legality.
 - Update game-status evaluation so eligible pending reinforcements prevent
   premature player elimination.
+- create a new reinforncements validator that is invoked by the current
+  scenario validator class.
 
 ### API and Web
 
@@ -113,6 +115,11 @@ A blocked group that has not entered by game end is not placed.
 - A player with only pending, still-possible reinforcements is not eliminated.
 - A group scheduled after the turn limit never enters and does not prevent
   normal game completion.
+
+## Game Instructions
+
+Update the `HOW_TO_PLAY.md` file to describe how reinforcements work. Keep the 
+updates concise and readable. 
 
 ## Non-goals
 
