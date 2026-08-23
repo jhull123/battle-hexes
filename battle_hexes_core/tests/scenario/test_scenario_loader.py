@@ -183,6 +183,37 @@ def test_load_scenario_uses_scenario_validator():
     validator_type.return_value.validate.assert_called_once_with(scenario)
 
 
+def test_load_scenario_maps_fixed_reinforcements(tmp_path):
+    payload_path = _scenario_dir() / "elim_1.json"
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["reinforcements"] = [{
+        "id": "red_reserve",
+        "units": ["red_unit_1"],
+        "arrival_turn": 3,
+        "entry_location": {"mode": "fixed", "coords": [0, 0]},
+    }]
+    for entry in payload["hex_data"]:
+        if entry.get("units") == ["red_unit_1"]:
+            entry.pop("units")
+    (tmp_path / "elim_1.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+
+    scenario = load_scenario("elim_1", scenario_dir=tmp_path)
+
+    assert scenario.reinforcements[0].id == "red_reserve"
+    assert scenario.reinforcements[0].units == ("red_unit_1",)
+    assert scenario.reinforcements[0].arrival_turn == 3
+    assert scenario.reinforcements[0].entry_location.mode == "fixed"
+    assert scenario.reinforcements[0].entry_location.coords == (0, 0)
+
+
+def test_load_scenario_defaults_reinforcements_to_empty_tuple():
+    scenario = load_scenario("elim_1", scenario_dir=_scenario_dir())
+
+    assert scenario.reinforcements == ()
+
+
 def test_load_scenario_keeps_victory_optional_for_legacy_scenarios():
     scenario = load_scenario("elim_2", scenario_dir=_scenario_dir())
 

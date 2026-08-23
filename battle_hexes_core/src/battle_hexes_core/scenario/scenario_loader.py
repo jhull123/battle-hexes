@@ -6,7 +6,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 from pydantic import (
     BaseModel,
@@ -24,6 +24,8 @@ from .scenario import (
     ScenarioHexData,
     ScenarioRoad,
     ScenarioRoadType,
+    ScenarioEntryLocation,
+    ScenarioReinforcement,
     ScenarioTerrainType,
     ScenarioUnit,
     ScenarioVictory,
@@ -141,6 +143,26 @@ class ScenarioVictoryData(BaseModel):
     description: str | None = None
 
 
+class ScenarioEntryLocationData(BaseModel):
+    """Fixed reinforcement entry location from a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    mode: Literal["fixed"]
+    coords: tuple[int, int]
+
+
+class ScenarioReinforcementData(BaseModel):
+    """Reinforcement group configuration from a scenario file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    units: list[str]
+    arrival_turn: StrictInt = Field(ge=1)
+    entry_location: ScenarioEntryLocationData
+
+
 class ScenarioData(BaseModel):
     """Full scenario definition parsed from a JSON file."""
 
@@ -163,6 +185,7 @@ class ScenarioData(BaseModel):
     roads: list[ScenarioRoadEntry] | None = None
     hex_data: list[ScenarioHexDataEntry] | None = None
     objectives: list[ScenarioObjectiveEntry] | None = None
+    reinforcements: list[ScenarioReinforcementData] | None = None
 
     def _build_objective_map(
         self,
@@ -288,6 +311,21 @@ class ScenarioData(BaseModel):
             for road in (self.roads or [])
         )
 
+    def _build_reinforcements(self) -> tuple[ScenarioReinforcement, ...]:
+        """Convert reinforcement definitions into core data."""
+        return tuple(
+            ScenarioReinforcement(
+                id=group.id,
+                units=tuple(group.units),
+                arrival_turn=group.arrival_turn,
+                entry_location=ScenarioEntryLocation(
+                    mode=group.entry_location.mode,
+                    coords=group.entry_location.coords,
+                ),
+            )
+            for group in (self.reinforcements or [])
+        )
+
     def to_core(self) -> Scenario:
         """Convert the validated payload into a core :class:`Scenario`."""
 
@@ -326,6 +364,7 @@ class ScenarioData(BaseModel):
                 if self.defensive_fire
                 else None
             ),
+            reinforcements=self._build_reinforcements(),
         )
 
 

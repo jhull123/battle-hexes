@@ -40,6 +40,10 @@ export class Board {
     this.players = players;
   }
 
+  getPlayers() {
+    return this.#players;
+  }
+
   addUnit(unit, row, column) {
     this.#units.add(unit);
     if (row !== undefined && column !== undefined) {

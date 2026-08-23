@@ -8,6 +8,9 @@ from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.scenario.scenario_loader import load_scenario
+from battle_hexes_core.gamecreator.reinforcements_creator import (
+    ReinforcementsCreator,
+)
 
 
 class GameCreator:
@@ -81,11 +84,19 @@ class GameCreator:
             player_by_faction_id,
         )
         self.add_objectives(board, scenario_obj)
+        reinforcements = ReinforcementsCreator(
+            self._build_unit
+        ).build_reinforcements(
+            scenario_obj,
+            faction_by_id,
+            player_by_faction_id,
+        )
 
         game = Game(
             players=players_list,
             board=board,
             turn_limit=scenario_obj.turn_limit,
+            reinforcements=reinforcements,
         )
         game.victory = scenario_obj.victory
         game.set_defensive_fire_settings(scenario_obj.defensive_fire)
@@ -258,22 +269,24 @@ class GameCreator:
                     message = f"Unknown faction: {unit_data.faction}"
                     raise NameError(message) from exc
 
-                unit = Unit(
-                    unit_data.id,
-                    unit_data.name,
-                    faction,
-                    owner,
-                    unit_data.type,
-                    unit_data.attack,
-                    unit_data.defense,
-                    unit_data.movement,
-                    echelon=unit_data.echelon,
-                )
-                unit.defensive_fire_modifier = (
-                    unit_data.defensive_fire_modifier
-                )
+                unit = self._build_unit(unit_data, faction, owner)
 
                 board.add_unit(unit, row, column)
+
+    def _build_unit(self, unit_data, faction: Faction, owner: Player) -> Unit:
+        unit = Unit(
+            unit_data.id,
+            unit_data.name,
+            faction,
+            owner,
+            unit_data.type,
+            unit_data.attack,
+            unit_data.defense,
+            unit_data.movement,
+            echelon=unit_data.echelon,
+        )
+        unit.defensive_fire_modifier = unit_data.defensive_fire_modifier
+        return unit
 
     def add_objectives(self, board: Board, scenario: Scenario) -> None:
         """Apply scenario objectives to the board hexes."""

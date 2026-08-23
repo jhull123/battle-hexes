@@ -197,4 +197,10 @@ class GameStatusEvaluator:
                 continue
             if any(unit.get_coords() is not None for unit in units):
                 active_players.append(player)
+            elif game.reinforcements_deployer.has_eligible_pending(
+                player,
+                game.get_turn_number(),
+                game.get_turn_limit(),
+            ):
+                active_players.append(player)
         return active_players

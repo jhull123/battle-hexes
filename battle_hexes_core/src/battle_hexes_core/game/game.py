@@ -13,6 +13,10 @@ from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.scoretracker import ScoreTracker
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
+from battle_hexes_core.game.reinforcement import ReinforcementGroup
+from battle_hexes_core.game.reinforcements_deployer import (
+    ReinforcementsDeployer,
+)
 from battle_hexes_core.unit.faction import Faction
 
 
@@ -29,6 +33,7 @@ class Game:
         players: list,
         board: Board,
         turn_limit: int | None = None,
+        reinforcements: list[ReinforcementGroup] | None = None,
     ):
         self.id = uuid.uuid4()
         self.players = players
@@ -42,12 +47,17 @@ class Game:
             else None
         )
         self.turn_number = 1
+        self.reinforcements_deployer = ReinforcementsDeployer(
+            board,
+            reinforcements,
+        )
         self.current_phase = "movement"
         self.pending_combats = []
         self.defensive_fire_resolver = DefensiveFireResolver(board)
         self._refresh_defensive_fire_availability()
         self.game_status = None
         self._terminal = False
+        self.reinforcements_deployer.deploy_due(self.turn_number)
         self.update_game_status()
 
     def get_id(self):
@@ -150,6 +160,8 @@ class Game:
         if next_idx == 0:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
+        if next_idx == 0:
+            self.reinforcements_deployer.deploy_due(self.turn_number)
         self._reset_movement_for_new_turn(self.current_player)
         self._reset_defensive_fire_off_turn_usage(self.current_player)
         self._refresh_defensive_fire_availability()
@@ -290,6 +302,15 @@ class Game:
             for unit in self.get_board().get_units()
             if unit.get_coords() is not None
         }
+        active_players.update(
+            player.name
+            for player in self.players
+            if self.reinforcements_deployer.has_eligible_pending(
+                player,
+                self.turn_number,
+                self.turn_limit,
+            )
+        )
         return len(active_players) <= 1
 
     def _require_in_progress(self) -> None:
