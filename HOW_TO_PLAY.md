@@ -79,6 +79,15 @@ Final defensive fire chance is calculated as:
 
 If the defensive fire roll succeeds, the moving unit retreats one hex. Otherwise, there is no effect.
 
+## Reinforcements
+
+Some scenarios schedule groups of reinforcements to enter at one fixed hex.
+At the start of the indicated turn, the whole group enters together if the
+hex has no enemy units and has enough stacking capacity. A blocked group stays
+off-board and tries the same hex again at the start of each later turn.
+Reinforcements may move normally on their arrival turn, but cannot use
+defensive fire until they have completed a friendly turn.
+
 ## Ending the Game
 
 Play continues until only one player still has units on the board. When all of

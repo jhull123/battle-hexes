@@ -1,6 +1,9 @@
 """Validation for scenarios selected for play."""
 
 from battle_hexes_core.scenario.scenario import Scenario
+from battle_hexes_core.scenario.reinforcements_validator import (
+    ReinforcementsValidator,
+)
 
 
 class ScenarioValidator:
@@ -9,6 +12,7 @@ class ScenarioValidator:
     def validate(self, scenario: Scenario) -> None:
         """Raise ``ValueError`` when ``scenario`` cannot be played safely."""
         self._validate_victory_scoring_side(scenario)
+        ReinforcementsValidator().validate(scenario)
 
     def _validate_victory_scoring_side(self, scenario: Scenario) -> None:
         """Ensure the victory scoring side identifies a scenario faction."""

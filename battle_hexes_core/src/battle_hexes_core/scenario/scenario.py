@@ -81,6 +81,24 @@ class ScenarioVictory:
 
 
 @dataclass(frozen=True)
+class ScenarioEntryLocation:
+    """A fixed board location where reinforcements enter play."""
+
+    mode: str
+    coords: tuple[int, int]
+
+
+@dataclass(frozen=True)
+class ScenarioReinforcement:
+    """An atomic group of units scheduled to enter together."""
+
+    id: str
+    units: tuple[str, ...]
+    arrival_turn: int
+    entry_location: ScenarioEntryLocation
+
+
+@dataclass(frozen=True)
 class DefensiveFireConfig:
     base_probability: float
     minimum: float
@@ -106,3 +124,6 @@ class Scenario:
     roads: tuple[ScenarioRoad, ...] = field(default_factory=tuple)
     hex_data: tuple[ScenarioHexData, ...] = field(default_factory=tuple)
     defensive_fire: DefensiveFireConfig | None = None
+    reinforcements: tuple[ScenarioReinforcement, ...] = field(
+        default_factory=tuple
+    )
