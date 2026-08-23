@@ -267,4 +267,4 @@ def end_turn(game_id: str, sparse_board: SparseBoard = Body(...)):
 
     game_repo.update_game(game)
     _call_end_game_callbacks(game)
-    return _dump_api_model(SparseBoard.from_game(game, include_scores=True))
+    return _dump_api_model(GameModel.from_game(game))

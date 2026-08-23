@@ -652,7 +652,8 @@ class TestFastAPI(unittest.TestCase):
         mock_game_repo.get_game.return_value = mock_game
         mock_from_game.return_value = {
             "id": "game-789",
-            "current_player": "Bob"
+            "board": {"units": []},
+            "active_player": "Bob",
         }
         mock_board = MagicMock()
         mock_game.get_board.return_value = mock_board
@@ -672,10 +673,10 @@ class TestFastAPI(unittest.TestCase):
         )
         mock_game.end_turn.assert_called_once_with()
         mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_from_game.assert_not_called()
+        mock_from_game.assert_called_once_with(mock_game)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["gameStatus"]["state"], "in_progress")
-        self.assertIn("units", response.json())
+        self.assertEqual(response.json()["active_player"], "Bob")
+        self.assertIn("units", response.json()["board"])
 
     @patch('battle_hexes_api.main.ObjectiveScorer')
     @patch('battle_hexes_api.main.GameModel.from_game')
@@ -704,7 +705,7 @@ class TestFastAPI(unittest.TestCase):
         )
         mock_player1.end_game_cb.assert_called_once_with()
         mock_player2.end_game_cb.assert_called_once_with()
-        mock_from_game.assert_not_called()
+        mock_from_game.assert_called_once_with(mock_game)
 
     @patch('battle_hexes_api.main.list_player_types')
     def test_get_player_types(self, mock_list_player_types):

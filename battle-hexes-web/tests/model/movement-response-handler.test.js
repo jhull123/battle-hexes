@@ -58,4 +58,18 @@ describe('applyMovementResponse', () => {
     expect(updater.updateBoard).toHaveBeenCalledWith(board, response.sparseBoard.units);
     expect(eventBus.emit).not.toHaveBeenCalled();
   });
+
+  test('uses a direct full game board returned when a turn ends', () => {
+    const board = { id: 'board-1' };
+    const response = {
+      board: {
+        units: [{ id: 'reinforcement', factionId: 'f1', row: 2, column: 3 }],
+      },
+    };
+
+    applyMovementResponse(board, response);
+
+    const updater = BoardUpdater.mock.results[0].value;
+    expect(updater.updateBoard).toHaveBeenCalledWith(board, response.board.units);
+  });
 });
