@@ -97,6 +97,7 @@ export class CpuPlayer extends Player {
           return null;
         });
       if (endTurnResponse) {
+        applyMovementResponse(game.getBoard(), endTurnResponse);
         game.applyApiState(endTurnResponse);
       }
       if (game.getCurrentPhase() === "End Turn") {

@@ -93,6 +93,11 @@ class Unit:
     def set_defensive_fire_available(self, is_available: bool) -> None:
         self.defensive_fire_available = bool(is_available)
 
+    def mark_as_newly_deployed(self) -> None:
+        """Prevent defensive fire until the first friendly turn finishes."""
+        self.ended_last_friendly_turn_with_defensive_fire_eligibility = False
+        self.set_defensive_fire_available(False)
+
     def update_defensive_fire_available(
             self,
             current_player: Player | None = None,

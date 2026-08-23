@@ -3,6 +3,7 @@ import { BoardUpdater } from '../../src/model/board-updater.js';
 import { eventBus } from '../../src/event-bus.js';
 import { Faction } from '../../src/model/faction.js';
 import { Unit } from '../../src/model/unit.js';
+import { Player, Players } from '../../src/player/player.js';
 
 jest.mock('../../src/event-bus.js', () => ({
   eventBus: {
@@ -16,8 +17,16 @@ describe('updateBoard', () => {
 
   beforeEach(() => {
     eventBus.emit.mockClear();
-    factions = [new Faction(), new Faction()];
+    factions = [
+      new Faction('faction-red', 'Red', '#f00'),
+      new Faction('faction-blue', 'Blue', '#00f'),
+    ];
     board = new Board(10, 10, factions);
+    const players = new Players([
+      new Player('Player 1', 'human', [factions[0]]),
+      new Player('Player 2', 'cpu', [factions[1]]),
+    ]);
+    board.players = players;
     boardUpdater = new BoardUpdater();
     redUnit = new Unit('unit-001', 'Red Unit', factions[0]);
     blueUnit = new Unit('unit-002', 'Blue Unit', factions[1]);
@@ -46,6 +55,28 @@ describe('updateBoard', () => {
     expect(eventBus.emit).toHaveBeenCalledTimes(2);
     expect(eventBus.emit).toHaveBeenCalledWith('redraw');
     expect(eventBus.emit).toHaveBeenCalledWith('menuUpdate');
+  });
+
+  test('adds a newly arrived unit from a full server board response', () => {
+    boardUpdater.updateBoard(board, [{
+      id: 'unit-003',
+      name: 'Reinforcement',
+      factionId: factions[1].getId(),
+      type: 'Infantry',
+      attack: 2,
+      defense: 3,
+      move: 4,
+      echelon: 'platoon',
+      row: 6,
+      column: 7,
+      defensiveFireAvailable: false,
+    }]);
+
+    const reinforcement = [...board.getUnits()][0];
+    expect(reinforcement.getId()).toBe('unit-003');
+    expect(reinforcement.getContainingHex().coordsHumanString()).toBe('6, 7');
+    expect(reinforcement.getFaction()).toBe(factions[1]);
+    expect(reinforcement.hasDefensiveFire()).toBe(false);
   });
 
 
