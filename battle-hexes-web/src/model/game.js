@@ -15,6 +15,7 @@ export class Game {
   #turnNumber;
   #gameStatus;
   #pendingCombats;
+  #reinforcements;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
@@ -25,6 +26,7 @@ export class Game {
     gameStatus = null,
     currentPhase = null,
     pendingCombats = null,
+    reinforcements = null,
   } = {}) {
     this.#id = id;
     this.#phases = phases;
@@ -51,6 +53,7 @@ export class Game {
     this.#turnNumber = Number.isInteger(turnNumber) && turnNumber > 0 ? turnNumber : 1;
     this.#gameStatus = this.#normalizeGameStatus(gameStatus);
     this.#pendingCombats = Array.isArray(pendingCombats) ? [...pendingCombats] : null;
+    this.#reinforcements = reinforcements;
     this.#board.setGameplayBlockedProvider?.(() => this.isGameOver());
   }
 
@@ -142,6 +145,10 @@ export class Game {
     return { ...this.#scores };
   }
 
+  getReinforcements() {
+    return this.#reinforcements;
+  }
+
   updateScores(scores = {}) {
     if (!scores || typeof scores !== 'object') {
       this.#scores = {};
@@ -198,14 +205,17 @@ export class Game {
         ? [...state.pendingCombats]
         : [];
     }
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'reinforcements')) {
+      this.#reinforcements = state.reinforcements;
+    }
     if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'scores')) {
       this.updateScores(responseData.scores);
     }
-    if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'turnLimit')
-        || Object.prototype.hasOwnProperty.call(responseData ?? {}, 'turnNumber')) {
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'turnLimit')
+        || Object.prototype.hasOwnProperty.call(state ?? {}, 'turnNumber')) {
       this.updateTurnState({
-        turnLimit: responseData?.turnLimit,
-        turnNumber: responseData?.turnNumber,
+        turnLimit: state?.turnLimit,
+        turnNumber: state?.turnNumber,
       });
     }
   }

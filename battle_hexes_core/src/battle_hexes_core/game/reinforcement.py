@@ -5,6 +5,16 @@ from dataclasses import dataclass
 from battle_hexes_core.unit.unit import Unit
 
 
+@dataclass(frozen=True)
+class PendingReinforcementGroup:
+    """Read-only menu state for a reinforcement group still off board."""
+
+    units: tuple[Unit, ...]
+    arrival_turn: int
+    coords: tuple[int, int]
+    status: str
+
+
 @dataclass
 class ReinforcementGroup:
     """Units waiting to enter atomically at a fixed location."""

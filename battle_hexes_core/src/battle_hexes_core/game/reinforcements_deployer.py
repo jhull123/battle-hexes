@@ -2,7 +2,10 @@
 
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player
-from battle_hexes_core.game.reinforcement import ReinforcementGroup
+from battle_hexes_core.game.reinforcement import (
+    PendingReinforcementGroup,
+    ReinforcementGroup,
+)
 
 
 class ReinforcementsDeployer:
@@ -44,6 +47,26 @@ class ReinforcementsDeployer:
             if next_attempt <= turn_limit:
                 return True
         return False
+
+    def pending(
+        self,
+        turn_number: int,
+    ) -> tuple[PendingReinforcementGroup, ...]:
+        """Return authoritative pending state in scenario declaration order."""
+        return tuple(
+            PendingReinforcementGroup(
+                units=group.units,
+                arrival_turn=group.arrival_turn,
+                coords=group.coords,
+                status=(
+                    "delayed"
+                    if group.arrival_turn < turn_number
+                    else "scheduled"
+                ),
+            )
+            for group in self.groups
+            if not group.entered
+        )
 
     def _can_deploy(self, group: ReinforcementGroup) -> bool:
         row, column = group.coords

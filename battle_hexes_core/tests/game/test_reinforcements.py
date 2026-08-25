@@ -87,6 +87,25 @@ def test_blocked_group_stays_atomic_and_retries_later():
     ]
 
 
+def test_pending_query_reports_scheduled_delayed_and_entered_state():
+    game, _ = _game(arrival_turn=2)
+    pending = game.reinforcements_deployer.pending(game.turn_number)
+    assert pending[0].status == "scheduled"
+    assert pending[0].arrival_turn == 2
+    assert pending[0].coords == (1, 1)
+
+    blocker = game.board.get_unit_by_id("onboard1")
+    blocker.set_coords(1, 1)
+    _advance_to_turn_two(game)
+    game.next_player()
+    game.next_player()
+    assert game.reinforcements_deployer.pending(3)[0].status == "delayed"
+
+    blocker.set_coords(0, 0)
+    game.reinforcements_deployer.deploy_due(3)
+    assert game.reinforcements_deployer.pending(3) == ()
+
+
 def test_pending_reinforcement_prevents_premature_elimination():
     game, players = _game()
     game.board.get_unit_by_id("onboard2").set_coords(None, None)
