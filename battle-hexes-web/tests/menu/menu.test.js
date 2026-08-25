@@ -57,6 +57,8 @@ describe('auto new game persistence', () => {
       <div id="victoryTurnLabel"></div>
       <div id="victoryPointsList"></div>
       <div id="reactionMessages"></div>
+      <div id="reinforcementsMenu" style="display: none;"><div id="reinforcementsList"></div></div>
+      <hr id="reinforcementsDivider" style="display: none;">
       <h3 id="scenarioOverviewHeading"></h3>
       <p id="scenarioOverviewDescription"></p>
       <h4 id="scenarioVictoryHeading"></h4>
@@ -103,6 +105,40 @@ describe('auto new game persistence', () => {
     mockService.listScenarios.mockResolvedValue([]);
     mockService.endMovement.mockResolvedValue({});
     mockService.endTurn.mockResolvedValue({});
+  });
+
+  test('renders authoritative reinforcement groups with accessible faction swatches', () => {
+    buildDom();
+    const faction = {
+      getId: () => 'wehrmacht',
+      getName: () => 'Wehrmacht',
+      getCounterColor: () => '#777777',
+    };
+    const player = { getName: () => 'Player 2', getFactions: () => [faction] };
+    new Menu(fakeGame({
+      getTurnNumber: () => 3,
+      getPlayers: () => ({ getAllPlayers: () => [player] }),
+      getReinforcements: () => ({
+        pending: [{
+          arrivalTurn: 2,
+          status: 'delayed',
+          playerName: 'Player 2',
+          units: [{
+            name: 'StuG. III Zug A',
+            factionId: 'wehrmacht',
+            entryCoordinate: [0, 16],
+          }],
+        }],
+      }),
+    }), { service: mockService });
+
+    expect(document.getElementById('reinforcementsMenu').style.display).toBe('');
+    expect(document.getElementById('reinforcementsList').textContent)
+      .toContain('Turn 3 (Delayed)Player 2StuG. III Zug A (0, 16)');
+    expect(document.querySelector('#reinforcementsList [role="img"]')
+      .getAttribute('aria-label')).toBe('Wehrmacht faction');
+    expect(document.querySelector('#reinforcementsList .selected-unit-moves').textContent)
+      .toBe('(0, 16)');
   });
 
   test('shows scenario heading from name with description and victory conditions', async () => {
