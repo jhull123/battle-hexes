@@ -24,6 +24,13 @@ beforeEach(() => {
 });
 
 describe("createGame", () => {
+  test("retains authoritative reinforcement menu state", () => {
+    const payload = { pending: [{ arrivalTurn: 3, status: 'scheduled' }] };
+    game.applyApiState({ game: { reinforcements: payload } });
+
+    expect(game.getReinforcements()).toBe(payload);
+  });
+
   test("create game sets game id", () => {
     expect(game.getId()).toBe("093e432e-28ba-4dd1-a202-0802ee6ef32b");
   });

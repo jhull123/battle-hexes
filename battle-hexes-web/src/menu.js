@@ -2,6 +2,7 @@ import { battleHexesService } from './service/service-factory.js';
 import { eventBus } from './event-bus.js';
 import { BoardUpdater } from './model/board-updater.js';
 import { SoundPlayer } from './sound-player.js';
+import { ReinforcementsMenu } from './reinforcements-menu.js';
 
 export class Menu {
   #game;
@@ -26,6 +27,7 @@ export class Menu {
   #autoReloadScheduled = false;
   #onNewGameRequested;
   #reactionMessagesDiv;
+  #reinforcementsMenu;
   #service;
   #soundPlayer;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
@@ -54,6 +56,7 @@ export class Menu {
     this.#scenarioVictoryHeading = document.getElementById('scenarioVictoryHeading');
     this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
     this.#reactionMessagesDiv = document.getElementById('reactionMessages');
+    this.#reinforcementsMenu = new ReinforcementsMenu(this.#game);
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
     this.#service = service
@@ -219,6 +222,7 @@ export class Menu {
     this.#setCurrentTurn();
     this.#updateVictoryPoints();
     this.#updatePhasesStyling();
+    this.#reinforcementsMenu.updateReinforcements();
     this.#disableOrEnableActionButton();
 
     this.#processGameStatus();
@@ -563,6 +567,7 @@ export class Menu {
 
   setGame(game) {
     this.#game = game;
+    this.#reinforcementsMenu.setGame(game);
     this.#soundPlayer.setGame(this.#game);
     this.#showDefensiveFireStatus([]);
     this.#showDefensiveFireEvents([]);

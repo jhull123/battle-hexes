@@ -11,6 +11,7 @@ from .board import BoardModel
 from .game_status import GameStatus
 from .objective import ObjectiveModel
 from .player import PlayerModel
+from .reinforcement import ReinforcementsModel
 
 if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.game.game import Game
@@ -37,6 +38,10 @@ class GameModel(ApiBaseModel):
     active_player: str | None = None
     current_phase: str | None = None
     pending_combats: list[dict[str, list[str]]] = Field(default_factory=list)
+    reinforcements: ReinforcementsModel | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
     @classmethod
     def from_game(
@@ -66,4 +71,5 @@ class GameModel(ApiBaseModel):
             active_player=getattr(game.get_current_player(), "name", None),
             current_phase=getattr(game, "current_phase", None),
             pending_combats=getattr(game, "pending_combats", []),
+            reinforcements=ReinforcementsModel.from_game(game),
         )
