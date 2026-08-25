@@ -11,6 +11,10 @@ export class ReinforcementsMenu {
     this.#list = document.getElementById('reinforcementsList');
   }
 
+  setGame(game) {
+    this.#game = game;
+  }
+
   updateReinforcements() {
     if (!this.#menu || !this.#list) return;
     const reinforcements = this.#game.getReinforcements?.();

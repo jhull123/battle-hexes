@@ -567,6 +567,7 @@ export class Menu {
 
   setGame(game) {
     this.#game = game;
+    this.#reinforcementsMenu.setGame(game);
     this.#soundPlayer.setGame(this.#game);
     this.#showDefensiveFireStatus([]);
     this.#showDefensiveFireEvents([]);

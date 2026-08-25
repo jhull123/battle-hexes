@@ -760,6 +760,40 @@ describe('auto new game persistence', () => {
     expect(document.getElementById('reactionMessages').style.display).toBe('none');
   });
 
+  test('renders reinforcements from a replacement game', () => {
+    buildDom();
+    history.replaceState(null, '', '/');
+    const faction = {
+      getId: () => 'wehrmacht',
+      getName: () => 'Wehrmacht',
+      getCounterColor: () => '#777777',
+    };
+    const player = { getName: () => 'Player 2', getFactions: () => [faction] };
+    const menu = new Menu(fakeGame({
+      getReinforcements: () => ({ pending: [] }),
+    }), { service: mockService });
+
+    menu.setGame(fakeGame({
+      getTurnNumber: () => 3,
+      getPlayers: () => ({ getAllPlayers: () => [player] }),
+      getReinforcements: () => ({
+        pending: [{
+          arrivalTurn: 3,
+          status: 'scheduled',
+          playerName: 'Player 2',
+          units: [{
+            name: 'StuG. III Zug A',
+            factionId: 'wehrmacht',
+            entryCoordinate: [0, 16],
+          }],
+        }],
+      }),
+    }));
+
+    expect(document.getElementById('reinforcementsList').textContent)
+      .toContain('Turn 3Player 2StuG. III Zug A (0, 16)');
+  });
+
   test('updates victory points after end of movement response', async () => {
     buildDom();
     history.replaceState(null, '', '/');
