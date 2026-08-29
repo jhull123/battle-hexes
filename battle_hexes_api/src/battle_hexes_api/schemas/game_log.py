@@ -32,9 +32,10 @@ def game_log_from_game(game) -> list[GameLogRecordModel]:
                 player_name=event.player_name,
                 events=GameLogEventsModel(reinforcements=[]),
             )
-        records_by_key[key].events.reinforcements.append(ReinforcementEventModel(
+        reinforcement = ReinforcementEventModel(
             outcome=event.outcome,
             unit_count=event.unit_count,
             entry_coordinate=event.entry_coordinate,
-        ))
+        )
+        records_by_key[key].events.reinforcements.append(reinforcement)
     return list(records_by_key.values())
