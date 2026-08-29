@@ -124,10 +124,11 @@ export class ReinforcementsMenu {
   #createUnitLabel(unit) {
     const label = document.createElement('span');
     label.textContent = `${unit.name} `;
-    const coordinate = document.createElement('span');
-    coordinate.className = 'selected-unit-moves';
-    coordinate.textContent = `(${unit.entryCoordinate[0]}, ${unit.entryCoordinate[1]})`;
-    label.append(coordinate);
+    const details = document.createElement('span');
+    details.className = 'reinforcement-unit-details';
+    details.textContent = `${unit.attack}-${unit.defense}-${unit.movement} `
+      + `(${unit.entryCoordinate[0]}, ${unit.entryCoordinate[1]})`;
+    label.append(details);
     return label;
   }
 }

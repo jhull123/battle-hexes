@@ -11,6 +11,9 @@ class ReinforcementUnitModel(ApiBaseModel):
     unit_id: str
     name: str
     faction_id: str
+    attack: int
+    defense: int
+    movement: int
     entry_coordinate: tuple[int, int]
 
 
@@ -45,6 +48,9 @@ class ReinforcementsModel(ApiBaseModel):
                         unit_id=unit.id,
                         name=unit.name,
                         faction_id=unit.faction.id,
+                        attack=unit.attack,
+                        defense=unit.defense,
+                        movement=unit.move,
                         entry_coordinate=group.coords,
                     )
                     for unit in group.units

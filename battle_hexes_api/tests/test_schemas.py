@@ -7,6 +7,7 @@ from battle_hexes_api.schemas import (
     FactionModel,
     GameModel,
     MovementResponseModel,
+    ReinforcementsModel,
     ScenarioModel,
     SparseBoard,
     SparseUnit,
@@ -88,6 +89,45 @@ class TestApiAliases(unittest.TestCase):
         terrain = payload["board"]["terrain"]["types"]["open"]
         self.assertEqual(terrain["moveCost"], 1)
         self.assertEqual(terrain["combatOddsShift"], 0)
+
+    def test_reinforcement_units_expose_combat_stats(self):
+        unit = SimpleNamespace(
+            id="stug-a",
+            name="StuG. III Zug A",
+            faction=SimpleNamespace(id="wehrmacht"),
+            player=SimpleNamespace(name="Player 2"),
+            attack=4,
+            defense=4,
+            move=7,
+        )
+        group = SimpleNamespace(
+            arrival_turn=3,
+            status="scheduled",
+            units=(unit,),
+            coords=(0, 16),
+        )
+        game = SimpleNamespace(
+            turn_number=1,
+            reinforcements_deployer=SimpleNamespace(
+                groups=(group,),
+                pending=lambda _turn_number: (group,),
+            ),
+        )
+
+        payload = ReinforcementsModel.from_game(game).model_dump(by_alias=True)
+
+        self.assertEqual(
+            payload["pending"][0]["units"][0],
+            {
+                "unitId": "stug-a",
+                "name": "StuG. III Zug A",
+                "factionId": "wehrmacht",
+                "attack": 4,
+                "defense": 4,
+                "movement": 7,
+                "entryCoordinate": (0, 16),
+            },
+        )
 
     def test_faction_model_exposes_nested_sound_keys_as_camel_case(self):
         faction = Faction(

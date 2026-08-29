@@ -126,6 +126,9 @@ describe('auto new game persistence', () => {
           units: [{
             name: 'StuG. III Zug A',
             factionId: 'wehrmacht',
+            attack: 4,
+            defense: 4,
+            movement: 7,
             entryCoordinate: [0, 16],
           }],
         }],
@@ -134,11 +137,11 @@ describe('auto new game persistence', () => {
 
     expect(document.getElementById('reinforcementsMenu').style.display).toBe('');
     expect(document.getElementById('reinforcementsList').textContent)
-      .toContain('Turn 3 (Delayed)Player 2StuG. III Zug A (0, 16)');
+      .toContain('Turn 3 (Delayed)Player 2StuG. III Zug A 4-4-7 (0, 16)');
     expect(document.querySelector('#reinforcementsList [role="img"]')
       .getAttribute('aria-label')).toBe('Wehrmacht faction');
-    expect(document.querySelector('#reinforcementsList .selected-unit-moves').textContent)
-      .toBe('(0, 16)');
+    expect(document.querySelector('#reinforcementsList .reinforcement-unit-details').textContent)
+      .toBe('4-4-7 (0, 16)');
   });
 
   test('shows scenario heading from name with description and victory conditions', async () => {
@@ -784,6 +787,9 @@ describe('auto new game persistence', () => {
           units: [{
             name: 'StuG. III Zug A',
             factionId: 'wehrmacht',
+            attack: 4,
+            defense: 4,
+            movement: 7,
             entryCoordinate: [0, 16],
           }],
         }],
@@ -791,7 +797,7 @@ describe('auto new game persistence', () => {
     }));
 
     expect(document.getElementById('reinforcementsList').textContent)
-      .toContain('Turn 3Player 2StuG. III Zug A (0, 16)');
+      .toContain('Turn 3Player 2StuG. III Zug A 4-4-7 (0, 16)');
   });
 
   test('updates victory points after end of movement response', async () => {
