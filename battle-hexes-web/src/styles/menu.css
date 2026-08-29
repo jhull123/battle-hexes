@@ -115,6 +115,10 @@
   font-size: 0.85em;
 }
 
+#menu .reinforcement-unit-details {
+  font-size: 0.85em;
+}
+
 #menu .reinforcement-turn,
 #menu .reinforcement-player {
   margin: 8px 0 4px;
