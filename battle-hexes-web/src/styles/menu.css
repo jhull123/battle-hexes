@@ -120,6 +120,11 @@
   margin: 8px 0 4px;
 }
 
+#menu .game-log-heading {
+  font-weight: bold;
+  margin-top: 8px;
+}
+
 #menu .reinforcement-turn {
   font-weight: 700;
 }

@@ -9,6 +9,7 @@ from .api_model import ApiBaseModel
 
 from .board import BoardModel
 from .game_status import GameStatus
+from .game_log import GameLogRecordModel, game_log_from_game
 from .objective import ObjectiveModel
 from .player import PlayerModel
 from .reinforcement import ReinforcementsModel
@@ -38,6 +39,7 @@ class GameModel(ApiBaseModel):
     active_player: str | None = None
     current_phase: str | None = None
     pending_combats: list[dict[str, list[str]]] = Field(default_factory=list)
+    game_log: list[GameLogRecordModel] = Field(default_factory=list)
     reinforcements: ReinforcementsModel | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
@@ -71,5 +73,6 @@ class GameModel(ApiBaseModel):
             active_player=getattr(game.get_current_player(), "name", None),
             current_phase=getattr(game, "current_phase", None),
             pending_combats=getattr(game, "pending_combats", []),
+            game_log=game_log_from_game(game),
             reinforcements=ReinforcementsModel.from_game(game),
         )

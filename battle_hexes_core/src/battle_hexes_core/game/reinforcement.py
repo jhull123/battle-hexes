@@ -6,6 +6,17 @@ from battle_hexes_core.unit.unit import Unit
 
 
 @dataclass(frozen=True)
+class ReinforcementArrivalEvent:
+    """Immutable history of one authoritative reinforcement attempt."""
+
+    turn_number: int
+    player_name: str
+    unit_count: int
+    entry_coordinate: tuple[int, int]
+    outcome: str
+
+
+@dataclass(frozen=True)
 class PendingReinforcementGroup:
     """Read-only menu state for a reinforcement group still off board."""
 

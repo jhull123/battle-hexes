@@ -85,6 +85,28 @@ def test_blocked_group_stays_atomic_and_retries_later():
     assert [unit.id for unit in game.board.get_units_at(1, 1)] == [
         "reserve1", "reserve2"
     ]
+    assert [event.outcome for event in game.reinforcements_deployer.game_log] \
+        == ["blocked", "arrived"]
+    first, second = game.reinforcements_deployer.game_log
+    assert first.turn_number == 2
+    assert first.player_name == "Player 2"
+    assert first.unit_count == 2
+    assert first.entry_coordinate == (1, 1)
+    assert second.turn_number == 3
+
+
+def test_blocked_group_records_every_retry_in_creation_order():
+    game, _ = _game(group_units=("reserve1", "reserve2"))
+    game.board.get_unit_by_id("onboard1").set_coords(1, 1)
+
+    _advance_to_turn_two(game)
+    game.next_player()
+    game.next_player()
+
+    assert [
+        (event.turn_number, event.outcome)
+        for event in game.reinforcements_deployer.game_log
+    ] == [(2, "blocked"), (3, "blocked")]
 
 
 def test_pending_query_reports_scheduled_delayed_and_entered_state():
