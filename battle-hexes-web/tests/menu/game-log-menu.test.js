@@ -35,12 +35,14 @@ describe('GameLogMenu', () => {
     expect(document.querySelectorAll('.game-log-heading')).toHaveLength(2);
   });
 
-  test('renders detailed combat blocks and omits empty effect lines', () => {
+  test('renders collapsed combat above reinforcements without repeated result details', () => {
     const game = { getGameLog: () => [{
       turnNumber: 3,
       playerName: 'Player 2',
       events: {
-        reinforcements: [],
+        reinforcements: [
+          { outcome: 'arrived', unitCount: 1, entryCoordinate: [0, 16] },
+        ],
         combat: [{
           attackers: [
             { name: 'Unit A', attack: 4, defense: 4, movement: 2 },
@@ -64,7 +66,11 @@ describe('GameLogMenu', () => {
     new GameLogMenu(game).update();
 
     const entry = document.querySelector('.game-log-combat');
-    expect(entry.textContent).toContain('Combat');
+    expect(entry.tagName).toBe('DETAILS');
+    expect(entry.open).toBe(false);
+    expect(entry.querySelector('summary').textContent).toBe(
+      'Combat - Defender Retreat 2 Hexes',
+    );
     expect(entry.textContent).toContain('Attacking: Unit A 4-4-2, Unit B 2-2-4');
     expect(entry.textContent).toContain('Defending: Unit C 3-3-3');
     expect(entry.textContent).toContain('Base odds: 3:1');
@@ -73,11 +79,14 @@ describe('GameLogMenu', () => {
       'Modified by defender terrain: Woods (-1 odds shift)',
     );
     expect(entry.textContent).toContain('Die roll: 4');
-    expect(entry.textContent).toContain('Result: Defender Retreat 2 Hexes');
-    expect(entry.textContent).toContain('Unit C retreated 2 hexes.');
-    expect(entry.textContent).toContain('Retreated: Unit C');
+    expect(entry.textContent).not.toContain('Result:');
+    expect(entry.textContent).not.toContain('Unit C retreated 2 hexes.');
+    expect(entry.textContent).not.toContain('Retreated:');
     expect(entry.textContent).not.toContain('Eliminated:');
     expect(entry.querySelectorAll('.game-log-unit-stats')).toHaveLength(3);
+    expect(entry.nextElementSibling.textContent).toBe(
+      'Reinforcements arrived - 1 unit at (0, 16)',
+    );
   });
 
   test('renders no placeholder for an empty log', () => {

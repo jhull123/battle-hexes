@@ -31,8 +31,8 @@ export class GameLogMenu {
     heading.className = 'game-log-heading';
     heading.textContent = `Turn ${record.turnNumber} - ${record.playerName}`;
     this.#list.appendChild(heading);
-    this.#appendEvents(record.events.reinforcements, this.#reinforcementRenderer);
     this.#appendEvents(record.events.combat, this.#combatRenderer);
+    this.#appendEvents(record.events.reinforcements, this.#reinforcementRenderer);
   }
 
   #appendEvents(events, renderer) {

@@ -1,18 +1,18 @@
 export class CombatEventRenderer {
   render(event) {
-    const entry = document.createElement('div');
+    const entry = document.createElement('details');
     entry.className = 'game-log-combat';
-    this.#appendLine(entry, 'Combat', 'game-log-combat-title');
+    const heading = document.createElement('summary');
+    heading.className = 'game-log-combat-title';
+    heading.textContent = `Combat - ${event.result.text}`;
+    entry.appendChild(heading);
     this.#appendParticipants(entry, 'Attacking', event.attackers);
     this.#appendParticipants(entry, 'Defending', event.defenders);
     this.#appendLine(entry, `Base odds: ${this.#odds(event.baseOdds)}`);
     this.#appendLine(entry, `Modified odds: ${this.#odds(event.modifiedOdds)}`);
     this.#appendTerrainModifier(entry, event.defenderTerrain);
     this.#appendLine(entry, `Die roll: ${event.dieRoll}`);
-    this.#appendLine(entry, `Result: ${event.result.text}`);
-    this.#appendLine(entry, event.result.summary);
     this.#appendUnitEffects(entry, 'Eliminated', event.eliminatedUnits);
-    this.#appendUnitEffects(entry, 'Retreated', event.retreatedUnits);
     return entry;
   }
 

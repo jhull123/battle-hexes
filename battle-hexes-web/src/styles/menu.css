@@ -135,6 +135,7 @@
 #menu .game-log-combat-title {
   font-weight: 700;
   margin-bottom: 3px;
+  cursor: pointer;
 }
 
 #menu .game-log-unit-stats {
