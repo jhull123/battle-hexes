@@ -3,7 +3,7 @@ import { eventBus } from './event-bus.js';
 import { BoardUpdater } from './model/board-updater.js';
 import { SoundPlayer } from './sound-player.js';
 import { ReinforcementsMenu } from './reinforcements-menu.js';
-import { GameLogMenu } from './game-log-menu.js';
+import { GameLogMenu } from './game-log/game-log-menu.js';
 
 export class Menu {
   #game;
