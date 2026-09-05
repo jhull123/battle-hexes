@@ -50,6 +50,7 @@ import { Game } from '../../src/model/game.js';
 import { Player, Players, playerTypes } from '../../src/player/player.js';
 import { Menu } from '../../src/menu.js';
 import { GameOverDialog } from '../../src/gameoverdialog.js';
+import { GameLogMenu } from '../../src/game-log/game-log-menu.js';
 
 function buildDom() {
   document.body.innerHTML = `
@@ -97,4 +98,29 @@ test('completed human combat renders its log and opens the authoritative game-ov
     .toBe('Germany wins by eliminating every Airborne unit. Winner: Germany');
   expect(mockService.endTurn).not.toHaveBeenCalled();
   expect(mockService.endMovement).not.toHaveBeenCalled();
+});
+
+test('opens the game-over dialog before a completed combat log render fails', async () => {
+  buildDom();
+  history.replaceState(null, '', '/');
+  const players = new Players([
+    new Player('Germany', playerTypes.HUMAN, []),
+    new Player('Airborne', playerTypes.HUMAN, []),
+  ], 'Germany');
+  const game = new Game('human-combat-render-failure',
+    ['Movement', 'Combat', 'End Turn'], players,
+    new Board(1, 1), { currentPhase: 'combat' });
+  new GameOverDialog();
+  const menu = new Menu(game, { service: mockService });
+  const renderError = new Error('combat event could not be rendered');
+
+  await game.resolveCombat();
+  jest.spyOn(GameLogMenu.prototype, 'update').mockImplementation(() => {
+    throw renderError;
+  });
+
+  expect(() => menu.updateMenu()).toThrow(renderError);
+  expect(document.getElementById('gameOverDialog').style.display).toBe('flex');
+  expect(document.getElementById('gameOverDialogMessage').textContent)
+    .toBe('Germany wins by eliminating every Airborne unit. Winner: Germany');
 });
