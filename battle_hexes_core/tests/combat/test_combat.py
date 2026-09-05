@@ -80,6 +80,35 @@ class TestCombat(unittest.TestCase):
 
         self.assertEqual(1, len(battles))
 
+    def test_combat_records_authoritative_history_after_board_effects(self):
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.board.get_hex(6, 5).set_terrain(Terrain(
+            name="Woods", hex_color="#123456", combat_odds_shift=-1
+        ))
+        self.combat.set_static_die_roll(1)
+
+        self.combat.resolve_combat()
+
+        event = self.game.combat_log[0]
+        self.assertEqual(1, event.turn_number)
+        self.assertEqual("Red Player", event.player_name)
+        self.assertEqual("Red Unit", event.attackers[0].name)
+        self.assertEqual((4, 4, 4), (
+            event.attackers[0].attack,
+            event.attackers[0].defense,
+            event.attackers[0].movement,
+        ))
+        self.assertEqual((2, 1), event.base_odds)
+        self.assertEqual((1, 1), event.modified_odds)
+        self.assertEqual("Woods", event.defender_terrain.name)
+        self.assertEqual(-1, event.defender_terrain.odds_shift)
+        self.assertEqual(1, event.die_roll)
+        self.assertEqual("DEFENDER_ELIMINATED", event.result.code)
+        self.assertEqual((), event.retreated_units)
+        self.assertEqual(("Blue Unit",), event.eliminated_units)
+        self.assertIsNone(self.blue_unit.get_coords())
+
     def test_board_attacker_elim_leaves_one_unit_on_the_board(self):
         self.board.add_unit(self.red_unit, 6, 4)
         self.board.add_unit(self.blue_unit, 6, 5)

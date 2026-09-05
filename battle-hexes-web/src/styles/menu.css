@@ -125,6 +125,23 @@
   margin-top: 8px;
 }
 
+#menu .game-log-combat {
+  margin: 6px 0 10px;
+  padding: 7px;
+  border-left: 3px solid #7a2100;
+  background: rgb(122 33 0 / 8%);
+}
+
+#menu .game-log-combat-title {
+  font-weight: 700;
+  margin-bottom: 3px;
+  cursor: pointer;
+}
+
+#menu .game-log-unit-stats {
+  font-size: 0.85em;
+}
+
 #menu .reinforcement-turn {
   font-weight: 700;
 }

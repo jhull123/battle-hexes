@@ -51,6 +51,7 @@ class Game:
             board,
             reinforcements,
         )
+        self.combat_log = []
         self.current_phase = "movement"
         self.pending_combats = []
         self.defensive_fire_resolver = DefensiveFireResolver(board)

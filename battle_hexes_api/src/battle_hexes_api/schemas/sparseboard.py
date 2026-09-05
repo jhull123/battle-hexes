@@ -11,6 +11,7 @@ from .api_model import ApiBaseModel
 
 from .combat import CombatResultSchema
 from .game_status import GameStatus
+from .game_log import GameLogRecordModel, game_log_from_game
 
 from .unit import SparseUnit
 
@@ -30,6 +31,7 @@ class SparseBoard(ApiBaseModel):
     active_player: Optional[str] = None
     current_phase: Optional[str] = None
     pending_combats: List[dict[str, List[str]]] = Field(default_factory=list)
+    game_log: List[GameLogRecordModel] = Field(default_factory=list)
 
     def add_unit(self, unit: SparseUnit) -> None:
         self.units.append(unit)
@@ -77,6 +79,8 @@ class SparseBoard(ApiBaseModel):
         sparse_board.pending_combats = (
             combats if isinstance(combats, list) else []
         )
+        if hasattr(game, "reinforcements_deployer"):
+            sparse_board.game_log = game_log_from_game(game)
         if include_scores:
             scores = game.get_score_tracker().get_scores()
             sparse_board.scores = scores if isinstance(scores, dict) else {}
