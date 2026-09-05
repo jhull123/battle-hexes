@@ -133,9 +133,35 @@
 }
 
 #menu .game-log-combat-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 700;
   margin-bottom: 3px;
   cursor: pointer;
+}
+
+#menu .game-log-combat-title::marker {
+  content: '';
+}
+
+#menu .game-log-disclosure {
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 5px solid transparent;
+  border-left-color: currentcolor;
+  background: transparent;
+  cursor: pointer;
+}
+
+#menu .game-log-combat[open] .game-log-disclosure {
+  transform: translate(-2px, 2px) rotate(90deg);
+}
+
+#menu .game-log-faction-swatch {
+  width: 12px;
+  height: 12px;
 }
 
 #menu .game-log-unit-stats {

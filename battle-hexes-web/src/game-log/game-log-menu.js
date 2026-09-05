@@ -31,13 +31,20 @@ export class GameLogMenu {
     heading.className = 'game-log-heading';
     heading.textContent = `Turn ${record.turnNumber} - ${record.playerName}`;
     this.#list.appendChild(heading);
-    this.#appendEvents(record.events.combat, this.#combatRenderer);
+    const faction = this.#factionForPlayer(record.playerName);
+    this.#appendEvents(record.events.combat, this.#combatRenderer, faction);
     this.#appendEvents(record.events.reinforcements, this.#reinforcementRenderer);
   }
 
-  #appendEvents(events, renderer) {
+  #appendEvents(events, renderer, ...renderArgs) {
     for (const event of events) {
-      this.#list.appendChild(renderer.render(event));
+      this.#list.appendChild(renderer.render(event, ...renderArgs));
     }
+  }
+
+  #factionForPlayer(playerName) {
+    const player = this.#game.getPlayers().getAllPlayers()
+      .find((candidate) => candidate.getName() === playerName);
+    return player?.getFactions()[0];
   }
 }
