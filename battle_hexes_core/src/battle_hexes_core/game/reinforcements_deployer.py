@@ -4,6 +4,7 @@ from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.reinforcement import (
     PendingReinforcementGroup,
+    ReinforcementArrivalEvent,
     ReinforcementGroup,
 )
 
@@ -18,18 +19,31 @@ class ReinforcementsDeployer:
     ) -> None:
         self.board = board
         self.groups = list(groups or [])
+        self.game_log: list[ReinforcementArrivalEvent] = []
 
     def deploy_due(self, turn_number: int) -> None:
         """Place due fixed groups in declaration order when entry is legal."""
         for group in self.groups:
             if group.entered or group.arrival_turn > turn_number:
                 continue
-            if not self._can_deploy(group):
+            can_deploy = self._can_deploy(group)
+            if not can_deploy:
+                self._record_attempt(group, turn_number, "blocked")
                 continue
             row, column = group.coords
             for unit in group.units:
                 self.board.add_unit(unit, row, column)
             group.entered = True
+            self._record_attempt(group, turn_number, "arrived")
+
+    def _record_attempt(self, group, turn_number, outcome) -> None:
+        self.game_log.append(ReinforcementArrivalEvent(
+            turn_number=turn_number,
+            player_name=group.player.name,
+            unit_count=len(group.units),
+            entry_coordinate=group.coords,
+            outcome=outcome,
+        ))
 
     def has_eligible_pending(
         self,

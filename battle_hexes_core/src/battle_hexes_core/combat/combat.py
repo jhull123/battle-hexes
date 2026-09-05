@@ -8,6 +8,12 @@ from battle_hexes_core.combat.combatresult import (
 )
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.combat.combatsolver import CombatSolver
+from battle_hexes_core.combat.combat_event import (
+    CombatEvent,
+    CombatOutcomeSnapshot,
+    CombatTerrainSnapshot,
+    CombatUnitSnapshot,
+)
 
 
 class Combat:
@@ -38,24 +44,42 @@ class Combat:
 
     def __resolve_combat(self, battle_participants) -> CombatResultData:
         attackers, defenders = battle_participants
+        attacker_snapshots = self._snapshot_units(attackers)
+        defender_snapshots = self._snapshot_units(defenders)
         attack_factor = sum(unit.get_attack() for unit in attackers)
         defense_factor = sum(unit.get_defense() for unit in defenders)
-        combat_odds_shift = self._get_defender_terrain_shift(defenders)
+        defender_terrain = self._get_defender_terrain(defenders)
+        combat_odds_shift = defender_terrain.odds_shift
         combat_result = self.combat_solver.solve_combat(
             attack_factor,
             defense_factor,
             combat_odds_shift=combat_odds_shift,
         )
+        crt_result = combat_result.get_combat_result()
         combat_result.set_battle_participants((attackers, defenders))
-        self.__update_board_for_result((attackers, defenders), combat_result)
+        eliminated, retreated = self.__update_board_for_result(
+            (attackers, defenders), combat_result
+        )
+        self._record_combat(
+            attacker_snapshots,
+            defender_snapshots,
+            defender_terrain,
+            combat_result,
+            crt_result,
+            eliminated,
+            retreated,
+        )
         return combat_result
 
     def _get_defender_terrain_shift(self, defenders) -> int:
         """Return the most defensive terrain shift across defender hexes."""
-        if not defenders:
-            return 0
+        return self._get_defender_terrain(defenders).odds_shift
 
-        defender_shifts: list[int] = []
+    def _get_defender_terrain(self, defenders) -> CombatTerrainSnapshot:
+        """Return the selected terrain, retaining defender evaluation order."""
+        selected = None
+        selected_shift = 0
+
         for defender in defenders:
             defender_coords = defender.get_coords()
             if defender_coords is None:
@@ -65,28 +89,34 @@ class Combat:
             if defender_hex is None or defender_hex.terrain is None:
                 continue
 
-            defender_shifts.append(defender_hex.terrain.combat_odds_shift)
+            shift = defender_hex.terrain.combat_odds_shift
+            if selected is None or shift < selected_shift:
+                selected = defender_hex.terrain
+                selected_shift = shift
 
-        if not defender_shifts:
-            return 0
-
-        return min(defender_shifts)
+        return CombatTerrainSnapshot(
+            name=selected.name if selected is not None else "Open",
+            odds_shift=selected_shift,
+        )
 
     def __update_board_for_result(
             self,
             battle_participants,
             combat_result: CombatResultData
-    ) -> None:
+    ) -> tuple[list, list]:
         attackers, defenders = battle_participants
         if (
             any(a.get_coords() is None for a in attackers)
             or any(d.get_coords() is None for d in defenders)
         ):
             # One or more units no longer occupy the board. Nothing to update.
-            return
+            return [], []
+        eliminated = []
+        retreated = []
         match combat_result.get_combat_result():
             case CombatResult.ATTACKER_ELIMINATED:
                 self.board.remove_units(attackers)
+                eliminated = list(attackers)
             case CombatResult.ATTACKER_RETREAT_2:
                 origin = defenders[0].get_coords()
                 removed = self._resolve_forced_retreat(attackers, origin, 2)
@@ -97,8 +127,11 @@ class Combat:
                         combat_result.combat_result = (
                             CombatResult.ATTACKER_ELIMINATED
                         )
+                eliminated = list(removed)
+                retreated = [unit for unit in attackers if unit not in removed]
             case CombatResult.DEFENDER_ELIMINATED:
                 self.board.remove_units(defenders)
+                eliminated = list(defenders)
             case CombatResult.DEFENDER_RETREAT_2:
                 origin = attackers[0].get_coords()
                 removed = self._resolve_forced_retreat(defenders, origin, 2)
@@ -109,6 +142,8 @@ class Combat:
                         combat_result.combat_result = (
                             CombatResult.DEFENDER_ELIMINATED
                         )
+                eliminated = list(removed)
+                retreated = [unit for unit in defenders if unit not in removed]
             case CombatResult.EXCHANGE:
                 defense_factor = sum(
                     unit.get_defense() for unit in defenders
@@ -118,11 +153,62 @@ class Combat:
                     defense_factor,
                 )
                 self.board.remove_units(attackers_to_remove + defenders)
+                eliminated = attackers_to_remove + list(defenders)
             case _:
                 raise Exception(
                     'Unhandled combat result:',
                     combat_result.get_combat_result(),
                 )
+        return eliminated, retreated
+
+    @staticmethod
+    def _snapshot_units(units) -> tuple[CombatUnitSnapshot, ...]:
+        return tuple(
+            CombatUnitSnapshot(
+                name=unit.get_name(),
+                attack=unit.get_attack(),
+                defense=unit.get_defense(),
+                movement=unit.get_move(),
+            )
+            for unit in units
+        )
+
+    def _record_combat(
+        self,
+        attackers,
+        defenders,
+        defender_terrain,
+        combat_result,
+        crt_result,
+        eliminated,
+        retreated,
+    ) -> None:
+        eliminated_names = tuple(unit.get_name() for unit in eliminated)
+        retreated_names = tuple(unit.get_name() for unit in retreated)
+        summary_parts = []
+        if eliminated_names:
+            summary_parts.append(f"{', '.join(eliminated_names)} eliminated.")
+        if retreated_names:
+            summary_parts.append(
+                f"{', '.join(retreated_names)} retreated 2 hexes."
+            )
+        self.game.combat_log.append(CombatEvent(
+            turn_number=self.game.turn_number,
+            player_name=self.attacking_player.name,
+            attackers=attackers,
+            defenders=defenders,
+            base_odds=tuple(combat_result.get_base_odds()),
+            modified_odds=tuple(combat_result.get_final_odds()),
+            defender_terrain=defender_terrain,
+            die_roll=combat_result.get_die_roll(),
+            result=CombatOutcomeSnapshot(
+                code=crt_result.name,
+                text=crt_result.value,
+                summary=" ".join(summary_parts),
+            ),
+            eliminated_units=eliminated_names,
+            retreated_units=retreated_names,
+        ))
 
     def _resolve_forced_retreat(
             self,

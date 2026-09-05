@@ -33,6 +33,7 @@ export class GameCreator {
         currentPhase: gameData?.currentPhase,
         pendingCombats: gameData?.pendingCombats ?? [],
         reinforcements: gameData?.reinforcements,
+        gameLog: gameData?.gameLog ?? [],
       },
     );
     this.#addTerrain(board, gameData.board);

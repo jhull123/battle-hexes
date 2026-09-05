@@ -16,6 +16,7 @@ export class Game {
   #gameStatus;
   #pendingCombats;
   #reinforcements;
+  #gameLog;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
@@ -27,6 +28,7 @@ export class Game {
     currentPhase = null,
     pendingCombats = null,
     reinforcements = null,
+    gameLog = [],
   } = {}) {
     this.#id = id;
     this.#phases = phases;
@@ -54,6 +56,7 @@ export class Game {
     this.#gameStatus = this.#normalizeGameStatus(gameStatus);
     this.#pendingCombats = Array.isArray(pendingCombats) ? [...pendingCombats] : null;
     this.#reinforcements = reinforcements;
+    this.#gameLog = gameLog;
     this.#board.setGameplayBlockedProvider?.(() => this.isGameOver());
   }
 
@@ -149,6 +152,10 @@ export class Game {
     return this.#reinforcements;
   }
 
+  getGameLog() {
+    return this.#gameLog;
+  }
+
   updateScores(scores = {}) {
     if (!scores || typeof scores !== 'object') {
       this.#scores = {};
@@ -207,6 +214,9 @@ export class Game {
     }
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'reinforcements')) {
       this.#reinforcements = state.reinforcements;
+    }
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'gameLog')) {
+      this.#gameLog = state.gameLog;
     }
     if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'scores')) {
       this.updateScores(responseData.scores);
