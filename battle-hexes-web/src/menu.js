@@ -223,13 +223,12 @@ export class Menu {
 
     this.#updateCombatIndicator();
     this.#setCurrentTurn();
+    this.#processGameStatus();
     this.#updateVictoryPoints();
     this.#updatePhasesStyling();
     this.#reinforcementsMenu.updateReinforcements();
     this.#gameLogMenu.update();
     this.#disableOrEnableActionButton();
-
-    this.#processGameStatus();
   }
 
   #toggleSelectedHexHeadings(isVisible) {
