@@ -48,6 +48,7 @@ class TestFastAPI(unittest.TestCase):
             },
             objectives=[],
             scores={},
+            combat_results_table={"dieRolls": [], "rows": []},
         )
 
     def test_health_check(self):

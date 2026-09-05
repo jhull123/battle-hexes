@@ -52,6 +52,8 @@ import { Menu } from '../../src/menu.js';
 import { GameOverDialog } from '../../src/gameoverdialog.js';
 import { GameLogMenu } from '../../src/game-log/game-log-menu.js';
 
+const combatResultsTable = { dieRolls: [], rows: [] };
+
 function buildDom() {
   document.body.innerHTML = `
     <div id="selHexContents"></div><div id="selHexCoord"></div>
@@ -67,6 +69,8 @@ function buildDom() {
     <hr id="reinforcementsDivider"><h3 id="scenarioOverviewHeading"></h3>
     <p id="scenarioOverviewDescription"></p><h4 id="scenarioVictoryHeading"></h4>
     <p id="scenarioVictoryDescription"></p>
+    <a id="openCombatResultsTable" href="#combatResultsTableDialog">Open table</a>
+    <div id="combatResultsTableDialog"><button id="closeCombatResultsTable"></button><table id="combatResultsTable"></table></div>
     <div id="gameOverDialog" style="display: none">
       <h2 id="gameOverDialogTitle"></h2><p id="gameOverDialogMessage"></p>
       <button id="gameOverNewGameBtn"></button><button id="gameOverMainMenuBtn"></button>
@@ -82,7 +86,7 @@ test('completed human combat renders its log and opens the authoritative game-ov
     new Player('Airborne', playerTypes.HUMAN, []),
   ], 'Germany');
   const game = new Game('human-combat', ['Movement', 'Combat', 'End Turn'], players,
-    new Board(1, 1), { currentPhase: 'combat' });
+    new Board(1, 1), { currentPhase: 'combat', combatResultsTable });
   new GameOverDialog();
   const menu = new Menu(game, { service: mockService });
 
@@ -109,7 +113,7 @@ test('opens the game-over dialog before a completed combat log render fails', as
   ], 'Germany');
   const game = new Game('human-combat-render-failure',
     ['Movement', 'Combat', 'End Turn'], players,
-    new Board(1, 1), { currentPhase: 'combat' });
+    new Board(1, 1), { currentPhase: 'combat', combatResultsTable });
   new GameOverDialog();
   const menu = new Menu(game, { service: mockService });
   const renderError = new Error('combat event could not be rendered');

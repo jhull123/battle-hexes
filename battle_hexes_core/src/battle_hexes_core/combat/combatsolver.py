@@ -6,12 +6,17 @@ from battle_hexes_core.combat.combatresult import (
     CombatResult,
     CombatResultData,
 )
+from battle_hexes_core.combat.combat_results_table import (
+    CombatResultsTable,
+    CombatResultsTableRow,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
 class CombatSolver:
+    DIE_ROLLS = (1, 2, 3, 4, 5, 6)
     STANDARD_ODDS_RATIOS = (1/7, 1/6, 1/5, 1/4, 1/3, 1/2, 1, 2, 3, 4, 5, 6, 7)
     STANDARD_ODDS = (
         (1, 7),
@@ -118,6 +123,10 @@ class CombatSolver:
             CombatResult.DEFENDER_ELIMINATED
         )
     }
+    AUTOMATIC_RESULTS = {
+        (1, 7): CombatResult.ATTACKER_ELIMINATED,
+        (7, 1): CombatResult.DEFENDER_ELIMINATED,
+    }
 
     def __init__(self):
         self.static_die_roll = None
@@ -169,19 +178,12 @@ class CombatSolver:
             odds_label,
         )
 
-        if odds_label == '1:7':
+        automatic_result = self.AUTOMATIC_RESULTS.get(final_odds)
+        if automatic_result is not None:
             return CombatResultData(
                 final_odds,
                 -1,
-                CombatResult.ATTACKER_ELIMINATED,
-                base_odds=base_odds,
-                final_odds=final_odds,
-            )
-        if odds_label == '7:1':
-            return CombatResultData(
-                final_odds,
-                -1,
-                CombatResult.DEFENDER_ELIMINATED,
+                automatic_result,
                 base_odds=base_odds,
                 final_odds=final_odds,
             )
@@ -194,6 +196,30 @@ class CombatSolver:
             combat_result,
             base_odds=base_odds,
             final_odds=final_odds,
+        )
+
+    @classmethod
+    def get_combat_results_table(cls) -> CombatResultsTable:
+        """Project the solver's authoritative odds and outcome definitions."""
+        rows = []
+        for odds in cls.STANDARD_ODDS:
+            automatic_result = cls.AUTOMATIC_RESULTS.get(odds)
+            if automatic_result is not None:
+                rows.append(CombatResultsTableRow(
+                    odds=odds,
+                    automatic_result=automatic_result,
+                ))
+                continue
+
+            odds_label = f'{odds[0]}:{odds[1]}'
+            rows.append(CombatResultsTableRow(
+                odds=odds,
+                results=cls.RESULTS_TABLE[odds_label],
+            ))
+
+        return CombatResultsTable(
+            die_rolls=cls.DIE_ROLLS,
+            rows=tuple(rows),
         )
 
     def set_static_die_roll(self, static_roll: int):

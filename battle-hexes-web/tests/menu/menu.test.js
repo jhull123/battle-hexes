@@ -63,6 +63,8 @@ describe('auto new game persistence', () => {
       <p id="scenarioOverviewDescription"></p>
       <h4 id="scenarioVictoryHeading"></h4>
       <p id="scenarioVictoryDescription"></p>
+      <a id="openCombatResultsTable" href="#combatResultsTableDialog">Open table</a>
+      <div id="combatResultsTableDialog"><button id="closeCombatResultsTable"></button><table id="combatResultsTable"></table></div>
     `;
   }
 
@@ -89,6 +91,7 @@ describe('auto new game persistence', () => {
       applyApiState: jest.fn(),
       getId: () => 'game-id',
       getScenarioId: () => 'elim_1',
+      getCombatResultsTable: () => ({ dieRolls: [], rows: [] }),
     };
 
     return { ...baseGame, ...overrides };

@@ -121,6 +121,12 @@
       <h3>Navigation</h3>
       <a class="back-link" href="index.html">Back to title screen</a>
     </div>
+    <hr class="menu-divider">
+    <section id="combatResultsTableMenu">
+      <h3>Combat Results Table</h3>
+      <p>The Combat Results Table shows the outcome for each combat odds ratio and die roll.</p>
+      <a id="openCombatResultsTable" href="#combatResultsTableDialog">Open the Combat Results Table</a>
+    </section>
   </div>
   <div id="canvas-container"></div>
   <div id="gameOverDialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="gameOverDialogTitle" aria-describedby="gameOverDialogMessage" style="display: none;">
@@ -133,6 +139,15 @@
         <button id="gameOverMainMenuBtn" type="button">Main Menu</button>
         <button id="gameOverCloseBtn" type="button" class="primary-action">Close</button>
       </div>
+    </div>
+  </div>
+  <div id="combatResultsTableDialog" class="crt-dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="combatResultsTableDialogTitle" style="display: none;">
+    <div class="crt-dialog-card">
+      <div class="crt-dialog-heading">
+        <h2 id="combatResultsTableDialogTitle">Combat Results Table</h2>
+        <button id="closeCombatResultsTable" type="button" aria-label="Close Combat Results Table">Close</button>
+      </div>
+      <table id="combatResultsTable"></table>
     </div>
   </div>
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet">

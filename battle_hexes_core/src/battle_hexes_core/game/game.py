@@ -18,6 +18,7 @@ from battle_hexes_core.game.reinforcements_deployer import (
     ReinforcementsDeployer,
 )
 from battle_hexes_core.unit.faction import Faction
+from battle_hexes_core.combat.combatsolver import CombatSolver
 
 
 @dataclass
@@ -57,6 +58,7 @@ class Game:
         self.defensive_fire_resolver = DefensiveFireResolver(board)
         self._refresh_defensive_fire_availability()
         self.game_status = None
+        self.combat_results_table = CombatSolver.get_combat_results_table()
         self._terminal = False
         self.reinforcements_deployer.deploy_due(self.turn_number)
         self.update_game_status()
@@ -75,6 +77,10 @@ class Game:
 
     def get_score_tracker(self) -> ScoreTracker:
         return self.score_tracker
+
+    def get_combat_results_table(self):
+        """Return the immutable reference used by combat resolution."""
+        return self.combat_results_table
 
     def set_defensive_fire_settings(self, settings) -> None:
         self.defensive_fire_resolver.set_settings(settings)

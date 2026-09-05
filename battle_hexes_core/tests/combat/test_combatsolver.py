@@ -35,6 +35,30 @@ class TestCombatSolver(unittest.TestCase):
         assert combat_result.get_combat_result() \
             == CombatResult.ATTACKER_ELIMINATED
 
+    def test_combat_results_table_projects_all_authoritative_columns(self):
+        table = self.combat_solver.get_combat_results_table()
+
+        self.assertEqual(table.die_rolls, (1, 2, 3, 4, 5, 6))
+        self.assertEqual(
+            tuple(row.odds for row in table.rows),
+            CombatSolver.STANDARD_ODDS,
+        )
+        self.assertEqual(
+            table.rows[0].automatic_result,
+            CombatResult.ATTACKER_ELIMINATED,
+        )
+        self.assertIsNone(table.rows[0].results)
+        self.assertEqual(
+            table.rows[1].results,
+            CombatSolver.RESULTS_TABLE['1:6'],
+        )
+        self.assertEqual(len(table.rows[1].results), 6)
+        self.assertEqual(
+            table.rows[-1].automatic_result,
+            CombatResult.DEFENDER_ELIMINATED,
+        )
+        self.assertIsNone(table.rows[-1].results)
+
     def test_solve_combat_applies_negative_odds_shift(self):
         self.combat_solver.set_static_die_roll(3)
 
