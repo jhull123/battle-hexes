@@ -22,7 +22,24 @@ const table = {
 };
 
 beforeEach(() => {
-  document.body.innerHTML = '<table id="combatResultsTable"></table>';
+  document.body.innerHTML = `
+    <a id="openCombatResultsTable" href="#combatResultsTableDialog">Open table</a>
+    <div id="combatResultsTableDialog" style="display: none;">
+      <button id="closeCombatResultsTable">Close</button>
+      <table id="combatResultsTable"></table>
+    </div>`;
+});
+
+test('opens and closes the table popup from the menu link', () => {
+  new CombatResultsTableMenu({ getCombatResultsTable: () => table });
+
+  document.getElementById('openCombatResultsTable').click();
+  expect(document.getElementById('combatResultsTableDialog').style.display).toBe('flex');
+  expect(document.activeElement).toBe(document.getElementById('closeCombatResultsTable'));
+
+  document.getElementById('closeCombatResultsTable').click();
+  expect(document.getElementById('combatResultsTableDialog').style.display).toBe('none');
+  expect(document.activeElement).toBe(document.getElementById('openCombatResultsTable'));
 });
 
 test('renders accessible die-roll columns and result text from game state', () => {

@@ -1,11 +1,42 @@
 export class CombatResultsTableMenu {
   #game;
   #table;
+  #dialog;
+  #openLink;
+  #closeButton;
 
   constructor(game) {
     this.#game = game;
     this.#table = document.getElementById('combatResultsTable');
+    this.#dialog = document.getElementById('combatResultsTableDialog');
+    this.#openLink = document.getElementById('openCombatResultsTable');
+    this.#closeButton = document.getElementById('closeCombatResultsTable');
+    this.#openLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      this.#open();
+    });
+    this.#closeButton.addEventListener('click', () => this.#close());
+    this.#dialog.addEventListener('click', (event) => {
+      if (event.target === this.#dialog) {
+        this.#close();
+      }
+    });
+    this.#dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.#close();
+      }
+    });
     this.render();
+  }
+
+  #open() {
+    this.#dialog.style.display = 'flex';
+    this.#closeButton.focus();
+  }
+
+  #close() {
+    this.#dialog.style.display = 'none';
+    this.#openLink.focus();
   }
 
   setGame(game) {

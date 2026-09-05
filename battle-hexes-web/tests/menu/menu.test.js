@@ -63,7 +63,8 @@ describe('auto new game persistence', () => {
       <p id="scenarioOverviewDescription"></p>
       <h4 id="scenarioVictoryHeading"></h4>
       <p id="scenarioVictoryDescription"></p>
-      <table id="combatResultsTable"></table>
+      <a id="openCombatResultsTable" href="#combatResultsTableDialog">Open table</a>
+      <div id="combatResultsTableDialog"><button id="closeCombatResultsTable"></button><table id="combatResultsTable"></table></div>
     `;
   }
 
