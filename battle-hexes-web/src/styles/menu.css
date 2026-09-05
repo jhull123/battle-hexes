@@ -167,3 +167,42 @@
   color: #999;
   opacity: 0.75;
 }
+
+#menu #combatResultsTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.66rem;
+  line-height: 1.15;
+}
+
+#menu #combatResultsTable caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+#menu #combatResultsTable th,
+#menu #combatResultsTable td {
+  border: 1px solid #aaa;
+  padding: 3px 2px;
+  overflow-wrap: anywhere;
+  text-align: center;
+  vertical-align: middle;
+}
+
+#menu #combatResultsTable th:first-child {
+  width: 9%;
+  font-weight: 700;
+}
+
+#menu #combatResultsTable thead th {
+  background: #e2e2e2;
+}
+
+#menu #combatResultsTable .crt-automatic-result {
+  font-weight: 600;
+}

@@ -2,6 +2,7 @@
 
 from .board import BoardModel
 from .combat import CombatResultSchema
+from .combat_results_table import CombatResultsTableModel
 from .create_game import CreateGameRequest
 from .faction import FactionModel
 from .movement import DefensiveFireEventModel, MovementResponseModel
@@ -19,6 +20,7 @@ from .unit import UnitModel, SparseUnit
 __all__ = [
     "BoardModel",
     "CombatResultSchema",
+    "CombatResultsTableModel",
     "CreateGameRequest",
     "FactionModel",
     "DefensiveFireEventModel",

@@ -4,6 +4,7 @@ import { BoardUpdater } from './model/board-updater.js';
 import { SoundPlayer } from './sound-player.js';
 import { ReinforcementsMenu } from './reinforcements-menu.js';
 import { GameLogMenu } from './game-log/game-log-menu.js';
+import { CombatResultsTableMenu } from './combat-results-table-menu.js';
 
 export class Menu {
   #game;
@@ -32,6 +33,7 @@ export class Menu {
   #gameLogMenu;
   #service;
   #soundPlayer;
+  #combatResultsTableMenu;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
   static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
@@ -60,6 +62,7 @@ export class Menu {
     this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#reinforcementsMenu = new ReinforcementsMenu(this.#game);
     this.#gameLogMenu = new GameLogMenu(this.#game);
+    this.#combatResultsTableMenu = new CombatResultsTableMenu(this.#game);
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
     this.#service = service
@@ -572,6 +575,7 @@ export class Menu {
     this.#game = game;
     this.#reinforcementsMenu.setGame(game);
     this.#gameLogMenu.setGame(game);
+    this.#combatResultsTableMenu.setGame(game);
     this.#soundPlayer.setGame(this.#game);
     this.#showDefensiveFireStatus([]);
     this.#showDefensiveFireEvents([]);

@@ -8,6 +8,7 @@ from pydantic import ConfigDict, Field
 from .api_model import ApiBaseModel
 
 from .board import BoardModel
+from .combat_results_table import CombatResultsTableModel
 from .game_status import GameStatus
 from .game_log import GameLogRecordModel, game_log_from_game
 from .objective import ObjectiveModel
@@ -44,6 +45,7 @@ class GameModel(ApiBaseModel):
         default=None,
         exclude_if=lambda value: value is None,
     )
+    combat_results_table: CombatResultsTableModel
 
     @classmethod
     def from_game(
@@ -75,4 +77,7 @@ class GameModel(ApiBaseModel):
             pending_combats=getattr(game, "pending_combats", []),
             game_log=game_log_from_game(game),
             reinforcements=ReinforcementsModel.from_game(game),
+            combat_results_table=CombatResultsTableModel.from_core(
+                game.get_combat_results_table()
+            ),
         )

@@ -689,5 +689,389 @@
     "winnerFactionId": null,
     "reason": null,
     "message": "Game in progress."
+  },
+  "combatResultsTable": {
+    "dieRolls": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "rows": [
+      {
+        "odds": [
+          1,
+          7
+        ],
+        "automaticResult": {
+          "code": "ATTACKER_ELIMINATED",
+          "text": "Attacker Eliminated"
+        }
+      },
+      {
+        "odds": [
+          1,
+          6
+        ],
+        "results": [
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          1,
+          5
+        ],
+        "results": [
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          1,
+          4
+        ],
+        "results": [
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          1,
+          3
+        ],
+        "results": [
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          1,
+          2
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          1,
+          1
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          2,
+          1
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "ATTACKER_RETREAT_2",
+            "text": "Attacker Retreat 2 Hexes"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "ATTACKER_ELIMINATED",
+            "text": "Attacker Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          3,
+          1
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          4,
+          1
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "EXCHANGE",
+            "text": "Exchange"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          5,
+          1
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          6,
+          1
+        ],
+        "results": [
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_RETREAT_2",
+            "text": "Defender Retreat 2 Hexes"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          },
+          {
+            "code": "DEFENDER_ELIMINATED",
+            "text": "Defender Eliminated"
+          }
+        ]
+      },
+      {
+        "odds": [
+          7,
+          1
+        ],
+        "automaticResult": {
+          "code": "DEFENDER_ELIMINATED",
+          "text": "Defender Eliminated"
+        }
+      }
+    ]
   }
 }
