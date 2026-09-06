@@ -108,7 +108,7 @@ def game_log_from_game(game) -> list[GameLogRecordModel]:
     for event in reversed(getattr(game, "combat_log", [])):
         record = _record_for_event(records_by_key, event)
         record.events.combat.append(_combat_event_model(event))
-    for event in getattr(game, "defensive_fire_log", []):
+    for event in reversed(getattr(game, "defensive_fire_log", [])):
         record = _record_for_event(records_by_key, event)
         record.events.defensive_fire.append(DefensiveFireHistoryEventModel(
             firing_unit=DefensiveFireUnitModel(**vars(event.firing_unit)),
