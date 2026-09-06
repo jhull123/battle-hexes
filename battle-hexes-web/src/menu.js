@@ -4,6 +4,8 @@ import { BoardUpdater } from './model/board-updater.js';
 import { SoundPlayer } from './sound-player.js';
 import { ReinforcementsMenu } from './reinforcements-menu.js';
 import { GameLogMenu } from './game-log/game-log-menu.js';
+import { CombatResultsTableMenu } from './combat-results-table-menu.js';
+import { createPlayerSwatch, getPlayerSwatchColor } from './faction-swatch.js';
 
 export class Menu {
   #game;
@@ -13,7 +15,6 @@ export class Menu {
   #selHexUnitsHeading;
   #selHexTerrainHeading;
   #selHexObjectivesDiv;
-  #reactionStatusDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -27,13 +28,12 @@ export class Menu {
   #scenarioDetailsRequestId = 0;
   #autoReloadScheduled = false;
   #onNewGameRequested;
-  #reactionMessagesDiv;
   #reinforcementsMenu;
   #gameLogMenu;
   #service;
   #soundPlayer;
+  #combatResultsTableMenu;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
-  static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
   constructor(game, {
     onNewGameRequested,
@@ -47,7 +47,6 @@ export class Menu {
     this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
     this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
-    this.#reactionStatusDiv = document.getElementById('reactionStatus');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -57,9 +56,9 @@ export class Menu {
     this.#scenarioOverviewDescription = document.getElementById('scenarioOverviewDescription');
     this.#scenarioVictoryHeading = document.getElementById('scenarioVictoryHeading');
     this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
-    this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#reinforcementsMenu = new ReinforcementsMenu(this.#game);
     this.#gameLogMenu = new GameLogMenu(this.#game);
+    this.#combatResultsTableMenu = new CombatResultsTableMenu(this.#game);
     this.#activeScenarioId = this.#game.getScenarioId?.() ?? null;
     this.#onNewGameRequested = onNewGameRequested;
     this.#service = service
@@ -106,11 +105,8 @@ export class Menu {
     this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
     eventBus.on('defensiveFireResolved', (events) => {
-      this.#showDefensiveFireStatus(events);
       this.#soundPlayer.playDefensiveFireEvents(events);
     });
-
-    eventBus.on?.('defensiveFireResolved', (events) => this.#showDefensiveFireEvents(events));
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -223,13 +219,12 @@ export class Menu {
 
     this.#updateCombatIndicator();
     this.#setCurrentTurn();
+    this.#processGameStatus();
     this.#updateVictoryPoints();
     this.#updatePhasesStyling();
     this.#reinforcementsMenu.updateReinforcements();
     this.#gameLogMenu.update();
     this.#disableOrEnableActionButton();
-
-    this.#processGameStatus();
   }
 
   #toggleSelectedHexHeadings(isVisible) {
@@ -240,20 +235,6 @@ export class Menu {
     if (this.#selHexTerrainHeading) {
       this.#selHexTerrainHeading.style.display = displayValue;
     }
-  }
-
-  #showDefensiveFireStatus(events) {
-    if (!this.#reactionStatusDiv) {
-      return;
-    }
-
-    const eventMessages = Array.isArray(events)
-      ? events
-        .map((event) => event?.message)
-        .filter((message) => typeof message === 'string' && message.length > 0)
-      : [];
-
-    this.#reactionStatusDiv.textContent = eventMessages.join(' ');
   }
 
   #formatSelectedHexUnits(selectedHex) {
@@ -268,7 +249,7 @@ export class Menu {
         const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
         const movesRemaining = unit.getMovesRemaining?.();
         const movesDisplay = Number.isFinite(movesRemaining) ? movesRemaining : 0;
-        const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
+        const color = getPlayerSwatchColor(unit.getOwningPlayer?.());
         const tooltipText = echelon
           ? `${echelon}, ${unitStrength}`
           : unitStrength;
@@ -334,9 +315,7 @@ export class Menu {
       const row = document.createElement('div');
       row.classList.add('victory-row');
 
-      const swatch = document.createElement('span');
-      swatch.classList.add('victory-swatch');
-      swatch.style.backgroundColor = this.#getPlayerSwatchColor(player);
+      const swatch = createPlayerSwatch(player);
 
       const name = document.createElement('span');
       const playerName = player.getName?.() ?? 'Unknown';
@@ -368,17 +347,6 @@ export class Menu {
       row.append(swatch, name, ...(turnBadge ? [turnBadge] : []), leader, score);
       this.#victoryPointsList.appendChild(row);
     }
-  }
-
-  #getPlayerSwatchColor(player) {
-    const factions = player?.getFactions?.() ?? [];
-    if (Array.isArray(factions) && factions.length > 0) {
-      const color = factions[0]?.getCounterColor?.();
-      if (typeof color === 'string' && color.trim().length > 0) {
-        return color;
-      }
-    }
-    return Menu.#DEFAULT_SWATCH_COLOR;
   }
 
   #updateCombatIndicator() {
@@ -513,23 +481,6 @@ export class Menu {
     }
   }
 
-  #showDefensiveFireEvents(events = []) {
-    if (!this.#reactionMessagesDiv) {
-      return;
-    }
-
-    if (!Array.isArray(events) || events.length === 0) {
-      this.#reactionMessagesDiv.innerHTML = '';
-      this.#reactionMessagesDiv.style.display = 'none';
-      return;
-    }
-
-    this.#reactionMessagesDiv.innerHTML = events
-      .map((event) => `<div class="reaction-message reaction-message--${event.outcome ?? 'info'}">${event.message ?? 'Defensive fire resolved.'}</div>`)
-      .join('');
-    this.#reactionMessagesDiv.style.display = 'block';
-  }
-
   #setCurrentTurn() {
     const player = this.#game.getCurrentPlayer();
     const phase = this.#game.getCurrentPhase();
@@ -573,9 +524,8 @@ export class Menu {
     this.#game = game;
     this.#reinforcementsMenu.setGame(game);
     this.#gameLogMenu.setGame(game);
+    this.#combatResultsTableMenu.setGame(game);
     this.#soundPlayer.setGame(this.#game);
-    this.#showDefensiveFireStatus([]);
-    this.#showDefensiveFireEvents([]);
     const scenarioId = this.#game.getScenarioId?.() ?? null;
     if (scenarioId !== this.#activeScenarioId) {
       this.#activeScenarioId = scenarioId;

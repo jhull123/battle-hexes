@@ -31,6 +31,22 @@ describe('constructor', () => {
 });
 
 describe('configuration metadata', () => {
+  test('retains and replaces the authoritative combat results table', () => {
+    const initialTable = { dieRolls: [1], rows: [] };
+    const replacementTable = { dieRolls: [1, 2], rows: [] };
+    const configuredGame = new Game(
+      'configured-id',
+      phases,
+      players,
+      new Board(10, 10),
+      { combatResultsTable: initialTable },
+    );
+
+    expect(configuredGame.getCombatResultsTable()).toBe(initialTable);
+    configuredGame.applyApiState({ combatResultsTable: replacementTable });
+    expect(configuredGame.getCombatResultsTable()).toBe(replacementTable);
+  });
+
   test('exposes scenario and player type identifiers when provided', () => {
     const configuredGame = new Game(
       'configured-id',

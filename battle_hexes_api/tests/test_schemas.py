@@ -73,6 +73,7 @@ class TestApiAliases(unittest.TestCase):
             scores={},
             turn_limit=10,
             turn_number=2,
+            combat_results_table={"dieRolls": [], "rows": []},
         )
 
         payload = model.model_dump(by_alias=True)
@@ -89,6 +90,7 @@ class TestApiAliases(unittest.TestCase):
         terrain = payload["board"]["terrain"]["types"]["open"]
         self.assertEqual(terrain["moveCost"], 1)
         self.assertEqual(terrain["combatOddsShift"], 0)
+        self.assertIn("combatResultsTable", payload)
 
     def test_reinforcement_units_expose_combat_stats(self):
         unit = SimpleNamespace(
@@ -259,6 +261,30 @@ class TestGameModel(unittest.TestCase):
             [(0, 0), (0, 1)],
         )
         self.assertEqual(len(model.objectives), 1)
+        table = model.combat_results_table
+        self.assertEqual(table.die_rolls, [1, 2, 3, 4, 5, 6])
+        self.assertEqual(len(table.rows), 13)
+        self.assertEqual(table.rows[0].odds, (1, 7))
+        self.assertEqual(
+            table.rows[0].automatic_result.code,
+            "ATTACKER_ELIMINATED",
+        )
+        self.assertIsNone(table.rows[0].results)
+        self.assertEqual(len(table.rows[1].results), 6)
+        self.assertEqual(
+            table.rows[1].results[2].text,
+            "Attacker Retreat 2 Hexes",
+        )
+        payload = model.model_dump(by_alias=True)
+        self.assertNotIn("results", payload["combatResultsTable"]["rows"][0])
+        self.assertNotIn(
+            "automaticResult",
+            payload["combatResultsTable"]["rows"][1],
+        )
+        self.assertEqual(
+            payload["combatResultsTable"]["rows"][1]["results"][2]["code"],
+            "ATTACKER_RETREAT_2",
+        )
         objective_model = model.objectives[0]
         self.assertEqual(objective_model.row, 0)
         self.assertEqual(objective_model.column, 0)
@@ -375,6 +401,7 @@ class TestMovementSchemas(unittest.TestCase):
                 },
                 objectives=[],
                 scores={},
+                combat_results_table={"dieRolls": [], "rows": []},
             ),
             sparse_board=SparseBoard(units=[]),
         )
@@ -444,6 +471,7 @@ class TestMovementSchemas(unittest.TestCase):
                     },
                     objectives=[],
                     scores={},
+                    combat_results_table={"dieRolls": [], "rows": []},
                 )
             )
             SparseBoard.from_board = classmethod(

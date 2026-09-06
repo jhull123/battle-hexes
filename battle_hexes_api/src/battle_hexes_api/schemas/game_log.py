@@ -41,9 +41,24 @@ class CombatEventModel(ApiBaseModel):
     retreated_units: list[str]
 
 
+class DefensiveFireUnitModel(ApiBaseModel):
+    unit_id: str
+    name: str
+
+
+class DefensiveFireHistoryEventModel(ApiBaseModel):
+    firing_unit: DefensiveFireUnitModel
+    target_unit: DefensiveFireUnitModel
+    success_probability: float
+    random_roll: float
+    outcome: Literal["noEffect", "retreated", "eliminated"]
+    summary: str
+
+
 class GameLogEventsModel(ApiBaseModel):
     reinforcements: list[ReinforcementEventModel]
     combat: list[CombatEventModel]
+    defensive_fire: list[DefensiveFireHistoryEventModel]
 
 
 class GameLogRecordModel(ApiBaseModel):
@@ -58,7 +73,9 @@ def _record_for_event(records_by_key, event) -> GameLogRecordModel:
         records_by_key[key] = GameLogRecordModel(
             turn_number=event.turn_number,
             player_name=event.player_name,
-            events=GameLogEventsModel(reinforcements=[], combat=[]),
+            events=GameLogEventsModel(
+                reinforcements=[], combat=[], defensive_fire=[]
+            ),
         )
     return records_by_key[key]
 
@@ -91,6 +108,16 @@ def game_log_from_game(game) -> list[GameLogRecordModel]:
     for event in reversed(getattr(game, "combat_log", [])):
         record = _record_for_event(records_by_key, event)
         record.events.combat.append(_combat_event_model(event))
+    for event in reversed(getattr(game, "defensive_fire_log", [])):
+        record = _record_for_event(records_by_key, event)
+        record.events.defensive_fire.append(DefensiveFireHistoryEventModel(
+            firing_unit=DefensiveFireUnitModel(**vars(event.firing_unit)),
+            target_unit=DefensiveFireUnitModel(**vars(event.target_unit)),
+            success_probability=event.success_probability,
+            random_roll=event.random_roll,
+            outcome=event.outcome,
+            summary=event.summary,
+        ))
     return sorted(
         records_by_key.values(),
         key=lambda record: record.turn_number,

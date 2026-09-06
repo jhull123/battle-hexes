@@ -1,3 +1,5 @@
+import { createFactionSwatch } from './faction-swatch.js';
+
 export class ReinforcementsMenu {
   #game;
   #menu;
@@ -102,7 +104,7 @@ export class ReinforcementsMenu {
     const faction = this.#findFaction(unit.factionId);
     const row = document.createElement('div');
     row.className = 'selected-unit-row';
-    row.append(this.#createSwatch(faction), this.#createUnitLabel(unit));
+    row.append(createFactionSwatch(faction, 'selected-unit-swatch'), this.#createUnitLabel(unit));
     this.#list.append(row);
   }
 
@@ -110,15 +112,6 @@ export class ReinforcementsMenu {
     return this.#game.getPlayers().getAllPlayers()
       .flatMap((player) => player.getFactions())
       .find((faction) => faction.getId() === factionId);
-  }
-
-  #createSwatch(faction) {
-    const swatch = document.createElement('span');
-    swatch.className = 'victory-swatch selected-unit-swatch';
-    swatch.style.backgroundColor = faction.getCounterColor();
-    swatch.setAttribute('role', 'img');
-    swatch.setAttribute('aria-label', `${faction.getName()} faction`);
-    return swatch;
   }
 
   #createUnitLabel(unit) {
