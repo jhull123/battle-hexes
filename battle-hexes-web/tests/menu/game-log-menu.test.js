@@ -42,6 +42,11 @@ describe('GameLogMenu', () => {
       + 'Turn 3 - Player 1Reinforcements blocked - 2 units at (0, 0)',
     );
     expect(document.querySelectorAll('.game-log-heading')).toHaveLength(2);
+    const headings = document.querySelectorAll('.game-log-heading');
+    expect(headings[0].querySelector('.game-log-player-swatch').style.backgroundColor)
+      .toBe('rgb(0, 0, 255)');
+    expect(headings[0].querySelector('.game-log-player-swatch').getAttribute('aria-label'))
+      .toBe('Player 2 player');
   });
 
   test('renders collapsed combat above reinforcements without repeated result details', () => {
@@ -80,16 +85,12 @@ describe('GameLogMenu', () => {
     expect(entry.querySelector('summary').textContent).toBe(
       'Combat - Defender Retreat 2 Hexes',
     );
-    const swatch = entry.querySelector('.game-log-faction-swatch');
-    expect(swatch.style.backgroundColor).toBe('rgb(0, 0, 255)');
-    expect(swatch.getAttribute('aria-label')).toBe('Axis faction');
+    expect(entry.querySelector('.game-log-faction-swatch')).toBeNull();
     const disclosure = entry.querySelector('.game-log-disclosure');
     disclosure.click();
     expect(entry.open).toBe(true);
-    expect(disclosure.getAttribute('aria-expanded')).toBe('true');
     disclosure.click();
     expect(entry.open).toBe(false);
-    expect(disclosure.getAttribute('aria-expanded')).toBe('false');
     entry.querySelector('summary').click();
     expect(entry.open).toBe(true);
     expect(entry.textContent).toContain('Attacking: Unit A 4-4-2, Unit B 2-2-4');

@@ -1,30 +1,15 @@
-import { createFactionSwatch } from '../faction-swatch.js';
-
 export class CombatEventRenderer {
-  render(event, faction) {
+  render(event) {
     const entry = document.createElement('details');
     entry.className = 'game-log-combat';
     const heading = document.createElement('summary');
     heading.className = 'game-log-combat-title';
-    const disclosure = document.createElement('button');
+    const disclosure = document.createElement('span');
     disclosure.className = 'game-log-disclosure';
-    disclosure.type = 'button';
-    disclosure.setAttribute('aria-label', 'Expand combat details');
-    disclosure.setAttribute('aria-expanded', 'false');
-    disclosure.addEventListener('click', (clickEvent) => {
-      clickEvent.preventDefault();
-      clickEvent.stopPropagation();
-      entry.open = !entry.open;
-      disclosure.setAttribute('aria-expanded', `${entry.open}`);
-      disclosure.setAttribute('aria-label', `${entry.open ? 'Collapse' : 'Expand'} combat details`);
-    });
-    entry.addEventListener('toggle', () => {
-      disclosure.setAttribute('aria-expanded', `${entry.open}`);
-      disclosure.setAttribute('aria-label', `${entry.open ? 'Collapse' : 'Expand'} combat details`);
-    });
+    disclosure.setAttribute('aria-hidden', 'true');
     const title = document.createElement('span');
     title.textContent = `Combat - ${event.result.text}`;
-    heading.append(disclosure, createFactionSwatch(faction, 'game-log-faction-swatch'), title);
+    heading.append(disclosure, title);
     entry.appendChild(heading);
     this.#appendParticipants(entry, 'Attacking', event.attackers);
     this.#appendParticipants(entry, 'Defending', event.defenders);
