@@ -117,7 +117,8 @@
   background: rgb(122 33 0 / 8%);
 }
 
-#menu .game-log-combat-title {
+#menu .game-log-combat-title,
+#menu .game-log-defensive-fire-title {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -126,7 +127,8 @@
   cursor: pointer;
 }
 
-#menu .game-log-combat-title::marker {
+#menu .game-log-combat-title::marker,
+#menu .game-log-defensive-fire-title::marker {
   content: '';
 }
 
@@ -141,7 +143,8 @@
   pointer-events: none;
 }
 
-#menu .game-log-combat[open] .game-log-disclosure {
+#menu .game-log-combat[open] .game-log-disclosure,
+#menu .game-log-defensive-fire[open] .game-log-disclosure {
   transform: translate(-2px, 2px) rotate(90deg);
 }
 
@@ -154,11 +157,6 @@
   padding: 7px;
   border-left: 3px solid #a14f00;
   background: rgb(161 79 0 / 8%);
-}
-
-#menu .game-log-defensive-fire-summary {
-  margin-top: 4px;
-  font-style: italic;
 }
 
 #menu .reinforcement-turn {
