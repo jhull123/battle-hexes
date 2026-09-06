@@ -707,6 +707,14 @@ class TestGame(unittest.TestCase):
 
         self.assertEqual(mover.get_coords(), (0, 1))
         self.assertEqual(result.defensive_fire_results[0].outcome, "no_effect")
+        event = game.defensive_fire_log[0]
+        self.assertEqual(event.player_name, "P1")
+        self.assertEqual(event.firing_unit.unit_id, "defender")
+        self.assertEqual(event.firing_unit.name, "Defender")
+        self.assertEqual(event.target_unit.unit_id, "mover")
+        self.assertEqual(event.outcome, "noEffect")
+        self.assertEqual(event.success_probability, 0.5)
+        self.assertEqual(event.random_roll, 1.0)
 
     @patch(
         RANDOM_PATCH_TARGET,

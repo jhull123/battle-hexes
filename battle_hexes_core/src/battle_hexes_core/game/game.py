@@ -9,6 +9,9 @@ from battle_hexes_core.defensivefire.defensive_fire import (
 from battle_hexes_core.defensivefire.defensive_fire_resolver import (
     DefensiveFireResolver,
 )
+from battle_hexes_core.defensivefire.defensive_fire_event_recorder import (
+    DefensiveFireEventRecorder,
+)
 from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.player import Player
 from battle_hexes_core.game.scoretracker import ScoreTracker
@@ -53,6 +56,11 @@ class Game:
             reinforcements,
         )
         self.combat_log = []
+        self.defensive_fire_log = []
+        self.defensive_fire_event_recorder = DefensiveFireEventRecorder(
+            board,
+            self.defensive_fire_log,
+        )
         self.current_phase = "movement"
         self.pending_combats = []
         self.defensive_fire_resolver = DefensiveFireResolver(board)
@@ -152,6 +160,12 @@ class Game:
                 )
             )
             resolution.defensive_fire_results.extend(defensive_fire_results)
+            self.defensive_fire_event_recorder.record(
+                defensive_fire_results,
+                unit,
+                self.turn_number,
+                self.get_current_player().name,
+            )
             break
 
     def next_player(self) -> Player:
