@@ -186,26 +186,6 @@ describe('auto new game persistence', () => {
     expect(soundPlayer.playDefensiveFireEvents).toHaveBeenCalledWith(events);
   });
 
-  test('shows defensive fire messages from movement-phase reactions', async () => {
-    buildDom();
-
-    new Menu(fakeGame(), { service: mockService });
-    await flushPromises();
-
-    const defensiveFireListener = eventBus.on.mock.calls.find(
-      ([eventName]) => eventName === 'defensiveFireResolved'
-    )?.[1];
-
-    defensiveFireListener([
-      { message: 'Defensive fire forced the target to retreat to (0, 1).' },
-      { message: 'Defensive fire had no effect.' },
-    ]);
-
-    expect(document.getElementById('reactionStatus').textContent).toBe(
-      'Defensive fire forced the target to retreat to (0, 1). Defensive fire had no effect.'
-    );
-  });
-
   test('falls back to scenario id and hides optional sections when details are missing', async () => {
     buildDom();
 
@@ -731,36 +711,28 @@ describe('auto new game persistence', () => {
       .toBe('End Turn');
   });
 
-  test('renders defensive fire messages from the event bus hook', () => {
+  test('does not register transient defensive fire message behavior', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
     new Menu(fakeGame(), { service: mockService });
 
     const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
-    const handler = calls[calls.length - 1][1];
-    handler([{ outcome: 'no_effect', message: 'Defensive fire had no effect.' }]);
-
-    const reactionMessages = document.getElementById('reactionMessages');
-    expect(reactionMessages.textContent).toContain('Defensive fire had no effect.');
-    expect(reactionMessages.style.display).toBe('block');
+    expect(calls).toHaveLength(1);
   });
 
-  test('clears defensive fire status when a new game is loaded', () => {
+  test('does not modify legacy reaction elements when a new game is loaded', () => {
     buildDom();
     history.replaceState(null, '', '/');
 
     const menu = new Menu(fakeGame(), { service: mockService });
-    const calls = eventBus.on.mock.calls.filter(([eventName]) => eventName === 'defensiveFireResolved');
-    calls.forEach(([, handler]) => handler([
-      { outcome: 'no_effect', message: 'Defensive fire had no effect.' },
-    ]));
+    document.getElementById('reactionStatus').textContent = 'unchanged';
+    document.getElementById('reactionMessages').textContent = 'unchanged';
 
     menu.setGame(fakeGame({ getId: () => 'new-game-id' }));
 
-    expect(document.getElementById('reactionStatus').textContent).toBe('');
-    expect(document.getElementById('reactionMessages').textContent).toBe('');
-    expect(document.getElementById('reactionMessages').style.display).toBe('none');
+    expect(document.getElementById('reactionStatus').textContent).toBe('unchanged');
+    expect(document.getElementById('reactionMessages').textContent).toBe('unchanged');
   });
 
   test('renders reinforcements from a replacement game', () => {

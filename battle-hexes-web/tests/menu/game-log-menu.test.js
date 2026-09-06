@@ -116,4 +116,36 @@ describe('GameLogMenu', () => {
 
     expect(document.getElementById('gameLogList').textContent).toBe('');
   });
+
+  test('renders defensive fire details with display rounding and result text', () => {
+    const game = { getPlayers: () => players, getGameLog: () => [{
+      turnNumber: 3,
+      playerName: 'Player 2',
+      events: {
+        reinforcements: [],
+        combat: [],
+        defensiveFire: [{
+          firingUnit: { unitId: 'a', name: 'Feldwache A' },
+          targetUnit: { unitId: 'b', name: 'Rifle Platoon B' },
+          successProbability: 0.2841,
+          randomRoll: 0.2317,
+          outcome: 'retreated',
+          summary: 'Feldwache A forced Rifle Platoon B to retreat.',
+        }],
+      },
+    }] };
+
+    new GameLogMenu(game).update();
+
+    const entry = document.querySelector('.game-log-defensive-fire');
+    expect(entry.textContent).toContain('Defensive Fire');
+    expect(entry.textContent).toContain('Firing unit: Feldwache A');
+    expect(entry.textContent).toContain('Target unit: Rifle Platoon B');
+    expect(entry.textContent).toContain('Success probability: 28.41%');
+    expect(entry.textContent).toContain('Random roll: 0.23');
+    expect(entry.textContent).toContain('Result: Target retreated');
+    expect(entry.textContent).toContain(
+      'Feldwache A forced Rifle Platoon B to retreat.',
+    );
+  });
 });

@@ -15,7 +15,6 @@ export class Menu {
   #selHexUnitsHeading;
   #selHexTerrainHeading;
   #selHexObjectivesDiv;
-  #reactionStatusDiv;
   #newGameBtn;
   #gameOverLabel;
   #autoNewGameChk;
@@ -29,7 +28,6 @@ export class Menu {
   #scenarioDetailsRequestId = 0;
   #autoReloadScheduled = false;
   #onNewGameRequested;
-  #reactionMessagesDiv;
   #reinforcementsMenu;
   #gameLogMenu;
   #service;
@@ -49,7 +47,6 @@ export class Menu {
     this.#selHexUnitsHeading = document.getElementById('selHexUnitsHeading');
     this.#selHexTerrainHeading = document.getElementById('selHexTerrainHeading');
     this.#selHexObjectivesDiv = document.getElementById('selHexObjectives');
-    this.#reactionStatusDiv = document.getElementById('reactionStatus');
     this.#newGameBtn = document.getElementById('newGameBtn');
     this.#gameOverLabel = document.getElementById('gameOverLabel');
     this.#autoNewGameChk = document.getElementById('autoNewGame');
@@ -59,7 +56,6 @@ export class Menu {
     this.#scenarioOverviewDescription = document.getElementById('scenarioOverviewDescription');
     this.#scenarioVictoryHeading = document.getElementById('scenarioVictoryHeading');
     this.#scenarioVictoryDescription = document.getElementById('scenarioVictoryDescription');
-    this.#reactionMessagesDiv = document.getElementById('reactionMessages');
     this.#reinforcementsMenu = new ReinforcementsMenu(this.#game);
     this.#gameLogMenu = new GameLogMenu(this.#game);
     this.#combatResultsTableMenu = new CombatResultsTableMenu(this.#game);
@@ -109,11 +105,8 @@ export class Menu {
     this.#storeShowHexCoords(this.#showHexCoordsChk.checked);
     eventBus.emit('hexCoordsVisibilityChanged', this.#showHexCoordsChk.checked);
     eventBus.on('defensiveFireResolved', (events) => {
-      this.#showDefensiveFireStatus(events);
       this.#soundPlayer.playDefensiveFireEvents(events);
     });
-
-    eventBus.on?.('defensiveFireResolved', (events) => this.#showDefensiveFireEvents(events));
 
     this.#initPhasesInMenu();
     this.#initPhaseEndButton();
@@ -242,20 +235,6 @@ export class Menu {
     if (this.#selHexTerrainHeading) {
       this.#selHexTerrainHeading.style.display = displayValue;
     }
-  }
-
-  #showDefensiveFireStatus(events) {
-    if (!this.#reactionStatusDiv) {
-      return;
-    }
-
-    const eventMessages = Array.isArray(events)
-      ? events
-        .map((event) => event?.message)
-        .filter((message) => typeof message === 'string' && message.length > 0)
-      : [];
-
-    this.#reactionStatusDiv.textContent = eventMessages.join(' ');
   }
 
   #formatSelectedHexUnits(selectedHex) {
@@ -502,23 +481,6 @@ export class Menu {
     }
   }
 
-  #showDefensiveFireEvents(events = []) {
-    if (!this.#reactionMessagesDiv) {
-      return;
-    }
-
-    if (!Array.isArray(events) || events.length === 0) {
-      this.#reactionMessagesDiv.innerHTML = '';
-      this.#reactionMessagesDiv.style.display = 'none';
-      return;
-    }
-
-    this.#reactionMessagesDiv.innerHTML = events
-      .map((event) => `<div class="reaction-message reaction-message--${event.outcome ?? 'info'}">${event.message ?? 'Defensive fire resolved.'}</div>`)
-      .join('');
-    this.#reactionMessagesDiv.style.display = 'block';
-  }
-
   #setCurrentTurn() {
     const player = this.#game.getCurrentPlayer();
     const phase = this.#game.getCurrentPhase();
@@ -564,8 +526,6 @@ export class Menu {
     this.#gameLogMenu.setGame(game);
     this.#combatResultsTableMenu.setGame(game);
     this.#soundPlayer.setGame(this.#game);
-    this.#showDefensiveFireStatus([]);
-    this.#showDefensiveFireEvents([]);
     const scenarioId = this.#game.getScenarioId?.() ?? null;
     if (scenarioId !== this.#activeScenarioId) {
       this.#activeScenarioId = scenarioId;

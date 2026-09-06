@@ -10,6 +10,10 @@ from battle_hexes_core.combat.combat_event import (
     CombatTerrainSnapshot,
     CombatUnitSnapshot,
 )
+from battle_hexes_core.defensivefire.defensive_fire_event import (
+    DefensiveFireEvent,
+    DefensiveFireUnitSnapshot,
+)
 
 
 def test_game_log_is_grouped_and_serialized_newest_first():
@@ -36,7 +40,7 @@ def test_game_log_is_grouped_and_serialized_newest_first():
                 "outcome": "arrived",
                 "unitCount": 2,
                 "entryCoordinate": (0, 0),
-            }], "combat": []},
+            }], "combat": [], "defensiveFire": []},
         },
         {
             "turnNumber": 3,
@@ -45,7 +49,7 @@ def test_game_log_is_grouped_and_serialized_newest_first():
                 "outcome": "arrived",
                 "unitCount": 1,
                 "entryCoordinate": (0, 16),
-            }], "combat": []},
+            }], "combat": [], "defensiveFire": []},
         },
         {
             "turnNumber": 3,
@@ -54,7 +58,7 @@ def test_game_log_is_grouped_and_serialized_newest_first():
                 "outcome": "blocked",
                 "unitCount": 2,
                 "entryCoordinate": (0, 0),
-            }], "combat": []},
+            }], "combat": [], "defensiveFire": []},
         },
     ]
 
@@ -110,5 +114,46 @@ def test_combat_history_serializes_complete_camel_case_contract():
                 "eliminatedUnits": [],
                 "retreatedUnits": ["Unit C"],
             }],
+            "defensiveFire": [],
         },
+    }
+
+
+def test_defensive_fire_history_serializes_raw_values_and_shot_order():
+    events = [
+        DefensiveFireEvent(
+            3, "Player 2",
+            DefensiveFireUnitSnapshot("a", "Feldwache A"),
+            DefensiveFireUnitSnapshot("target", "Rifle Platoon B"),
+            0.2841, 0.2317, "retreated",
+            "Feldwache A forced Rifle Platoon B to retreat.",
+        ),
+        DefensiveFireEvent(
+            3, "Player 2",
+            DefensiveFireUnitSnapshot("b", "Feldwache B"),
+            DefensiveFireUnitSnapshot("target", "Rifle Platoon B"),
+            0.2, 0.8, "noEffect",
+            "Feldwache B fired at Rifle Platoon B with no effect.",
+        ),
+    ]
+    game = SimpleNamespace(
+        reinforcements_deployer=SimpleNamespace(game_log=[]),
+        combat_log=[],
+        defensive_fire_log=events,
+    )
+
+    defensive_fire = game_log_from_game(game)[0].model_dump(
+        by_alias=True
+    )["events"]["defensiveFire"]
+
+    assert [event["firingUnit"]["unitId"] for event in defensive_fire] == [
+        "a", "b",
+    ]
+    assert defensive_fire[0] == {
+        "firingUnit": {"unitId": "a", "name": "Feldwache A"},
+        "targetUnit": {"unitId": "target", "name": "Rifle Platoon B"},
+        "successProbability": 0.2841,
+        "randomRoll": 0.2317,
+        "outcome": "retreated",
+        "summary": "Feldwache A forced Rifle Platoon B to retreat.",
     }
