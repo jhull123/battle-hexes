@@ -117,7 +117,7 @@ describe('GameLogMenu', () => {
     expect(document.getElementById('gameLogList').textContent).toBe('');
   });
 
-  test('renders defensive fire details with display rounding and result text', () => {
+  test('renders defensive fire collapsed with expandable details', () => {
     const game = { getPlayers: () => players, getGameLog: () => [{
       turnNumber: 3,
       playerName: 'Player 2',
@@ -129,8 +129,8 @@ describe('GameLogMenu', () => {
           targetUnit: { unitId: 'b', name: 'Rifle Platoon B' },
           successProbability: 0.2841,
           randomRoll: 0.2317,
-          outcome: 'retreated',
-          summary: 'Feldwache A forced Rifle Platoon B to retreat.',
+          outcome: 'noEffect',
+          summary: 'Feldwache A fired at Rifle Platoon B with no effect.',
         }],
       },
     }] };
@@ -138,14 +138,18 @@ describe('GameLogMenu', () => {
     new GameLogMenu(game).update();
 
     const entry = document.querySelector('.game-log-defensive-fire');
-    expect(entry.textContent).toContain('Defensive Fire');
+    expect(entry.tagName).toBe('DETAILS');
+    expect(entry.open).toBe(false);
+    expect(entry.querySelector('summary').textContent).toBe('Defensive Fire - No Effect');
+    entry.querySelector('summary').click();
+    expect(entry.open).toBe(true);
     expect(entry.textContent).toContain('Firing unit: Feldwache A');
     expect(entry.textContent).toContain('Target unit: Rifle Platoon B');
     expect(entry.textContent).toContain('Success probability: 28.41%');
     expect(entry.textContent).toContain('Random roll: 0.23');
-    expect(entry.textContent).toContain('Result: Target retreated');
-    expect(entry.textContent).toContain(
-      'Feldwache A forced Rifle Platoon B to retreat.',
+    expect(entry.textContent).not.toContain('Result:');
+    expect(entry.textContent).not.toContain(
+      'Feldwache A fired at Rifle Platoon B with no effect.',
     );
   });
 });
