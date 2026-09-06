@@ -1,7 +1,5 @@
-import { createFactionSwatch } from '../faction-swatch.js';
-
 export class CombatEventRenderer {
-  render(event, faction) {
+  render(event) {
     const entry = document.createElement('details');
     entry.className = 'game-log-combat';
     const heading = document.createElement('summary');
@@ -11,7 +9,7 @@ export class CombatEventRenderer {
     disclosure.setAttribute('aria-hidden', 'true');
     const title = document.createElement('span');
     title.textContent = `Combat - ${event.result.text}`;
-    heading.append(disclosure, createFactionSwatch(faction, 'game-log-faction-swatch'), title);
+    heading.append(disclosure, title);
     entry.appendChild(heading);
     this.#appendParticipants(entry, 'Attacking', event.attackers);
     this.#appendParticipants(entry, 'Defending', event.defenders);

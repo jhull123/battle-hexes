@@ -36,8 +36,7 @@ export class GameLogMenu {
       `Turn ${record.turnNumber} - ${record.playerName}`,
     );
     this.#list.appendChild(heading);
-    const faction = player?.getFactions()[0];
-    this.#appendEvents(record.events.combat, this.#combatRenderer, faction);
+    this.#appendEvents(record.events.combat, this.#combatRenderer);
     this.#appendEvents(record.events.reinforcements, this.#reinforcementRenderer);
   }
 

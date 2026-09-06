@@ -85,9 +85,7 @@ describe('GameLogMenu', () => {
     expect(entry.querySelector('summary').textContent).toBe(
       'Combat - Defender Retreat 2 Hexes',
     );
-    const swatch = entry.querySelector('.game-log-faction-swatch');
-    expect(swatch.style.backgroundColor).toBe('rgb(0, 0, 255)');
-    expect(swatch.getAttribute('aria-label')).toBe('Axis faction');
+    expect(entry.querySelector('.game-log-faction-swatch')).toBeNull();
     const disclosure = entry.querySelector('.game-log-disclosure');
     disclosure.click();
     expect(entry.open).toBe(true);
