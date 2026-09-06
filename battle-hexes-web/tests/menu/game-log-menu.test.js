@@ -1,13 +1,22 @@
 /** @jest-environment jsdom */
 import { GameLogMenu } from '../../src/game-log/game-log-menu.js';
+import { Faction } from '../../src/model/faction.js';
+import { Player, Players, playerTypes } from '../../src/player/player.js';
 
 describe('GameLogMenu', () => {
+  let players;
+
   beforeEach(() => {
     document.body.innerHTML = '<div id="gameLogList"></div>';
+    players = new Players([
+      new Player('Player 1', playerTypes.HUMAN, [new Faction('allies', 'Allies', '#ff0000')]),
+      new Player('Player 2', playerTypes.HUMAN, [new Faction('axis', 'Axis', '#0000ff')]),
+    ], 'Player 1');
   });
 
   test('renders the complete structured log in supplied newest-first order', () => {
     const game = {
+      getPlayers: () => players,
       getGameLog: () => [
         {
           turnNumber: 4,
@@ -33,10 +42,15 @@ describe('GameLogMenu', () => {
       + 'Turn 3 - Player 1Reinforcements blocked - 2 units at (0, 0)',
     );
     expect(document.querySelectorAll('.game-log-heading')).toHaveLength(2);
+    const headings = document.querySelectorAll('.game-log-heading');
+    expect(headings[0].querySelector('.game-log-player-swatch').style.backgroundColor)
+      .toBe('rgb(0, 0, 255)');
+    expect(headings[0].querySelector('.game-log-player-swatch').getAttribute('aria-label'))
+      .toBe('Player 2 player');
   });
 
   test('renders collapsed combat above reinforcements without repeated result details', () => {
-    const game = { getGameLog: () => [{
+    const game = { getPlayers: () => players, getGameLog: () => [{
       turnNumber: 3,
       playerName: 'Player 2',
       events: {
@@ -71,6 +85,14 @@ describe('GameLogMenu', () => {
     expect(entry.querySelector('summary').textContent).toBe(
       'Combat - Defender Retreat 2 Hexes',
     );
+    expect(entry.querySelector('.game-log-faction-swatch')).toBeNull();
+    const disclosure = entry.querySelector('.game-log-disclosure');
+    disclosure.click();
+    expect(entry.open).toBe(true);
+    disclosure.click();
+    expect(entry.open).toBe(false);
+    entry.querySelector('summary').click();
+    expect(entry.open).toBe(true);
     expect(entry.textContent).toContain('Attacking: Unit A 4-4-2, Unit B 2-2-4');
     expect(entry.textContent).toContain('Defending: Unit C 3-3-3');
     expect(entry.textContent).toContain('Base odds: 3:1');
@@ -90,7 +112,7 @@ describe('GameLogMenu', () => {
   });
 
   test('renders no placeholder for an empty log', () => {
-    new GameLogMenu({ getGameLog: () => [] }).update();
+    new GameLogMenu({ getGameLog: () => [], getPlayers: () => players }).update();
 
     expect(document.getElementById('gameLogList').textContent).toBe('');
   });

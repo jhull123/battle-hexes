@@ -1,5 +1,6 @@
 import { CombatEventRenderer } from './combat-event-renderer.js';
 import { ReinforcementEventRenderer } from './reinforcement-event-renderer.js';
+import { createPlayerSwatch } from '../faction-swatch.js';
 
 export class GameLogMenu {
   #game;
@@ -29,15 +30,24 @@ export class GameLogMenu {
   #renderRecord(record) {
     const heading = document.createElement('div');
     heading.className = 'game-log-heading';
-    heading.textContent = `Turn ${record.turnNumber} - ${record.playerName}`;
+    const player = this.#playerForName(record.playerName);
+    heading.append(
+      createPlayerSwatch(player, 'game-log-player-swatch'),
+      `Turn ${record.turnNumber} - ${record.playerName}`,
+    );
     this.#list.appendChild(heading);
     this.#appendEvents(record.events.combat, this.#combatRenderer);
     this.#appendEvents(record.events.reinforcements, this.#reinforcementRenderer);
   }
 
-  #appendEvents(events, renderer) {
+  #appendEvents(events, renderer, ...renderArgs) {
     for (const event of events) {
-      this.#list.appendChild(renderer.render(event));
+      this.#list.appendChild(renderer.render(event, ...renderArgs));
     }
+  }
+
+  #playerForName(playerName) {
+    return this.#game.getPlayers().getAllPlayers()
+      .find((candidate) => candidate.getName() === playerName);
   }
 }

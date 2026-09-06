@@ -5,6 +5,7 @@ import { SoundPlayer } from './sound-player.js';
 import { ReinforcementsMenu } from './reinforcements-menu.js';
 import { GameLogMenu } from './game-log/game-log-menu.js';
 import { CombatResultsTableMenu } from './combat-results-table-menu.js';
+import { createPlayerSwatch, getPlayerSwatchColor } from './faction-swatch.js';
 
 export class Menu {
   #game;
@@ -35,7 +36,6 @@ export class Menu {
   #soundPlayer;
   #combatResultsTableMenu;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
-  static #DEFAULT_SWATCH_COLOR = '#B0B0B0';
 
   constructor(game, {
     onNewGameRequested,
@@ -270,7 +270,7 @@ export class Menu {
         const unitStrength = `${unit.getAttack()}-${unit.getDefense()}-${unit.getMovement()}`;
         const movesRemaining = unit.getMovesRemaining?.();
         const movesDisplay = Number.isFinite(movesRemaining) ? movesRemaining : 0;
-        const color = this.#getPlayerSwatchColor(unit.getOwningPlayer?.());
+        const color = getPlayerSwatchColor(unit.getOwningPlayer?.());
         const tooltipText = echelon
           ? `${echelon}, ${unitStrength}`
           : unitStrength;
@@ -336,9 +336,7 @@ export class Menu {
       const row = document.createElement('div');
       row.classList.add('victory-row');
 
-      const swatch = document.createElement('span');
-      swatch.classList.add('victory-swatch');
-      swatch.style.backgroundColor = this.#getPlayerSwatchColor(player);
+      const swatch = createPlayerSwatch(player);
 
       const name = document.createElement('span');
       const playerName = player.getName?.() ?? 'Unknown';
@@ -370,17 +368,6 @@ export class Menu {
       row.append(swatch, name, ...(turnBadge ? [turnBadge] : []), leader, score);
       this.#victoryPointsList.appendChild(row);
     }
-  }
-
-  #getPlayerSwatchColor(player) {
-    const factions = player?.getFactions?.() ?? [];
-    if (Array.isArray(factions) && factions.length > 0) {
-      const color = factions[0]?.getCounterColor?.();
-      if (typeof color === 'string' && color.trim().length > 0) {
-        return color;
-      }
-    }
-    return Menu.#DEFAULT_SWATCH_COLOR;
   }
 
   #updateCombatIndicator() {

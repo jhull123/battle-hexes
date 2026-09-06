@@ -4,7 +4,12 @@ export class CombatEventRenderer {
     entry.className = 'game-log-combat';
     const heading = document.createElement('summary');
     heading.className = 'game-log-combat-title';
-    heading.textContent = `Combat - ${event.result.text}`;
+    const disclosure = document.createElement('span');
+    disclosure.className = 'game-log-disclosure';
+    disclosure.setAttribute('aria-hidden', 'true');
+    const title = document.createElement('span');
+    title.textContent = `Combat - ${event.result.text}`;
+    heading.append(disclosure, title);
     entry.appendChild(heading);
     this.#appendParticipants(entry, 'Attacking', event.attackers);
     this.#appendParticipants(entry, 'Defending', event.defenders);
