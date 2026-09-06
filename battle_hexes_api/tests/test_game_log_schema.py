@@ -119,7 +119,7 @@ def test_combat_history_serializes_complete_camel_case_contract():
     }
 
 
-def test_defensive_fire_history_serializes_raw_values_and_shot_order():
+def test_defensive_fire_history_serializes_raw_values_newest_first():
     events = [
         DefensiveFireEvent(
             3, "Player 2",
@@ -147,9 +147,9 @@ def test_defensive_fire_history_serializes_raw_values_and_shot_order():
     )["events"]["defensiveFire"]
 
     assert [event["firingUnit"]["unitId"] for event in defensive_fire] == [
-        "a", "b",
+        "b", "a",
     ]
-    assert defensive_fire[0] == {
+    assert defensive_fire[1] == {
         "firingUnit": {"unitId": "a", "name": "Feldwache A"},
         "targetUnit": {"unitId": "target", "name": "Rifle Platoon B"},
         "successProbability": 0.2841,
