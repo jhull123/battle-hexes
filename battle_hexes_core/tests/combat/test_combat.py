@@ -273,6 +273,11 @@ class TestCombat(unittest.TestCase):
         self.assertEqual(2, len(self.board.get_units()))
         self.assertEqual((5, 5), self.blue_unit.get_coords())
         self.assertEqual((), combat_result.get_no_retreat_units())
+        event = self.game.combat_log[0]
+        self.assertEqual("DEFENDER_RETREAT_2", event.result.code)
+        self.assertEqual("Defender Retreat 2 Hexes", event.result.text)
+        self.assertEqual((), event.eliminated_units)
+        self.assertEqual(("Blue Unit",), event.retreated_units)
 
     def test_defender_retreat_off_map_eliminates_unit(self):
         self.board.add_unit(self.red_unit, 0, 1)
@@ -439,6 +444,12 @@ class TestCombat(unittest.TestCase):
             (fixed_defender,),
             combat_result.get_no_retreat_units(),
         )
+        event = self.game.combat_log[0]
+        self.assertEqual("DEFENDER_ELIMINATED", event.result.code)
+        self.assertEqual("Defender Eliminated", event.result.text)
+        self.assertEqual("Fixed Blue Unit eliminated.", event.result.summary)
+        self.assertEqual(("Fixed Blue Unit",), event.eliminated_units)
+        self.assertEqual((), event.retreated_units)
 
     def test_defender_retreat_only_eliminates_zero_movement_units(self):
         fixed_defender = Unit(

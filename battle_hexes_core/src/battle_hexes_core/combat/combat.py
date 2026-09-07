@@ -55,7 +55,6 @@ class Combat:
             defense_factor,
             combat_odds_shift=combat_odds_shift,
         )
-        crt_result = combat_result.get_combat_result()
         combat_result.set_battle_participants((attackers, defenders))
         eliminated, retreated = self.__update_board_for_result(
             (attackers, defenders), combat_result
@@ -65,7 +64,6 @@ class Combat:
             defender_snapshots,
             defender_terrain,
             combat_result,
-            crt_result,
             eliminated,
             retreated,
         )
@@ -179,10 +177,10 @@ class Combat:
         defenders,
         defender_terrain,
         combat_result,
-        crt_result,
         eliminated,
         retreated,
     ) -> None:
+        effective_result = combat_result.get_combat_result()
         eliminated_names = tuple(unit.get_name() for unit in eliminated)
         retreated_names = tuple(unit.get_name() for unit in retreated)
         summary_parts = []
@@ -202,8 +200,8 @@ class Combat:
             defender_terrain=defender_terrain,
             die_roll=combat_result.get_die_roll(),
             result=CombatOutcomeSnapshot(
-                code=crt_result.name,
-                text=crt_result.value,
+                code=effective_result.name,
+                text=effective_result.value,
                 summary=" ".join(summary_parts),
             ),
             eliminated_units=eliminated_names,
