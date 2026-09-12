@@ -11,7 +11,7 @@ This repository now contains several packages:
 Source code for each project lives inside its own `src` directory (for example `battle_hexes_core/src` or `battle-hexes-web/src`) so the project name is not repeated.
 
 
-From the ``battle_hexes_api`` directory you can run ``fastapi dev src/main.py``
+From the ``battle_hexes_api`` directory you can run ``python -m fastapi dev src/battle_hexes_api/main.py``
 to start the development server. The API module adjusts ``PYTHONPATH`` at
 runtime so the sibling packages are available without installation.
 
@@ -32,6 +32,26 @@ You can run unit tests and linting for all Python packages with:
 ```bash
 ./server-side-checks.sh
 ```
+
+## Checking CloudFormation templates
+
+Install the pinned infrastructure linting dependencies from the repository
+root:
+
+```bash
+python -m pip install -r requirements-infrastructure.txt
+```
+
+Run the same CloudFormation checks used by CI:
+
+```bash
+./cloudformation-checks.sh
+```
+
+The script uses AWS's `cfn-lint` to check all API, database, and web
+CloudFormation templates. It reports warnings and fails when it finds a
+template error. The check is local and does not deploy resources or require AWS
+credentials.
 
 ### Running the API with Docker
 

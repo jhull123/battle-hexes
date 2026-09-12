@@ -1,0 +1,36 @@
+name: Lint CloudFormation
+
+on:
+  push:
+    paths:
+      - 'battle_hexes_api/dev-database.yml'
+      - 'battle_hexes_api/ecs-backend.yml'
+      - 'battle-hexes-web/cloudformation-template.yml'
+      - 'cloudformation-checks.sh'
+      - 'requirements-infrastructure.txt'
+      - '.github/workflows/cloudformation-lint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-infrastructure.txt
+
+      - name: Install CloudFormation lint dependencies
+        run: python -m pip install -r requirements-infrastructure.txt
+
+      - name: Lint CloudFormation templates
+        run: ./cloudformation-checks.sh

@@ -131,7 +131,7 @@ Resources:
       Port: 8000
       Protocol: HTTP
       VpcId: !Ref VpcId
-      HealthCheckPath: /health
+      HealthCheckPath: /ready
       HealthCheckProtocol: HTTP
       HealthCheckIntervalSeconds: 15
       HealthyThresholdCount: 2
@@ -187,6 +187,8 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
           Environment:
+            - Name: DYNAMODB_ENABLED
+              Value: "true"
             - Name: DDB_TABLE_NAME
               Value: !ImportValue battle-hexes-dev:TableName
           LogConfiguration:

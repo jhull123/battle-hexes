@@ -24,6 +24,22 @@ From the repository root you can execute `./server-side-checks.sh` to run the
 tests and linter across **all** Python packages. The script adjusts
 `PYTHONPATH` so the API can import the core and agent packages while tests run.
 
+### Working with CloudFormation
+
+- Install the infrastructure linting dependency with
+  `python -m pip install -r requirements-infrastructure.txt`.
+- Run `./cloudformation-checks.sh` whenever adding or changing a CloudFormation
+  template, or when changing the CloudFormation lint workflow, script, or
+  dependency pin.
+- The script is the canonical local and CI entry point. Keep its template list
+  synchronized with the CloudFormation files in the repository.
+- Treat `cfn-lint` errors as blockers. Review warnings and either address them
+  when they are relevant to the change or document why they are intentionally
+  left in place.
+- `cfn-lint` performs static validation only. Do not treat a passing lint run as
+  proof that deployment parameters, permissions, imports, or runtime behavior
+  work in AWS.
+
 ### Working with the API
 
 - Install dependencies using both requirement files from the repository root:
