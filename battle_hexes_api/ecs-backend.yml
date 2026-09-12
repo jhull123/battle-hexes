@@ -131,7 +131,7 @@ Resources:
       Port: 8000
       Protocol: HTTP
       VpcId: !Ref VpcId
-      HealthCheckPath: /health
+      HealthCheckPath: /ready
       HealthCheckProtocol: HTTP
       HealthCheckIntervalSeconds: 15
       HealthyThresholdCount: 2
