@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi import Body
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from battle_hexes_api.health import lifespan, router as health_router
 
 import logging
 import sys
@@ -35,13 +36,8 @@ from battle_hexes_api.schemas import (  # noqa: E402
     ScenarioModel,
 )
 
-app = FastAPI()
-
-
-@app.get("/health")
-def health():
-    """Health check endpoint used by load balancers."""
-    return {"status": "ok"}
+app = FastAPI(lifespan=lifespan)
+app.include_router(health_router)
 
 
 game_repo = GameRepository()
