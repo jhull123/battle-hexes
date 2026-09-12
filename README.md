@@ -33,6 +33,26 @@ You can run unit tests and linting for all Python packages with:
 ./server-side-checks.sh
 ```
 
+## Checking CloudFormation templates
+
+Install the pinned infrastructure linting dependencies from the repository
+root:
+
+```bash
+python -m pip install -r requirements-infrastructure.txt
+```
+
+Run the same CloudFormation checks used by CI:
+
+```bash
+./cloudformation-checks.sh
+```
+
+The script uses AWS's `cfn-lint` to check all API, database, and web
+CloudFormation templates. It reports warnings and fails when it finds a
+template error. The check is local and does not deploy resources or require AWS
+credentials.
+
 ### Running the API with Docker
 
 The API project includes a Dockerfile at `battle_hexes_api/Dockerfile`. From the
