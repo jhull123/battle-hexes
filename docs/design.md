@@ -62,6 +62,10 @@ rules. It must not preserve the current shared-object behavior.
   detectable; no migration framework is required initially.
 - The initial design does not split game history into separate items or provide
   history pagination.
+- Q-learning tables, training progress, and transient agent decisions are not
+  authoritative game state and are not persisted.
+- Model storage, versioning, training, and deployment for future agents such as
+  PPO or AlphaZero are out of scope until those agents are designed.
 - DynamoDB Streams are not required.
 
 ### 1.4 Component Boundaries
@@ -382,10 +386,7 @@ At minimum, the persistence document captures:
   movement points, and complete defensive-fire runtime flags and modifier;
 - reinforcement group `entered` state and ordered arrival-attempt history;
 - ordered combat and defensive-fire histories in their core record forms, not
-  the grouped client presentation;
-- mutable controller state needed to continue behavior, including Q-learning
-  hyperparameters, Q-table, turn count, pending last actions, and learning or
-  exploration flags; and
+  the grouped client presentation; and
 - stable identifiers needed to reconnect shared player, faction, unit, board,
   reinforcement, and controller references during hydration.
 
@@ -395,14 +396,39 @@ API schema code to evaluate game rules.
 
 The current core does not expose a complete public hydration API. Under the
 no-core-change constraint, the API codec may need narrowly contained assignment
-to core and agent runtime attributes after constructing the object graph from
-the scenario. This coupling is isolated in the codec and covered by exhaustive
+to core runtime attributes after constructing the object graph from the
+scenario. This coupling is isolated in the codec and covered by exhaustive
 round-trip tests. It must not spread into routes, HTTP schemas, or repository
 implementations.
 
-Python pickle is not a persistence format. Existing Q-learning pickle input may
-still seed a newly created player, but a running game's required controller
-state is converted to validated primitive JSON data for storage.
+#### Agent State Policy
+
+The primitive Q-learning player is not a persistence requirement. A saved game
+records its `q-learning` player type, but does not record its Q-table,
+hyperparameters, turn count, pending last actions, learning flags, or any other
+private agent state. Hydration recreates the player using the same configured
+baseline Q-table and settings used for a new game. The baseline pickle remains
+a trusted deployment artifact and is never written to or read from DynamoDB.
+
+Q-learning updates made while handling one request may affect work within that
+request, but can be discarded afterward. Learning continuity across requests,
+process restarts, and API instances is explicitly not guaranteed. Losing
+`_last_actions` before a later combat callback is acceptable because it only
+loses this experimental agent's learning update; it does not lose authoritative
+board, combat, score, or turn state.
+
+The minimum implementation does not add a process-local agent cache. Such a
+best-effort cache may be added later if useful, and it may produce different
+learning behavior when requests reach different instances, but game correctness
+must never depend on a cache hit. The in-memory and DynamoDB repositories both
+apply this same non-persistent agent-state policy.
+
+Future PPO, AlphaZero, or other agents should default to stateless inference
+from the authoritative game snapshot with separately deployed immutable model
+artifacts. If a future agent requires per-game recurrent state for correct
+inference, that state and its compatibility/versioning rules must be designed
+explicitly when the agent is introduced. Production game persistence must not
+become a general-purpose RL training store.
 
 The process-global random generator state is not persisted as game state. A new
 logical action may generate a new random result. Idempotency receipts ensure a
@@ -532,7 +558,7 @@ and claim a second success.
 Operational telemetry should include repository implementation, operation,
 latency, game version, outcome category, transaction conflicts, replay count,
 item sizes, expiry count, and DynamoDB error category. Logs must not contain raw
-idempotency keys, complete game snapshots, Q-tables, or response bodies.
+idempotency keys, complete game snapshots, model artifacts, or response bodies.
 
 ### 1.17 Test Strategy
 
@@ -544,7 +570,9 @@ Implementation specifications must cover at least:
 - codec round trips for every scenario and player type at creation and after
   movement, combat, reinforcement, scoring, and completion transitions;
 - preservation of ordered units, pending combats, logs, defensive-fire state,
-  reinforcement state, scores, terminal status, and mutable controller state;
+  reinforcement state, scores, and terminal status;
+- reconstruction of the Q-learning player from its configured baseline without
+  serializing Q-table, last-action, or online-learning state;
 - scenario-version and state-schema incompatibility;
 - two different commands racing from one version, with exactly one commit and
   one version conflict;
