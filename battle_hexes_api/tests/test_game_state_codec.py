@@ -92,6 +92,37 @@ def test_decode_rejects_unknown_fields():
         )
 
 
+@pytest.mark.parametrize("movement_points", [-1, 999])
+def test_decode_rejects_invalid_movement_points(movement_points):
+    scenario_id = "elim_1"
+    version = load_scenario_data(scenario_id).version
+    game = GameCreator.create_sample_game(scenario_id, ["human", "random"])
+    codec = GameStateCodec()
+    document = json.loads(codec.encode(game, scenario_version=version))
+    document["units"][0]["movement_points_remaining"] = movement_points
+
+    with pytest.raises(SavedGameIncompatibleError):
+        codec.decode(stored(game, json.dumps(document).encode(), version))
+
+
+def test_decode_rejects_pending_combats_outside_combat_phase():
+    scenario_id = "elim_1"
+    version = load_scenario_data(scenario_id).version
+    game = GameCreator.create_sample_game(scenario_id, ["human", "random"])
+    codec = GameStateCodec()
+    document = json.loads(codec.encode(game, scenario_version=version))
+    document["current_phase"] = "end_turn"
+    document["pending_combats"] = [
+        {
+            "attacker_unit_ids": [document["active_unit_ids"][0]],
+            "defender_unit_ids": [document["active_unit_ids"][1]],
+        }
+    ]
+
+    with pytest.raises(SavedGameIncompatibleError):
+        codec.decode(stored(game, json.dumps(document).encode(), version))
+
+
 def test_round_trip_preserves_tuple_bearing_histories():
     scenario_id = "elim_1"
     version = load_scenario_data(scenario_id).version

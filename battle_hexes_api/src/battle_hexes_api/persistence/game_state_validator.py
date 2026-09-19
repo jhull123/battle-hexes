@@ -104,6 +104,9 @@ class GameStateValidator:
         )
 
     def _validate_units(self, document, scenario, context):
+        movement_by_unit_id = {
+            unit.id: unit.movement for unit in scenario.units
+        }
         pending_scenario_ids = {
             unit_id
             for group, state in zip(
@@ -128,6 +131,10 @@ class GameStateValidator:
                 unit.unit_id in pending_scenario_ids
             ):
                 self._incompatible("disposition")
+            if not 0 <= unit.movement_points_remaining <= movement_by_unit_id[
+                unit.unit_id
+            ]:
+                self._incompatible("movement_points")
             if not math.isfinite(unit.defensive_fire_modifier):
                 self._incompatible("numeric_value")
 
@@ -151,6 +158,10 @@ class GameStateValidator:
                 and document.current_phase is not None
                 and document.game_status.state == "in_progress"
             )
+            if (document.current_phase == "combat") != bool(
+                document.pending_combats
+            ):
+                valid = False
         if not valid:
             self._incompatible("terminal_state")
 
