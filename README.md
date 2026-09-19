@@ -22,8 +22,8 @@ See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for an overview of the game mechanics.
 Create a virtual environment and install dependencies from both requirement files:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python3.12 -m venv .venv312
+source .venv312/bin/activate
 pip install -r requirements.txt -r requirements-test.txt
 ```
 

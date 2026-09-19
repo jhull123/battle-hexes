@@ -9,11 +9,11 @@ balancers and uptime monitoring.
 
 Create a virtual environment.
 
-    python -m venv .venv
+    python3.12 -m venv .venv312
 
 Activate the virtual environment.
 
-    source .venv/bin/activate
+    source .venv312/bin/activate
 
 Upgrade `pip`.
 
@@ -55,4 +55,3 @@ You can run the checks for this package directly:
 
 Or from the repository root run `./server-side-checks.sh` to execute the tests
 and `flake8` across all Python packages.
-
