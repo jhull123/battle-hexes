@@ -29,6 +29,7 @@ from .identity import (
     normalize_route,
 )
 from .game_state_codec import GameStateCodec
+from .in_memory import GameRepositoryInMemory
 
 __all__ = [
     "Clock",
@@ -39,6 +40,7 @@ __all__ = [
     "GameAlreadyExistsError",
     "GameNotFoundError",
     "GameRepository",
+    "GameRepositoryInMemory",
     "GameStateCodec",
     "GameVersionConflictError",
     "IdempotencyConflictError",
