@@ -17,6 +17,10 @@ runtime so the sibling packages are available without installation.
 
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for an overview of the game mechanics.
 
+## Requirements
+
+The targeted Python version for this project is Python 3.12.
+
 ## Setting up the API
 
 Create a virtual environment and install dependencies from both requirement files:
