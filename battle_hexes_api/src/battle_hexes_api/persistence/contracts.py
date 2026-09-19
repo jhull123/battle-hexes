@@ -134,7 +134,7 @@ class GameRepository(Protocol):
 
     def create_game(
         self, game: StoredGame, receipt: CommandReceipt
-    ) -> None:
+    ) -> CommandReceipt:
         ...
 
     def commit_command(
@@ -142,7 +142,7 @@ class GameRepository(Protocol):
         expected_version: int,
         game: StoredGame,
         receipt: CommandReceipt,
-    ) -> None:
+    ) -> CommandReceipt:
         ...
 
 
