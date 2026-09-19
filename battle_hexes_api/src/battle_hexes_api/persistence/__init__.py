@@ -30,13 +30,9 @@ from .identity import (
 )
 from .game_state_codec import GameStateCodec
 from .in_memory import GameRepositoryInMemory
-from .command_service import (
-    CommandRequest,
-    CommandServiceError,
-    CreatedGame,
-    GameCommandService,
-    SuccessfulResponse,
-)
+from .command_errors import CommandServiceError
+from .command_models import CommandRequest, CreatedGame, SuccessfulResponse
+from .command_service import GameCommandService
 
 __all__ = [
     "Clock",
