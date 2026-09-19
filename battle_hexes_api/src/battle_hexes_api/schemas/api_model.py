@@ -1,4 +1,6 @@
-"""Shared Pydantic base classes for API schemas."""
+"""Shared Pydantic base classes and serialization for API schemas."""
+
+import json
 
 from pydantic import BaseModel, ConfigDict
 
@@ -30,3 +32,15 @@ class ApiBaseModel(BaseModel):
         alias_generator=to_camel,
         populate_by_name=True,
     )
+
+
+def api_model_json_bytes(model: BaseModel) -> bytes:
+    """Serialize an API model to stable, compact, client-facing JSON."""
+
+    value = model.model_dump(by_alias=True, mode="json")
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
