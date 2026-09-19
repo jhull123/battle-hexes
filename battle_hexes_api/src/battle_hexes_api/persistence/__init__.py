@@ -28,6 +28,7 @@ from .identity import (
     normalize_method,
     normalize_route,
 )
+from .game_state_codec import GameStateCodec
 
 __all__ = [
     "Clock",
@@ -38,6 +39,7 @@ __all__ = [
     "GameAlreadyExistsError",
     "GameNotFoundError",
     "GameRepository",
+    "GameStateCodec",
     "GameVersionConflictError",
     "IdempotencyConflictError",
     "PersistenceCapacityError",
