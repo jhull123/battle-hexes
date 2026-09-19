@@ -106,7 +106,14 @@ def test_canonical_json_is_stable_and_uses_utf8():
 
 @pytest.mark.parametrize(
     "body",
-    [{1: "bad"}, {"number": float("nan")}, {"number": float("inf")}, (1, 2)],
+    [
+        {1: "bad"},
+        {"number": float("nan")},
+        {"number": float("inf")},
+        (1, 2),
+        {"value": "\ud800"},
+        {"\udfff": "value"},
+    ],
 )
 def test_canonical_json_rejects_non_json_values(body):
     with pytest.raises(ValueError):

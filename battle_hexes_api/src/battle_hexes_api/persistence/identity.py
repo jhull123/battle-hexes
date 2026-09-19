@@ -72,7 +72,10 @@ def normalize_route(route):
 
 
 def _validate_json(value, seen):
-    if value is None or isinstance(value, (str, bool, int)):
+    if isinstance(value, str):
+        _require_utf8(value, "JSON strings")
+        return
+    if value is None or isinstance(value, (bool, int)):
         return
     if isinstance(value, float):
         if not math.isfinite(value):
@@ -92,6 +95,8 @@ def _validate_json(value, seen):
     if isinstance(value, dict):
         if any(not isinstance(key, str) for key in value):
             raise ValueError("JSON object keys must be strings")
+        for key in value:
+            _require_utf8(key, "JSON object keys")
         identity = id(value)
         if identity in seen:
             raise ValueError("JSON values must not contain cycles")
@@ -103,6 +108,13 @@ def _validate_json(value, seen):
             seen.remove(identity)
         return
     raise ValueError("body must contain only JSON-compatible values")
+
+
+def _require_utf8(value, description):
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError(f"{description} must be valid Unicode") from error
 
 
 def canonical_json_bytes(value):
