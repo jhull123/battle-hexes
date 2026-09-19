@@ -30,17 +30,24 @@ from .identity import (
 )
 from .game_state_codec import GameStateCodec
 from .in_memory import GameRepositoryInMemory
+from .command_errors import CommandServiceError
+from .command_models import CommandRequest, CreatedGame, SuccessfulResponse
+from .command_service import GameCommandService
 
 __all__ = [
     "Clock",
     "CommandIdentity",
     "CommandReceipt",
+    "CommandRequest",
+    "CommandServiceError",
+    "CreatedGame",
     "EncodedItemBudget",
     "EncodedItemSizer",
     "GameAlreadyExistsError",
     "GameNotFoundError",
     "GameRepository",
     "GameRepositoryInMemory",
+    "GameCommandService",
     "GameStateCodec",
     "GameVersionConflictError",
     "IdempotencyConflictError",
@@ -49,6 +56,7 @@ __all__ = [
     "PersistenceUnavailableError",
     "SavedGameIncompatibleError",
     "StoredGame",
+    "SuccessfulResponse",
     "SystemClock",
     "canonical_json_bytes",
     "create_command_identity",
