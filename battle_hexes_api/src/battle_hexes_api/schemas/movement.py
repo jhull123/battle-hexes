@@ -81,6 +81,9 @@ class MovementResponseModel(ApiBaseModel):
     """Movement endpoint payload including board updates and reactions."""
 
     game: GameModel
+    game_version: int | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     plans: list[MovementPlanModel] = Field(default_factory=list)
     sparse_board: SparseBoard
     defensive_fire_events: list[DefensiveFireEventModel] = Field(
@@ -99,6 +102,9 @@ class MovementResponseModel(ApiBaseModel):
         game: Any,
         plans: list[Any],
         movement_resolution: Any,
+        *,
+        game_version: int | None = None,
+        scenario_version: str | None = None,
     ) -> "MovementResponseModel":
         """Build a response model from a core game and movement result."""
 
@@ -111,6 +117,10 @@ class MovementResponseModel(ApiBaseModel):
             game,
             game_status=getattr(movement_resolution, "game_status", None),
         )
+        sparse_board.game_version = game_version
+        game_model = GameModel.from_game(game)
+        game_model.game_version = game_version
+        game_model.scenario_version = scenario_version
         current_player = (
             game.get_current_player()
             if hasattr(game, "get_current_player")
@@ -118,7 +128,8 @@ class MovementResponseModel(ApiBaseModel):
         )
         player_name = getattr(current_player, "name", None)
         return cls(
-            game=GameModel.from_game(game),
+            game=game_model,
+            game_version=game_version,
             plans=[MovementPlanModel.from_plan(plan) for plan in plans],
             sparse_board=sparse_board,
             defensive_fire_events=[
