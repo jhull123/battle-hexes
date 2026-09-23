@@ -84,6 +84,15 @@ new p5((p) => {
 
   new GameOverDialog({ onNewGameRequested: createNewGameAndLoad });
   menu = new Menu(game, { onNewGameRequested: createNewGameAndLoad, service: battleHexesService });
+  battleHexesService.setReconciliationHandler?.(async (authoritativeGameData) => {
+    updateUrlWithGameId(authoritativeGameData.id);
+    rememberLoadedGameData(authoritativeGameData);
+    game = new GameCreator().createGame(authoritativeGameData);
+    configureMovementHandling();
+    menu.setGame(game);
+    eventBus.emit('menuUpdate');
+    eventBus.emit('redraw');
+  });
 
   if (!game.getCurrentPlayer().isHuman()) {
     game.getCurrentPlayer().play(game);

@@ -33,6 +33,7 @@ export class Menu {
   #service;
   #soundPlayer;
   #combatResultsTableMenu;
+  #commandInFlight = false;
   static #SHOW_HEX_COORDS_STORAGE_KEY = 'battleHexes.showHexCoords';
 
   constructor(game, {
@@ -362,15 +363,18 @@ export class Menu {
     }
   }
 
-  doEndPhase() {
-    if (this.#game.isGameOver()) {
+  async doEndPhase() {
+    if (this.#game.isGameOver() || this.#commandInFlight) {
       return;
     }
-
-    if (this.#isCombatPhase()) {
-      this.#handleCombatPhase();
-    } else {
-      this.#finishPhase();
+    this.#commandInFlight = true;
+    this.#disableOrEnableActionButton();
+    try {
+      if (this.#isCombatPhase()) await this.#handleCombatPhase();
+      else await this.#finishPhase();
+    } finally {
+      this.#commandInFlight = false;
+      this.#disableOrEnableActionButton();
     }
   }
 
@@ -378,12 +382,11 @@ export class Menu {
     return this.#game.getCurrentPhase().toLowerCase() === 'combat';
   }
 
-  #handleCombatPhase() {
+  async #handleCombatPhase() {
     console.log('Resolving combat.');
-    this.#game.resolveCombat(this.#postCombat).then(() => {
-      this.updateMenu();
-      eventBus.emit('redraw');
-    });
+    await this.#game.resolveCombat(this.#postCombat);
+    this.updateMenu();
+    eventBus.emit('redraw');
   }
 
   async #finishPhase() {
@@ -407,30 +410,27 @@ export class Menu {
       }
       return;
     }
-    const switchedPlayers = this.#game.endPhase();
-    this.updateMenu();
-    eventBus.emit('redraw');
-    this.#disableOrEnableActionButton();
-
-    if (switchedPlayers) {
-      this.#service.endTurn(
+    if (this.#game.getCurrentPhase().toLowerCase() === 'end turn') {
+      eventBus.emit('redraw');
+      try {
+        const responseData = await this.#service.endTurn(
         this.#game.getId(),
-        endTurnPayload
-      ).then((responseData) => {
+        endTurnPayload,
+        );
         this.#applyGameStateResponse(responseData);
+        if (this.#game.getCurrentPhase() === 'End Turn') this.#game.endPhase();
         this.updateMenu();
-      }).catch(err => console.error('Failed to update game state', err))
-       .finally(() => {
-         if (!this.#game.isGameOver()) {
-           this.#game.getCurrentPlayer().play(this.#game);
-         }
-       });
+        eventBus.emit('redraw');
+        if (!this.#game.isGameOver()) this.#game.getCurrentPlayer().play(this.#game);
+      } catch (err) {
+        console.error('Failed to update game state', err);
+      }
     }
   }
 
   #disableOrEnableActionButton() {
     const endPhaseBtn = document.getElementById('endPhaseBtn');
-    endPhaseBtn.disabled = this.#game.isGameOver()
+    endPhaseBtn.disabled = this.#commandInFlight || this.#game.isGameOver()
       || !this.#game.getCurrentPlayer().isHuman();
   }
 

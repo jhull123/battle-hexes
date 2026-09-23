@@ -10,6 +10,9 @@ import { Road, RoadType } from './road';
 
 export class GameCreator {
   createGame(gameData) {
+    if (!Number.isInteger(gameData.gameVersion) || gameData.gameVersion < 1) {
+      throw new TypeError('gameVersion must be a positive integer');
+    }
     const board = new Board(gameData.board.rows, gameData.board.columns);
     board.stackingLimit = this.#extractStackingLimit(gameData);
     const scenarioId = this.#extractScenarioId(gameData);
@@ -35,6 +38,7 @@ export class GameCreator {
         reinforcements: gameData?.reinforcements,
         gameLog: gameData?.gameLog ?? [],
         combatResultsTable: gameData.combatResultsTable,
+        gameVersion: gameData.gameVersion,
       },
     );
     this.#addTerrain(board, gameData.board);
