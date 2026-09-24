@@ -53,6 +53,7 @@ new p5((p) => {
 
       applyMovementResponse(game.getBoard(), movementResponse);
       game.applyApiState(movementResponse);
+      battleHexesService.acknowledgeResponseApplication?.(game.getId());
     };
   };
   configureMovementHandling();
@@ -85,6 +86,7 @@ new p5((p) => {
   new GameOverDialog({ onNewGameRequested: createNewGameAndLoad });
   menu = new Menu(game, { onNewGameRequested: createNewGameAndLoad, service: battleHexesService });
   battleHexesService.setReconciliationHandler?.(async (authoritativeGameData) => {
+    if (authoritativeGameData.id !== game.getId()) return;
     updateUrlWithGameId(authoritativeGameData.id);
     rememberLoadedGameData(authoritativeGameData);
     game = new GameCreator().createGame(authoritativeGameData);

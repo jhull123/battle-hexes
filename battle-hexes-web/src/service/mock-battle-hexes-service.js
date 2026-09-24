@@ -35,7 +35,7 @@ export class MockBattleHexesService extends BattleHexesService {
   getGame(gameId) {
     const version = this.#versions.get(gameId) ?? 1;
     this.#versions.set(gameId, version);
-    return Promise.resolve({ ...structuredClone(getGameResponse), gameVersion: version });
+    return Promise.resolve({ ...structuredClone(getGameResponse), id: gameId, gameVersion: version });
   }
 
   #command(gameId, operation, response = {}) {
@@ -44,12 +44,16 @@ export class MockBattleHexesService extends BattleHexesService {
       const gameVersion = (this.#versions.get(gameId) ?? 1) + 1;
       this.#versions.set(gameId, gameVersion);
       return { ...structuredClone(response), gameVersion };
-    });
+    }, { awaitResponseApplication: true });
   }
 
   #throwInjected(operation) {
     const error = this.#errorProvider(operation);
     if (error) throw error;
+  }
+
+  acknowledgeResponseApplication(gameId) {
+    this.#coordinator.acknowledgeResponseApplication(gameId);
   }
 
   #movement(gameId, operation) {

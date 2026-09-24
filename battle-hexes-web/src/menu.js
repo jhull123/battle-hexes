@@ -405,6 +405,7 @@ export class Menu {
         this.#applyGameStateResponse(responseData);
         this.updateMenu();
         eventBus.emit('redraw');
+        this.#service.acknowledgeResponseApplication?.(this.#game.getId());
       } catch (err) {
         console.error('Failed to update movement state', err);
       }
@@ -421,6 +422,7 @@ export class Menu {
         if (this.#game.getCurrentPhase() === 'End Turn') this.#game.endPhase();
         this.updateMenu();
         eventBus.emit('redraw');
+        this.#service.acknowledgeResponseApplication?.(this.#game.getId());
         if (!this.#game.isGameOver()) this.#game.getCurrentPlayer().play(this.#game);
       } catch (err) {
         console.error('Failed to update game state', err);

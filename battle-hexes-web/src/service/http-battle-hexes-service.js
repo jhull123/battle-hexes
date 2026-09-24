@@ -57,7 +57,7 @@ export class HttpBattleHexesService extends BattleHexesService {
         idempotencyKey: this.#uuid(), expectedGameVersion,
       });
       return this.#sendDescriptor(descriptor, methodName, gameId);
-    });
+    }, { awaitResponseApplication: gameId !== null });
   }
 
   async #sendDescriptor(descriptor, methodName, gameId) {
@@ -149,6 +149,9 @@ export class HttpBattleHexesService extends BattleHexesService {
   listPlayerTypes() { return this.#get('/player-types', 'listPlayerTypes'); }
   createGame(config) { return this.#post('/games', 'createGame', config); }
   getGame(gameId) { return this.#get(`/games/${gameId}`, 'getGame', gameId); }
+  acknowledgeResponseApplication(gameId) {
+    this.#coordinator.acknowledgeResponseApplication(gameId);
+  }
   resolveHumanMove(gameId, body) { return this.#post(`/games/${gameId}/move`, 'resolveHumanMove', body, gameId); }
   generateCpuMovement(gameId) { return this.#post(`/games/${gameId}/movement`, 'generateCpuMovement', undefined, gameId); }
   resolveCombat(gameId, body) { return this.#post(`/games/${gameId}/combat`, 'resolveCombat', body, gameId); }

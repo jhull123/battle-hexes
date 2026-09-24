@@ -299,6 +299,7 @@ export class Game {
       if (finishedCb) {
         finishedCb(combatResult);
       }
+      this.#combatResolver.acknowledgeResponseApplication?.();
       return combatResult;
     });
   }
