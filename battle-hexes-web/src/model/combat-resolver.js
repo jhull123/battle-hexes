@@ -23,4 +23,8 @@ export class CombatResolver {
     boardUpdater.updateBoard(this.#board, combatResult.units);
     return combatResult;
   }
+
+  acknowledgeResponseApplication() {
+    this.service.acknowledgeResponseApplication?.(this.#gameId);
+  }
 }

@@ -43,6 +43,7 @@ export class CpuPlayer extends Player {
 
         applyMovementResponse(game.getBoard(), responseData);
         game.applyApiState(responseData);
+        this.service.acknowledgeResponseApplication?.(game.getId());
         if (game.isGameOver()) {
           eventBus.emit("redraw");
           eventBus.emit("menuUpdate");
@@ -54,6 +55,7 @@ export class CpuPlayer extends Player {
           game.getBoard().sparseBoard(),
         );
         game.applyApiState(endMovementResponse);
+        this.service.acknowledgeResponseApplication?.(game.getId());
         if (game.isGameOver()) {
           eventBus.emit("redraw");
           eventBus.emit("menuUpdate");
@@ -99,9 +101,8 @@ export class CpuPlayer extends Player {
       if (endTurnResponse) {
         applyMovementResponse(game.getBoard(), endTurnResponse);
         game.applyApiState(endTurnResponse);
-      }
-      if (game.getCurrentPhase() === "End Turn") {
-        game.endPhase();
+        if (game.getCurrentPhase() === "End Turn") game.endPhase();
+        this.service.acknowledgeResponseApplication?.(game.getId());
       }
       eventBus.emit("redraw");
       eventBus.emit("menuUpdate");
