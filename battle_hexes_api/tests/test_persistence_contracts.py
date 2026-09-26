@@ -9,6 +9,7 @@ from battle_hexes_api.persistence import (
     EncodedItemBudget,
     GameRepository,
     GameVersionConflictError,
+    InMemoryItemSizer,
     PersistenceCapacityError,
     StoredGame,
     canonical_json_bytes,
@@ -223,6 +224,24 @@ def test_item_budget_accepts_limit_and_reports_overage_metadata():
     assert raised.value.item_kind == "receipt"
     assert raised.value.measured_bytes == 358401
     assert raised.value.limit_bytes == 358400
+
+
+def test_in_memory_sizer_counts_nested_collection_overhead():
+    sizer = InMemoryItemSizer()
+    assert sizer.size_bytes({"a": {"b": "é"}}) == 8
+    assert sizer.size_bytes({"a": [b"x", True, None]}) == 10
+
+
+def test_in_memory_sizer_applies_budget_to_nested_headers_and_body():
+    sizer = InMemoryItemSizer()
+    budget = EncodedItemBudget()
+    item = {"response_headers": {"Game-Version": "1"}, "body": b""}
+    fixed_size = sizer.size_bytes(item)
+    item["body"] = b"x" * (budget.limit_bytes - fixed_size)
+    assert budget.require_fits("receipt", sizer.size_bytes(item)) is None
+    item["body"] += b"x"
+    with pytest.raises(PersistenceCapacityError):
+        budget.require_fits("receipt", sizer.size_bytes(item))
 
 
 def test_version_conflict_exposes_only_storage_neutral_metadata():

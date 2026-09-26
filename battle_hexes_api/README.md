@@ -25,13 +25,14 @@ Install dependencies from the repository root.
 
 ## Running Locally
 
-To start the server locally in development mode:
+From this directory, start the server locally in development mode:
 
-    python -m fastapi dev src/battle_hexes_api/main.py
+```bash
+PYTHONPATH="../battle_hexes_core/src:../battle_agent_rl/src:src:${PYTHONPATH:-}" \
+  python -m fastapi dev src/battle_hexes_api/main.py
+```
 
-The ``main.py`` module automatically adjusts ``PYTHONPATH`` so you can run this
-command from within ``battle_hexes_api`` without installing the sibling
-packages first.
+The source paths make the sibling packages available without installing them.
 
 ## Running Tests
 
