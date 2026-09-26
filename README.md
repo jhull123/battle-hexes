@@ -11,14 +11,13 @@ This repository now contains several packages:
 Source code for each project lives inside its own `src` directory (for example `battle_hexes_core/src` or `battle-hexes-web/src`) so the project name is not repeated.
 
 
-From the ``battle_hexes_api`` directory, start the development server with:
+From the repository root, start the development server with:
 
 ```bash
-PYTHONPATH="../battle_hexes_core/src:../battle_agent_rl/src:src:${PYTHONPATH:-}" \
-  python -m fastapi dev src/battle_hexes_api/main.py
+./battle_hexes_api/dev.sh
 ```
 
-The source paths make the sibling packages available without installing them.
+The launcher makes the sibling packages available without installing them.
 
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for an overview of the game mechanics.
 
