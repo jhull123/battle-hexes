@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,6 +21,7 @@ from battle_hexes_api.persistence import (
     SavedGameIncompatibleError,
     StoredGame,
 )
+from battle_hexes_api.schemas.game_log import game_log_from_game
 from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 
 
@@ -176,3 +178,36 @@ def test_round_trip_preserves_tuple_bearing_histories():
     )
     assert isinstance(payload["combat_history"][0]["attackers"], list)
     assert codec.encode(decoded, scenario_version=version) == encoded
+
+
+def test_decoded_game_records_new_defensive_fire_in_authoritative_history():
+    scenario_id = "elim_1"
+    version = load_scenario_data(scenario_id).version
+    game = GameCreator.create_sample_game(scenario_id, ["human", "random"])
+    codec = GameStateCodec()
+    decoded = codec.decode(stored(
+        game, codec.encode(game, scenario_version=version), version
+    ))
+    firing_unit, target_unit = decoded.board.get_units()[:2]
+
+    decoded.defensive_fire_event_recorder.record(
+        [SimpleNamespace(
+            firing_unit_id=str(firing_unit.get_id()),
+            target_unit_id=str(target_unit.get_id()),
+            probability=0.5,
+            roll=0.75,
+            outcome="no_effect",
+            retreat_destination=None,
+        )],
+        target_unit,
+        decoded.turn_number,
+        decoded.current_player.name,
+    )
+
+    assert len(decoded.defensive_fire_log) == 1
+    assert game_log_from_game(decoded)[0].events.defensive_fire[0].outcome == (
+        "noEffect"
+    )
+    assert len(json.loads(codec.encode(
+        decoded, scenario_version=version
+    ))["defensive_fire_history"]) == 1

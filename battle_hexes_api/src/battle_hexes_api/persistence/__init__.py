@@ -30,6 +30,7 @@ from .identity import (
 )
 from .game_state_codec import GameStateCodec
 from .in_memory import GameRepositoryInMemory
+from .dynamodb import GameRepositoryDynamoDB
 from .command_errors import CommandServiceError
 from .command_models import CommandRequest, CreatedGame, SuccessfulResponse
 from .command_service import GameCommandService
@@ -47,6 +48,7 @@ __all__ = [
     "GameAlreadyExistsError",
     "GameNotFoundError",
     "GameRepository",
+    "GameRepositoryDynamoDB",
     "GameRepositoryInMemory",
     "GameCommandService",
     "GameStateCodec",
