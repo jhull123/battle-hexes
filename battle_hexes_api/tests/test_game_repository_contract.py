@@ -35,7 +35,10 @@ class ControlledSizer:
         self.items.append(item)
         if self.error is not None:
             raise self.error
-        return self.sizes[item["item_type"]]
+        item_type = item["item_type"]
+        if isinstance(item_type, dict):
+            item_type = item_type["S"]
+        return self.sizes[item_type]
 
 
 def make_game(version=1, expires_at=200, state=b"{}"):

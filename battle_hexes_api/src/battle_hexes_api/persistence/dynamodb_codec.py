@@ -77,8 +77,10 @@ def decode_receipt(item, key_digest):
         if _string(item, "item_type") != "command_receipt":
             raise ValueError
         headers_value = item["response_headers"]
-        if set(headers_value) != {"M"}:
+        if not isinstance(headers_value, dict) or set(headers_value) != {"M"}:
             raise ValueError
+        if not isinstance(headers_value["M"], dict):
+            raise TypeError
         headers = {
             name: _attribute_string(value)
             for name, value in headers_value["M"].items()

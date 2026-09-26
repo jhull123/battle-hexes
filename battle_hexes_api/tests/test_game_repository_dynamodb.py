@@ -1,5 +1,8 @@
 """Unit coverage for the low-level DynamoDB repository adapter."""
 
+from copy import deepcopy
+from threading import Lock
+
 from botocore.exceptions import ClientError, EndpointConnectionError
 import pytest
 
@@ -16,6 +19,7 @@ from battle_hexes_api.persistence import (
     PersistenceUnavailableError,
     StoredGame,
 )
+from tests.test_game_repository_contract import RepositoryContractTests
 
 
 class Clock:
@@ -38,37 +42,67 @@ class Sizer:
 
 class Client:
     def __init__(self):
+        self.lock = Lock()
         self.items = {}
         self.gets = []
         self.transactions = []
         self.transaction_error = None
 
     def get_item(self, **request):
-        self.gets.append(request)
-        key = (request["Key"]["pk"]["S"], request["Key"]["sk"]["S"])
-        item = self.items.get(key)
-        return {} if item is None else {"Item": item}
+        with self.lock:
+            self.gets.append(request)
+            key = self._key(request["Key"])
+            item = self.items.get(key)
+            return {} if item is None else {"Item": deepcopy(item)}
 
     def transact_write_items(self, **request):
-        self.transactions.append(request)
-        if self.transaction_error is not None:
-            raise self.transaction_error
-        for operation in request["TransactItems"]:
-            if "Put" in operation:
-                item = operation["Put"]["Item"]
-                key = (item["pk"]["S"], item["sk"]["S"])
-                self.items[key] = item
-            else:
-                update = operation["Update"]
-                key = (update["Key"]["pk"]["S"],
-                       update["Key"]["sk"]["S"])
-                current = dict(self.items[key])
-                for name in update["ExpressionAttributeNames"].values():
-                    current[name] = update["ExpressionAttributeValues"][
-                        f":{name}"
-                    ]
-                self.items[key] = current
+        with self.lock:
+            self.transactions.append(request)
+            if self.transaction_error is not None:
+                raise self.transaction_error
+            operations = request["TransactItems"]
+            conditions = [self._condition_passes(operation)
+                          for operation in operations]
+            if not all(conditions):
+                raise cancellation(*(
+                    "None" if passed else "ConditionalCheckFailed"
+                    for passed in conditions
+                ))
+            for operation in operations:
+                if "Put" in operation:
+                    item = operation["Put"]["Item"]
+                    self.items[self._key(item)] = deepcopy(item)
+                else:
+                    update = operation["Update"]
+                    current = self.items[self._key(update["Key"])]
+                    for name in update["ExpressionAttributeNames"].values():
+                        current[name] = deepcopy(
+                            update["ExpressionAttributeValues"][f":{name}"]
+                        )
         return {}
+
+    def _condition_passes(self, operation):
+        if "Put" in operation:
+            put = operation["Put"]
+            assert put["ConditionExpression"] == (
+                "attribute_not_exists(pk) OR ttl <= :now"
+            )
+            current = self.items.get(self._key(put["Item"]))
+            now = int(put["ExpressionAttributeValues"][":now"]["N"])
+            return current is None or int(current["ttl"]["N"]) <= now
+        update = operation["Update"]
+        assert update["ConditionExpression"] == (
+            "#version = :expected_version AND #ttl > :now"
+        )
+        current = self.items.get(self._key(update["Key"]))
+        values = update["ExpressionAttributeValues"]
+        return (current is not None
+                and current["version"] == values[":expected_version"]
+                and int(current["ttl"]["N"]) > int(values[":now"]["N"]))
+
+    @staticmethod
+    def _key(attributes):
+        return (attributes["pk"]["S"], attributes["sk"]["S"])
 
 
 def game(version=1, expires_at=200):
@@ -184,12 +218,54 @@ def test_malformed_item_and_read_failure_are_storage_neutral(context):
         repository.find_receipt("a" * 64)
 
 
+@pytest.mark.parametrize("bad_headers", [
+    {"M": []}, {"M": "not a map"}, {"M": {"X": {"N": "1"}}},
+])
+def test_malformed_receipt_headers_are_storage_neutral(context, bad_headers):
+    repository, client, _, _ = context
+    repository.create_game(game(), receipt())
+    key = ("IDEMPOTENCY#" + "a" * 64, "RECEIPT")
+    client.items[key]["response_headers"] = bad_headers
+
+    with pytest.raises(PersistenceUnavailableError):
+        repository.find_receipt("a" * 64)
+
+
 def test_cancelled_create_reconciles_live_game(context):
     repository, client, _, _ = context
     repository.create_game(game(), receipt())
     client.transaction_error = cancellation("ConditionalCheckFailed", "None")
     with pytest.raises(GameAlreadyExistsError):
         repository.create_game(game(), receipt(key="c" * 64))
+
+
+@pytest.mark.parametrize("operation", ["create", "commit"])
+def test_lost_write_response_replays_persisted_receipt(context, operation):
+    repository, client, _, _ = context
+    if operation == "commit":
+        repository.create_game(game(), receipt())
+        candidate_game = game(version=2)
+        candidate_receipt = receipt(version=2, key="c" * 64)
+    else:
+        candidate_game = game()
+        candidate_receipt = receipt()
+
+    write = client.transact_write_items
+
+    def lose_response(**request):
+        write(**request)
+        raise EndpointConnectionError(endpoint_url="http://dynamodb")
+
+    client.transact_write_items = lose_response
+    if operation == "commit":
+        result = repository.commit_command(
+            1, candidate_game, candidate_receipt
+        )
+    else:
+        result = repository.create_game(candidate_game, candidate_receipt)
+
+    assert result == candidate_receipt
+    assert repository.load_game("game-1") == candidate_game
 
 
 def test_failed_commit_reconciles_missing_and_changed_games(context):
@@ -229,3 +305,15 @@ def cancellation(*codes):
                   "Message": "provider detail"},
         "CancellationReasons": [{"Code": code} for code in codes],
     }, "TransactWriteItems")
+
+
+class TestGameRepositoryDynamoDB(RepositoryContractTests):
+    """Run the same observable repository contract against DynamoDB mapping."""
+
+    @pytest.fixture
+    def repository_factory(self):
+        def make_repository(clock, sizer, budget):
+            return GameRepositoryDynamoDB(
+                "games", Client(), clock, sizer, budget
+            )
+        return make_repository
