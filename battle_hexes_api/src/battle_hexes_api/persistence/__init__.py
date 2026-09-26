@@ -33,6 +33,7 @@ from .in_memory import GameRepositoryInMemory
 from .command_errors import CommandServiceError
 from .command_models import CommandRequest, CreatedGame, SuccessfulResponse
 from .command_service import GameCommandService
+from .item_sizer import InMemoryItemSizer
 
 __all__ = [
     "Clock",
@@ -49,6 +50,7 @@ __all__ = [
     "GameRepositoryInMemory",
     "GameCommandService",
     "GameStateCodec",
+    "InMemoryItemSizer",
     "GameVersionConflictError",
     "IdempotencyConflictError",
     "PersistenceCapacityError",
