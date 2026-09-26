@@ -1,3 +1,4 @@
+// Serializes commands per game and can wait for each response to be applied before continuing.
 export class GameCommandCoordinator {
   #tails = new Map();
   #applicationAcknowledgements = new Map();
