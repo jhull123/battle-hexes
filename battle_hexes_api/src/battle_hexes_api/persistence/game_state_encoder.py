@@ -71,7 +71,9 @@ class GameStateEncoder:
         board_units = {
             str(unit.get_id()): unit for unit in game.board.get_units()
         }
-        all_units = dict(board_units)
+        all_units = {
+            str(unit.get_id()): unit for unit in game.board.get_known_units()
+        }
         pending_ids = set()
         for group in game.reinforcements_deployer.groups:
             for unit in group.units:

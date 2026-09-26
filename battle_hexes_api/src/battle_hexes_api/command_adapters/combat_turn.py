@@ -36,6 +36,8 @@ class CombatAdapter:
         scorer = self._scorer_factory()
         scorer.award_hold_objectives_after_combat(game, results)
         scorer.recalculate_scenario_victory(game)
+        if game.get_game_status().state == "completed":
+            game.end_turn()
         notify_game_completion(game)
         return CombatCommandResult(results)
 
