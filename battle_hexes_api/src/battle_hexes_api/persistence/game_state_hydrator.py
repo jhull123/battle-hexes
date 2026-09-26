@@ -115,7 +115,7 @@ class GameStateHydrator:
         game.combat_log = [
             decode_combat_event(value) for value in document.combat_history
         ]
-        game.defensive_fire_log = [
+        game.defensive_fire_log[:] = [
             decode_defensive_fire_event(value)
             for value in document.defensive_fire_history
         ]
