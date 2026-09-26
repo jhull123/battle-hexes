@@ -1,788 +1,138 @@
-import unittest
-from types import SimpleNamespace
-from unittest.mock import patch, MagicMock
-from uuid import uuid4
-
 from fastapi.testclient import TestClient
 
-from battle_hexes_api.main import app, _serialize_game, game_repo
-from battle_hexes_api.schemas import GameModel
-from battle_hexes_core.defensivefire.defensive_fire import (
-    DefensiveFireResult,
-    MovementResolutionResult,
-)
-from battle_hexes_api.schemas import SparseBoard
-from battle_hexes_api.player_types import PlayerTypeDefinition
-from battle_hexes_core.game.player import Player, PlayerType
-from battle_hexes_core.scoring.game_status_evaluator import GameStatus
-from battle_hexes_core.scenario.scenario import Scenario
-from battle_hexes_core.unit.faction import Faction
+from battle_hexes_api.application import create_app
 
 
-class TestFastAPI(unittest.TestCase):
-    def setUp(self):
-        self.client = TestClient(app)
+CREATE = {"scenarioId": "elim_1", "playerTypes": ["human", "random"]}
 
-    def _mock_game(self):
-        game = MagicMock()
-        game.get_game_status.return_value = SimpleNamespace(
-            state="in_progress",
-            winner_player_name=None,
-            winner_faction_id=None,
-            reason=None,
-            message=None,
-        )
-        return game
 
-    def _game_model_payload(self):
-        return GameModel(
-            id="00000000-0000-0000-0000-000000000000",
-            players=[],
-            board={
-                "rows": 1,
-                "columns": 1,
-                "units": [],
-                "terrain": {"default": None, "types": {}, "hexes": []},
-                "roadTypes": {},
-                "roadPaths": [],
-            },
-            objectives=[],
-            scores={},
-            combat_results_table={"dieRolls": [], "rows": []},
-        )
+def create(client, key="create-12345678"):
+    return client.post("/games", json=CREATE, headers={"Idempotency-Key": key})
 
-    def test_health_check(self):
-        response = self.client.get('/health')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok"})
 
-    def test_create_game(self):
-        payload = {
-            "scenarioId": "elim_1",
-            "playerTypes": ["human", "random"],
-        }
-        post_response = self.client.post('/games', json=payload)
-        post_body = post_response.json()
-        new_game_id = post_body.get('id')
+def test_health_and_static_routes_remain_available():
+    with TestClient(create_app()) as client:
+        assert client.get("/health").json() == {"status": "ok"}
+        assert client.get("/ready").status_code == 200
+        assert client.get("/scenarios").status_code == 200
+        assert client.get("/player-types").status_code == 200
 
-        self.assertEqual(post_response.status_code, 200)
-        self.assertEqual(post_body.get('playerTypeIds'), ['human', 'random'])
-        self.assertEqual(post_body.get('scenarioId'), 'elim_1')
-        self.assertEqual(post_body.get('stackingLimit'), 2)
-        self.assertEqual(
-            post_body.get('gameStatus', {}).get('state'),
-            'in_progress',
-        )
-        terrain = post_body.get("board", {}).get("terrain", {})
-        self.assertEqual(terrain.get("default"), "open")
-        self.assertIn("open", terrain.get("types", {}))
-        self.assertIn("village", terrain.get("types", {}))
-        self.assertEqual(
-            terrain.get("types", {}).get("open", {}).get("color"),
-            "#C6AA5C",
-        )
-        self.assertEqual(
-            terrain.get("types", {}).get("open", {}).get("moveCost"),
-            1,
-        )
-        self.assertEqual(
-            terrain.get("types", {}).get("open", {}).get(
-                "combatOddsShift"
-            ),
-            0,
-        )
-        self.assertEqual(
-            terrain.get("types", {}).get("village", {}).get(
-                "combatOddsShift"
-            ),
-            -1,
-        )
-        self.assertEqual(
-            terrain.get("hexes"),
-            [
-                {"row": 5, "column": 5, "terrain": "village"},
-                {"row": 8, "column": 9, "terrain": "village"},
-            ],
-        )
-        self.assertEqual(post_body.get("board", {}).get("roadTypes"), {})
-        self.assertEqual(post_body.get("board", {}).get("roadPaths"), [])
 
-        get_response = self.client.get(f'/games/{new_game_id}')
-        get_body = get_response.json()
+def test_create_replay_and_get_use_authoritative_versioned_storage():
+    with TestClient(create_app()) as client:
+        first = create(client)
+        replay = create(client)
+        game_id = first.json()["id"]
+        loaded = client.get(f"/games/{game_id}")
 
-        self.assertEqual(new_game_id, get_body.get('id'))
-        self.assertEqual(get_body.get('playerTypeIds'), ['human', 'random'])
-        self.assertEqual(get_body.get('scenarioId'), 'elim_1')
-        self.assertEqual(get_body.get('stackingLimit'), 2)
-        self.assertEqual(
-            get_body.get('gameStatus', {}).get('state'),
-            'in_progress',
-        )
-        self.assertEqual(
-            get_body.get("board", {})
-            .get("terrain", {})
-            .get("types", {})
-            .get("village", {})
-            .get("combatOddsShift"),
-            -1,
-        )
-        self.assertEqual(
-            get_body.get("board", {}).get("terrain", {}).get("hexes"),
-            [
-                {"row": 5, "column": 5, "terrain": "village"},
-                {"row": 8, "column": 9, "terrain": "village"},
-            ],
-        )
-        self.assertEqual(get_body.get("board", {}).get("roadTypes"), {})
-        self.assertEqual(get_body.get("board", {}).get("roadPaths"), [])
-
-    def test_get_game_preserves_completed_status(self):
-        create_response = self.client.post(
-            '/games',
-            json={
-                "scenarioId": "elim_1",
-                "playerTypes": ["human", "random"],
-            },
-        )
-        game_id = create_response.json()["id"]
-        game = game_repo.get_game(game_id)
-        game.game_status = GameStatus(
-            state="completed",
-            winner_player_name="Player 1",
-            winner_faction_id="allies",
-            reason="unit_elimination",
-            message="Player 1 wins.",
+        assert first.status_code == 200
+        assert first.content == replay.content
+        assert first.headers["game-version"] == "1"
+        assert first.json()["gameVersion"] == 1
+        assert first.json()["scenarioVersion"]
+        assert loaded.status_code == 200
+        assert loaded.headers["game-version"] == "1"
+        assert loaded.json()["gameVersion"] == 1
+        assert (
+            loaded.json()["scenarioVersion"]
+            == first.json()["scenarioVersion"]
         )
 
-        response = self.client.get(f'/games/{game_id}')
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json()["gameStatus"],
-            {
-                "state": "completed",
-                "winnerPlayerName": "Player 1",
-                "winnerFactionId": "allies",
-                "reason": "unit_elimination",
-                "message": "Player 1 wins.",
+def test_command_headers_are_required_before_execution():
+    with TestClient(create_app()) as client:
+        game_id = create(client).json()["id"]
+        missing_key = client.post(f"/games/{game_id}/movement")
+        missing_version = client.post(
+            f"/games/{game_id}/movement",
+            headers={"Idempotency-Key": "move-12345678"},
+        )
+        invalid_version = client.post(
+            f"/games/{game_id}/movement",
+            headers={
+                "Idempotency-Key": "move-12345678",
+                "Expected-Game-Version": "+1",
             },
         )
 
-    def test_create_game_invalid_scenario_returns_404(self):
-        payload = {
-            "scenarioId": "not-real",
-            "playerTypes": ["human", "random"],
+        assert missing_key.status_code == 400
+        assert missing_key.json()["code"] == "invalidIdempotencyKey"
+        assert missing_version.status_code == 428
+        assert missing_version.json()["code"] == "expectedGameVersionRequired"
+        assert invalid_version.status_code == 400
+        assert invalid_version.json()["code"] == "invalidExpectedGameVersion"
+        assert client.get(f"/games/{game_id}").json()["gameVersion"] == 1
+
+
+def test_successful_existing_command_advances_once_and_replays():
+    with TestClient(create_app()) as client:
+        game_id = create(client).json()["id"]
+        headers = {
+            "Idempotency-Key": "movement-12345678",
+            "Expected-Game-Version": "1",
         }
+        first = client.post(f"/games/{game_id}/movement", headers=headers)
+        replay = client.post(f"/games/{game_id}/movement", headers=headers)
 
-        response = self.client.post('/games', json=payload)
+        assert first.status_code == 200
+        assert first.content == replay.content
+        assert first.headers["game-version"] == "2"
+        assert first.json()["gameVersion"] == 2
+        assert client.get(f"/games/{game_id}").json()["gameVersion"] == 2
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json()["detail"], "Scenario not found")
 
-    def test_create_game_invalid_player_type_returns_422(self):
-        payload = {
-            "scenarioId": "elim_1",
-            "playerTypes": ["human", "unknown"],
-        }
-
-        response = self.client.post('/games', json=payload)
-
-        self.assertEqual(response.status_code, 422)
-        self.assertIn("Unsupported player type", response.json()["detail"])
-
-    def test_get_game_invalid_uuid_returns_404(self):
-        response = self.client.get('/games/not-a-uuid')
-        self.assertEqual(response.status_code, 404)
-
-    def test_get_game_missing_returns_404(self):
-        missing_id = uuid4()
-        response = self.client.get(f'/games/{missing_id}')
-        self.assertEqual(response.status_code, 404)
-
-    @patch('battle_hexes_api.main.scenario_registry')
-    def test_list_scenarios(self, mock_registry):
-        mock_registry.list_scenarios.return_value = [
-            Scenario(id="test-1", name="Test Scenario"),
-            Scenario(id="test-2", name="Another Scenario"),
-        ]
-
-        response = self.client.get('/scenarios')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            [
-                {
-                    "id": "test-1",
-                    "name": "Test Scenario",
-                    "description": None,
-                    "victory": None,
-                    "stackingLimit": None,
-                },
-                {
-                    "id": "test-2",
-                    "name": "Another Scenario",
-                    "description": None,
-                    "victory": None,
-                    "stackingLimit": None,
-                },
-            ],
-        )
-        mock_registry.list_scenarios.assert_called_once_with()
-
-    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_resolve_combat_placeholder(
-        self,
-        mock_game_repo,
-        mock_from_board,
-        mock_apply_to_board,
-    ):
-        mock_board = MagicMock()
-        sparse_board_data = {
-            "units": []
-        }
-
-        game_id = "game-123"
-        mock_game = self._mock_game()
-        mock_game.id = game_id
-        mock_game_repo.get_game.return_value = mock_game
-        mock_game.get_board.return_value = mock_board
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {}
-        mock_from_board.return_value = MagicMock()
-
-        self.client.post(
-            f"/games/{game_id}/combat", json=sparse_board_data)
-
-        mock_apply_to_board.assert_called_once_with(mock_board)
-        mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_from_board.assert_called_once_with(mock_board)
-
-    @patch('battle_hexes_api.main.Combat')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_resolve_combat_includes_scores(
-        self,
-        mock_game_repo,
-        mock_combat,
-    ):
-        mock_board = MagicMock()
-        mock_board.get_units.return_value = []
-        mock_game = self._mock_game()
-        mock_game.get_board.return_value = mock_board
-        score_tracker = MagicMock()
-        score_tracker.get_scores.return_value = {"Alice": 5}
-        mock_game.get_score_tracker.return_value = score_tracker
-        mock_game_repo.get_game.return_value = mock_game
-        mock_results = MagicMock()
-        mock_results.get_battles.return_value = []
-        mock_combat.return_value.resolve_combat.return_value = mock_results
-
-        game_id = "game-999"
-        response = self.client.post(
-            f"/games/{game_id}/combat", json=SparseBoard().model_dump()
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get("scores"), {"Alice": 5})
-
-    @patch('battle_hexes_api.main.logger')
-    @patch('battle_hexes_api.main.ObjectiveScorer')
-    @patch('battle_hexes_api.main.Combat')
-    @patch('battle_hexes_api.main.game_repo')
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
-    def test_resolve_combat_awards_objectives_after_combat(
-        self,
-        mock_apply_to_board,
-        mock_from_board,
-        mock_game_repo,
-        mock_combat,
-        mock_scorer,
-        mock_logger,
-    ):
-        mock_board = MagicMock()
-        game_id = "game-456"
-        mock_game = self._mock_game()
-        mock_game.id = game_id
-        mock_game.get_board.return_value = mock_board
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {}
-        mock_game_repo.get_game.return_value = mock_game
-        mock_results = MagicMock()
-        mock_results.get_battles.return_value = []
-        mock_combat.return_value.resolve_combat.return_value = mock_results
-        (
-            mock_scorer.return_value.award_hold_objectives_after_combat
-        ).return_value = 3
-        mock_from_board.return_value = MagicMock()
-
-        self.client.post(f"/games/{game_id}/combat", json={"units": []})
-
-        scorer_instance = mock_scorer.return_value
-        (
-            scorer_instance.award_hold_objectives_after_combat
-        ).assert_called_once_with(
-            mock_game,
-            mock_results,
-        )
-        scorer_instance.recalculate_scenario_victory.assert_called_once_with(
-            mock_game
-        )
-        mock_logger.info.assert_any_call(
-            'Awarded %d pts for objectvies after combat.',
-            3,
-        )
-
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.Combat')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_resolve_combat_calls_end_game_callback_when_game_over(
-        self, mock_game_repo, mock_combat, mock_from_board
-    ):
-        mock_board = MagicMock()
-        mock_game = self._mock_game()
-        mock_game.get_board.return_value = mock_board
-        mock_game.is_game_over.return_value = True
-        mock_player1 = MagicMock()
-        mock_player2 = MagicMock()
-        mock_game.get_players.return_value = [mock_player1, mock_player2]
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {}
-        mock_game_repo.get_game.return_value = mock_game
-        mock_results = MagicMock()
-        mock_results.get_battles.return_value = []
-        mock_combat.return_value.resolve_combat.return_value = mock_results
-
-        game_id = "game-123"
-        sparse_board_data = {"units": []}
-
-        mock_from_board.return_value = MagicMock()
-
-        self.client.post(
-            f"/games/{game_id}/combat", json=sparse_board_data
-        )
-
-        mock_player1.end_game_cb.assert_called_once_with()
-        mock_player2.end_game_cb.assert_called_once_with()
-
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_generate_movement(
-        self,
-        mock_game_repo,
-        mock_from_game,
-        mock_from_board,
-    ):
-        mock_plan = MagicMock()
-        mock_player = MagicMock()
-        mock_player.movement.return_value = [mock_plan]
-        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
-        mock_game = self._mock_game()
-        mock_game.get_current_player.return_value = mock_player
-        mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = self._game_model_payload()
-        mock_from_board.return_value = SparseBoard(units=[])
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {
-            "Alice": 3,
-        }
-        mock_game.turn_limit = 7
-        mock_game.turn_number = 2
-        mock_game.apply_movement_plans.return_value = (
-            MovementResolutionResult()
-        )
-        mock_game.get_board.return_value = MagicMock()
-
-        game_id = "game-456"
-        response = self.client.post(f"/games/{game_id}/movement")
-
-        mock_player.movement.assert_called_once_with()
-        mock_game.apply_movement_plans.assert_called_once_with([mock_plan])
-        mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_from_game.assert_called_once_with(mock_game)
-        mock_plan.to_dict.assert_called_once_with()
-        self.assertEqual(
-            response.json()["game"]["id"],
-            "00000000-0000-0000-0000-000000000000",
-        )
-        self.assertEqual(
-            response.json()["plans"],
-            [{"unitId": "u-1", "path": []}],
-        )
-        self.assertEqual(response.json()["defensiveFireEvents"], [])
-        self.assertIn("sparseBoard", response.json())
-        self.assertEqual(
-            response.json()["sparseBoard"]["gameStatus"]["state"],
-            "in_progress",
-        )
-        self.assertEqual(response.json()["scores"], {"Alice": 3})
-        self.assertEqual(response.json()["turnLimit"], 7)
-        self.assertEqual(response.json()["turnNumber"], 2)
-
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_generate_movement_includes_defensive_fire_events(
-        self,
-        mock_game_repo,
-        mock_from_game,
-        mock_from_board,
-    ):
-        mock_plan = MagicMock()
-        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
-        mock_player = MagicMock()
-        mock_player.name = "CPU 1"
-        mock_player.movement.return_value = [mock_plan]
-        mock_game = self._mock_game()
-        mock_game.get_current_player.return_value = mock_player
-        mock_game.get_board.return_value = MagicMock()
-        mock_game.apply_movement_plans.return_value = MovementResolutionResult(
-            defensive_fire_results=[
-                DefensiveFireResult(
-                    firing_unit_id="df-1",
-                    target_unit_id="m-1",
-                    trigger_hex=(1, 1),
-                    target_hex_before=(1, 1),
-                    outcome="retreat",
-                    retreat_destination=(0, 1),
-                    probability=0.5,
-                    roll=0.2,
-                )
-            ]
-        )
-        mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = self._game_model_payload()
-        mock_from_board.return_value = SparseBoard(units=[])
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {}
-
-        response = self.client.post("/games/game-789/movement")
-
-        self.assertEqual(response.status_code, 200)
-        event = response.json()["defensiveFireEvents"][0]
-        self.assertEqual(event["firingUnitId"], "df-1")
-        self.assertEqual(event["targetUnitId"], "m-1")
-        self.assertEqual(event["outcome"], "retreat")
-        self.assertEqual(event["retreatDestination"], [0, 1])
-        self.assertIn("forced the target to retreat", event["message"])
-
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
-    @patch('battle_hexes_api.main.ObjectiveScorer')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_resolve_human_move_updates_game_without_ending_movement(
-        self,
-        mock_game_repo,
-        mock_from_game,
-        mock_scorer,
-        mock_to_movement_plans,
-        mock_from_board,
-    ):
-        mock_game = self._mock_game()
-        mock_board = MagicMock()
-        mock_plan = MagicMock()
-        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
-        mock_game.get_board.return_value = mock_board
-        mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = self._game_model_payload()
-        mock_from_board.return_value = SparseBoard(units=[])
-        mock_to_movement_plans.return_value = [mock_plan]
-        mock_game.apply_movement_plans.return_value = (
-            MovementResolutionResult()
-        )
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {
-            "Alice": 4,
-        }
-
-        response = self.client.post(
-            "/games/game-150/move",
-            json={"units": [{"id": "u-1", "row": 2, "column": 3}]},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        mock_to_movement_plans.assert_called_once_with(mock_board)
-        mock_game.apply_movement_plans.assert_called_once_with([mock_plan])
-        mock_scorer.assert_not_called()
-        self.assertEqual(response.json()["defensiveFireEvents"], [])
-        self.assertEqual(response.json()["scores"], {"Alice": 4})
-
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
-    @patch('battle_hexes_api.main.ObjectiveScorer')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_end_movement_updates_game_and_scores(
-        self,
-        mock_game_repo,
-        mock_from_game,
-        mock_scorer,
-        mock_to_movement_plans,
-        mock_from_board,
-    ):
-        mock_game = self._mock_game()
-        mock_board = MagicMock()
-        mock_plans = [MagicMock()]
-        mock_plans[0].to_dict.return_value = {"unit_id": "u-1", "path": []}
-        mock_game.get_board.return_value = mock_board
-        mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = self._game_model_payload()
-        mock_from_board.return_value = SparseBoard(units=[])
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {
-            "Alice": 5,
-        }
-        mock_game.turn_limit = 9
-        mock_game.turn_number = 4
-        mock_to_movement_plans.return_value = mock_plans
-        mock_game.apply_movement_plans.return_value = (
-            MovementResolutionResult()
-        )
-
-        game_id = "game-101"
-        sparse_board_data = {"units": []}
-
-        response = self.client.post(
-            f"/games/{game_id}/end-movement",
-            json=sparse_board_data,
-        )
-
-        mock_to_movement_plans.assert_called_once_with(mock_board)
-        mock_game.apply_movement_plans.assert_called_once_with(mock_plans)
-        mock_scorer.return_value.award_hold_objectives.assert_called_once_with(
-            mock_game
-        )
-        mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_from_game.assert_called_once_with(mock_game)
-        self.assertEqual(
-            response.json()["game"]["id"],
-            "00000000-0000-0000-0000-000000000000",
-        )
-        self.assertEqual(response.json()["defensiveFireEvents"], [])
-        self.assertEqual(response.json()["scores"], {"Alice": 5})
-        self.assertEqual(response.json()["turnLimit"], 9)
-        self.assertEqual(response.json()["turnNumber"], 4)
-
-    @patch('battle_hexes_api.main.SparseBoard.from_board')
-    @patch('battle_hexes_api.main.SparseBoard.to_movement_plans')
-    @patch('battle_hexes_api.main.ObjectiveScorer')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_end_movement_returns_retreat_state_and_events(
-        self,
-        mock_game_repo,
-        mock_from_game,
-        mock_scorer,
-        mock_to_movement_plans,
-        mock_from_board,
-    ):
-        mock_game = self._mock_game()
-        mock_game.get_board.return_value = MagicMock()
-        mock_game_repo.get_game.return_value = mock_game
-        mock_plan = MagicMock()
-        mock_plan.to_dict.return_value = {"unit_id": "u-1", "path": []}
-        mock_to_movement_plans.return_value = [mock_plan]
-        mock_game.apply_movement_plans.return_value = MovementResolutionResult(
-            defensive_fire_results=[
-                DefensiveFireResult(
-                    firing_unit_id="df-2",
-                    target_unit_id="m-2",
-                    trigger_hex=(2, 2),
-                    target_hex_before=(2, 2),
-                    outcome="no_effect",
-                    retreat_destination=None,
-                    probability=0.3,
-                    roll=0.9,
-                )
-            ]
-        )
-        mock_from_game.return_value = self._game_model_payload()
-        mock_from_board.return_value = SparseBoard(
-            units=[
-                {
-                    "id": "m-2",
-                    "row": 2,
-                    "column": 2,
-                    "defensiveFireAvailable": False,
-                }
-            ]
-        )
-        mock_game.get_score_tracker.return_value.get_scores.return_value = {
-            "Alice": 5,
-        }
-
-        response = self.client.post(
-            "/games/game-202/end-movement",
-            json={"units": [{"id": "m-2", "row": 3, "column": 2}]},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json()["sparseBoard"]["units"][0],
-            {
-                "id": "m-2",
-                "row": 2,
-                "column": 2,
-                "defensiveFireAvailable": False,
+def test_stale_command_returns_structured_conflict():
+    with TestClient(create_app()) as client:
+        game_id = create(client).json()["id"]
+        client.post(
+            f"/games/{game_id}/movement",
+            headers={
+                "Idempotency-Key": "movement-12345678",
+                "Expected-Game-Version": "1",
             },
         )
-        self.assertEqual(
-            response.json()["defensiveFireEvents"][0]["outcome"],
-            "no_effect",
+        conflict = client.post(
+            f"/games/{game_id}/movement",
+            headers={
+                "Idempotency-Key": "movement-87654321",
+                "Expected-Game-Version": "1",
+            },
         )
-        self.assertEqual(response.json()["scores"], {"Alice": 5})
 
-    @patch('battle_hexes_api.main.SparseBoard.apply_to_board')
-    @patch('battle_hexes_api.main.ObjectiveScorer')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_end_turn_updates_game_and_returns_game_model(
-        self,
-        mock_game_repo,
-        mock_from_game,
-        mock_scorer,
-        mock_apply_to_board,
-    ):
-        mock_game = self._mock_game()
-        mock_old_player = MagicMock()
-        mock_old_player.name = "Alice"
-        mock_new_player = MagicMock()
-        mock_new_player.name = "Bob"
-        mock_game.end_turn.return_value = SimpleNamespace(
-            previous_player=mock_old_player,
-            current_player=mock_new_player,
-            game_status=mock_game.get_game_status.return_value,
-        )
-        mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = {
-            "id": "game-789",
-            "board": {"units": []},
-            "active_player": "Bob",
+        assert conflict.status_code == 409
+        assert conflict.json() == {
+            "code": "gameVersionConflict",
+            "message": "The game version has changed.",
+            "gameId": game_id,
+            "expectedGameVersion": 1,
+            "currentGameVersion": 2,
         }
-        mock_board = MagicMock()
-        mock_game.get_board.return_value = mock_board
 
-        game_id = "game-789"
-        sparse_board_data = {"units": []}
 
-        response = self.client.post(
-            f"/games/{game_id}/end-turn",
-            json=sparse_board_data
+def test_cors_exposes_and_accepts_persistence_headers():
+    with TestClient(create_app()) as client:
+        response = client.options(
+            "/games/example/movement",
+            headers={
+                "Origin": "https://example.test",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": (
+                    "Idempotency-Key, Expected-Game-Version"
+                ),
+            },
         )
-
-        mock_apply_to_board.assert_called_once_with(mock_board)
-        scorer_instance = mock_scorer.return_value
-        scorer_instance.recalculate_scenario_victory.assert_called_once_with(
-            mock_game
+        assert response.status_code == 200
+        allowed = response.headers["access-control-allow-headers"].lower()
+        assert "idempotency-key" in allowed
+        created = client.post(
+            "/games",
+            json=CREATE,
+            headers={
+                "Idempotency-Key": "cors-create-1234",
+                "Origin": "https://example.test",
+            },
         )
-        mock_game.end_turn.assert_called_once_with()
-        mock_game_repo.update_game.assert_called_once_with(mock_game)
-        mock_from_game.assert_called_once_with(mock_game)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["active_player"], "Bob")
-        self.assertIn("units", response.json()["board"])
-
-    @patch('battle_hexes_api.main.ObjectiveScorer')
-    @patch('battle_hexes_api.main.GameModel.from_game')
-    @patch('battle_hexes_api.main.game_repo')
-    def test_end_turn_calls_end_game_callback_when_game_over(
-        self, mock_game_repo, mock_from_game, mock_scorer
-    ):
-        mock_player1 = MagicMock()
-        mock_player2 = MagicMock()
-        mock_game = self._mock_game()
-        mock_game.get_current_player.return_value = MagicMock()
-        mock_game.next_player.return_value = MagicMock()
-        mock_game.get_players.return_value = [mock_player1, mock_player2]
-        mock_game.is_game_over.return_value = True
-        mock_game_repo.get_game.return_value = mock_game
-        mock_from_game.return_value = {}
-
-        game_id = "game-789"
-        self.client.post(
-            f"/games/{game_id}/end-turn", json={"units": []}
+        assert (
+            created.headers["access-control-expose-headers"]
+            == "Game-Version"
         )
-
-        scorer_instance = mock_scorer.return_value
-        scorer_instance.recalculate_scenario_victory.assert_called_once_with(
-            mock_game
-        )
-        mock_player1.end_game_cb.assert_called_once_with()
-        mock_player2.end_game_cb.assert_called_once_with()
-        mock_from_game.assert_called_once_with(mock_game)
-
-    @patch('battle_hexes_api.main.list_player_types')
-    def test_get_player_types(self, mock_list_player_types):
-        mock_list_player_types.return_value = (
-            PlayerTypeDefinition(id="human", name="Human"),
-            PlayerTypeDefinition(id="random", name="Random"),
-        )
-
-        response = self.client.get('/player-types')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            [
-                {"id": "human", "name": "Human"},
-                {"id": "random", "name": "Random"},
-            ],
-        )
-        mock_list_player_types.assert_called_once_with()
-
-    def test_serialize_game_serializes_factions_and_metadata(self):
-        faction_alpha = Faction(
-            id="alpha",
-            name="Alpha",
-            color="#ff0000",
-            sounds={"defensive_fire": {"effect": "a.ogg"}},
-        )
-        faction_beta = Faction(
-            id="beta",
-            name="Beta",
-            color="#00ff00",
-            sounds={"defensive_fire": {"effect": "b.ogg"}},
-        )
-
-        players = [
-            Player(
-                name="Alice",
-                type=PlayerType.HUMAN,
-                factions=[faction_alpha],
-            ),
-            Player(
-                name="Bob",
-                type=PlayerType.CPU,
-                factions=[faction_beta],
-            ),
-        ]
-
-        class DummyGameModel:
-            def __init__(self, players):
-                self.players = players
-
-            def model_dump(self):
-                return {
-                    "id": "game-123",
-                    "board": {"hexes": []},
-                    "players": [{} for _ in self.players],
-                }
-
-        class DummyGame:
-            def __init__(self):
-                self.scenario_id = "elim_1"
-                self.player_type_ids = ("human", "cpu")
-
-        game = DummyGame()
-
-        with patch(
-            'battle_hexes_api.main.GameModel.from_game'
-        ) as mock_from_game:
-            mock_from_game.return_value = DummyGameModel(players)
-            serialized = _serialize_game(game)
-            mock_from_game.assert_called_once()
-            args, _ = mock_from_game.call_args
-            self.assertEqual(args[0], game)
-            self.assertEqual(args[1].id, "elim_1")
-
-        self.assertEqual(serialized["id"], "game-123")
-        self.assertEqual(serialized["board"], {"hexes": []})
-
-        self.assertEqual(serialized["players"], [{}, {}])

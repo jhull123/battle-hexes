@@ -71,6 +71,9 @@ def validate_histories(
 
         for value in combat_history:
             event = decode_combat_event(value)
+            participant_names = {
+                item.name for item in event.attackers + event.defenders
+            }
             if (
                 event.player_name not in player_names
                 or any(
@@ -79,8 +82,14 @@ def validate_histories(
                 or any(
                     not isinstance(item.name, str) for item in event.defenders
                 )
-                or any(item not in unit_ids for item in event.eliminated_units)
-                or any(item not in unit_ids for item in event.retreated_units)
+                or any(
+                    item not in participant_names
+                    for item in event.eliminated_units
+                )
+                or any(
+                    item not in participant_names
+                    for item in event.retreated_units
+                )
             ):
                 raise ValueError
 

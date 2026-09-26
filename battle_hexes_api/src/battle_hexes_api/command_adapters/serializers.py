@@ -1,6 +1,9 @@
 """Pure response serializers paired with authoritative game commands."""
 
-from battle_hexes_core.scenario.scenario_loader import load_scenario
+from battle_hexes_core.scenario.scenario_loader import (
+    load_scenario,
+    load_scenario_data,
+)
 
 from battle_hexes_api.schemas import (
     GameModel,
@@ -26,6 +29,9 @@ class GameResponseSerializer:
         self._scenario_loader = scenario_loader
 
     def __call__(self, game, _operation_result, resulting_version):
+        scenario_version = self._scenario_version
+        if scenario_version is None:
+            scenario_version = load_scenario_data(game.scenario_id).version
         scenario = None
         if self._scenario_loader is not None:
             scenario = self._scenario_loader(game.scenario_id)
@@ -33,7 +39,7 @@ class GameResponseSerializer:
             game,
             scenario,
             game_version=resulting_version,
-            scenario_version=self._scenario_version,
+            scenario_version=scenario_version,
         ))
 
 
@@ -56,7 +62,10 @@ class MovementResponseSerializer:
             list(result.plans),
             result.movement_resolution,
             game_version=resulting_version,
-            scenario_version=self._scenario_version,
+            scenario_version=(
+                self._scenario_version
+                or load_scenario_data(game.scenario_id).version
+            ),
         )
         return _response(model)
 

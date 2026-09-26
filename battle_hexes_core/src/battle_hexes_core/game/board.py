@@ -33,6 +33,7 @@ class Board:
         self.columns = columns
         self.stacking_limit: int | None = None
         self.units: dict[str, Unit] = {}
+        self._known_units: dict[str, Unit] = {}
         self.road_types: dict[str, float] = {}
         self.road_paths: tuple[
             tuple[str, tuple[tuple[int, int], ...]],
@@ -96,6 +97,7 @@ class Board:
 
         unit.set_coords(row, column)
         self.units[unit.get_id()] = unit
+        self._known_units[unit.get_id()] = unit
 
     def remove_units(self, units) -> None:
         if isinstance(units, Iterable):
@@ -110,6 +112,10 @@ class Board:
 
     def get_units(self) -> List[Unit]:
         return list(self.units.values())
+
+    def get_known_units(self) -> List[Unit]:
+        """Include removed units whose state must survive game persistence."""
+        return list(self._known_units.values())
 
     def get_units_for_player(self, player) -> List[Unit]:
         """Return all board units owned by ``player``."""
