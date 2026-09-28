@@ -10,7 +10,6 @@ from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI
 
 from .config import DynamoDBConfig
-from .readiness import ReadinessChecker
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,6 @@ def configure_dependencies(
                 "DDB_TABLE_NAME is configured but DynamoDB is disabled"
             )
     app.state.dynamodb_config = config
-    app.state.readiness_checker = ReadinessChecker(config, factory)
 
 
 def _validate_table_contract(client_factory, table_name):
@@ -52,6 +50,8 @@ def _validate_table_contract(client_factory, table_name):
         else None
     if not isinstance(table, dict) or not _has_required_keys(table):
         raise RuntimeError("DynamoDB table has an incompatible key schema")
+    if table.get("TableStatus") not in {"ACTIVE", "UPDATING"}:
+        raise RuntimeError("DynamoDB table is unavailable at startup")
 
     # TTL performs cleanup; application reads and writes enforce expiry.
     # A TTL mismatch merits an operational warning, not traffic rejection.
