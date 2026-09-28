@@ -61,16 +61,9 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:GetItem
                   - dynamodb:UpdateItem
-                  - dynamodb:BatchWriteItem
-                  - dynamodb:BatchGetItem
-                  - dynamodb:Query
-                  - dynamodb:Scan
                   - dynamodb:DescribeTable
-                Resource:
-                  - !ImportValue battle-hexes-dev:TableArn
-                  - !Sub
-                    - "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${T}/index/*"
-                    - { T: !ImportValue battle-hexes-dev:TableName }
+                  - dynamodb:DescribeTimeToLive
+                Resource: !ImportValue battle-hexes-dev:TableArn
 
   TaskExecutionRole:
     Type: AWS::IAM::Role

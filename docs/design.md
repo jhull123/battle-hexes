@@ -514,10 +514,16 @@ underlying item actions, so this transaction shape requires `PutItem` and
 batch, index, and stream permissions are not needed for this design and should
 not be added as dependencies.
 
-Readiness in DynamoDB mode verifies that the selected repository is DynamoDB,
-the table is active, its key schema is the expected string `pk`/`sk` schema,
-and TTL is enabled on `ttl`. This may require
-`dynamodb:DescribeTimeToLive`. `/health` remains independent of external
+Startup validates the expected string `pk`/`sk` table key schema before an
+enabled deployment serves traffic. It also checks TTL on `ttl` using
+`dynamodb:DescribeTimeToLive`, but a mismatch or inability to verify TTL is
+an operational warning, not a traffic gate: application reads and writes
+enforce logical expiry, while DynamoDB TTL performs eventual cleanup. The
+deployed table should still have TTL enabled to avoid unbounded retention.
+
+`/ready` in DynamoDB mode checks current table availability without repeating
+schema or TTL validation. Both `ACTIVE` and `UPDATING` are usable states;
+unavailable tables return 503. `/health` remains independent of external
 dependencies. In-memory mode is ready without AWS access.
 
 ### 1.15 Frontend Coordination
@@ -588,8 +594,8 @@ Implementation specifications must cover at least:
   exposure;
 - frontend command serialization, retry key reuse, version updates, and stale
   state recovery; and
-- CloudFormation linting plus readiness behavior for wrong table schema,
-  disabled TTL, missing permissions, and unavailable DynamoDB.
+- CloudFormation linting, startup rejection for wrong table keys, startup
+  warnings for disabled TTL, and readiness behavior for unavailable DynamoDB.
 
 Botocore stubs are appropriate for request construction and error translation,
 but transaction and conditional-write behavior also needs integration coverage
