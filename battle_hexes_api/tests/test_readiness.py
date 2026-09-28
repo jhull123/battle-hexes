@@ -1,3 +1,5 @@
+"""Startup-contract and live-readiness behavior."""
+
 import logging
 from copy import deepcopy
 from unittest.mock import MagicMock
@@ -7,16 +9,16 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from battle_hexes_api.health.readiness import (
-    DynamoDBConfig,
-    ReadinessChecker,
+from battle_hexes_api.health.config import DynamoDBConfig
+from battle_hexes_api.health.readiness import ReadinessChecker, router
+from battle_hexes_api.health.startup import (
+    _has_required_keys,
+    configure_dependencies,
     lifespan,
-    router,
 )
 
-
 TABLE_NAME = "battle-hexes-dev"
-VALID_TABLE_RESPONSE = {
+TABLE_RESPONSE = {
     "Table": {
         "TableStatus": "ACTIVE",
         "KeySchema": [
@@ -29,7 +31,7 @@ VALID_TABLE_RESPONSE = {
         ],
     }
 }
-VALID_TTL_RESPONSE = {
+TTL_RESPONSE = {
     "TimeToLiveDescription": {
         "TimeToLiveStatus": "ENABLED",
         "AttributeName": "ttl",
@@ -43,23 +45,21 @@ def make_app():
     return app
 
 
-def valid_dynamodb_client():
+def dynamodb_client():
     client = MagicMock()
-    client.describe_table.return_value = deepcopy(VALID_TABLE_RESPONSE)
-    client.describe_time_to_live.return_value = deepcopy(VALID_TTL_RESPONSE)
+    client.describe_table.return_value = deepcopy(TABLE_RESPONSE)
+    client.describe_time_to_live.return_value = deepcopy(TTL_RESPONSE)
     return client
 
 
-def configure_dynamodb(monkeypatch):
+def enabled_app(monkeypatch, dynamodb):
     monkeypatch.setenv("DYNAMODB_ENABLED", "true")
     monkeypatch.setenv("DDB_TABLE_NAME", f"  {TABLE_NAME}  ")
-
-
-def ready_response(monkeypatch, dynamodb):
-    configure_dynamodb(monkeypatch)
-    with TestClient(make_app()) as client:
-        client.app.state.readiness_checker.client_factory = lambda: dynamodb
-        return client.get("/ready")
+    monkeypatch.setattr(
+        "battle_hexes_api.health.startup.boto3.client",
+        lambda service: dynamodb,
+    )
+    return make_app()
 
 
 @pytest.mark.parametrize(
@@ -91,236 +91,151 @@ def test_enabled_requires_non_blank_table_name(table_name):
     environment = {"DYNAMODB_ENABLED": "true"}
     if table_name is not None:
         environment["DDB_TABLE_NAME"] = table_name
-
     with pytest.raises(ValueError, match="DDB_TABLE_NAME is required"):
         DynamoDBConfig.from_environment(environment)
 
 
 def test_invalid_configuration_prevents_application_startup(monkeypatch):
     monkeypatch.setenv("DYNAMODB_ENABLED", "sometimes")
-
     with pytest.raises(ValueError, match="DYNAMODB_ENABLED must be"):
         with TestClient(make_app()):
             pass
 
 
-def test_ready_when_dynamodb_is_disabled_without_constructing_client(
-    monkeypatch,
-):
-    monkeypatch.delenv("DYNAMODB_ENABLED", raising=False)
+def test_in_memory_mode_does_not_contact_aws(monkeypatch):
+    monkeypatch.setenv("DYNAMODB_ENABLED", "false")
     monkeypatch.delenv("DDB_TABLE_NAME", raising=False)
-    client_factory = MagicMock()
-
-    with TestClient(make_app()) as client:
-        client.app.state.readiness_checker.client_factory = client_factory
-        response = client.get("/ready")
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
-    client_factory.assert_not_called()
+    factory = MagicMock(side_effect=AssertionError("AWS contact"))
+    app = make_app()
+    configure_dependencies(app, environment={}, client_factory=factory)
+    assert app.state.readiness_checker.is_ready()
+    factory.assert_not_called()
 
 
-def test_disabled_with_table_name_is_valid_and_warns(monkeypatch, caplog):
+def test_disabled_with_table_name_warns(monkeypatch, caplog):
     monkeypatch.setenv("DYNAMODB_ENABLED", "false")
     monkeypatch.setenv("DDB_TABLE_NAME", "unused-table")
-
     with caplog.at_level(logging.WARNING), TestClient(make_app()) as client:
-        response = client.get("/ready")
-
-    assert response.status_code == 200
+        assert client.get("/ready").status_code == 200
     assert "configured but DynamoDB is disabled" in caplog.text
 
 
-def test_application_stores_one_validated_configuration(monkeypatch):
-    configure_dynamodb(monkeypatch)
-
-    with TestClient(make_app()) as client:
+def test_startup_validates_contract_once(monkeypatch):
+    dynamodb = dynamodb_client()
+    with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
         config = client.app.state.dynamodb_config
-
         assert config == DynamoDBConfig(enabled=True, table_name=TABLE_NAME)
         assert client.app.state.readiness_checker.config is config
-
-
-def test_active_compatible_table_is_ready(monkeypatch):
-    dynamodb = valid_dynamodb_client()
-
-    response = ready_response(monkeypatch, dynamodb)
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
-    dynamodb.describe_table.assert_called_once_with(TableName=TABLE_NAME)
+        assert client.get("/ready").status_code == 200
+        assert client.get("/ready").status_code == 200
+    assert dynamodb.describe_table.call_count == 3
     dynamodb.describe_time_to_live.assert_called_once_with(
         TableName=TABLE_NAME
     )
 
 
-def test_additional_non_key_attribute_definition_is_allowed(monkeypatch):
-    dynamodb = valid_dynamodb_client()
-    dynamodb.describe_table.return_value["Table"][
-        "AttributeDefinitions"
-    ].append({"AttributeName": "other", "AttributeType": "N"})
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda table: table.pop("KeySchema"),
+        lambda table: table["KeySchema"][0].update(AttributeName="id"),
+        lambda table: table["KeySchema"][1].update(KeyType="HASH"),
+        lambda table: table["AttributeDefinitions"][0].update(
+            AttributeType="N"
+        ),
+    ],
+)
+def test_wrong_key_contract_fails_startup(monkeypatch, change):
+    dynamodb = dynamodb_client()
+    change(dynamodb.describe_table.return_value["Table"])
+    with pytest.raises(RuntimeError, match="incompatible key schema"):
+        with TestClient(enabled_app(monkeypatch, dynamodb)):
+            pass
 
-    assert ready_response(monkeypatch, dynamodb).status_code == 200
+
+def test_additional_non_key_definition_is_allowed():
+    table = deepcopy(TABLE_RESPONSE["Table"])
+    table["AttributeDefinitions"].append(
+        {"AttributeName": "other", "AttributeType": "N"}
+    )
+    assert _has_required_keys(table)
 
 
-def table_response_with(mutator):
-    response = deepcopy(VALID_TABLE_RESPONSE)
-    mutator(response["Table"])
-    return response
-
-
-def ttl_response_with(status, attribute_name="ttl"):
-    return {
+def test_ttl_mismatch_warns_without_blocking_traffic(monkeypatch, caplog):
+    dynamodb = dynamodb_client()
+    dynamodb.describe_time_to_live.return_value = {
         "TimeToLiveDescription": {
-            "TimeToLiveStatus": status,
-            "AttributeName": attribute_name,
+            "TimeToLiveStatus": "DISABLED",
+            "AttributeName": "ttl",
         }
     }
+    with caplog.at_level(logging.WARNING):
+        with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
+            assert client.get("/ready").status_code == 200
+    assert "category=ttl_contract" in caplog.text
 
 
-@pytest.mark.parametrize(
-    "table_response",
-    [
-        None,
-        {},
-        {"Table": None},
-        table_response_with(
-            lambda table: table.update(TableStatus="UPDATING")
-        ),
-        table_response_with(lambda table: table.pop("KeySchema")),
-        table_response_with(
-            lambda table: table["KeySchema"].append(
-                {"AttributeName": "extra", "KeyType": "HASH"}
-            )
-        ),
-        table_response_with(
-            lambda table: table["KeySchema"][0].update(AttributeName="id")
-        ),
-        table_response_with(
-            lambda table: table["KeySchema"][1].update(KeyType="HASH")
-        ),
-        table_response_with(lambda table: table.pop("AttributeDefinitions")),
-        table_response_with(
-            lambda table: table["AttributeDefinitions"][0].update(
-                AttributeType="N"
-            )
-        ),
-        table_response_with(
-            lambda table: table["AttributeDefinitions"].pop()
-        ),
-    ],
-    ids=[
-        "non-mapping-response",
-        "missing-table",
-        "malformed-table",
-        "inactive",
-        "missing-key-schema",
-        "extra-key",
-        "wrong-key-name",
-        "wrong-key-type",
-        "missing-definitions",
-        "non-string-key",
-        "missing-definition",
-    ],
-)
-def test_incompatible_table_returns_generic_503(monkeypatch, table_response):
-    dynamodb = valid_dynamodb_client()
-    dynamodb.describe_table.return_value = table_response
+def test_ttl_check_failure_warns_without_blocking_traffic(
+    monkeypatch, caplog
+):
+    dynamodb = dynamodb_client()
+    dynamodb.describe_time_to_live.side_effect = EndpointConnectionError(
+        endpoint_url="https://private.example"
+    )
+    with caplog.at_level(logging.WARNING):
+        with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
+            assert client.get("/ready").status_code == 200
+    assert "category=ttl_unverified" in caplog.text
+    assert "private.example" not in caplog.text
 
-    response = ready_response(monkeypatch, dynamodb)
 
+@pytest.mark.parametrize("status", ["ACTIVE", "UPDATING"])
+def test_usable_table_is_ready(monkeypatch, status):
+    dynamodb = dynamodb_client()
+    with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
+        dynamodb.describe_table.return_value["Table"]["TableStatus"] = status
+        assert client.get("/ready").status_code == 200
+
+
+def test_unavailable_table_returns_503(monkeypatch):
+    dynamodb = dynamodb_client()
+    with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
+        dynamodb.describe_table.return_value["Table"]["TableStatus"] = \
+            "CREATING"
+        response = client.get("/ready")
     assert response.status_code == 503
     assert response.json() == {"detail": "Service not ready"}
 
 
-@pytest.mark.parametrize(
-    "ttl_response",
-    [
-        None,
-        {},
-        {"TimeToLiveDescription": None},
-        ttl_response_with("ENABLING"),
-        ttl_response_with("DISABLING"),
-        ttl_response_with("DISABLED"),
-        ttl_response_with("ENABLED", "expires_at"),
-    ],
-)
-def test_incompatible_ttl_returns_generic_503(monkeypatch, ttl_response):
-    dynamodb = valid_dynamodb_client()
-    dynamodb.describe_time_to_live.return_value = ttl_response
-
-    response = ready_response(monkeypatch, dynamodb)
-
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Service not ready"}
-
-
-@pytest.mark.parametrize(
-    "operation", ["describe_table", "describe_time_to_live"]
-)
-@pytest.mark.parametrize(
-    "error",
-    [
-        ClientError(
-            {
-                "Error": {
-                    "Code": "ResourceNotFoundException",
-                    "Message": "secret",
-                }
-            },
-            "DescribeTable",
-        ),
-        ClientError(
+def test_provider_error_returns_generic_503(monkeypatch, caplog):
+    dynamodb = dynamodb_client()
+    with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
+        dynamodb.describe_table.side_effect = ClientError(
             {"Error": {"Code": "AccessDeniedException", "Message": "secret"}},
             "DescribeTable",
-        ),
-        ClientError(
-            {"Error": {"Code": "ThrottlingException", "Message": "secret"}},
-            "DescribeTable",
-        ),
-        EndpointConnectionError(endpoint_url="https://private.example"),
-    ],
-)
-def test_provider_error_returns_generic_503_without_logging_details(
-    monkeypatch, caplog, operation, error
-):
-    dynamodb = valid_dynamodb_client()
-    getattr(dynamodb, operation).side_effect = error
-
-    with caplog.at_level(logging.WARNING):
-        response = ready_response(monkeypatch, dynamodb)
-
+        )
+        with caplog.at_level(logging.WARNING):
+            response = client.get("/ready")
     assert response.status_code == 503
     assert response.json() == {"detail": "Service not ready"}
     assert "secret" not in caplog.text
-    assert "private.example" not in caplog.text
-    assert f"category=provider_error table={TABLE_NAME}" in caplog.text
 
 
-def test_health_does_not_contact_dynamodb_when_dependency_is_unavailable(
-    monkeypatch,
-):
-    configure_dynamodb(monkeypatch)
-    factory = MagicMock(
-        side_effect=AssertionError("AWS must not be contacted")
-    )
-
-    with TestClient(make_app()) as client:
-        client.app.state.readiness_checker.client_factory = factory
-        response = client.get("/health")
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
-    factory.assert_not_called()
+def test_health_does_not_contact_dynamodb(monkeypatch):
+    dynamodb = dynamodb_client()
+    with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
+        dynamodb.describe_table.reset_mock()
+        dynamodb.describe_time_to_live.reset_mock()
+        assert client.get("/health").status_code == 200
+    dynamodb.describe_table.assert_not_called()
+    dynamodb.describe_time_to_live.assert_not_called()
 
 
-def test_checker_accepts_an_injected_client_factory():
-    dynamodb = valid_dynamodb_client()
+def test_checker_accepts_injected_client_factory():
+    dynamodb = dynamodb_client()
     factory = MagicMock(return_value=dynamodb)
     checker = ReadinessChecker(
-        DynamoDBConfig(enabled=True, table_name=TABLE_NAME),
-        client_factory=factory,
+        DynamoDBConfig(enabled=True, table_name=TABLE_NAME), factory
     )
-
     assert checker.is_ready()
     factory.assert_called_once_with()

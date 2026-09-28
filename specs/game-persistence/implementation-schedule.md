@@ -248,7 +248,10 @@ DynamoDB adapter becomes authoritative.
 
 **Scope:**
 
-- Verify table activity, string `pk`/`sk` key schema, and TTL enabled on `ttl`.
+- Validate the string `pk`/`sk` key schema at startup. Verify TTL on `ttl`
+  at startup and warn on a mismatch; logical expiry remains application-owned.
+- Limit `/ready` to current table availability, accepting `ACTIVE` and
+  `UPDATING` and avoiding repeated schema or TTL checks.
 - Add only the IAM permissions required by repository operations and readiness,
   including `DescribeTimeToLive`.
 - Validate table-name and enabled-mode configuration and define startup failure
@@ -257,8 +260,9 @@ DynamoDB adapter becomes authoritative.
   access.
 - Keep CloudFormation templates and their canonical lint script synchronized.
 
-**Completion evidence:** Readiness tests cover inactive or unavailable tables,
-wrong key schemas, disabled TTL, missing configuration, and in-memory mode.
+**Completion evidence:** Startup tests cover wrong key schemas, disabled TTL
+warnings, and missing configuration. Readiness tests cover unavailable tables,
+`UPDATING`, and in-memory mode without AWS access.
 CloudFormation checks pass.
 
 **Dependencies:** The data and configuration contracts in `docs/design.md` and
