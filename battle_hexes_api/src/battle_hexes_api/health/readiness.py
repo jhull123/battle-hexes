@@ -63,25 +63,107 @@ class ReadinessChecker:
 
         try:
             client = self.client_factory()
-            response = client.describe_table(
+            table_response = client.describe_table(
                 TableName=self.config.table_name,
             )
-        except (BotoCoreError, ClientError) as exc:
-            logger.exception("DynamoDB readiness check failed: %s", exc)
+            ttl_response = client.describe_time_to_live(
+                TableName=self.config.table_name,
+            )
+        except (BotoCoreError, ClientError):
+            logger.warning(
+                "DynamoDB readiness failure category=provider_error table=%s",
+                self.config.table_name,
+            )
             return False
 
-        status = response.get("Table", {}).get("TableStatus")
-        if status != "ACTIVE":
+        if not _has_required_table_contract(table_response):
             logger.warning(
-                "DynamoDB readiness check found table status %r", status
+                "DynamoDB readiness failure category=table_contract table=%s",
+                self.config.table_name,
+            )
+            return False
+        if not _has_required_ttl_contract(ttl_response):
+            logger.warning(
+                "DynamoDB readiness failure category=ttl_contract table=%s",
+                self.config.table_name,
             )
             return False
         return True
 
 
-def configure_readiness(app: FastAPI) -> None:
+def _has_required_table_contract(response: object) -> bool:
+    """Return whether a DescribeTable response meets the persistence schema."""
+    if not isinstance(response, Mapping):
+        return False
+    table = response.get("Table")
+    if not isinstance(table, Mapping) or table.get("TableStatus") != "ACTIVE":
+        return False
+
+    return _has_required_key_schema(table) and _has_required_key_types(table)
+
+
+def _has_required_key_schema(table: Mapping) -> bool:
+    key_schema = table.get("KeySchema")
+    if not isinstance(key_schema, list) or len(key_schema) != 2:
+        return False
+    required_keys = {("pk", "HASH"), ("sk", "RANGE")}
+    actual_keys = set()
+    for key in key_schema:
+        if not isinstance(key, Mapping):
+            return False
+        attribute_name = key.get("AttributeName")
+        key_type = key.get("KeyType")
+        if (
+            not isinstance(attribute_name, str)
+            or not isinstance(key_type, str)
+        ):
+            return False
+        actual_keys.add((attribute_name, key_type))
+    if actual_keys != required_keys:
+        return False
+    return True
+
+
+def _has_required_key_types(table: Mapping) -> bool:
+    definitions = table.get("AttributeDefinitions")
+    if not isinstance(definitions, list):
+        return False
+    attribute_types = {}
+    for definition in definitions:
+        if not isinstance(definition, Mapping):
+            return False
+        name = definition.get("AttributeName")
+        if not isinstance(name, str):
+            return False
+        if name in attribute_types:
+            return False
+        attribute_types[name] = definition.get("AttributeType")
+    return (
+        attribute_types.get("pk") == "S"
+        and attribute_types.get("sk") == "S"
+    )
+
+
+def _has_required_ttl_contract(response: object) -> bool:
+    """Return whether a TTL description enables the expected attribute."""
+    if not isinstance(response, Mapping):
+        return False
+    description = response.get("TimeToLiveDescription")
+    return (
+        isinstance(description, Mapping)
+        and description.get("TimeToLiveStatus") == "ENABLED"
+        and description.get("AttributeName") == "ttl"
+    )
+
+
+def configure_readiness(
+    app: FastAPI,
+    *,
+    environment: Mapping[str, str] = os.environ,
+    client_factory: Callable[[], object] | None = None,
+) -> None:
     """Validate, log, and install the application's readiness checker."""
-    config = DynamoDBConfig.from_environment()
+    config = DynamoDBConfig.from_environment(environment)
     if config.enabled:
         logger.info("DynamoDB dependency: enabled")
         logger.info("DynamoDB table: %s", config.table_name)
@@ -91,7 +173,8 @@ def configure_readiness(app: FastAPI) -> None:
             logger.warning(
                 "DDB_TABLE_NAME is configured but DynamoDB is disabled"
             )
-    app.state.readiness_checker = ReadinessChecker(config)
+    app.state.dynamodb_config = config
+    app.state.readiness_checker = ReadinessChecker(config, client_factory)
 
 
 @asynccontextmanager
