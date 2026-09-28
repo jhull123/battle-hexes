@@ -1,4 +1,4 @@
-"""Startup-contract and live-readiness behavior."""
+"""Startup contract and process-local readiness behavior."""
 
 import logging
 from copy import deepcopy
@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from battle_hexes_api.health.config import DynamoDBConfig
-from battle_hexes_api.health.readiness import ReadinessChecker, router
+from battle_hexes_api.health.readiness import router
 from battle_hexes_api.health.startup import (
     _has_required_keys,
     configure_dependencies,
@@ -108,7 +108,7 @@ def test_in_memory_mode_does_not_contact_aws(monkeypatch):
     factory = MagicMock(side_effect=AssertionError("AWS contact"))
     app = make_app()
     configure_dependencies(app, environment={}, client_factory=factory)
-    assert app.state.readiness_checker.is_ready()
+    assert app.state.dynamodb_config == DynamoDBConfig(False, None)
     factory.assert_not_called()
 
 
@@ -125,10 +125,9 @@ def test_startup_validates_contract_once(monkeypatch):
     with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
         config = client.app.state.dynamodb_config
         assert config == DynamoDBConfig(enabled=True, table_name=TABLE_NAME)
-        assert client.app.state.readiness_checker.config is config
         assert client.get("/ready").status_code == 200
         assert client.get("/ready").status_code == 200
-    assert dynamodb.describe_table.call_count == 3
+    dynamodb.describe_table.assert_called_once_with(TableName=TABLE_NAME)
     dynamodb.describe_time_to_live.assert_called_once_with(
         TableName=TABLE_NAME
     )
@@ -190,35 +189,44 @@ def test_ttl_check_failure_warns_without_blocking_traffic(
 
 
 @pytest.mark.parametrize("status", ["ACTIVE", "UPDATING"])
-def test_usable_table_is_ready(monkeypatch, status):
+def test_usable_table_passes_startup(monkeypatch, status):
     dynamodb = dynamodb_client()
+    dynamodb.describe_table.return_value["Table"]["TableStatus"] = status
     with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
-        dynamodb.describe_table.return_value["Table"]["TableStatus"] = status
         assert client.get("/ready").status_code == 200
 
 
-def test_unavailable_table_returns_503(monkeypatch):
+def test_unavailable_table_fails_startup(monkeypatch):
+    dynamodb = dynamodb_client()
+    dynamodb.describe_table.return_value["Table"]["TableStatus"] = "CREATING"
+    with pytest.raises(RuntimeError, match="unavailable at startup"):
+        with TestClient(enabled_app(monkeypatch, dynamodb)):
+            pass
+
+
+def test_provider_error_fails_startup_without_exposing_details(monkeypatch):
+    dynamodb = dynamodb_client()
+    dynamodb.describe_table.side_effect = ClientError(
+        {"Error": {"Code": "AccessDeniedException", "Message": "secret"}},
+        "DescribeTable",
+    )
+    with pytest.raises(RuntimeError, match="could not be validated") \
+            as error:
+        with TestClient(enabled_app(monkeypatch, dynamodb)):
+            pass
+    assert "secret" not in str(error.value)
+
+
+def test_ready_does_not_contact_aws_after_startup(monkeypatch):
     dynamodb = dynamodb_client()
     with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
-        dynamodb.describe_table.return_value["Table"]["TableStatus"] = \
-            "CREATING"
+        dynamodb.describe_table.reset_mock()
+        dynamodb.describe_time_to_live.reset_mock()
         response = client.get("/ready")
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Service not ready"}
-
-
-def test_provider_error_returns_generic_503(monkeypatch, caplog):
-    dynamodb = dynamodb_client()
-    with TestClient(enabled_app(monkeypatch, dynamodb)) as client:
-        dynamodb.describe_table.side_effect = ClientError(
-            {"Error": {"Code": "AccessDeniedException", "Message": "secret"}},
-            "DescribeTable",
-        )
-        with caplog.at_level(logging.WARNING):
-            response = client.get("/ready")
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Service not ready"}
-    assert "secret" not in caplog.text
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+    dynamodb.describe_table.assert_not_called()
+    dynamodb.describe_time_to_live.assert_not_called()
 
 
 def test_health_does_not_contact_dynamodb(monkeypatch):
@@ -229,13 +237,3 @@ def test_health_does_not_contact_dynamodb(monkeypatch):
         assert client.get("/health").status_code == 200
     dynamodb.describe_table.assert_not_called()
     dynamodb.describe_time_to_live.assert_not_called()
-
-
-def test_checker_accepts_injected_client_factory():
-    dynamodb = dynamodb_client()
-    factory = MagicMock(return_value=dynamodb)
-    checker = ReadinessChecker(
-        DynamoDBConfig(enabled=True, table_name=TABLE_NAME), factory
-    )
-    assert checker.is_ready()
-    factory.assert_called_once_with()
