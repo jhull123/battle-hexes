@@ -1,6 +1,7 @@
 """Process-local liveness and readiness endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -12,6 +13,9 @@ def health():
 
 
 @router.get("/ready")
-def ready():
-    """Report readiness after FastAPI startup has completed."""
+def ready(request: Request):
+    """Return the cached dependency state; never call AWS per request."""
+    probe = getattr(request.app.state, "dynamodb_readiness_probe", None)
+    if probe is not None and not probe.is_ready:
+        return JSONResponse({"status": "not_ready"}, status_code=503)
     return {"status": "ready"}

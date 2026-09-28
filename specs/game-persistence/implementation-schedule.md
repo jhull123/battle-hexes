@@ -251,7 +251,8 @@ DynamoDB adapter becomes authoritative.
 - Validate the string `pk`/`sk` key schema at startup. Verify TTL on `ttl`
   at startup and warn on a mismatch; logical expiry remains application-owned.
 - Require a usable table (`ACTIVE` or `UPDATING`) at startup. Keep `/ready`
-  process-local, with no repeated DynamoDB control-plane calls.
+  process-local; refresh a cached data-plane `GetItem` signal once per minute
+  per task, with no AWS call per ALB probe.
 - Add only the IAM permissions required by repository operations and readiness,
   including `DescribeTimeToLive`.
 - Validate table-name and enabled-mode configuration and define startup failure
@@ -262,7 +263,8 @@ DynamoDB adapter becomes authoritative.
 
 **Completion evidence:** Startup tests cover wrong key schemas, unavailable
 tables, `UPDATING`, disabled TTL warnings, and missing configuration. Readiness
-tests show no AWS access after startup or in memory mode.
+tests show no AWS access in the `/ready` handler or in memory mode and cover
+background probe failure/recovery.
 CloudFormation checks pass.
 
 **Dependencies:** The data and configuration contracts in `docs/design.md` and

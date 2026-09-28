@@ -522,11 +522,14 @@ an operational warning, not a traffic gate: application reads and writes
 enforce logical expiry, while DynamoDB TTL performs eventual cleanup. The
 deployed table should still have TTL enabled to avoid unbounded retention.
 
-`/ready` reports process-local startup completion and makes no AWS call. A
-later shared DynamoDB outage is reported by repository operations rather than
-making every ALB target unhealthy; routing to another API task would not repair
-the shared dependency. `/health` also remains independent of AWS. In-memory
-mode is ready without AWS access.
+`/ready` reports cached DynamoDB read-path status and makes no AWS call per
+request. An initial `GetItem` seeds the signal; a background probe refreshes it
+once per minute per task. Three consecutive failures after a success make the
+task unready, and a later success restores readiness. A missing probe item is
+still a successful read; no item is written. This checks the read path, not
+write availability. A shared DynamoDB outage may make all targets unhealthy;
+routing to another task cannot repair it. `/health` remains independent of AWS.
+In-memory mode is ready without AWS access.
 
 ### 1.15 Frontend Coordination
 
@@ -597,7 +600,7 @@ Implementation specifications must cover at least:
 - frontend command serialization, retry key reuse, version updates, and stale
   state recovery; and
 - CloudFormation linting, startup rejection for wrong keys or an unavailable
-  table, TTL warnings, and AWS-free readiness probes.
+  table, TTL warnings, and cached data-plane readiness probes.
 
 Botocore stubs are appropriate for request construction and error translation,
 but transaction and conditional-write behavior also needs integration coverage

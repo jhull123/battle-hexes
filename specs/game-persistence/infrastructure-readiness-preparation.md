@@ -16,7 +16,7 @@ validation, and readiness reporting without making DynamoDB authoritative.
 
 Prepare `battle_hexes_api` and its CloudFormation templates for a safe DynamoDB
 cutover. This increment validates configuration and static table invariants at
-startup. `/ready` reports process-local completion of that startup work.
+startup. `/ready` reports a cached, periodically refreshed data-path signal.
 
 In scope are API configuration, readiness checks, task-role permissions,
 development-table compatibility, CloudFormation lint coverage, and focused
@@ -30,7 +30,7 @@ cutover in increment 3.10. `/health` behavior must not change.
 | --- | --- |
 | DynamoDB mode | Configuration where `DYNAMODB_ENABLED` is exactly `true` after case and surrounding-whitespace normalization. |
 | Liveness | Evidence that the API process can serve requests; exposed by `/health`. |
-| Readiness | Evidence that application startup completed; exposed by `/ready` without a per-probe AWS call. |
+| Readiness | Startup completion and the last periodic DynamoDB read-path signal; exposed by `/ready` without a per-request AWS call. |
 | Table contract | String partition key `pk`, string sort key `sk`, and TTL enabled on attribute `ttl`. Key compatibility gates startup; TTL is an operational warning. |
 | TTL | DynamoDB Time to Live, used for asynchronous physical deletion of expired items. |
 
@@ -61,15 +61,17 @@ cutover in increment 3.10. `/health` behavior must not change.
 
 - **REQ-005**: `/health` must always remain independent of DynamoDB and return
   its existing success response while the API process is running.
-- **REQ-006**: `/ready` must return its existing success response after startup
-  completes in either mode, without constructing an AWS client or making an AWS
-  call on each probe.
+- **REQ-006**: `/ready` must return its existing success response in memory mode
+  and when the cached DynamoDB read-path signal is healthy. It must not make an
+  AWS call on each HTTP request; return 503 when the cached signal is unhealthy.
 - **REQ-007**: Startup must verify exactly one HASH key named `pk` and one
   RANGE key named `sk`, both DynamoDB type `S`. Additional non-key attribute
   definitions do not invalidate this contract.
-- **REQ-008**: No `/ready` evaluation may call DynamoDB. Startup owns table
-  status, schema, and TTL checks; later DynamoDB failures are handled by
-  repository operations and operational monitoring.
+- **REQ-008**: Startup owns table status, schema, and TTL checks. In DynamoDB
+  mode, seed a cached readiness signal with `GetItem`, then refresh it once per
+  minute per task in the background. Mark an initially failing probe unready;
+  after a successful probe, require three consecutive failures to turn unready.
+  A successful probe restores readiness. `/ready` only reads cached state.
 - **REQ-009**: Missing tables, access denial, throttling, endpoint failures,
   malformed AWS responses, and other boto client/core failures during required
   table startup validation must prevent startup without exposing provider
@@ -116,7 +118,7 @@ cutover in increment 3.10. `/health` behavior must not change.
 | --- | --- | --- | --- |
 | absent or `false` | absent | succeeds | none |
 | `false` | present | succeeds; may warn that it is unused | none |
-| `true` | nonblank | succeeds if table is usable and keys are compatible; warns for TTL mismatch | none after startup |
+| `true` | nonblank | succeeds if table is usable and keys are compatible; warns for TTL mismatch | cached `GetItem` result |
 | `true` | absent/blank | fails | not applicable |
 | any other value | any | fails | not applicable |
 
@@ -125,18 +127,19 @@ cutover in increment 3.10. `/health` behavior must not change.
 | Endpoint | Success result | AWS dependency behavior |
 | --- | --- | --- |
 | `GET /health` | `200 {"status":"ok"}` | Not applicable; no AWS access |
-| `GET /ready` | `200 {"status":"ready"}` | No AWS call; startup failure prevents serving |
+| `GET /ready` | `200 {"status":"ready"}` or `503 {"status":"not_ready"}` | No AWS call in the handler; startup failure prevents serving |
 
 ### 4.3 AWS calls
 
 ```text
 Startup: DescribeTable(TableName=<validated DDB_TABLE_NAME>)
 Startup: DescribeTimeToLive(TableName=<validated DDB_TABLE_NAME>)
+Startup, then once per minute per task: GetItem(TableName=<validated DDB_TABLE_NAME>, Key=<fixed absent pk/sk>)
 ```
 
 Startup rejects an unavailable table or incompatible/unverified keys and warns
-for TTL mismatch. `/ready` makes no AWS call. Startup uses no data-plane read,
-scan, write, or known item as a probe.
+for TTL mismatch. The data-plane probe is read-only: a missing item still
+demonstrates that `GetItem` succeeded. `/ready` makes no AWS call.
 
 ## 5. Acceptance Criteria
 
@@ -153,8 +156,9 @@ scan, write, or known item as a probe.
   transitional TTL, wrong TTL attribute, and failed TTL verification warn at
   startup but do not block serving. An unavailable table or failed
   `DescribeTable` call prevents startup without provider detail.
-- **AC-005**: Given a later DynamoDB failure, `/health` and `/ready` remain
-  independent of AWS; repository operations report the failure.
+- **AC-005**: Given a later DynamoDB failure, `/health` remains independent of
+  AWS; after three failed background probes, `/ready` returns 503 from cache.
+  A successful subsequent probe restores 200 without restarting the task.
 - **AC-006**: The task role contains only the DynamoDB actions and table
   resource scopes in REQ-013 through REQ-015; repository transactions remain
   authorized through `PutItem` and `UpdateItem`.
@@ -171,7 +175,8 @@ scan, write, or known item as a probe.
 - Use injected fakes to test startup key mismatches, usable/unavailable statuses,
   provider errors, and TTL warnings.
 - Assert endpoint status and stable public bodies, client-call parameters, and
-  absence of AWS calls from both `/health` and `/ready` after startup.
+  absence of AWS calls from both HTTP handlers, plus cached readiness changes
+  after repeated background probe failures and recovery.
 - Run existing API tests through `./server-side-checks.sh` and infrastructure
   validation through `./cloudformation-checks.sh`. No live AWS test or new
   coverage threshold is required for this increment.
@@ -210,7 +215,7 @@ deregistration. Least-privilege IAM reflects actual item operations.
 | TTL is `ENABLING` on `ttl` | Startup warns; readiness can succeed |
 | TTL is `ENABLED` on `expires_at` | Startup warns; readiness can succeed |
 | `DescribeTable` succeeds; TTL permission is denied | Startup warns; readiness can succeed |
-| DynamoDB fails after startup | Repository operations fail; `/ready` makes no AWS call |
+| DynamoDB fails after startup | Repository operations fail; three failed background probes make `/ready` return 503 from cache |
 | DynamoDB disabled; stale table name is present | Ready without AWS access; warning is permitted |
 
 ## 10. Validation Criteria

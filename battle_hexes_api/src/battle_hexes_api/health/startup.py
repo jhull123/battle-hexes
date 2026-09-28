@@ -1,15 +1,18 @@
 """Validate DynamoDB configuration and deployment invariants at startup."""
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Callable, Mapping
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI
 
 from .config import DynamoDBConfig
+from .dependency_probe import DynamoDBReadinessProbe, PROBE_INTERVAL_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +25,30 @@ def configure_dependencies(
 ) -> None:
     """Install one validated config and check static deployment invariants."""
     config = DynamoDBConfig.from_environment(environment)
-    factory = client_factory or (lambda: boto3.client("dynamodb"))
+    factory = client_factory or (
+        lambda: boto3.client(
+            "dynamodb",
+            config=Config(
+                connect_timeout=2,
+                read_timeout=2,
+                retries={"mode": "standard", "total_max_attempts": 1},
+            ),
+        )
+    )
     if config.enabled:
         logger.info(
             "DynamoDB dependency: enabled; table=%s", config.table_name
         )
-        _validate_table_contract(factory, config.table_name)
+        try:
+            client = factory()
+        except (BotoCoreError, ClientError):
+            raise RuntimeError(
+                "DynamoDB table contract could not be validated"
+            ) from None
+        _validate_table_contract(client, config.table_name)
+        probe = DynamoDBReadinessProbe(client, config.table_name)
+        probe.probe_once()
+        app.state.dynamodb_readiness_probe = probe
     else:
         logger.info("DynamoDB dependency: disabled")
         if config.table_name is not None:
@@ -37,9 +58,8 @@ def configure_dependencies(
     app.state.dynamodb_config = config
 
 
-def _validate_table_contract(client_factory, table_name):
+def _validate_table_contract(client, table_name):
     try:
-        client = client_factory()
         table_response = client.describe_table(TableName=table_name)
     except (BotoCoreError, ClientError):
         raise RuntimeError(
@@ -109,5 +129,28 @@ def _has_required_ttl(response):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    async with dependency_lifespan(app):
+        yield
+
+
+async def _poll_dependency(probe: DynamoDBReadinessProbe):
+    while True:
+        await asyncio.sleep(PROBE_INTERVAL_SECONDS)
+        await asyncio.to_thread(probe.probe_once)
+
+
+@asynccontextmanager
+async def dependency_lifespan(app: FastAPI):
+    """Validate static contract, seed readiness, then poll once per interval."""
     configure_dependencies(app)
-    yield
+    probe = getattr(app.state, "dynamodb_readiness_probe", None)
+    task = asyncio.create_task(_poll_dependency(probe)) if probe else None
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass

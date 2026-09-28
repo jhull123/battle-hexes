@@ -57,7 +57,7 @@ def enabled_app(monkeypatch, dynamodb):
     monkeypatch.setenv("DDB_TABLE_NAME", f"  {TABLE_NAME}  ")
     monkeypatch.setattr(
         "battle_hexes_api.health.startup.boto3.client",
-        lambda service: dynamodb,
+        lambda service, **kwargs: dynamodb,
     )
     return make_app()
 
