@@ -73,7 +73,7 @@ def test_frozen_roadblock_elimination_without_objective_remains_persistable():
     game.current_phase = "end_turn"
     game.board.remove_units(
         unit for unit in game.board.get_units()
-        if unit.player.name == "Player 2"
+        if unit.player.name == "Germany"
     )
     scorer = ObjectiveScorer()
     scorer.recalculate_scenario_victory(game)
@@ -83,7 +83,7 @@ def test_frozen_roadblock_elimination_without_objective_remains_persistable():
     result = game.end_turn()
 
     assert result.game_status.state == "in_progress"
-    assert result.current_player.name == "Player 2"
+    assert result.current_player.name == "Germany"
     assert game.current_phase == "movement"
     codec.encode(game, scenario_version=scenario_version)
 
@@ -91,9 +91,9 @@ def test_frozen_roadblock_elimination_without_objective_remains_persistable():
     scorer.recalculate_scenario_victory(game)
     final = game.end_turn()
 
-    assert final.game_status.state == "completed"
-    assert final.game_status.winner_player_name == "Player 2"
-    assert game.current_player is None
+    assert final.game_status.state == "in_progress"
+    assert final.current_player.name == "USSR"
+    assert game.current_player is final.current_player
     codec.encode(game, scenario_version=scenario_version)
 
 
