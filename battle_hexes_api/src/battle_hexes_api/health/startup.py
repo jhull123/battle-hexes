@@ -141,7 +141,7 @@ async def _poll_dependency(probe: DynamoDBReadinessProbe):
 
 @asynccontextmanager
 async def dependency_lifespan(app: FastAPI):
-    """Validate static contract, seed readiness, then poll once per interval."""
+    """Validate static contract, seed readiness, then poll periodically."""
     configure_dependencies(app)
     probe = getattr(app.state, "dynamodb_readiness_probe", None)
     task = asyncio.create_task(_poll_dependency(probe)) if probe else None

@@ -7,7 +7,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 logger = logging.getLogger(__name__)
 
-# A missing item is a successful GetItem. These keys are never written by the app.
+# A missing item is a successful GetItem. The app never writes these keys.
 PROBE_KEY = {
     "pk": {"S": "HEALTH#READINESS"},
     "sk": {"S": "HEALTH#READINESS"},
@@ -30,7 +30,7 @@ class DynamoDBReadinessProbe:
             return self._ready
 
     def probe_once(self) -> None:
-        """Check the read path and update readiness without exposing AWS errors."""
+        """Update cached readiness from a read-path check."""
         try:
             self.client.get_item(TableName=self.table_name, Key=PROBE_KEY)
         except (BotoCoreError, ClientError):
@@ -40,7 +40,7 @@ class DynamoDBReadinessProbe:
                     self._ready = False
                 failures = self._failures
             logger.warning(
-                "DynamoDB readiness probe failed table=%s consecutive_failures=%s",
+                "DynamoDB probe failed table=%s consecutive_failures=%s",
                 self.table_name,
                 failures,
             )
@@ -50,4 +50,7 @@ class DynamoDBReadinessProbe:
                 self._ready = True
                 self._failures = 0
             if recovered:
-                logger.info("DynamoDB readiness probe recovered table=%s", self.table_name)
+                logger.info(
+                    "DynamoDB readiness probe recovered table=%s",
+                    self.table_name,
+                )
