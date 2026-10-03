@@ -35,6 +35,11 @@ from .command_errors import CommandServiceError
 from .command_models import CommandRequest, CreatedGame, SuccessfulResponse
 from .command_service import GameCommandService
 from .item_sizer import InMemoryItemSizer
+from .telemetry import (
+    InstrumentedGameRepository,
+    LoggingTelemetrySink,
+    RepositoryOperationEvent,
+)
 
 __all__ = [
     "Clock",
@@ -53,11 +58,14 @@ __all__ = [
     "GameCommandService",
     "GameStateCodec",
     "InMemoryItemSizer",
+    "InstrumentedGameRepository",
+    "LoggingTelemetrySink",
     "GameVersionConflictError",
     "IdempotencyConflictError",
     "PersistenceCapacityError",
     "PersistenceError",
     "PersistenceUnavailableError",
+    "RepositoryOperationEvent",
     "SavedGameIncompatibleError",
     "StoredGame",
     "SuccessfulResponse",

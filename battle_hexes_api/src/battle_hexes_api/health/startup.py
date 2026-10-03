@@ -48,6 +48,7 @@ def configure_dependencies(
         _validate_table_contract(client, config.table_name)
         probe = DynamoDBReadinessProbe(client, config.table_name)
         probe.probe_once()
+        app.state.dynamodb_client = client
         app.state.dynamodb_readiness_probe = probe
     else:
         logger.info("DynamoDB dependency: disabled")

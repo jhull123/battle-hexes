@@ -42,3 +42,7 @@ class PersistenceCapacityError(PersistenceError):
 
 class PersistenceUnavailableError(PersistenceError):
     """Storage is unavailable or the result of a commit is ambiguous."""
+
+    def __init__(self, dynamodb_error_category=None):
+        self.dynamodb_error_category = dynamodb_error_category
+        super().__init__()

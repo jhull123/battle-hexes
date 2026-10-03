@@ -1,9 +1,50 @@
 from fastapi.testclient import TestClient
+from unittest.mock import MagicMock
 
 from battle_hexes_api.application import create_app
+from battle_hexes_api.persistence import (
+    GameRepositoryDynamoDB,
+    GameRepositoryInMemory,
+)
+from tests.test_readiness import TABLE_RESPONSE, TTL_RESPONSE
 
 
 CREATE = {"scenarioId": "elim_1", "playerTypes": ["human", "random"]}
+
+
+def test_lifespan_selects_dynamodb_once_and_reuses_startup_client(
+    monkeypatch,
+):
+    dynamodb = MagicMock()
+    dynamodb.describe_table.return_value = TABLE_RESPONSE
+    dynamodb.describe_time_to_live.return_value = TTL_RESPONSE
+    dynamodb.get_item.return_value = {}
+    monkeypatch.setenv("DYNAMODB_ENABLED", "true")
+    monkeypatch.setenv("DDB_TABLE_NAME", "games")
+    monkeypatch.setattr(
+        "battle_hexes_api.health.startup.boto3.client",
+        lambda service, **kwargs: dynamodb,
+    )
+
+    with TestClient(create_app()) as client:
+        repository = client.app.state.game_repository
+        assert isinstance(repository, GameRepositoryDynamoDB)
+        assert repository._client is dynamodb
+        assert client.app.state.game_command_service._repository \
+            ._repository is repository
+
+
+def test_lifespan_memory_selection_creates_no_aws_client(monkeypatch):
+    monkeypatch.setenv("DYNAMODB_ENABLED", "false")
+    monkeypatch.delenv("DDB_TABLE_NAME", raising=False)
+    aws = MagicMock(side_effect=AssertionError("unexpected AWS client"))
+    monkeypatch.setattr("battle_hexes_api.health.startup.boto3.client", aws)
+
+    with TestClient(create_app()) as client:
+        assert isinstance(
+            client.app.state.game_repository, GameRepositoryInMemory
+        )
+    aws.assert_not_called()
 
 
 def create(client, key="create-12345678"):
