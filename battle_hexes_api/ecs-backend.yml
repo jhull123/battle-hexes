@@ -181,7 +181,7 @@ Resources:
             - ContainerPort: 8000
           Environment:
             - Name: DYNAMODB_ENABLED
-              Value: "true"
+              Value: "false"
             - Name: DDB_TABLE_NAME
               Value: !ImportValue battle-hexes-dev:TableName
           LogConfiguration:
