@@ -3,14 +3,16 @@
 
 def create_transaction(table_name, game_item, receipt_item, now):
     values = {":now": {"N": str(now)}}
-    condition = "attribute_not_exists(pk) OR ttl <= :now"
+    condition = "attribute_not_exists(pk) OR #ttl <= :now"
     return {
         "TransactItems": [
             {"Put": {"TableName": table_name, "Item": game_item,
                      "ConditionExpression": condition,
+                     "ExpressionAttributeNames": {"#ttl": "ttl"},
                      "ExpressionAttributeValues": values}},
             {"Put": {"TableName": table_name, "Item": receipt_item,
                      "ConditionExpression": condition,
+                     "ExpressionAttributeNames": {"#ttl": "ttl"},
                      "ExpressionAttributeValues": values}},
         ],
     }
@@ -48,8 +50,9 @@ def commit_transaction(
                 "TableName": table_name,
                 "Item": receipt_item,
                 "ConditionExpression": (
-                    "attribute_not_exists(pk) OR ttl <= :now"
+                    "attribute_not_exists(pk) OR #ttl <= :now"
                 ),
+                "ExpressionAttributeNames": {"#ttl": "ttl"},
                 "ExpressionAttributeValues": receipt_values,
             }},
         ],

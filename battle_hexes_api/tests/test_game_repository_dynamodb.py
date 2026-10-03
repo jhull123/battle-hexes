@@ -85,8 +85,9 @@ class Client:
         if "Put" in operation:
             put = operation["Put"]
             assert put["ConditionExpression"] == (
-                "attribute_not_exists(pk) OR ttl <= :now"
+                "attribute_not_exists(pk) OR #ttl <= :now"
             )
+            assert put["ExpressionAttributeNames"] == {"#ttl": "ttl"}
             current = self.items.get(self._key(put["Item"]))
             now = int(put["ExpressionAttributeValues"][":now"]["N"])
             return current is None or int(current["ttl"]["N"]) <= now
@@ -144,7 +145,9 @@ def test_create_uses_strong_reads_and_one_conditional_transaction(context):
             client.transactions[0]["TransactItems"]]
     assert all(value["TableName"] == "games" for value in puts)
     assert all(value["ConditionExpression"] ==
-               "attribute_not_exists(pk) OR ttl <= :now" for value in puts)
+               "attribute_not_exists(pk) OR #ttl <= :now" for value in puts)
+    assert all(value["ExpressionAttributeNames"] == {"#ttl": "ttl"}
+               for value in puts)
     assert sizer.items[0]["state"] == {"B": b"{}"}
     assert repository.load_game("game-1") == game()
     assert repository.find_receipt("a" * 64) == receipt()
@@ -171,7 +174,7 @@ def test_commit_updates_every_non_key_game_attribute(context):
          {":expected_version", ":now"}}
     )
     assert transaction[1]["Put"]["ConditionExpression"] == (
-        "attribute_not_exists(pk) OR ttl <= :now"
+        "attribute_not_exists(pk) OR #ttl <= :now"
     )
     assert repository.load_game("game-1").version == 2
 
