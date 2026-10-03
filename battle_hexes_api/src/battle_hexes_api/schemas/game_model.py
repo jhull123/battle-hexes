@@ -26,6 +26,12 @@ class GameModel(ApiBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     id: uuid.UUID
+    game_version: int | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    scenario_version: str | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     players: List[PlayerModel]
     board: BoardModel
     objectives: List[ObjectiveModel]
@@ -49,12 +55,19 @@ class GameModel(ApiBaseModel):
 
     @classmethod
     def from_game(
-        cls, game: "Game", scenario: "Scenario | None" = None
+        cls,
+        game: "Game",
+        scenario: "Scenario | None" = None,
+        *,
+        game_version: int | None = None,
+        scenario_version: str | None = None,
     ) -> "GameModel":
         """Create a ``GameModel`` instance from the core ``Game`` object."""
 
         return cls(
             id=game.get_id(),
+            game_version=game_version,
+            scenario_version=scenario_version,
             players=[
                 PlayerModel.from_core(player)
                 for player in game.get_players()

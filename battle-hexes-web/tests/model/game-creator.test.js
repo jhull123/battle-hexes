@@ -6,7 +6,7 @@ let game;
 beforeEach(() => {
   const gameCreator = new GameCreator();
   const gameData = JSON.parse(
-    '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b",' +
+    '{"id":"093e432e-28ba-4dd1-a202-0802ee6ef32b","gameVersion":1,' +
     '"scenarioId":"elem_test",' +
     '"stackingLimit":2,' +
     '"playerTypeIds":["human","q-learning"],"turnLimit":9,"turnNumber":2,' +
@@ -77,6 +77,7 @@ describe("createGame", () => {
     const gameCreator = new GameCreator();
     const gameData = {
       id: 'reload-game',
+      gameVersion: 1,
       activePlayer: 'Player 2',
       currentPhase: 'combat',
       pendingCombats: [{ attackerUnitIds: ['red-unit'], defenderUnitIds: ['blue-unit'] }],
@@ -140,6 +141,7 @@ describe("createGame", () => {
     const gameCreator = new GameCreator();
     const minimalGameData = {
       id: 'turn-defaults',
+      gameVersion: 1,
       players: [
         { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#C81010' }] },
         { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#4682B4' }] },
@@ -160,6 +162,7 @@ describe("createGame", () => {
     const gameCreator = new GameCreator();
     const gameData = {
       id: 'terrain-default',
+      gameVersion: 1,
       players: [
         { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#C81010' }] },
         { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#4682B4' }] },
@@ -223,6 +226,7 @@ describe("createGame", () => {
     const gameCreator = new GameCreator();
     const gameData = {
       id: 'legacy-roads',
+      gameVersion: 1,
       players: [
         { name: 'Player 1', type: 'Human', factions: [{ id: 'red', name: 'Red', color: '#C81010' }] },
         { name: 'Player 2', type: 'Computer', factions: [{ id: 'blue', name: 'Blue', color: '#4682B4' }] },

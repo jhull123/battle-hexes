@@ -229,8 +229,8 @@ class QLearningPlayer(RLPlayer):
         )
 
     def movement(self) -> List[UnitMovementPlan]:
-        logger.info("")
-        logger.info("")
+        logger.debug("")
+        logger.debug("")
         self._last_actions = {}
         plans: List[UnitMovementPlan] = []
         for unit in self.own_units(self._board.get_units()):
@@ -321,10 +321,10 @@ class QLearningPlayer(RLPlayer):
         if random.random() < self._epsilon:
             return random.choice(actions)
 
-        logger.info("Current state for unit %s is: %s", str(unit), state)
-        logger.info("Available actions are:")
+        logger.debug("Current state for unit %s is: %s", str(unit), state)
+        logger.debug("Available actions are:")
         for a in actions:
-            logger.info("  Action: %s", a)
+            logger.debug("  Action: %s", a)
 
         q_values = [self._q_table.get((state, a), 0.0) for a in actions]
 
@@ -334,20 +334,20 @@ class QLearningPlayer(RLPlayer):
         # example_q = self._q_table.get(example_key)  # Example access to Q-val
         # logger.info("Example Q-value is: %s", example_q)
 
-        logger.info("Q-values are:")
+        logger.debug("Q-values are:")
         for a, q in zip(actions, q_values):
             # if q != 0.0:
-            logger.info("  Action: %s, Q-value: %.4f", a, q)
+            logger.debug("  Action: %s, Q-value: %.4f", a, q)
 
         max_q = max(q_values)
         best = [a for a, q in zip(actions, q_values) if q == max_q]
 
-        logger.info("Best actions are:")
+        logger.debug("Best actions are:")
         for a in best:
-            logger.info("  Action: %s", a)
+            logger.debug("  Action: %s", a)
 
         selected_action = random.choice(best)
-        logger.info("Chose action %s", selected_action)
+        logger.debug("Chose action %s", selected_action)
         return selected_action
 
     def update_q(
@@ -613,7 +613,7 @@ class QLearningPlayer(RLPlayer):
         return reward
 
     def end_game_cb(self) -> None:
-        self.print_q_table(logging.INFO)
+        self.print_q_table(logging.DEBUG)
         pass
 
     def print_last_actions(self) -> None:

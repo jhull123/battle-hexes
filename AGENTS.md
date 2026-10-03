@@ -72,6 +72,27 @@ tests and linter across **all** Python packages. The script adjusts
 - Prefer testing observable behavior and public contracts over incidental implementation details.
 - Do not add tests that assert exact log message text, private helper calls, or other brittle internals unless the log/output is itself part of documented behavior or an explicit operational requirement.
 
+### Code structure and decomposition
+
+Before implementing a feature, identify its distinct responsibilities and keep
+each module focused on one cohesive concern. Do not combine public value types,
+orchestration, serialization or normalization, error translation,
+reconciliation, and persistence adapters in one module.
+
+- Treat production Python modules around 250 lines and public methods around 30
+  lines as prompts to split by responsibility. If a module exceeds 300 lines or
+  a private method exceeds 40 lines, make and document an explicit
+  decomposition decision.
+- When two workflows repeat the same sequence of three or more steps, extract
+  the shared workflow instead of maintaining parallel implementations.
+- Prefer a small number of cohesive modules over one large service module or
+  many trivial one-function modules.
+- Before submitting, inspect changed files for duplicated control flow,
+  repeated error translation, and helpers that move complexity without
+  clarifying ownership.
+- Test extracted collaborators through public contracts, and retain service
+  tests that verify the end-to-end orchestration.
+
 ## Naming and Casing
 
 This repository follows a canonical naming/casing policy. Follow these rules when

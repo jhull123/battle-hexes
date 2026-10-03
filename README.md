@@ -11,19 +11,27 @@ This repository now contains several packages:
 Source code for each project lives inside its own `src` directory (for example `battle_hexes_core/src` or `battle-hexes-web/src`) so the project name is not repeated.
 
 
-From the ``battle_hexes_api`` directory you can run ``python -m fastapi dev src/battle_hexes_api/main.py``
-to start the development server. The API module adjusts ``PYTHONPATH`` at
-runtime so the sibling packages are available without installation.
+From the repository root, start the development server with:
+
+```bash
+./battle_hexes_api/dev.sh
+```
+
+The launcher makes the sibling packages available without installing them.
 
 See [HOW_TO_PLAY.md](HOW_TO_PLAY.md) for an overview of the game mechanics.
+
+## Requirements
+
+The targeted Python version for this project is Python 3.12.
 
 ## Setting up the API
 
 Create a virtual environment and install dependencies from both requirement files:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python3.12 -m venv .venv312
+source .venv312/bin/activate
 pip install -r requirements.txt -r requirements-test.txt
 ```
 

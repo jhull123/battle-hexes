@@ -11,6 +11,7 @@
  * - resolveCombat(gameId, sparseBoard)
  * - endMovement(gameId, sparseBoard)
  * - endTurn(gameId, sparseBoard)
+ * - acknowledgeResponseApplication(gameId) after applying a successful command response
  */
 export class BattleHexesService {
   listScenarios() { throw new Error('Not implemented'); }
@@ -22,4 +23,5 @@ export class BattleHexesService {
   resolveCombat() { throw new Error('Not implemented'); }
   endMovement() { throw new Error('Not implemented'); }
   endTurn() { throw new Error('Not implemented'); }
+  acknowledgeResponseApplication() { throw new Error('Not implemented'); }
 }

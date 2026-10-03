@@ -3,7 +3,7 @@ import path from 'node:path';
 import { MockBattleHexesService } from '../../src/service/mock-battle-hexes-service.js';
 
 describe('MockBattleHexesService', () => {
-  test('getGame returns the get-game mock response payload', async () => {
+  test('getGame returns the requested game ID in the mock response payload', async () => {
     const service = new MockBattleHexesService();
     const expectedPayload = JSON.parse(
       fs.readFileSync(
@@ -12,9 +12,9 @@ describe('MockBattleHexesService', () => {
       ),
     );
 
-    const response = await service.getGame('ignored-id');
+    const response = await service.getGame('requested-game-id');
 
-    expect(response).toEqual(expectedPayload);
+    expect(response).toEqual({ ...expectedPayload, id: 'requested-game-id' });
   });
 
   test('getGame returns a deep clone of the mock payload', async () => {

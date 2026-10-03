@@ -23,6 +23,9 @@ class SparseBoard(ApiBaseModel):
     """A lightweight representation of the game board used by the API."""
 
     units: List[SparseUnit] = Field(default_factory=list)
+    game_version: Optional[int] = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     last_combat_results: Optional[List[CombatResultSchema]] = None
     scores: Optional[dict[str, int]] = None
     game_status: Optional[GameStatus] = None
@@ -46,6 +49,7 @@ class SparseBoard(ApiBaseModel):
         include_scores: bool = False,
         combat_results=None,
         game_status=None,
+        game_version: int | None = None,
     ) -> "SparseBoard":
         """Create a sparse board from a game with computed status."""
 
@@ -56,6 +60,7 @@ class SparseBoard(ApiBaseModel):
         if status is None:
             status = game.get_game_status()
         sparse_board.game_status = GameStatus.from_core(status)
+        sparse_board.game_version = game_version
         turn_limit = getattr(game, "turn_limit", None)
         turn_number = getattr(game, "turn_number", 1)
         sparse_board.turn_limit = (

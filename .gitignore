@@ -1,4 +1,8 @@
 .venv/
+.venv312/
 .vscode/
 **/__pycache__/
 .pytest_cache/
+*.swp
+*.swo
+*~

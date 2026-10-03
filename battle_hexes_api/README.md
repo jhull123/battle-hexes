@@ -9,11 +9,11 @@ balancers and uptime monitoring.
 
 Create a virtual environment.
 
-    python -m venv .venv
+    python3.12 -m venv .venv312
 
 Activate the virtual environment.
 
-    source .venv/bin/activate
+    source .venv312/bin/activate
 
 Upgrade `pip`.
 
@@ -21,17 +21,17 @@ Upgrade `pip`.
 
 Install dependencies from the repository root.
 
-    pip install -r ../requirements.txt -r ../requirements-test.txt
+    python -m pip install -r ../requirements.txt -r ../requirements-test.txt
 
 ## Running Locally
 
-To start the server locally in development mode:
+From this directory, start the server locally in development mode:
 
-    python -m fastapi dev src/battle_hexes_api/main.py
+```bash
+./dev.sh
+```
 
-The ``main.py`` module automatically adjusts ``PYTHONPATH`` so you can run this
-command from within ``battle_hexes_api`` without installing the sibling
-packages first.
+The launcher makes the sibling packages available without installing them.
 
 ## Running Tests
 
@@ -55,4 +55,3 @@ You can run the checks for this package directly:
 
 Or from the repository root run `./server-side-checks.sh` to execute the tests
 and `flake8` across all Python packages.
-

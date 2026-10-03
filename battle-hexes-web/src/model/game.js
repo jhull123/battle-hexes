@@ -18,6 +18,7 @@ export class Game {
   #reinforcements;
   #gameLog;
   #combatResultsTable;
+  #gameVersion;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
@@ -31,7 +32,12 @@ export class Game {
     reinforcements = null,
     gameLog = [],
     combatResultsTable,
+    gameVersion = 1,
   } = {}) {
+    if (!Number.isInteger(gameVersion) || gameVersion < 1) {
+      throw new TypeError('gameVersion must be a positive integer');
+    }
+    this.#gameVersion = gameVersion;
     this.#id = id;
     this.#phases = phases;
     this.#currentPhase = gameStatus?.state === 'completed'
@@ -90,6 +96,10 @@ export class Game {
 
   getId() {
     return this.#id;
+  }
+
+  get gameVersion() {
+    return this.#gameVersion;
   }
 
   getCurrentPhase() {
@@ -192,6 +202,12 @@ export class Game {
 
   applyApiState(responseData = {}) {
     const state = responseData?.game ?? responseData?.sparseBoard ?? responseData;
+    if (Object.prototype.hasOwnProperty.call(responseData, 'gameVersion')) {
+      if (!Number.isInteger(responseData.gameVersion) || responseData.gameVersion < 1) {
+        throw new TypeError('gameVersion must be a positive integer');
+      }
+      this.#gameVersion = responseData.gameVersion;
+    }
     const gameStatus = this.#extractGameStatus(responseData);
     if (gameStatus !== undefined) {
       this.updateGameStatus(gameStatus);
@@ -283,6 +299,7 @@ export class Game {
       if (finishedCb) {
         finishedCb(combatResult);
       }
+      this.#combatResolver.acknowledgeResponseApplication?.();
       return combatResult;
     });
   }
