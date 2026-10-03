@@ -3,6 +3,7 @@
 from dataclasses import asdict, dataclass
 import json
 import logging
+import sys
 from time import perf_counter
 
 from .errors import (
@@ -38,6 +39,14 @@ class RepositoryOperationEvent:
 
 class LoggingTelemetrySink:
     """Emit a bounded JSON event suitable for log metrics and queries."""
+
+    def __init__(self):
+        if not logger.handlers:
+            handler = logging.StreamHandler(sys.__stderr__ or sys.stderr)
+            handler.setFormatter(logging.Formatter("%(message)s"))
+            logger.addHandler(handler)
+            logger.propagate = False
+        logger.setLevel(logging.INFO)
 
     def emit(self, event):
         logger.info(

@@ -69,6 +69,19 @@ def test_emits_bounded_outcomes_sizes_and_no_identifiers():
     assert "missing-secret-id" not in serialized
 
 
+def test_default_sink_emits_to_process_log(capfd):
+    repository = GameRepositoryInMemory(
+        ControlledClock(), InMemoryItemSizer(), EncodedItemBudget()
+    )
+
+    instrument(repository, None).find_receipt("a" * 64)
+
+    output = capfd.readouterr().err
+    assert "repository_operation_completed" in output
+    assert '"outcome":"not_found_expired"' in output
+    assert "a" * 64 not in output
+
+
 def test_sink_failure_does_not_change_committed_result():
     repository = GameRepositoryInMemory(
         ControlledClock(), InMemoryItemSizer(), EncodedItemBudget()
