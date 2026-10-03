@@ -68,7 +68,7 @@ def decode_game(item, game_id):
             expires_at=_integer(item, "ttl"),
         )
     except (KeyError, TypeError, ValueError, UnicodeError):
-        raise PersistenceUnavailableError() from None
+        raise PersistenceUnavailableError("malformed_data") from None
 
 
 def decode_receipt(item, key_digest):
@@ -100,7 +100,7 @@ def decode_receipt(item, key_digest):
             expires_at=_integer(item, "ttl"),
         )
     except (KeyError, TypeError, ValueError, UnicodeError):
-        raise PersistenceUnavailableError() from None
+        raise PersistenceUnavailableError("malformed_data") from None
 
 
 def _require_key(item, expected):

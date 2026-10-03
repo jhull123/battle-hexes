@@ -87,9 +87,9 @@ class GameRepositoryDynamoDB:
         )
         try:
             self._client.transact_write_items(**request)
-        except (BotoCoreError, ClientError):
+        except (BotoCoreError, ClientError) as error:
             return self._reconcile_commit(
-                expected_version, game, receipt, now
+                expected_version, game, receipt, now, error
             )
         return decode_receipt(receipt_item, receipt.identity.key_digest)
 
@@ -110,9 +110,9 @@ class GameRepositoryDynamoDB:
             current = self._read_game(game.game_id)
             if current is not None and current.expires_at > now:
                 raise GameAlreadyExistsError(game.game_id)
-        raise PersistenceUnavailableError()
+        raise PersistenceUnavailableError(_error_category(error))
 
-    def _reconcile_commit(self, expected_version, game, receipt, now):
+    def _reconcile_commit(self, expected_version, game, receipt, now, error):
         replay = self._reconcile_receipt(receipt, now)
         if replay is not None:
             return replay
@@ -123,7 +123,7 @@ class GameRepositoryDynamoDB:
             raise GameVersionConflictError(
                 expected_version, current.version
             )
-        raise PersistenceUnavailableError()
+        raise PersistenceUnavailableError(_error_category(error))
 
     def _reconcile_receipt(self, candidate, now):
         existing = self._read_receipt(candidate.identity.key_digest)
@@ -152,8 +152,12 @@ class GameRepositoryDynamoDB:
             if not isinstance(response, dict):
                 raise TypeError
             return response.get("Item")
-        except (BotoCoreError, ClientError, KeyError, TypeError, ValueError):
-            raise PersistenceUnavailableError() from None
+        except (BotoCoreError, ClientError) as error:
+            raise PersistenceUnavailableError(
+                _error_category(error)
+            ) from None
+        except (KeyError, TypeError, ValueError):
+            raise PersistenceUnavailableError("malformed_data") from None
 
     @staticmethod
     def _is_known_create_game_race(error):
@@ -198,3 +202,28 @@ class GameRepositoryDynamoDB:
     @staticmethod
     def _validate_digest(key_digest):
         CommandIdentity(key_digest, "0" * 64)
+
+
+def _error_category(error):
+    if isinstance(error, ClientError):
+        code = error.response.get("Error", {}).get("Code", "")
+        if code in {
+            "ThrottlingException", "ProvisionedThroughputExceededException",
+            "RequestLimitExceeded",
+        }:
+            return "throttling"
+        if code in {
+            "AccessDeniedException", "ResourceNotFoundException",
+            "ValidationException", "UnrecognizedClientException",
+        }:
+            return "access_configuration"
+        if code.startswith("InternalServer") or code in {
+            "InternalServerError", "ServiceUnavailable",
+        }:
+            return "service"
+        return "unresolved_unknown"
+    name = type(error).__name__
+    if name in {"EndpointConnectionError", "ConnectTimeoutError",
+                "ReadTimeoutError", "ConnectionClosedError"}:
+        return "endpoint_network"
+    return "unresolved_unknown"
