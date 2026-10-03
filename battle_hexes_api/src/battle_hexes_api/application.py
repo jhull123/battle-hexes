@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from battle_hexes_api.game_routes import router as game_router
 from battle_hexes_api.health import router as health_router
-from battle_hexes_api.health.startup import configure_dependencies
+from battle_hexes_api.health.startup import dependency_lifespan
 from battle_hexes_api.persistence import (
     EncodedItemBudget,
     GameCommandService,
@@ -30,13 +30,13 @@ def create_app(*, clock=None, repository=None, codec=None):
 
     @asynccontextmanager
     async def lifespan(app):
-        configure_dependencies(app)
-        app.state.game_repository = runtime_repository
-        app.state.game_command_service = GameCommandService(
-            runtime_repository, runtime_codec, runtime_clock
-        )
-        app.state.game_state_codec = runtime_codec
-        yield
+        async with dependency_lifespan(app):
+            app.state.game_repository = runtime_repository
+            app.state.game_command_service = GameCommandService(
+                runtime_repository, runtime_codec, runtime_clock
+            )
+            app.state.game_state_codec = runtime_codec
+            yield
 
     app = FastAPI(lifespan=lifespan)
 

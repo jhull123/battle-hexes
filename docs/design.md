@@ -514,17 +514,22 @@ underlying item actions, so this transaction shape requires `PutItem` and
 batch, index, and stream permissions are not needed for this design and should
 not be added as dependencies.
 
-Startup validates the expected string `pk`/`sk` table key schema before an
-enabled deployment serves traffic. It also checks TTL on `ttl` using
+Startup validates that the table is `ACTIVE` or `UPDATING` with the expected
+string `pk`/`sk` key schema before an enabled deployment serves traffic. It
+also checks TTL on `ttl` using
 `dynamodb:DescribeTimeToLive`, but a mismatch or inability to verify TTL is
 an operational warning, not a traffic gate: application reads and writes
 enforce logical expiry, while DynamoDB TTL performs eventual cleanup. The
 deployed table should still have TTL enabled to avoid unbounded retention.
 
-`/ready` in DynamoDB mode checks current table availability without repeating
-schema or TTL validation. Both `ACTIVE` and `UPDATING` are usable states;
-unavailable tables return 503. `/health` remains independent of external
-dependencies. In-memory mode is ready without AWS access.
+`/ready` reports cached DynamoDB read-path status and makes no AWS call per
+request. An initial `GetItem` seeds the signal; a background probe refreshes it
+once per minute per task. Three consecutive failures after a success make the
+task unready, and a later success restores readiness. A missing probe item is
+still a successful read; no item is written. This checks the read path, not
+write availability. A shared DynamoDB outage may make all targets unhealthy;
+routing to another task cannot repair it. `/health` remains independent of AWS.
+In-memory mode is ready without AWS access.
 
 ### 1.15 Frontend Coordination
 
@@ -594,8 +599,8 @@ Implementation specifications must cover at least:
   exposure;
 - frontend command serialization, retry key reuse, version updates, and stale
   state recovery; and
-- CloudFormation linting, startup rejection for wrong table keys, startup
-  warnings for disabled TTL, and readiness behavior for unavailable DynamoDB.
+- CloudFormation linting, startup rejection for wrong keys or an unavailable
+  table, TTL warnings, and cached data-plane readiness probes.
 
 Botocore stubs are appropriate for request construction and error translation,
 but transaction and conditional-write behavior also needs integration coverage
