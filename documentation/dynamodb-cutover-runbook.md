@@ -28,6 +28,8 @@ Do not begin until all boxes have objective evidence:
 - [ ] TTL is enabled on `ttl`; `pk` and `sk` are string keys.
 - [ ] The task role is least privilege: `DescribeTable`,
   `DescribeTimeToLive`, `GetItem`, `PutItem`, and `UpdateItem` only as required.
+  `TransactWriteItems` uses the permissions for its underlying `Put` and
+  `Update` actions; it has no separate IAM action to grant.
 - [ ] Server, compatible-DynamoDB integration, and infrastructure suites pass.
 - [ ] Repository latency/size distributions and bounded outcome/error counters
   are visible; the agreed alarms are enabled.
@@ -63,9 +65,14 @@ Example non-sensitive probes (substitute approved host and disposable IDs):
 curl --fail --silent --show-error "$API/health"
 curl --fail --silent --show-error "$API/ready"
 aws dynamodb describe-table --table-name "$DDB_TABLE_NAME" \
-  --query 'Table.{Status:TableStatus,PITR:LatestStreamArn}'
+  --query 'Table.{Status:TableStatus,Keys:KeySchema}'
+aws dynamodb describe-continuous-backups --table-name "$DDB_TABLE_NAME" \
+  --query 'ContinuousBackupsDescription.PointInTimeRecoveryDescription.PointInTimeRecoveryStatus'
 aws dynamodb describe-time-to-live --table-name "$DDB_TABLE_NAME"
 ```
+
+Confirm the point-in-time recovery status is `ENABLED`. Run the backup probe
+with an operator role; the API task role does not need backup-inspection access.
 
 Use centralized logs/metrics to group `repository_operation_completed` by
 `repository`, `operation`, `outcome`, and `dynamodb_error_category`; graph

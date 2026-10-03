@@ -197,8 +197,8 @@ class Game:
         """Advance the turn and return the resulting core state."""
         self._require_in_progress()
         previous_player = self.get_current_player() if self.players else None
-        self.update_game_status(turn_ended=True, finalize=True)
-        if self.is_game_over():
+        status = self.update_game_status(turn_ended=True, finalize=True)
+        if status.state == "completed":
             self._terminal = True
             self.current_player = None
             self.current_phase = None
@@ -312,27 +312,14 @@ class Game:
         return self.turn_number
 
     def is_game_over(self) -> bool:
-        """Return True if zero/one players remain or turn limit was reached."""
+        """Return whether current scenario victory conditions are met."""
         if self._terminal:
             return True
-        if self.turn_limit is not None and self.turn_number > self.turn_limit:
-            return True
-
-        active_players = {
-            unit.player.name
-            for unit in self.get_board().get_units()
-            if unit.get_coords() is not None
-        }
-        active_players.update(
-            player.name
-            for player in self.players
-            if self.reinforcements_deployer.has_eligible_pending(
-                player,
-                self.turn_number,
-                self.turn_limit,
-            )
+        from battle_hexes_core.scoring.game_status_evaluator import (
+            GameStatusEvaluator,
         )
-        return len(active_players) <= 1
+
+        return GameStatusEvaluator().evaluate(self).state == "completed"
 
     def _require_in_progress(self) -> None:
         """Reject mutations after the game reaches a terminal state."""

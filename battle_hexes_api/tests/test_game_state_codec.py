@@ -14,6 +14,7 @@ from battle_hexes_core.defensivefire.defensive_fire_event import (
     DefensiveFireUnitSnapshot,
 )
 from battle_hexes_core.game.reinforcement import ReinforcementArrivalEvent
+from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
 from battle_hexes_api.gamecreator import GameCreator
 from battle_hexes_api.persistence import (
@@ -61,6 +62,39 @@ def test_round_trip_is_canonical_and_detached(scenario_id):
     assert decoded.board is not game.board
     assert all(player._board is decoded.board for player in decoded.players)
     assert json.loads(encoded)["state_schema_version"] == 1
+
+
+def test_frozen_roadblock_elimination_without_objective_remains_persistable():
+    scenario_id = "east_front_frozen_roadblock"
+    scenario_version = load_scenario_data(scenario_id).version
+    game = GameCreator.create_sample_game(scenario_id, ["human", "random"])
+    codec = GameStateCodec()
+    game.turn_number = 2
+    game.current_phase = "end_turn"
+    game.board.remove_units(
+        unit for unit in game.board.get_units()
+        if unit.player.name == "Player 2"
+    )
+    scorer = ObjectiveScorer()
+    scorer.recalculate_scenario_victory(game)
+    assert game.get_game_status().state == "in_progress"
+    assert not game.is_game_over()
+
+    result = game.end_turn()
+
+    assert result.game_status.state == "in_progress"
+    assert result.current_player.name == "Player 2"
+    assert game.current_phase == "movement"
+    codec.encode(game, scenario_version=scenario_version)
+
+    game.current_phase = "end_turn"
+    scorer.recalculate_scenario_victory(game)
+    final = game.end_turn()
+
+    assert final.game_status.state == "completed"
+    assert final.game_status.winner_player_name == "Player 2"
+    assert game.current_player is None
+    codec.encode(game, scenario_version=scenario_version)
 
 
 def test_decode_rejects_metadata_mismatch():
