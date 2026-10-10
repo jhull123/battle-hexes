@@ -8,6 +8,13 @@ also name the focused specifications (`01-`, `02-`, and so on). This is a
 dependency order, not a calendar or a promise that later designs are settled.
 Only write a numbered specification when its increment is ready to be designed.
 
+When an increment is implemented and its completion evidence is verified, mark
+it done here with a link to the specification, delivered work, and evidence;
+update the [PPO vision](../../battle_agent_rl/PPO.md) to reflect the new current
+state. Writing a specification does not complete the increment. Raise proposed
+deviations from a numbered specification to the user for a decision before
+implementing them.
+
 ## Principles
 
 - Preserve a runnable random baseline. Distinguish replaying one trajectory
@@ -39,7 +46,7 @@ learning takes place in this increment.
 
 ### 02 — Rollout inspection and observation audit
 
-**Planned specification:** `02-rollout-inspection.md`.
+**Specification:** [02-rollout-inspection.md](02-rollout-inspection.md).
 
 **Objective:** Make one seeded environment episode legible before training.
 

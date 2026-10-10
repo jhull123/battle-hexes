@@ -65,6 +65,19 @@ tests and linter across **all** Python packages. The script adjusts
   most environments (like the Codex sandbox) will not allow binary downloads. As such, 
   running the e2e tests is not necessary for opening a PR.
 
+### Working with the PPO agent
+
+- Before changing PPO-related code, specs, or documentation, read
+  `battle_agent_rl/PPO.md` and `specs/ppo-agent/implementation-schedule.md`,
+  plus the relevant numbered specification.
+- If implementation would deviate from a numbered specification, explain the
+  proposed deviation and its reason to the user and ask them how to proceed
+  before making that deviation. Do not silently redefine the contract.
+- After an increment is implemented and its completion evidence is verified,
+  update the schedule to mark it done with delivered work and evidence, and
+  update `battle_agent_rl/PPO.md` to reflect the new current state. Writing a
+  specification alone does not mark an increment done.
+
 ## Change quality guidance
 
 - Prefer small, focused methods; avoid introducing long methods when a few well-named helpers would make the logic easier to read.
