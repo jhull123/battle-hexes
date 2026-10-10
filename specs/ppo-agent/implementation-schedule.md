@@ -10,7 +10,8 @@ Only write a numbered specification when its increment is ready to be designed.
 
 ## Principles
 
-- Preserve a runnable random baseline and reproducible seeded evaluations.
+- Preserve a runnable random baseline. Distinguish replaying one trajectory
+  under fixed seeds and actions from comparing estimates across seed sets.
 - Show what the environment and policy do before increasing game complexity.
 - Keep core rules authoritative and PPO-specific code under
   `battle_agent_rl.ppo`; share observation/action conversion between training
@@ -80,14 +81,19 @@ metrics, but does not claim skill from training loss alone.
 **Objective:** Determine whether training produces a better policy and make
 progress and regressions visible.
 
-**Scope:** Freeze and reload checkpoints, evaluate on held-out seeds and
-declared opponents, compare against random and no-op baselines, and chart or
-tabulate win/loss/draw rates and episode lengths over training. Declare the
-comparison protocol and success criterion before selecting a best checkpoint.
+**Scope:** Freeze and reload checkpoints, compare against random and no-op
+baselines, and chart or tabulate win/loss/draw rates and episode lengths over
+training. Define no-op as choosing hold on every learner turn; it does not
+disable opponent actions, combat, or defensive fire. Fix the opponent policy,
+opponent/environment randomness protocol, seed sets, and success criterion
+before comparison. Select checkpoints on validation seeds; reserve a separate
+held-out seed set for final reporting, not checkpoint selection.
 
 **Completion evidence:** A saved policy reloads with the same legal-action
-behavior; repeated evaluation runs agree within expected stochastic variation,
-and the report distinguishes an improvement from noise or overfitting.
+behavior. A fixed checkpoint and evaluation seed/RNG configuration reproduces
+its reported metrics; independent seed sets yield statistically consistent
+estimates. The final held-out report distinguishes improvement from noise or
+overfitting without reusing its games to choose the checkpoint.
 
 **Dependencies:** 03. Basic update metrics belong in 03; this increment adds
 reliable evaluation and durable artifacts.

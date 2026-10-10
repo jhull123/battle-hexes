@@ -27,9 +27,10 @@ yet; the current `LearningPlayer` only passes a selected movement plan to core.
   move, combat and defensive fire, reward, and episode outcome.
 - Train a masked PPO policy on the small scenario and see whether its behavior
   changes, not just whether an optimization loop runs.
-- Evaluate frozen checkpoints on held-out seeds against declared baselines;
-  report win/loss/draw rates, episode length, and uncertainty rather than a
-  favorable training run alone.
+- Select frozen checkpoints using validation seeds, then compare the selected
+  policy with declared baselines on separate, held-out seeds. Report
+  win/loss/draw rates, episode length, and uncertainty rather than a favorable
+  training run alone.
 - Load a trained policy into a core-compatible `PPOPlayer` for local games. The
   game engine remains authoritative for legal movement and combat.
 - Expand to richer scenarios only after the action and observation contracts
@@ -45,8 +46,10 @@ yet; the current `LearningPlayer` only passes a selected movement plan to core.
 - Training and inference must use the same observation encoding, legal-action
   masking, and action-to-plan mapping. A policy should never be asked to learn
   from an action that the game will reject.
-- Keep randomness seedable and results reproducible. Keep the random policy as
-  a baseline; do not treat it as a learning agent.
+- Keep randomness seedable: a fixed game seed and fixed policy/action sequence
+  should reproduce an environment trajectory. Across different evaluation
+  seed sets, expect statistically consistent estimates rather than identical
+  outcomes. Keep the random policy as a baseline, not a learning agent.
 - Keep rewards and episode endings tied to authoritative game status. Begin
   with the existing terminal reward; add shaping only to address an observed
   learning problem and evaluate for unintended incentives.
