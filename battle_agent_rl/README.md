@@ -9,7 +9,7 @@ RL agents.
 
 ## Minimal PPO training environment
 
-`battle_agent_rl.ppo_environment.PPOTrainingEnvironment(step_limit=50)`
+`battle_agent_rl.ppo.PPOTrainingEnvironment(step_limit=50)`
 provides `reset(seed)` and `step(action)`. Both return a `Transition` with
 `observation`, `legal_action_mask`, `reward`, `terminated`, `truncated`, and
 `info`. Call `reset` after either ending. Each step includes the learner's
@@ -41,7 +41,7 @@ episodes (36% win rate)**, **4.92 steps per episode** on average (44 losses,
 
 ```python
 import random
-from battle_agent_rl.ppo_environment import PPOTrainingEnvironment
+from battle_agent_rl.ppo import PPOTrainingEnvironment
 
 for seed in range(100):
     env = PPOTrainingEnvironment()

@@ -14,7 +14,7 @@ from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
-from battle_agent_rl.ppo_player import LearningPlayer, SeededRandomPlayer
+from .players import LearningPlayer, SeededRandomPlayer
 
 
 @dataclass(frozen=True)

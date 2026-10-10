@@ -5,7 +5,7 @@ import pytest
 from battle_hexes_core.defensivefire.defensive_fire import (
     DefensiveFireSettings,
 )
-from battle_agent_rl.ppo_environment import PPOTrainingEnvironment
+from battle_agent_rl.ppo import PPOTrainingEnvironment
 
 
 def run_episode(seed, step_limit=50):
