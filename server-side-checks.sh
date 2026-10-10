@@ -33,4 +33,7 @@ NO_COLOR=1 python3 -m battle_agent_rl.ppo.rollout_inspection --seed 42 --step-li
   battle_hexes_core/src battle_hexes_core/tests \
   battle_agent_rl/src battle_agent_rl/tests \
   battle_hexes_api/src battle_hexes_api/tests
-python3 -m ruff check battle_hexes_core/src battle_agent_rl/src battle_hexes_api/src
+python3 -m ruff check \
+  battle_hexes_core/src battle_hexes_core/tests \
+  battle_agent_rl/src battle_agent_rl/tests \
+  battle_hexes_api/src battle_hexes_api/tests

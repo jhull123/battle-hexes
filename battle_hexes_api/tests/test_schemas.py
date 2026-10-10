@@ -209,7 +209,7 @@ class TestScenarioModel(unittest.TestCase):
 
 
 class TestGameModel(unittest.TestCase):
-    def test_from_game(self):
+    def _game_model(self):
         board = Board(2, 2)
         faction = Faction(id="f1", name="Faction 1", color="#ffffff")
         player = Player(
@@ -240,9 +240,10 @@ class TestGameModel(unittest.TestCase):
             name="Scenario 1",
             terrain_default="open",
         )
+        return GameModel.from_game(game, scenario), game
 
-        model = GameModel.from_game(game, scenario)
-
+    def test_from_game(self):
+        model, game = self._game_model()
         self.assertEqual(model.id, game.get_id())
         self.assertEqual(model.players[0].name, "Alice")
         self.assertEqual(model.players[0].type, "Human")
@@ -261,6 +262,18 @@ class TestGameModel(unittest.TestCase):
             [(0, 0), (0, 1)],
         )
         self.assertEqual(len(model.objectives), 1)
+        objective_model = model.objectives[0]
+        self.assertEqual(objective_model.row, 0)
+        self.assertEqual(objective_model.column, 0)
+        self.assertEqual(objective_model.points, 2)
+        self.assertEqual(objective_model.type, "hold")
+        unit_model = model.board.units[0]
+        self.assertEqual(unit_model.id, "u1")
+        self.assertEqual(unit_model.row, 0)
+        self.assertEqual(unit_model.column, 1)
+
+    def test_from_game_combat_results_table(self):
+        model, _ = self._game_model()
         table = model.combat_results_table
         self.assertEqual(table.die_rolls, [1, 2, 3, 4, 5, 6])
         self.assertEqual(len(table.rows), 13)
@@ -285,15 +298,6 @@ class TestGameModel(unittest.TestCase):
             payload["combatResultsTable"]["rows"][1]["results"][2]["code"],
             "ATTACKER_RETREAT_2",
         )
-        objective_model = model.objectives[0]
-        self.assertEqual(objective_model.row, 0)
-        self.assertEqual(objective_model.column, 0)
-        self.assertEqual(objective_model.points, 2)
-        self.assertEqual(objective_model.type, "hold")
-        unit_model = model.board.units[0]
-        self.assertEqual(unit_model.id, "u1")
-        self.assertEqual(unit_model.row, 0)
-        self.assertEqual(unit_model.column, 1)
 
 
 class TestSparseUnit(unittest.TestCase):
