@@ -13,13 +13,19 @@ orders the work. Individual numbered specifications define the contracts for
 each increment. This vision describes the destination, not a fixed algorithm
 or delivery date.
 
-## Starting point
+## Current state
 
 The completed [01 training environment](../specs/ppo-agent/01-training-environment.md)
 provides a seeded 5×5, one-unit-per-side game with legal destination masks,
 observations, rewards, and clear terminal versus cutoff outcomes. A random
-policy supplies a reproducible baseline. No PPO policy or training update exists
-yet; the current `LearningPlayer` only passes a selected movement plan to core.
+policy supplies a reproducible baseline. The completed
+[02 rollout inspector](../specs/ppo-agent/02-rollout-inspection.md) provides
+seeded, checked turn-by-turn traces, including combat, defensive fire and
+cutoff outcomes. The observation audit added `remaining_steps` to the policy
+input and found no mask correction necessary for this fixed task; see the
+[usage and audit record](README.md#seeded-rollout-inspection). No PPO policy or
+training update exists yet; the current `LearningPlayer` only passes a
+selected movement plan to core.
 
 ## Desired experience
 

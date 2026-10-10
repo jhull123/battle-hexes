@@ -27,6 +27,8 @@ cd "$REPO_ROOT/battle_hexes_api"
 pytest
 
 cd "$REPO_ROOT"
+NO_COLOR=1 python3 -m battle_agent_rl.ppo.rollout_inspection --seed 0 --step-limit 50 --policy random --expect-ending completed >/dev/null
+NO_COLOR=1 python3 -m battle_agent_rl.ppo.rollout_inspection --seed 42 --step-limit 1 --policy hold --expect-ending cutoff >/dev/null
 "${FLAKE8_CMD[@]}" \
   battle_hexes_core/src battle_hexes_core/tests \
   battle_agent_rl/src battle_agent_rl/tests \
