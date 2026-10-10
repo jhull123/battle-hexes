@@ -44,21 +44,23 @@ baseline. PPO source and tests live in dedicated `ppo` directories. Merged into
 documented baseline of 36 wins, 44 losses, and 20 draws in 100 games. No
 learning takes place in this increment.
 
-### 02 — Rollout inspection and observation audit
+### 02 — Rollout inspection and observation audit (done)
 
 **Specification:** [02-rollout-inspection.md](02-rollout-inspection.md).
 
-**Objective:** Make one seeded environment episode legible before training.
+**Delivered:** `./inspect-ppo-rollout.sh` launches seeded CLI traces showing
+each pre-action board, observation, legal destinations, action, fire/combat
+events, reward and post-step state, with
+terminal-friendly styling and step-numbered invariant failures. The audit
+added `remaining_steps` to the observation; no mask change was needed. Usage,
+the policy seed protocol and the complete audit record are in
+[`battle_agent_rl/README.md`](../../battle_agent_rl/README.md#seeded-rollout-inspection).
 
-**Scope:** A small CLI or equivalent local view shows the board, policy-visible
-observation, legal destinations, selected action, combat/defensive-fire events,
-reward, and ending at each step. It uses a random or manually selected policy;
-it is not a PPO trainer or a new game UI. Audit whether relevant current game
-state is missing from the observation or action mask.
-
-**Completion evidence:** A documented command reproduces a trace for a seed;
-the displayed values match the environment transition and authoritative game
-state, including a terminal game and a cutoff.
+**Evidence:** Fixed seed 0/random/50 completes, while seed 42/hold/1 cuts off
+with core status in progress. Both expected-ending invocations run in
+`./server-side-checks.sh`; focused tests verify replay, legality, fire/retreat,
+color behavior, mismatches and exit status. Full server-side checks pass:
+210 core, 32 RL and 192 API tests (11 API integration skips), plus Flake8.
 
 **Dependencies:** 01.
 

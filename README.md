@@ -41,6 +41,17 @@ You can run unit tests and linting for all Python packages with:
 ./server-side-checks.sh
 ```
 
+The script runs Flake8 and Ruff. Ruff's enabled rules and settings live in
+`pyproject.toml`, which is the source of truth. Run Ruff alone from the
+repository root after installing `requirements-test.txt`:
+
+```bash
+python3 -m ruff check battle_hexes_core/{src,tests} battle_agent_rl/{src,tests} battle_hexes_api/{src,tests}
+```
+
+Ruff checks production source and tests in all three Python packages.
+`./server-side-checks.sh` and CI run this check after Flake8.
+
 ## Checking CloudFormation templates
 
 Install the pinned infrastructure linting dependencies from the repository

@@ -73,6 +73,8 @@ def test_cutoff_is_not_game_result_and_reset_is_fresh():
     result = env.step(10)
     assert result.truncated and not result.terminated
     assert result.reward == 0
+    assert first.observation["remaining_steps"] == 1
+    assert result.observation["remaining_steps"] == 0
     assert result.info["outcome"].state == "in_progress"
     assert not any(result.legal_action_mask)
     with pytest.raises(RuntimeError):

@@ -157,6 +157,7 @@ class PPOTrainingEnvironment:
             observation={
                 "occupancy": occupancy,
                 "defensive_fire_ready": defensive_fire_ready,
+                "remaining_steps": self.step_limit - self.step_count,
             },
             legal_action_mask=self._mask(),
             reward=reward,
