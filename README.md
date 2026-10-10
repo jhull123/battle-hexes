@@ -27,12 +27,14 @@ The targeted Python version for this project is Python 3.12.
 
 ## Setting up the API
 
-Create a virtual environment and install dependencies from both requirement files:
+Create a virtual environment and install the API, test, and PPO training
+dependencies to run all Python checks:
 
 ```bash
 python3.12 -m venv .venv312
 source .venv312/bin/activate
-pip install -r requirements.txt -r requirements-test.txt
+pip install 'torch==2.5.1+cpu' --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt -r requirements-test.txt -r requirements-ppo.txt
 ```
 
 You can run unit tests and linting for all Python packages with:
@@ -40,6 +42,10 @@ You can run unit tests and linting for all Python packages with:
 ```bash
 ./server-side-checks.sh
 ```
+
+Activate `.venv312` before running this script. It checks that `python3` is
+Python 3.12 and uses that interpreter for all tests and linting; CI also uses
+Python 3.12.
 
 The script runs Flake8 and Ruff. Ruff's enabled rules and settings live in
 `pyproject.toml`, which is the source of truth. Run Ruff alone from the
@@ -52,19 +58,25 @@ python3 -m ruff check battle_hexes_core/{src,tests} battle_agent_rl/{src,tests} 
 Ruff checks production source and tests in all three Python packages.
 `./server-side-checks.sh` and CI run this check after Flake8.
 
+For a quick masked-PPO training run followed by a board-level policy trace,
+run `./train-and-inspect-ppo.sh` from the repository root. It uses `.venv312`
+automatically; see [PPO usage](battle_agent_rl/PPO.md#run-locally) for options.
+
 ## Checking CloudFormation templates
 
-Install the pinned infrastructure linting dependencies from the repository
-root:
+Keep the pinned infrastructure linter in a separate Python 3.12 environment:
+its SymPy requirement conflicts with the CPU Torch version used for PPO.
+From the repository root:
 
 ```bash
-python -m pip install -r requirements-infrastructure.txt
+python3.12 -m venv .venv-cfn312
+.venv-cfn312/bin/python -m pip install -r requirements-infrastructure.txt
 ```
 
 Run the same CloudFormation checks used by CI:
 
 ```bash
-./cloudformation-checks.sh
+PATH="$PWD/.venv-cfn312/bin:$PATH" ./cloudformation-checks.sh
 ```
 
 The script uses AWS's `cfn-lint` to check all API, database, and web

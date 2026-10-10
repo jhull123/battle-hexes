@@ -48,7 +48,7 @@ PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src python -m battle_agent_rl.p
 PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src python -m battle_agent_rl.ppo.rollout_inspection --seed 42 --step-limit 1 --policy hold
 ```
 
-`--seed` is an integer; `--step-limit` is a positive integer; `--policy` selects `random` or `hold` if both are provided. Optional `--expect-ending completed|cutoff` requires the specified episode ending and is used by both smoke runs in `server-side-checks.sh`. Reject invalid arguments, verification failures, and unexpected endings with a clear nonzero exit. The first command uses the same policy sampling protocol as the baseline in `battle_agent_rl/README.md`; the second provides a deliberate short horizon. These are proposed invocation contracts, not claims that the commands already exist.
+`--seed` is an integer; `--step-limit` is a positive integer; `--policy` selects `random` or `hold` if both are provided. Optional `--expect-ending completed|cutoff` requires the specified episode ending and is used by both smoke runs in `server-side-checks.sh`. Reject invalid arguments, verification failures, and unexpected endings with a clear nonzero exit. The first command uses the same policy sampling protocol as the baseline in `battle_agent_rl/PPO.md`; the second provides a deliberate short horizon. These are proposed invocation contracts, not claims that the commands already exist.
 
 The two check-script invocations use the documented commands with `--expect-ending completed` and `--expect-ending cutoff`, respectively (with `NO_COLOR` set and successful full traces suppressed). In the existing environment, seed `0` with the baseline random policy completes within 50 steps, and seed `42` with hold reaches a one-step cutoff. If environment behavior intentionally changes, update and document the fixed fixtures rather than weakening the expected-ending check. Avoid comparing the printed transcript with a stored snapshot.
 
@@ -112,7 +112,7 @@ The delivered documentation includes copyable commands for a seeded completed ep
 - [01 — Minimal training environment](01-training-environment.md)
 - [PPO implementation schedule](implementation-schedule.md)
 - [PPO agent vision](../../battle_agent_rl/PPO.md)
-- [RL environment contract and baseline](../../battle_agent_rl/README.md#minimal-ppo-training-environment)
+- [RL environment contract and baseline](../../battle_agent_rl/PPO.md#evidence-and-observation-audit)
 
 ## Open Questions
 

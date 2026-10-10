@@ -1,86 +1,112 @@
-# Battle Hexes PPO Agent: Vision
+# Battle Hexes PPO Agent
 
-## Purpose
+## Status
 
-Build a Battle Hexes player that learns from games through Proximal Policy
-Optimization (PPO), then can make legal moves through the same core `Player`
-interface as other computer players. This is an applied RL project as well as
-an agent-development project: each increment should make the agent's decisions,
-training behavior, and limitations understandable.
+The fixed 5×5, one-unit-per-side environment, seeded rollout inspector and
+masked PPO training loop are implemented (see the
+[schedule](../specs/ppo-agent/implementation-schedule.md)).
+Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
+destinations. Training updates are verified, but improvement over a baseline
+has not been established. Checkpoint evaluation and a core-compatible inference
+player are later increments.
 
-The [implementation schedule](../specs/ppo-agent/implementation-schedule.md)
-orders the work. Individual numbered specifications define the contracts for
-each increment. This vision describes the destination, not a fixed algorithm
-or delivery date.
+## Run locally
 
-## Current state
+Use Python 3.12. From the repository root, after setting up `.venv312` as in
+the [root README](../README.md#setting-up-the-api):
 
-The completed [01 training environment](../specs/ppo-agent/01-training-environment.md)
-provides a seeded 5×5, one-unit-per-side game with legal destination masks,
-observations, rewards, and clear terminal versus cutoff outcomes. A random
-policy supplies a reproducible baseline. The completed
-[02 rollout inspector](../specs/ppo-agent/02-rollout-inspection.md) provides
-seeded, checked turn-by-turn traces, including combat, defensive fire and
-cutoff outcomes. The observation audit added `remaining_steps` to the policy
-input and found no mask correction necessary for this fixed task; see the
-[usage and audit record](README.md#seeded-rollout-inspection). No PPO policy or
-training update exists yet; the current `LearningPlayer` only passes a
-selected movement plan to core.
+```sh
+source .venv312/bin/activate
+./inspect-ppo-rollout.sh --seed 0 --policy random --expect-ending completed
+./inspect-ppo-rollout.sh --seed 42 --step-limit 1 --policy hold --expect-ending cutoff
+./train-and-inspect-ppo.sh
+```
 
-## Desired experience
+The inspector does not need trainer dependencies; run
+`./inspect-ppo-rollout.sh --help` for options. `random` samples sorted legal
+indexes with a policy-local `random.Random(seed)` separate from the game RNG;
+`hold` keeps the learner in place. The trace shows the pre-action board,
+observation, legal indexes/coordinates, action, defensive fire, combat, reward
+and final state. `L` is learner, `O` opponent, `.` empty and `*` the chosen
+destination, which can differ from the post-combat unit position. A cutoff
+leaves core status in progress. `NO_COLOR=1` disables styling.
 
-- Inspect a seeded game turn by turn: board, observation, legal actions, chosen
-  move, combat and defensive fire, reward, and episode outcome.
-- Train a masked PPO policy on the small scenario and see whether its behavior
-  changes, not just whether an optimization loop runs.
-- Select frozen checkpoints using validation seeds, then compare the selected
-  policy with declared baselines on separate, held-out seeds. Report
-  win/loss/draw rates, episode length, and uncertainty rather than a favorable
-  training run alone.
-- Load a trained policy into a core-compatible `PPOPlayer` for local games. The
-  game engine remains authoritative for legal movement and combat.
-- Expand to richer scenarios only after the action and observation contracts
-  for multiple units are deliberately designed and tested.
+`./train-and-inspect-ppo.sh` runs the verified short masked-PPO smoke training
+(seed 0, four-step limit, 32 timesteps, rollout 16, batch size 8), then
+inspects episode seed 42. It uses the repo's `.venv312` automatically when
+present; from an isolated worktree, activate a Python 3.12 environment first.
+Pass trainer options after the script name to override the defaults. For
+example, `./train-and-inspect-ppo.sh --total-timesteps 256 --n-steps 64
+--batch-size 32 --step-limit 50` runs a longer inspection. PPO dependencies
+must be installed as described in the root README.
 
-## Architectural boundaries
+The environment's row-major 25-cell observation has `occupancy` (learner 1,
+opponent -1, empty 0), `defensive_fire_ready` (0/1) and `remaining_steps`.
+The boolean action mask marks legal destinations; the current cell is hold.
+Rewards are +1 for a win, -1 for a loss and 0 otherwise. At an ending the mask
+is all false; a step-limit cutoff is `truncated`, not a core draw. The Gym
+adapter (`ppo.gym_env.MaskedBattleHexesEnv`) exposes the same inputs to
+`MultiInputPolicy`. Always pass the current mask for prediction:
+`model.predict(obs, action_masks=env.action_masks(), deterministic=True)`.
 
-- `battle_hexes_core` owns game rules, transitions, legal paths, and victory.
-  PPO code must not reproduce these rules or train through the HTTP API.
-- `battle_agent_rl.ppo` owns the environment, observation/action adapters,
-  training and evaluation entry points, checkpoint handling, and inference
-  player. Keep these responsibilities in cohesive modules as they appear.
-- Training and inference must use the same observation encoding, legal-action
-  masking, and action-to-plan mapping. A policy should never be asked to learn
-  from an action that the game will reject.
-- Keep randomness seedable: a fixed game seed and fixed policy/action sequence
-  should reproduce an environment trajectory. Across different evaluation
-  seed sets, expect statistically consistent estimates rather than identical
-  outcomes. Keep the random policy as a baseline, not a learning agent.
-- Keep rewards and episode endings tied to authoritative game status. Begin
-  with the existing terminal reward; add shaping only to address an observed
-  learning problem and evaluate for unintended incentives.
-- Use [SB3-Contrib's `MaskablePPO`](https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html)
-  for the policy, masked action sampling, and PPO updates. Do not reimplement
-  the PPO optimizer in this project. Battle Hexes owns the game adapter,
-  observation/action mapping, training entry point, and evaluation protocol.
-  Choose compatible dependency versions and the exact adapter contract in 03.
+The 5×5 layout is a fixed row-major encoding of hex cells, not square-grid
+movement: core computes hex reachability and paths, and the mask prevents
+illegal destinations. The current MLP does not explicitly receive hex-neighbor
+or distance features, though, so it must learn useful spatial relationships
+from experience. Keep this simple representation as the first baseline; the
+32-timestep smoke run only verifies plumbing, not playing strength. Evaluate
+on held-out seeds against random and hold before changing it. If learning
+stalls or is too sample-hungry, try explicit hex-aware features (for example,
+distance to the opponent) before moving to a graph-based policy. Revisit the
+representation when adding larger or variable-sized boards.
 
-## Evidence of progress
+The trainer uses one CPU environment and a seeded random opponent. Explicit
+`reset(seed=s)` starts game seed `s`; automatic resets advance to `s+1`,
+`s+2`, etc. The Gym action space is seeded too. The CLI requires positive
+`--step-limit` and `--total-timesteps`, `--n-steps > 1`, and
+`1 < --batch-size <= --n-steps`; the values above are its defaults. It reports
+actual collected steps (which may exceed the request), completed episode
+outcomes/length/return and PPO update losses. Losses do not measure playing
+skill. Optional `--inspect-episode SEED` uses the just-trained in-memory model
+for one deterministic, mask-aware episode, bounded by `--step-limit`. It prints
+each board, legal index and coordinate, selected action, reward and ending
+through the same audited inspector as the random/hold baseline. The supplied
+seed makes this spot check repeatable; the model is not saved here (checkpoints
+belong to increment 04). Compare two identical training commands' summaries
+and inspection traces, and inspect decisions where most destinations are
+illegal: every printed PPO action must appear in that decision's legal list.
 
-A working trainer is not yet a successful agent. First prove reproducible
-policy updates that sample only legal actions; then show improvement over a
-predeclared baseline across held-out games. Checkpoints, training curves,
-and representative rollout traces should make regressions visible. Later
-milestones must also prove that the frozen policy behaves the same way through
-the core `Player` interface as it did in evaluation.
+## Evidence and observation audit
 
-## Decisions intentionally deferred
+Uniform random play over seeds 0–99 won 36, lost 44 and drew 20 games (mean
+4.92 steps). The inspector verifies each observation and legal mask against
+core, including after combat and at endings. For this fixed task:
 
-- How one policy decision should order multiple units: one unit at a time,
-  a complete turn, or another explicit scheme.
-- How larger maps and varying unit counts fit a stable policy input/output
-  contract, and when a trained player should be exposed through the API/UI.
+| Decision factor | Policy access |
+| --- | --- |
+| Positions and eliminated units | Occupancy. |
+| Defensive-fire eligibility | Readiness plane; includes opponent off-turn fire risk. |
+| Legal movement and hold | Core-derived mask; every legal destination has a path. |
+| Remaining time to cutoff | `remaining_steps`, added by the 02 audit. |
+| Unit attributes, terrain and fire settings | Fixed by the scenario. |
+| Movement/retreat history | Current readiness and positions capture its next-decision effects; new turns refresh movement. |
+| Turn/status/event history | Diagnostic `info`, not policy input. |
+| Future opponent choices and rolls | Private seeded randomness. |
 
-These decisions belong in focused specifications after the small environment
-has been observed and measured. The older `RLPLAN.md` surveys many RL methods;
-it is not the implementation schedule for this PPO track.
+No mask change was needed. A cutoff remains distinguishable from a completed
+game even when its core status is `in_progress`. For reproducibility, two
+seed-12 CPU runs (Python 3.12.3, Torch 2.5.1+cpu, NumPy 2.5.4, Gymnasium
+1.2.3, SB3/SB3-Contrib 2.7.0, `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1`, limit 2,
+32 timesteps, n_steps 16, batch size 8, [16, 16] network) matched action and
+outcome traces and timesteps; parameters and update metrics agreed within
+`rtol=1e-6, atol=1e-7`. Results need not match across hardware or versions.
+
+## Direction
+
+Keep training and inference on the same observation, mask and action-to-plan
+mapping, with core authoritative for movement, combat and victory. Next select
+checkpoints on validation seeds and measure win/loss/draw rates against random
+and hold baselines on held-out games, then connect a frozen policy to the core
+`Player` interface. Design multi-unit decisions and variable-sized inputs
+before expanding the scenario; see the numbered specifications in the
+[schedule](../specs/ppo-agent/implementation-schedule.md).

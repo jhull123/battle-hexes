@@ -24,8 +24,13 @@ def _select_action(transition, policy, rng):
     return action
 
 
-def _step(env, transition, step, policy, rng, view):
-    action = _select_action(transition, policy, rng)
+def _step(env, transition, step, policy, rng, view, action_selector):
+    action = (action_selector(transition) if action_selector is not None else
+              _select_action(transition, policy, rng))
+    if not isinstance(action, int) or not 0 <= action < len(
+            transition.legal_action_mask) or not transition.legal_action_mask[
+                action]:
+        raise ValueError(f"selected illegal action {action}")
     view.state("pre-action decision", transition, env.COLUMNS,
                selected=action)
     destination = divmod(action, env.COLUMNS)
@@ -44,7 +49,8 @@ def _step(env, transition, step, policy, rng, view):
 
 def inspect(seed, step_limit, policy="random", expect_ending=None,
             stream=None, color=None,
-            environment_factory=PPOTrainingEnvironment):
+            environment_factory=PPOTrainingEnvironment,
+            action_selector=None):
     stream = stream if stream is not None else sys.stdout
     if color is None:
         color = stream.isatty() and "NO_COLOR" not in os.environ
@@ -60,7 +66,9 @@ def inspect(seed, step_limit, policy="random", expect_ending=None,
         view.state("initial decision", transition, env.COLUMNS)
         while not (transition.terminated or transition.truncated):
             step += 1
-            transition = _step(env, transition, step, policy, rng, view)
+            transition = _step(
+                env, transition, step, policy, rng, view, action_selector
+            )
         view.summary(transition, env.learner.name)
         ending = "completed" if transition.terminated else "cutoff"
         if expect_ending is not None and ending != expect_ending:
