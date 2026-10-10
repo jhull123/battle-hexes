@@ -27,12 +27,14 @@ The targeted Python version for this project is Python 3.12.
 
 ## Setting up the API
 
-Create a virtual environment and install dependencies from both requirement files:
+Create a virtual environment and install the API, test, and PPO training
+dependencies to run all Python checks:
 
 ```bash
 python3.12 -m venv .venv312
 source .venv312/bin/activate
-pip install -r requirements.txt -r requirements-test.txt
+pip install 'torch==2.5.1+cpu' --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt -r requirements-test.txt -r requirements-ppo.txt
 ```
 
 You can run unit tests and linting for all Python packages with:
@@ -40,6 +42,10 @@ You can run unit tests and linting for all Python packages with:
 ```bash
 ./server-side-checks.sh
 ```
+
+Activate `.venv312` before running this script. It checks that `python3` is
+Python 3.12 and uses that interpreter for all tests and linting; CI also uses
+Python 3.12.
 
 The script runs Flake8 and Ruff. Ruff's enabled rules and settings live in
 `pyproject.toml`, which is the source of truth. Run Ruff alone from the

@@ -53,8 +53,8 @@ each pre-action board, observation, legal destinations, action, fire/combat
 events, reward and post-step state, with
 terminal-friendly styling and step-numbered invariant failures. The audit
 added `remaining_steps` to the observation; no mask change was needed. Usage,
-the policy seed protocol and the complete audit record are in
-[`battle_agent_rl/README.md`](../../battle_agent_rl/README.md#seeded-rollout-inspection).
+the policy seed protocol and audit record are in
+[`battle_agent_rl/PPO.md`](../../battle_agent_rl/PPO.md#evidence-and-observation-audit).
 
 **Evidence:** Fixed seed 0/random/50 completes, while seed 42/hold/1 cuts off
 with core status in progress. Both expected-ending invocations run in
@@ -64,9 +64,27 @@ color behavior, mismatches and exit status. Full server-side checks pass:
 
 **Dependencies:** 01.
 
-### 03 — First masked PPO training loop
+### 03 — First masked PPO training loop (done)
 
-**Planned specification:** `03-masked-ppo-training.md`.
+**Specification:** [03-masked-ppo-training.md](03-masked-ppo-training.md).
+
+**Delivered:** Separate pinned trainer dependencies; Gymnasium adapter with
+fixed dict/action spaces, current-state native action masks, seeded per-episode
+resets and namespaced end summaries; one-CPU-environment SB3-Contrib masked
+trainer with a bounded CLI, outcome counts and update metrics. Usage, inference
+mask protocol and reproducibility settings are documented in
+[`battle_agent_rl/PPO.md`](../../battle_agent_rl/PPO.md#run-locally).
+
+**Evidence:** Focused tests cover invalid action non-mutation, space/dtype
+contracts, active/terminal/cutoff masks and observations, core completion at
+the step limit, restricted-mask training and prediction, changed model weights,
+legal reachable predictions, and two identical seed-12 short CPU runs with
+matching action/outcome traces, timesteps and parameters/update metrics within
+`rtol=1e-6, atol=1e-7` on Python 3.12.3. The CLI smoke run at seed 0,
+step limit 50, 64 timesteps, n_steps 32, batch size 16 reported 64 collected
+steps, 11 episodes (7 wins, 4 losses), 20 updates and policy/value/entropy
+losses. Full server-side checks pass (210 core, 44 RL, 193 API; 11 integration
+skips; Flake8/Ruff).
 
 **Objective:** Train a policy on the fixed 1v1 environment without changing
 game rules or broadening the scenario.

@@ -92,7 +92,7 @@ The adapter satisfies the targeted Gymnasium API/space checks and SB3-Contrib ma
 - [02 — Rollout inspection and observation audit](02-rollout-inspection.md)
 - [PPO implementation schedule](implementation-schedule.md)
 - [PPO agent vision](../../battle_agent_rl/PPO.md)
-- [Environment contract and observation audit](../../battle_agent_rl/README.md)
+- [Environment contract and observation audit](../../battle_agent_rl/PPO.md#evidence-and-observation-audit)
 - [SB3-Contrib MaskablePPO documentation](https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html)
 
 ## Open Questions
