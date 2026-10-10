@@ -41,6 +41,29 @@ You can run unit tests and linting for all Python packages with:
 ./server-side-checks.sh
 ```
 
+The script runs Flake8 and a deliberately small Ruff starter set:
+
+- `PLR0915`: more than 35 statements in a function or method.
+- `PLR0912`: more than 12 branches in a function or method.
+- `B006`: mutable default argument values.
+- `RUF100`: unused `noqa` suppressions.
+
+`PLR` rules come from Pylint-style checks, `B` from flake8-bugbear, and
+`RUF` from Ruff itself. The numbers identify individual rules.
+Run Ruff alone from the repository root after installing
+`requirements-test.txt`:
+
+```bash
+python3 -m ruff check battle_hexes_core/src battle_agent_rl/src battle_hexes_api/src
+```
+
+Ruff checks production source in all three Python packages; tests are excluded
+from these checks. One older core combat method has a targeted statement-count
+exception. Ruff is pinned in `requirements-test.txt`, and the explicit rule
+selection and statement threshold live in `pyproject.toml`; other Ruff rules
+are not enabled by default. `./server-side-checks.sh` and CI run this same
+check alongside Flake8 and the Python tests.
+
 ## Checking CloudFormation templates
 
 Install the pinned infrastructure linting dependencies from the repository

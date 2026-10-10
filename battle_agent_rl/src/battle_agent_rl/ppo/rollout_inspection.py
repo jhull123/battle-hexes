@@ -10,6 +10,38 @@ from .inspection_audit import verify_transition
 from .inspection_view import InspectionView
 
 
+def _select_action(transition, policy, rng):
+    legal = [i for i, allowed in enumerate(transition.legal_action_mask)
+             if allowed]
+    if not legal:
+        raise ValueError("active decision has no legal actions")
+    if policy == "random":
+        return rng.choice(legal)
+    action = next((i for i in legal
+                   if transition.observation["occupancy"][i] == 1), None)
+    if action is None:
+        raise ValueError("hold action unavailable")
+    return action
+
+
+def _step(env, transition, step, policy, rng, view):
+    action = _select_action(transition, policy, rng)
+    view.state("pre-action decision", transition, env.COLUMNS,
+               selected=action)
+    destination = divmod(action, env.COLUMNS)
+    view.line(view.emphasis(
+        f"action: index={action} destination={destination}", "1;33"))
+    result = env.step(action)
+    if result.info["destination"] != destination:
+        raise ValueError("destination mismatch")
+    verify_transition(env, result, step)
+    view.result(result)
+    ended = result.terminated or result.truncated
+    view.state("final state" if ended else "next decision", result,
+               env.COLUMNS)
+    return result
+
+
 def inspect(seed, step_limit, policy="random", expect_ending=None,
             stream=None, color=None,
             environment_factory=PPOTrainingEnvironment):
@@ -27,29 +59,8 @@ def inspect(seed, step_limit, policy="random", expect_ending=None,
                   f"policy={policy}")
         view.state("initial decision", transition, env.COLUMNS)
         while not (transition.terminated or transition.truncated):
-            legal = [i for i, allowed in
-                     enumerate(transition.legal_action_mask) if allowed]
-            if not legal:
-                raise ValueError("active decision has no legal actions")
-            action = rng.choice(legal) if policy == "random" else next(
-                (i for i in legal if transition.observation["occupancy"][i]
-                 == 1), None)
-            if action is None:
-                raise ValueError("hold action unavailable")
-            view.state("pre-action decision", transition, env.COLUMNS,
-                       selected=action)
-            destination = divmod(action, env.COLUMNS)
-            view.line(view.emphasis(
-                f"action: index={action} destination={destination}", "1;33"))
             step += 1
-            transition = env.step(action)
-            if transition.info["destination"] != destination:
-                raise ValueError("destination mismatch")
-            verify_transition(env, transition, step)
-            view.result(transition)
-            ended = transition.terminated or transition.truncated
-            label = "final state" if ended else "next decision"
-            view.state(label, transition, env.COLUMNS)
+            transition = _step(env, transition, step, policy, rng, view)
         view.summary(transition, env.learner.name)
         ending = "completed" if transition.terminated else "cutoff"
         if expect_ending is not None and ending != expect_ending:

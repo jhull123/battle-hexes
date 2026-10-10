@@ -6,7 +6,12 @@ def verify_transition(env, transition, step):
         if not condition:
             raise ValueError(f"step {step}: {invariant}")
 
-    board = env.game.get_board()
+    ended = _verify_status(env, transition, step, require)
+    _verify_observation(env, transition, step, require)
+    _verify_mask(env, transition, ended, require)
+
+
+def _verify_status(env, transition, step, require):
     status = env.game.get_game_status()
     require(transition.info["outcome"] == status, "core outcome mismatch")
     require(transition.info["step_count"] == env.step_count,
@@ -24,7 +29,11 @@ def verify_transition(env, transition, step):
     if terminated and status.winner_player_name is not None:
         reward = 1 if status.winner_player_name == env.learner.name else -1
     require(transition.reward == reward, "reward mismatch")
+    return terminated or truncated
 
+
+def _verify_observation(env, transition, step, require):
+    board = env.game.get_board()
     cells = env.ROWS * env.COLUMNS
     occupants = [board.get_unit_at(*divmod(index, env.COLUMNS))
                  for index in range(cells)]
@@ -40,11 +49,14 @@ def verify_transition(env, transition, step):
     require(observation["remaining_steps"] == env.step_limit - step,
             "remaining steps mismatch")
 
+
+def _verify_mask(env, transition, ended, require):
+    board = env.game.get_board()
     mask = transition.legal_action_mask
-    require(len(mask) == cells, "mask length mismatch")
+    require(len(mask) == env.ROWS * env.COLUMNS, "mask length mismatch")
     require(all(isinstance(value, bool) for value in mask),
             "mask contains non-boolean values")
-    if terminated or truncated:
+    if ended:
         require(not any(mask), "ending mask must be all false")
         return
     units = board.get_units_for_player(env.learner)

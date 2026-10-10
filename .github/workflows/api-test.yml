@@ -7,6 +7,8 @@ on:
       - 'battle_hexes_core/**'
       - 'battle_agent_rl/**'
       - 'server-side-checks.sh'
+      - 'pyproject.toml'
+      - 'requirements-test.txt'
       - '.github/workflows/api-test.yml'
   workflow_dispatch:
 

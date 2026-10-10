@@ -516,6 +516,40 @@ class QLearningPlayer(RLPlayer):
         # Do not clear _last_actions here so combat_results can also use them
         self.print_q_table(logging.DEBUG)
 
+    def _combat_award_for_odds(self, odds):
+        match odds:
+            case (1, 7) | (1, 6) | (1, 5) | (1, 4) | (1, 3):
+                return -self._combat_bonus
+            case (1, 2):
+                return -self._half_combat_bonus
+            case (2, 1):
+                return self._combat_bonus
+            case (3, 1) | (4, 1) | (5, 1) | (6, 1) | (7, 1):
+                return self._double_combat_bonus
+        return 0.0
+
+    def _award_combat_participants(self, battle, reward, awards):
+        participants = battle.get_battle_participants()
+        if participants is None:
+            return
+        attackers, defenders = participants
+        groups = [(attackers, len(attackers) > 1),
+                  (defenders, len(defenders) > 1)]
+        for group, has_allies in groups:
+            for unit in group:
+                if not self.owns(unit):
+                    continue
+                unit_id = unit.get_id()
+                awards[unit_id] = awards.get(unit_id, 0.0) + reward
+                if has_allies:
+                    awards[unit_id] += self._ally_combat_bonus
+                logger.info(
+                    "Combat award for %s is %s for %s at %s odds "
+                    "(allies=%s)",
+                    unit.get_name(), reward, battle.get_combat_result(),
+                    battle.get_odds(), has_allies,
+                )
+
     def combat_results(self, combat_results: CombatResults) -> None:
         """
         Informs the player of the combat results.
@@ -523,59 +557,12 @@ class QLearningPlayer(RLPlayer):
         player's movement plan.
         """
 
-        # Determine if this player was the attacker.
-        # During the attacker's turn ``_last_actions`` stores the actions.
-        # attacker = bool(self._last_actions)
         per_unit_rewards: Dict[str, float] = {}
         for battle in combat_results.get_battles():
-            combat_award = 0.0
-            match battle.get_odds():
-                case (1, 7) | (1, 6) | (1, 5) | (1, 4) | (1, 3):
-                    combat_award = -self._combat_bonus
-                case (1, 2):
-                    combat_award = -self._half_combat_bonus
-                case (1, 1):
-                    combat_award = 0.0
-                case (2, 1):
-                    combat_award = self._combat_bonus
-                case (3, 1) | (4, 1) | (5, 1) | (6, 1) | (7, 1):
-                    combat_award = self._double_combat_bonus
-
-            result = battle.get_combat_result()
-            # TODO consider giving a results bonus
-            # if result == CombatResult.DEFENDER_ELIMINATED:
-            #     combat_award += double_bonus if attacker else -half_bonus
-            # elif result == CombatResult.ATTACKER_ELIMINATED:
-            #     combat_award += -half_bonus if attacker else half_bonus
-            # elif result == CombatResult.EXCHANGE:
-            #     combat_award += half_bonus
-            # else:
-            #     combat_award += half_bonus if attacker else 1.0
-            participants = battle.get_battle_participants()
-            if participants is None:
-                continue
-            attackers, defenders = participants
-
-            groups = [
-                (attackers, len(attackers) > 1),
-                (defenders, len(defenders) > 1),
-            ]
-            for group, has_allies in groups:
-                for unit in group:
-                    if self.owns(unit):
-                        unit_id = unit.get_id()
-                        if unit_id not in per_unit_rewards:
-                            per_unit_rewards[unit_id] = 0.0
-                        per_unit_rewards[unit_id] += combat_award
-                        if has_allies:
-                            bonus = self._ally_combat_bonus
-                            per_unit_rewards[unit_id] += bonus
-                        logger.info(
-                            "Combat award for %s is %s for %s at %s odds "
-                            "(allies=%s)",
-                            unit.get_name(), combat_award, result,
-                            battle.get_odds(), has_allies
-                        )
+            combat_award = self._combat_award_for_odds(battle.get_odds())
+            self._award_combat_participants(
+                battle, combat_award, per_unit_rewards
+            )
 
         for unit_id, (unit, state, action) in self._last_actions.items():
             if unit_id not in per_unit_rewards:

@@ -1,0 +1,6 @@
+[tool.ruff.lint]
+# Keep the starter set explicit; Flake8 continues to check style.
+select = ["PLR0915", "PLR0912", "B006", "RUF100"]
+
+[tool.ruff.lint.pylint]
+max-statements = 35

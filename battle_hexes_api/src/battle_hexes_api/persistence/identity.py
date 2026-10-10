@@ -82,32 +82,28 @@ def _validate_json(value, seen):
             raise ValueError("JSON numbers must be finite")
         return
     if isinstance(value, list):
-        identity = id(value)
-        if identity in seen:
-            raise ValueError("JSON values must not contain cycles")
-        seen.add(identity)
-        try:
-            for item in value:
-                _validate_json(item, seen)
-        finally:
-            seen.remove(identity)
+        _validate_children(value, value, seen)
         return
     if isinstance(value, dict):
         if any(not isinstance(key, str) for key in value):
             raise ValueError("JSON object keys must be strings")
         for key in value:
             _require_utf8(key, "JSON object keys")
-        identity = id(value)
-        if identity in seen:
-            raise ValueError("JSON values must not contain cycles")
-        seen.add(identity)
-        try:
-            for item in value.values():
-                _validate_json(item, seen)
-        finally:
-            seen.remove(identity)
+        _validate_children(value, value.values(), seen)
         return
     raise ValueError("body must contain only JSON-compatible values")
+
+
+def _validate_children(container, children, seen):
+    identity = id(container)
+    if identity in seen:
+        raise ValueError("JSON values must not contain cycles")
+    seen.add(identity)
+    try:
+        for item in children:
+            _validate_json(item, seen)
+    finally:
+        seen.remove(identity)
 
 
 def _require_utf8(value, description):

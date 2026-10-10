@@ -97,7 +97,8 @@ class Combat:
             odds_shift=selected_shift,
         )
 
-    def __update_board_for_result(
+    # Existing combat resolution branches; refactor separately.
+    def __update_board_for_result(  # noqa: PLR0915
             self,
             battle_participants,
             combat_result: CombatResultData
