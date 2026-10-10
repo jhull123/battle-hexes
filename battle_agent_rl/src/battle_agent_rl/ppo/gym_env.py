@@ -6,6 +6,25 @@ import numpy as np
 from .environment import PPOTrainingEnvironment
 
 
+def policy_observation(transition):
+    """Encode the current core transition for training or prediction."""
+    data = transition.observation
+    return {
+        "occupancy": np.array(data["occupancy"], dtype=np.int8),
+        "defensive_fire_ready": np.array(
+            data["defensive_fire_ready"], dtype=np.int8
+        ),
+        "remaining_steps": np.array(
+            [data["remaining_steps"]], dtype=np.int32
+        ),
+    }
+
+
+def policy_action_mask(transition):
+    """Return a fresh mask from the same current transition."""
+    return np.array(transition.legal_action_mask, dtype=np.bool_)
+
+
 class MaskedBattleHexesEnv(gym.Env):
     """One learner decision per step; core environment owns all transitions."""
 
@@ -37,7 +56,7 @@ class MaskedBattleHexesEnv(gym.Env):
         self._episode_seed = episode_seed
         self._transition = self.game_env.reset(episode_seed)
         self._episode_return = 0
-        return self._observation(), {
+        return policy_observation(self._transition), {
             **self._transition.info, "episode_seed": episode_seed,
         }
 
@@ -60,7 +79,7 @@ class MaskedBattleHexesEnv(gym.Env):
                 "return": self._episode_return,
                 "seed": self._episode_seed,
             }
-        return (self._observation(), float(result.reward),
+        return (policy_observation(result), float(result.reward),
                 result.terminated, result.truncated, info)
 
     def action_masks(self):
@@ -68,19 +87,7 @@ class MaskedBattleHexesEnv(gym.Env):
             raise RuntimeError(
                 "Reset the environment before requesting a mask"
             )
-        return np.array(self._transition.legal_action_mask, dtype=np.bool_)
-
-    def _observation(self):
-        data = self._transition.observation
-        return {
-            "occupancy": np.array(data["occupancy"], dtype=np.int8),
-            "defensive_fire_ready": np.array(
-                data["defensive_fire_ready"], dtype=np.int8
-            ),
-            "remaining_steps": np.array(
-                [data["remaining_steps"]], dtype=np.int32
-            ),
-        }
+        return policy_action_mask(self._transition)
 
     def _outcome(self, result):
         if result.truncated:

@@ -22,7 +22,8 @@ source .venv312/bin/activate
 python -m pip install -r requirements-ppo.txt
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src \
   python -m battle_agent_rl.ppo.train --seed 0 --step-limit 50 \
-  --total-timesteps 256 --n-steps 64 --batch-size 32
+  --total-timesteps 256 --n-steps 64 --batch-size 32 \
+  --inspect-episode 42
 ```
 
 The inspector does not need trainer dependencies; run
@@ -50,7 +51,14 @@ The trainer uses one CPU environment and a seeded random opponent. Explicit
 `1 < --batch-size <= --n-steps`; the values above are its defaults. It reports
 actual collected steps (which may exceed the request), completed episode
 outcomes/length/return and PPO update losses. Losses do not measure playing
-skill.
+skill. Optional `--inspect-episode SEED` uses the just-trained in-memory model
+for one deterministic, mask-aware episode, bounded by `--step-limit`. It prints
+each board, legal index and coordinate, selected action, reward and ending
+through the same audited inspector as the random/hold baseline. The supplied
+seed makes this spot check repeatable; the model is not saved here (checkpoints
+belong to increment 04). Compare two identical training commands' summaries
+and inspection traces, and inspect decisions where most destinations are
+illegal: every printed PPO action must appear in that decision's legal list.
 
 ## Evidence and observation audit
 
