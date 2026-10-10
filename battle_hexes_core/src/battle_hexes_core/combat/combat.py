@@ -17,11 +17,11 @@ from battle_hexes_core.combat.combat_event import (
 
 
 class Combat:
-    def __init__(self, game: Game):
+    def __init__(self, game: Game, rng=None):
         self.game = game
         self.board = game.get_board()
         self.attacking_player = game.get_current_player()
-        self.combat_solver = CombatSolver()
+        self.combat_solver = CombatSolver(rng=rng)
         self.logger = logging.getLogger(__name__)
 
     def resolve_combat(self) -> CombatResults:

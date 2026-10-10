@@ -38,6 +38,7 @@ class Game:
         board: Board,
         turn_limit: int | None = None,
         reinforcements: list[ReinforcementGroup] | None = None,
+        rng=None,
     ):
         self.id = uuid.uuid4()
         self.players = players
@@ -63,7 +64,7 @@ class Game:
         )
         self.current_phase = "movement"
         self.pending_combats = []
-        self.defensive_fire_resolver = DefensiveFireResolver(board)
+        self.defensive_fire_resolver = DefensiveFireResolver(board, rng=rng)
         self._refresh_defensive_fire_availability()
         self.game_status = None
         self.combat_results_table = CombatSolver.get_combat_results_table()
