@@ -85,6 +85,35 @@ def test_cutoff_is_not_game_result_and_reset_is_fresh():
     assert new_unit is not old_unit
 
 
+def test_observation_exposes_defensive_fire_risk_at_same_positions():
+    observations = []
+    fire_counts = []
+    for eligible in (True, False):
+        env = PPOTrainingEnvironment(step_limit=1)
+        env.reset(2)
+        opponent = env.game.get_board().get_units_for_player(
+            env.game.players[1]
+        )[0]
+        opponent.set_coords(2, 2)
+        opponent.ended_last_friendly_turn_with_defensive_fire_eligibility = (
+            eligible
+        )
+        opponent.update_defensive_fire_available(env.learner)
+
+        before = env._transition(None, (), ())
+        observations.append(before)
+        fire_counts.append(len(env.step(11).info["defensive_fire"]))
+
+    ready, unavailable = observations
+    assert ready.observation["occupancy"] == unavailable.observation[
+        "occupancy"
+    ]
+    assert ready.legal_action_mask == unavailable.legal_action_mask
+    assert ready.observation["defensive_fire_ready"][12] == 1
+    assert unavailable.observation["defensive_fire_ready"][12] == 0
+    assert fire_counts == [1, 0]
+
+
 def test_defensive_fire_and_combat_return_post_resolution_board():
     env = PPOTrainingEnvironment()
     env.reset(2)

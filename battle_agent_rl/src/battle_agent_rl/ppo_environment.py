@@ -143,13 +143,21 @@ class PPOTrainingEnvironment:
             reward = (
                 1 if status.winner_player_name == self.learner.name else -1
             )
-        occupancy = tuple(
-            self._occupant_value(board.get_unit_at(tile.row, tile.column))
-            for tile in board.hexes
+        occupants = tuple(
+            board.get_unit_at(tile.row, tile.column) for tile in board.hexes
+        )
+        occupancy = tuple(self._occupant_value(unit) for unit in occupants)
+        defensive_fire_ready = tuple(
+            int(unit.public_defensive_fire_status(self.learner))
+            if unit is not None else 0
+            for unit in occupants
         )
 
         return Transition(
-            observation={"occupancy": occupancy},
+            observation={
+                "occupancy": occupancy,
+                "defensive_fire_ready": defensive_fire_ready,
+            },
             legal_action_mask=self._mask(),
             reward=reward,
             terminated=terminated,

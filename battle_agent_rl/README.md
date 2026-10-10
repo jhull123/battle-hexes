@@ -18,13 +18,18 @@ if the game is still active. The board is 5 rows by 5 columns, with one unit
 per side and no core turn limit. The opponent samples sorted legal destinations
 using the episode's private seeded RNG; combat and defensive fire share it.
 
-The observation contains one fixed-length field: `occupancy`, a 25-element
-tuple in row-major order (`row * 5 + column`). Each cell is normalized to
-`1` for the learner, `-1` for the opponent, or `0` for empty. The mask has
-25 booleans in the same order; the current cell is the hold action. On an
-ending, the mask is all false. `info` contains the core `outcome` (`GameStatus`),
-`turn_number`, `step_count`, the selected `(row, column)` `destination` (or
-`None` on reset), and the current step's `defensive_fire` and `combats` events.
+The observation contains two fixed-length, 25-element tuples in row-major
+order (`row * 5 + column`). `occupancy` is `1` for the learner, `-1` for the
+opponent, or `0` for empty. `defensive_fire_ready` is `1` when that cell's unit
+is currently eligible for defensive fire, otherwise `0` (including empty
+cells). For the active learner it describes readiness if its turn ended now;
+for the off-turn opponent it describes whether it can fire on the learner's
+move. This distinguishes board positions with different defensive-fire risk.
+The mask has 25 booleans in the same order; the current cell is the hold
+action. On an ending, the mask is all false. `info` contains the core `outcome`
+(`GameStatus`), `turn_number`, `step_count`, the selected `(row, column)`
+`destination` (or `None` on reset), and the current step's `defensive_fire`
+and `combats` events.
 These diagnostics are not policy inputs. Reward is +1 for a win, -1 for a loss,
 and 0 for a draw or unfinished game. An environment step-limit cutoff is
 `truncated`, with the core outcome still `in_progress`.
