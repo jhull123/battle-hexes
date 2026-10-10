@@ -1,5 +1,6 @@
 .venv/
 .venv312/
+.venv-cfn312/
 .vscode/
 **/__pycache__/
 .pytest_cache/

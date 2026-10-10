@@ -1,12 +1,13 @@
 import io
+from pathlib import Path
 import re
+import subprocess
 
 import pytest
 import torch
 from sb3_contrib import MaskablePPO
 
 from battle_agent_rl.ppo.gym_env import MaskedBattleHexesEnv
-from battle_agent_rl.ppo.train import main
 from battle_agent_rl.ppo.trained_inspection import inspect_trained_episode
 from battle_agent_rl.ppo.training import train, training_report
 
@@ -120,10 +121,16 @@ def test_trained_episode_inspection_is_audited_and_reproducible():
         assert int(index) == 5 * int(row) + int(column)
 
 
-def test_training_cli_inspects_its_in_memory_model(capsys):
-    main(["--seed", "12", "--step-limit", "1", "--total-timesteps", "8",
-          "--n-steps", "8", "--batch-size", "4", "--inspect-episode", "42"])
-    text = capsys.readouterr().out
+def test_training_script_inspects_its_in_memory_model():
+    script = Path(__file__).resolve().parents[3] / "train-and-inspect-ppo.sh"
+    completed = subprocess.run(
+        [str(script), "--seed", "12", "--step-limit", "1",
+         "--total-timesteps", "8", "--n-steps", "8", "--batch-size", "4",
+         "--inspect-episode", "42"],
+        capture_output=True, text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    text = completed.stdout
     assert "collected_timesteps=8" in text
     assert "episode: seed=42 step_limit=1 policy=ppo" in text
     assert "legal:" in text and "action: index=" in text

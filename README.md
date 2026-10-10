@@ -58,19 +58,25 @@ python3 -m ruff check battle_hexes_core/{src,tests} battle_agent_rl/{src,tests} 
 Ruff checks production source and tests in all three Python packages.
 `./server-side-checks.sh` and CI run this check after Flake8.
 
+For a quick masked-PPO training run followed by a board-level policy trace,
+run `./train-and-inspect-ppo.sh` from the repository root. It uses `.venv312`
+automatically; see [PPO usage](battle_agent_rl/PPO.md#run-locally) for options.
+
 ## Checking CloudFormation templates
 
-Install the pinned infrastructure linting dependencies from the repository
-root:
+Keep the pinned infrastructure linter in a separate Python 3.12 environment:
+its SymPy requirement conflicts with the CPU Torch version used for PPO.
+From the repository root:
 
 ```bash
-python -m pip install -r requirements-infrastructure.txt
+python3.12 -m venv .venv-cfn312
+.venv-cfn312/bin/python -m pip install -r requirements-infrastructure.txt
 ```
 
 Run the same CloudFormation checks used by CI:
 
 ```bash
-./cloudformation-checks.sh
+PATH="$PWD/.venv-cfn312/bin:$PATH" ./cloudformation-checks.sh
 ```
 
 The script uses AWS's `cfn-lint` to check all API, database, and web

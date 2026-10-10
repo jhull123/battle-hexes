@@ -19,11 +19,7 @@ the [root README](../README.md#setting-up-the-api):
 source .venv312/bin/activate
 ./inspect-ppo-rollout.sh --seed 0 --policy random --expect-ending completed
 ./inspect-ppo-rollout.sh --seed 42 --step-limit 1 --policy hold --expect-ending cutoff
-python -m pip install -r requirements-ppo.txt
-OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src \
-  python -m battle_agent_rl.ppo.train --seed 0 --step-limit 50 \
-  --total-timesteps 256 --n-steps 64 --batch-size 32 \
-  --inspect-episode 42
+./train-and-inspect-ppo.sh
 ```
 
 The inspector does not need trainer dependencies; run
@@ -34,6 +30,15 @@ observation, legal indexes/coordinates, action, defensive fire, combat, reward
 and final state. `L` is learner, `O` opponent, `.` empty and `*` the chosen
 destination, which can differ from the post-combat unit position. A cutoff
 leaves core status in progress. `NO_COLOR=1` disables styling.
+
+`./train-and-inspect-ppo.sh` runs the verified short masked-PPO smoke training
+(seed 0, four-step limit, 32 timesteps, rollout 16, batch size 8), then
+inspects episode seed 42. It uses the repo's `.venv312` automatically when
+present; from an isolated worktree, activate a Python 3.12 environment first.
+Pass trainer options after the script name to override the defaults. For
+example, `./train-and-inspect-ppo.sh --total-timesteps 256 --n-steps 64
+--batch-size 32 --step-limit 50` runs a longer inspection. PPO dependencies
+must be installed as described in the root README.
 
 The environment's row-major 25-cell observation has `occupancy` (learner 1,
 opponent -1, empty 0), `defensive_fire_ready` (0/1) and `remaining_steps`.
