@@ -85,7 +85,7 @@ matching action/outcome traces, timesteps and parameters/update metrics within
 `rtol=1e-6, atol=1e-7` on Python 3.12.3. The CLI smoke run at seed 0,
 step limit 50, 64 timesteps, n_steps 32, batch size 16 reported 64 collected
 steps, 11 episodes (7 wins, 4 losses), 20 updates and policy/value/entropy
-losses. Full server-side checks pass (210 core, 44 RL, 193 API; 11 integration
+losses. Full server-side checks pass (210 core, 46 RL, 193 API; 11 integration
 skips; Flake8/Ruff). The optional seed-42, four-step, post-training PPO
 inspection completed with a core-audited win; two identical runs printed the
 same training summary and action/board trace, with every selected index listed
