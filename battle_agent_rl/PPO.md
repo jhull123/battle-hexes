@@ -49,6 +49,17 @@ adapter (`ppo.gym_env.MaskedBattleHexesEnv`) exposes the same inputs to
 `MultiInputPolicy`. Always pass the current mask for prediction:
 `model.predict(obs, action_masks=env.action_masks(), deterministic=True)`.
 
+The 5×5 layout is a fixed row-major encoding of hex cells, not square-grid
+movement: core computes hex reachability and paths, and the mask prevents
+illegal destinations. The current MLP does not explicitly receive hex-neighbor
+or distance features, though, so it must learn useful spatial relationships
+from experience. Keep this simple representation as the first baseline; the
+32-timestep smoke run only verifies plumbing, not playing strength. Evaluate
+on held-out seeds against random and hold before changing it. If learning
+stalls or is too sample-hungry, try explicit hex-aware features (for example,
+distance to the opponent) before moving to a graph-based policy. Revisit the
+representation when adding larger or variable-sized boards.
+
 The trainer uses one CPU environment and a seeded random opponent. Explicit
 `reset(seed=s)` starts game seed `s`; automatic resets advance to `s+1`,
 `s+2`, etc. The Gym action space is seeded too. The CLI requires positive
