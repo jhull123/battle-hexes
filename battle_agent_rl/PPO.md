@@ -53,9 +53,11 @@ yet; the current `LearningPlayer` only passes a selected movement plan to core.
 - Keep rewards and episode endings tied to authoritative game status. Begin
   with the existing terminal reward; add shaping only to address an observed
   learning problem and evaluate for unintended incentives.
-- Prefer an adequate maintained, free PPO implementation when choosing a
-  training stack. If implementing PPO ourselves is useful for learning, make
-  that an explicit, bounded decision with independent correctness checks.
+- Use [SB3-Contrib's `MaskablePPO`](https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html)
+  for the policy, masked action sampling, and PPO updates. Do not reimplement
+  the PPO optimizer in this project. Battle Hexes owns the game adapter,
+  observation/action mapping, training entry point, and evaluation protocol.
+  Choose compatible dependency versions and the exact adapter contract in 03.
 
 ## Evidence of progress
 
@@ -68,8 +70,6 @@ the core `Player` interface as it did in evaluation.
 
 ## Decisions intentionally deferred
 
-- Whether a maintained PPO library or a small in-project implementation best
-  serves the first training increment, including correct action masking.
 - How one policy decision should order multiple units: one unit at a time,
   a complete turn, or another explicit scheme.
 - How larger maps and varying unit counts fit a stable policy input/output

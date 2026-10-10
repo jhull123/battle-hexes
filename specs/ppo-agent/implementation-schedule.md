@@ -62,15 +62,17 @@ state, including a terminal game and a cutoff.
 **Objective:** Train a policy on the fixed 1v1 environment without changing
 game rules or broadening the scenario.
 
-**Scope:** Select a maintained free implementation or justify a small custom
-one; define the fixed policy input/output, legal-action masking at sampling and
-optimization, rollout collection, optimizer updates, seeding, and a repeatable
-training command. Keep the trainer separate from the game-compatible player.
+**Scope:** Adapt the fixed environment to the Gymnasium contract required by
+SB3-Contrib's `MaskablePPO`, including fixed observation/action spaces and an
+action mask where `True` means legal. Use its masked policy, rollout collection,
+and PPO updates rather than implementing those algorithms here. Define
+compatible dependency versions, seeding, a repeatable training command, and
+the boundary between the trainer and game-compatible player.
 
 **Completion evidence:** Focused checks establish valid sampled actions,
-consistent action log-probabilities under masks, parameter updates, and
-reproducible short runs. Training output exposes episode outcomes and update
-metrics, but does not claim skill from training loss alone.
+masking during learning and prediction, parameter updates, and reproducible
+short runs. Training output exposes episode outcomes and update metrics, but
+does not claim skill from training loss alone.
 
 **Dependencies:** 01 and 02; incorporate any observation fixes found in 02.
 
@@ -81,9 +83,10 @@ metrics, but does not claim skill from training loss alone.
 **Objective:** Determine whether training produces a better policy and make
 progress and regressions visible.
 
-**Scope:** Freeze and reload checkpoints, compare against random and no-op
-baselines, and chart or tabulate win/loss/draw rates and episode lengths over
-training. Define no-op as choosing hold on every learner turn; it does not
+**Scope:** Freeze and reload checkpoints; use SB3-Contrib's mask-aware
+evaluation utilities to compare against random and no-op baselines. Chart or
+tabulate win/loss/draw rates and episode lengths over training. Define no-op
+as choosing hold on every learner turn; it does not
 disable opponent actions, combat, or defensive fire. Fix the opponent policy,
 opponent/environment randomness protocol, seed sets, and success criterion
 before comparison. Select checkpoints on validation seeds; reserve a separate
