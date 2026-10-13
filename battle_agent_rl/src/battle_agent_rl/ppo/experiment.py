@@ -65,11 +65,7 @@ def _save_report(run_dir, name, records, text, report):
     return text
 
 
-def select_and_report(run_dir):
-    manifest = read_manifest(run_dir)
-    check_seed_separation(manifest)
-    if manifest["selected"] is not None:
-        raise ValueError("Selection already reported for this run")
+def _select_on_validation(run_dir, manifest):
     entries = sorted(
         manifest["checkpoints"],
         key=lambda e: (e["training_timesteps"], e["path"]),
@@ -98,9 +94,15 @@ def select_and_report(run_dir):
             ],
         ),
     )
+    selected_records = next(
+        records for entry, records in validation if entry == selected
+    )
+    return selected, selected_records
+
+
+def _report_held_out(run_dir, manifest, selected, selected_validation):
     held = _evaluate(run_dir, manifest, selected, "held_out")
     comparisons, conclusion = bootstrap(held)
-    selected_validation = next(r for e, r in validation if e == selected)
     validation_intervals, _ = bootstrap(selected_validation)
     text = table(selected, summarize(held))
     validation_score_interval = score_interval(selected_validation)
@@ -135,6 +137,18 @@ def select_and_report(run_dir):
             held_out_score_interval=held_score_interval,
             conclusion=conclusion,
         ),
+    )
+    return result
+
+
+def select_and_report(run_dir):
+    manifest = read_manifest(run_dir)
+    check_seed_separation(manifest)
+    if manifest["selected"] is not None:
+        raise ValueError("Selection already reported for this run")
+    selected, selected_validation = _select_on_validation(run_dir, manifest)
+    result = _report_held_out(
+        run_dir, manifest, selected, selected_validation
     )
     manifest["selected"] = selected
     write_json(Path(run_dir) / "manifest.json", manifest)
