@@ -116,29 +116,44 @@ def select(results):
 
 
 def table(entry, summary):
+    """Format a compact outcome table and separate paired-score comparisons."""
     lines = [
-        f"{entry['path']} steps={entry['training_timesteps']}",
-        ("policy games win loss draw cutoff win% loss% draw% cutoff% "
-         "mean_len median_len mean_return score paired_vs"),
+        f"Checkpoint: {entry['path']}  |  Collected steps: "
+        f"{entry['training_timesteps']}",
+        "",
+        "Outcomes and episode metrics",
+        "Policy               Games  W/L/D/C       "
+        "Win/Loss/Draw/Cutoff %   Decisions μ/med  Return    Score",
+        "-------------------- -----  ------------  "
+        "----------------------   --------------  --------   -----",
     ]
     for policy in POLICIES:
         row = summary[policy]
         counts = row["counts"]
         rates = row["rates"]
-        diff = row.get("paired_differences", {})
-        lines.append(
-            " ".join(
-                [
-                    policy,
-                    str(row["games"]),
-                    *(str(counts[k]) for k in counts),
-                    *(f"{100 * rates[k]:.1f}" for k in rates),
-                    f"{row['mean_length']:.2f}",
-                    f"{row['median_length']:.2f}",
-                    f"{row['mean_return']:.3f}",
-                    f"{row['score']:.3f}",
-                    ",".join(f"{k}:{v:+.3f}" for k, v in diff.items()) or "-",
-                ]
-            )
+        name = {"center_hold": "center-then-hold"}.get(policy, policy)
+        outcome_counts = "/".join(
+            str(counts[k]) for k in ("win", "loss", "draw", "cutoff")
         )
+        outcome_rates = "/".join(
+            f"{100 * rates[k]:.1f}" for k in
+            ("win", "loss", "draw", "cutoff")
+        )
+        lines.append(
+            f"{name:<20} {row['games']:>5}  {outcome_counts:>12}  "
+            f"{outcome_rates:>22}  "
+            f"{row['mean_length']:>6.2f}/{row['median_length']:<6.2f}  "
+            f"{row['mean_return']:>8.3f}     {row['score']:>5.3f}"
+        )
+    differences = summary["ppo"].get("paired_differences", {})
+    if differences:
+        lines.extend(("", "Paired score difference (PPO − baseline)",
+                      "Baseline          Difference"))
+        for policy in ("random", "hold", "center_hold"):
+            name = {"center_hold": "center-then-hold"}.get(policy, policy)
+            lines.append(f"{name:<17} {differences[policy]:>+9.3f}")
+    lines.append(
+        "Counts/rates are W/L/D/cutoff; score = "
+        "(wins + 0.5 × draws) / games."
+    )
     return "\n".join(lines)

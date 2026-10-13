@@ -29,6 +29,9 @@ def test_replay_and_completed_episode_matches_legal_actions_and_board():
     assert "final: win" in text
     assert "combats:\n  combat" in text
     assert "board: L=learner O=opponent" in text
+    assert "   1: [" in text
+    assert "policy inputs (same row/column coordinates):" in text
+    assert "  fire-ready:" in text
     decisions = re.findall(r"legal: (.+)\naction: index=(\d+) "
                            r"destination=\((\d+), (\d+)\)", text)
     assert len(decisions) == result.info["step_count"]

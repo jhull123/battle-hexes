@@ -15,7 +15,7 @@ from battle_agent_rl.ppo.experiment import (
     select_and_report,
     train_run,
 )
-from battle_agent_rl.ppo.metrics import bootstrap, select, summarize
+from battle_agent_rl.ppo.metrics import bootstrap, select, summarize, table
 
 
 def test_snapshot_reload_replay_and_selection(tmp_path):
@@ -58,7 +58,7 @@ def test_snapshot_reload_replay_and_selection(tmp_path):
         other = next(e for e in manifest["checkpoints"] if e != selected)
         evaluate_checkpoint(run, other["path"], "held_out")
     replay = evaluate_checkpoint(run, entry["path"])
-    assert "policy games" in replay
+    assert "Outcomes and episode metrics" in replay
     assert (
         json.loads(
             (
@@ -131,6 +131,21 @@ def test_metrics_ties_cutoffs_and_bootstrap():
     intervals, conclusion = bootstrap(records)
     assert intervals["center_hold"]["interval"][1] < 0
     assert conclusion == "worse"
+    rendered = table(
+        dict(path="candidate.zip", training_timesteps=16), summary
+    )
+    assert "Outcomes and episode metrics" in rendered
+    assert "Paired score difference (PPO − baseline)" in rendered
+    assert "center-then-hold" in rendered
+    assert "0.0/0.0/50.0/50.0" in rendered
+    header = next(line for line in rendered.splitlines()
+                  if line.startswith("Policy "))
+    ppo_row = next(line for line in rendered.splitlines()
+                   if line.startswith("ppo "))
+    assert header.index("Score") == ppo_row.index("0.250", 80)
+    assert "|" not in header
+    separator = rendered.splitlines()[rendered.splitlines().index(header) + 1]
+    assert separator.rfind("-----") == header.index("Score")
     first = dict(path="later.zip", training_timesteps=16)
     earlier = dict(path="earlier.zip", training_timesteps=8)
     assert select([(first, records), (earlier, records)]) == earlier
