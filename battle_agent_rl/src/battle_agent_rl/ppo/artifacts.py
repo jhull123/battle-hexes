@@ -40,46 +40,55 @@ def write_json(path, value):
     Path(path).write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
+def _validate_policy_contract(manifest):
+    if manifest["contract"] != CONTRACT or manifest["versions"] != versions():
+        raise ValueError(
+            "Incompatible policy-input contract or software versions"
+        )
+    if (
+        manifest["device"] != "cpu"
+        or manifest["selection_rule"] != SELECTION_RULE
+        or manifest["baselines"] != BASELINES
+        or manifest["interval_method"] != "completed PPO optimizer updates"
+    ):
+        raise ValueError("Incompatible run metadata")
+
+
+def _validate_run_metadata(manifest):
+    if (
+        type(manifest["step_limit"]) is not int
+        or manifest["step_limit"] < 1
+        or manifest["step_limit"] != manifest["training"]["step_limit"]
+        or not manifest["checkpoints"]
+    ):
+        raise ValueError("Incomplete run metadata")
+    if (manifest["selected"] is not None
+            and manifest["selected"] not in manifest["checkpoints"]):
+        raise ValueError("Selected checkpoint is not a candidate")
+    seed_sets(manifest["validation_seeds"], manifest["held_out_seeds"])
+    if not isinstance(manifest["training_episode_seeds"], list):
+        raise ValueError("Missing training episode seeds")
+    if any(type(seed) is not int
+           for seed in manifest["training_episode_seeds"]):
+        raise ValueError("Invalid training episode seeds")
+
+
+def _validate_checkpoints(entries):
+    for entry in entries:
+        if (not isinstance(entry["training_timesteps"], int)
+                or entry["training_timesteps"] < 1
+                or not isinstance(entry["sha256"], str)
+                or len(entry["sha256"]) != 64
+                or not isinstance(entry["path"], str)):
+            raise ValueError("Invalid checkpoint metadata")
+
+
 def read_manifest(run_dir):
     try:
         manifest = json.loads((Path(run_dir) / "manifest.json").read_text())
-        if (
-            manifest["contract"] != CONTRACT
-            or manifest["versions"] != versions()
-        ):
-            raise ValueError(
-                "Incompatible policy-input contract or software versions"
-            )
-        if (
-            manifest["device"] != "cpu"
-            or manifest["selection_rule"] != SELECTION_RULE
-            or manifest["baselines"] != BASELINES
-            or manifest["interval_method"] != "completed PPO optimizer updates"
-        ):
-            raise ValueError("Incompatible run metadata")
-        if (
-            type(manifest["step_limit"]) is not int
-            or manifest["step_limit"] < 1
-            or manifest["step_limit"] != manifest["training"]["step_limit"]
-            or not manifest["checkpoints"]
-        ):
-            raise ValueError("Incomplete run metadata")
-        if (manifest["selected"] is not None
-                and manifest["selected"] not in manifest["checkpoints"]):
-            raise ValueError("Selected checkpoint is not a candidate")
-        seed_sets(manifest["validation_seeds"], manifest["held_out_seeds"])
-        if not isinstance(manifest["training_episode_seeds"], list):
-            raise ValueError("Missing training episode seeds")
-        if any(type(seed) is not int
-               for seed in manifest["training_episode_seeds"]):
-            raise ValueError("Invalid training episode seeds")
-        for entry in manifest["checkpoints"]:
-            if (not isinstance(entry["training_timesteps"], int)
-                    or entry["training_timesteps"] < 1
-                    or not isinstance(entry["sha256"], str)
-                    or len(entry["sha256"]) != 64
-                    or not isinstance(entry["path"], str)):
-                raise ValueError("Invalid checkpoint metadata")
+        _validate_policy_contract(manifest)
+        _validate_run_metadata(manifest)
+        _validate_checkpoints(manifest["checkpoints"])
         return manifest
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError(f"Missing or invalid run manifest: {exc}") from exc
