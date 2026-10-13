@@ -1,3 +1,6 @@
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 from enum import Enum
 import logging
 import math

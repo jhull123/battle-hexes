@@ -1,3 +1,6 @@
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 from collections.abc import Sequence
 
 from battle_hexes_core.game.board import Board

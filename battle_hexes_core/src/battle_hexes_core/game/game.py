@@ -1,3 +1,6 @@
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 import uuid
 from dataclasses import dataclass
 from typing import List, Any

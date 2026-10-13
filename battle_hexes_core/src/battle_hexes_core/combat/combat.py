@@ -1,3 +1,6 @@
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 from itertools import combinations
 import logging
 

@@ -108,9 +108,28 @@ does not claim skill from training loss alone.
 
 **Dependencies:** 01 and 02; incorporate any observation fixes found in 02.
 
-### 04 — Evaluation, visualization, and checkpoints
+### 04 — Evaluation, visualization, and checkpoints (done)
 
-**Planned specification:** `04-evaluation-and-checkpoints.md`.
+**Specification:** [04-evaluation-and-checkpoints.md](04-evaluation-and-checkpoints.md).
+
+**Delivered:** Completed-update and final snapshots with manifest, version/
+contract/space/digest checks, recorded episode seeds and disjoint predeclared
+seed sets. Mask-aware SB3-Contrib evaluation pairs deterministic reloaded PPO
+against random, hold and center-then-hold in fresh games. JSON per-seed records,
+validation progression, selected-artifact identity, held-out table and 10,000
+resample paired intervals are documented in
+[`battle_agent_rl/PPO.md`](../../battle_agent_rl/PPO.md#checkpoint-evaluation).
+
+**Evidence:** Focused tests verify two snapshots, deterministic legal reload,
+replay without weight mutation, seed overlap and corrupt artifact rejection,
+cutoff accounting, tie selection and synthetic bootstrap arithmetic. Full
+server-side checks pass (210 core, 50 RL, 193 API; 11 integration skips;
+Flake8/Ruff). A separate 512-step CPU run selected the 256-step checkpoint
+on 200 validation games (score 0.708) and tested it on 200 disjoint held-out
+games (score 0.677). Paired 95% intervals versus random, hold and
+center-then-hold were [0.143, 0.315], [0.053, 0.203], and
+[-0.160, -0.018]; the predeclared conclusion is **worse** against the
+center-then-hold baseline. Run commands, artifacts and settings are in PPO.md.
 
 **Objective:** Determine whether training produces a better policy and make
 progress and regressions visible.

@@ -45,6 +45,7 @@ class MaskedBattleHexesEnv(gym.Env):
         self._transition = None
         self._episode_return = 0
         self._episode_seed = None
+        self.episode_seeds = []
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
@@ -54,6 +55,7 @@ class MaskedBattleHexesEnv(gym.Env):
         episode_seed = self._next_seed
         self._next_seed += 1
         self._episode_seed = episode_seed
+        self.episode_seeds.append(episode_seed)
         self._transition = self.game_env.reset(episode_seed)
         self._episode_return = 0
         return policy_observation(self._transition), {

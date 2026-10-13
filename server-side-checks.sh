@@ -19,6 +19,9 @@ PY
 if ! python3 -c 'import flake8' >/dev/null 2>&1; then
   python3 -m pip install --quiet flake8
 fi
+if ! python3 -c 'import pylint' >/dev/null 2>&1; then
+  python3 -m pip install --quiet 'pylint>=3.2,<4'
+fi
 
 cd "$REPO_ROOT/battle_hexes_core"
 python3 -m pytest
@@ -38,3 +41,6 @@ python3 -m ruff check \
   battle_hexes_core/src battle_hexes_core/tests \
   battle_agent_rl/src battle_agent_rl/tests \
   battle_hexes_api/src battle_hexes_api/tests
+python3 -m pylint \
+  --disable=all --enable=too-many-lines --max-module-lines=300 \
+  battle_hexes_core/src battle_agent_rl/src battle_hexes_api/src

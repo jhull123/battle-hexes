@@ -2,13 +2,13 @@
 
 ## Status
 
-The fixed 5×5, one-unit-per-side environment, seeded rollout inspector and
-masked PPO training loop are implemented (see the
+The fixed 5×5, one-unit-per-side environment, seeded rollout inspector,
+masked PPO training loop and checkpoint evaluation are implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
 Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
-destinations. Training updates are verified, but improvement over a baseline
-has not been established. Checkpoint evaluation and a core-compatible inference
-player are later increments.
+destinations. The fixed-protocol held-out comparison does not support
+improvement over all baselines; a core-compatible inference player is a later
+increment.
 
 ## Run locally
 
@@ -71,10 +71,67 @@ skill. Optional `--inspect-episode SEED` uses the just-trained in-memory model
 for one deterministic, mask-aware episode, bounded by `--step-limit`. It prints
 each board, legal index and coordinate, selected action, reward and ending
 through the same audited inspector as the random/hold baseline. The supplied
-seed makes this spot check repeatable; the model is not saved here (checkpoints
-belong to increment 04). Compare two identical training commands' summaries
+seed makes this spot check repeatable; without `--run-dir` the model is not
+saved. Compare two identical training commands' summaries
 and inspection traces, and inspect decisions where most destinations are
 illegal: every printed PPO action must appear in that decision's legal list.
+
+## Checkpoint evaluation
+
+From the repository root with `.venv312` active and the PPO dependencies
+installed, run (the directory must not already exist):
+
+```sh
+export PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
+export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+python -m battle_agent_rl.ppo.train --seed 0 --step-limit 50 --total-timesteps 512 --n-steps 64 --batch-size 32 --run-dir /tmp/ppo-run --checkpoint-interval 4
+python -m battle_agent_rl.ppo.evaluate --run-dir /tmp/ppo-run
+python -m battle_agent_rl.ppo.evaluate --run-dir /tmp/ppo-run --checkpoint checkpoint-000000256.zip --split validation
+```
+
+`--checkpoint-interval` counts completed optimizer updates; a snapshot is
+also saved at the final update. Training is one uninterrupted `learn` run.
+`--run-dir` creates a new directory, preventing accidental overwrite. For
+alternate, predeclared sets, pass `--seed-lists FILE` *at training time*;
+the JSON file has ordered integer arrays `validation` and `held_out`.
+Defaults are 1,000,000–1,000,199 and 2,000,000–2,000,199. The run manifest
+records the complete lists, training episode seeds (including the unfinished
+episode), training configuration, completed-update interval, step limit,
+CPU/software versions, fixed policy-input contract, baselines, selection rule,
+and `.zip` checkpoint paths, update positions, and SHA-256 digests. A changed
+step limit, policy-input space, contract or software version rejects reload.
+The replay command reloads a checkpoint without training. Held-out replay is
+restricted to the already selected checkpoint.
+
+`validation-episodes.json` and `validation-table.txt` contain all candidate
+results ordered by collected timesteps; `validation-report.json` records the
+selection. Only the highest validation game score advances, with ties broken
+by lower timesteps then path. `held-out-episodes.json`, `held-out-table.txt`
+and `held-out-report.json` contain the frozen comparison; `replay-*-*` files
+hold a standalone reload's results. Per-episode JSON records `split`,
+`checkpoint`, `training_timesteps`, `policy`, `game_seed`, `outcome`, `length`
+(learner decisions), and `return`. Tables count wins/losses/core draws and
+cutoffs separately, report rates over all games, score (win 1, draw 0.5,
+loss/cutoff 0), mean/median decisions, mean return and paired differences.
+Held-out paired 95% intervals resample whole game seeds 10,000 times with
+`random.Random(0)`; a positive lower endpoint against random, hold and
+center-then-hold is required to support improvement. Cutoffs remain core
+`in_progress`, neither a loss nor a draw. A selected checkpoint may be
+audited using the existing inspector after `load_checkpoint`:
+`inspect_trained_episode(model, seed, step_limit)`.
+
+The fixed experiment at seed 0, step limit 50, 512 requested/collected
+timesteps, rollout 64, batch 32, interval 4, evaluated both 256- and
+512-timestep snapshots on all 200 validation seeds; their scores tied at
+0.708, so 256 was selected. Its held-out score on 200 distinct seeds was
+0.677 (95% score interval [0.620, 0.733]); validation's score interval was
+[0.650, 0.763]. Held-out paired differences were +0.230 vs random
+([0.143, 0.315]), +0.128 vs hold ([0.053, 0.203]) and -0.087 vs
+center-then-hold ([-0.160, -0.018]). The overall result is **worse** against
+the predeclared tactical baseline. This small fixed scenario and random
+opponent do not establish broader skill. The local artifacts for this run are
+in `/tmp/opencode/ppo-04-evidence`; use the commands above to create durable
+artifacts at a location of your choice.
 
 ## Evidence and observation audit
 
@@ -104,9 +161,10 @@ outcome traces and timesteps; parameters and update metrics agreed within
 ## Direction
 
 Keep training and inference on the same observation, mask and action-to-plan
-mapping, with core authoritative for movement, combat and victory. Next select
-checkpoints on validation seeds and measure win/loss/draw rates against random
-and hold baselines on held-out games, then connect a frozen policy to the core
+mapping, with core authoritative for movement, combat and victory. The
+center-then-hold comparison challenges the current policy's strength; revisit
+training/representation before claiming improvement, then connect a frozen
+policy to the core
 `Player` interface. Design multi-unit decisions and variable-sized inputs
 before expanding the scenario; see the numbered specifications in the
 [schedule](../specs/ppo-agent/implementation-schedule.md).

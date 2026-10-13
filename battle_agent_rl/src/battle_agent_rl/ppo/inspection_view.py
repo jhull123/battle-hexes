@@ -17,28 +17,37 @@ class InspectionView:
             f"{label}: step={transition.info['step_count']} "
             f"turn={transition.info['turn_number']}"))
         self.line("board: L=learner O=opponent .=empty *=selected destination")
-        self.line("     " + "  ".join(str(col) for col in range(columns)))
+        self.line("       " + "   ".join(str(col) for col in range(columns)))
         values = transition.observation["occupancy"]
         for row in range(len(values) // columns):
             markers = []
             for col in range(columns):
                 index = row * columns + col
                 symbol = {1: "L", -1: "O", 0: "."}[values[index]]
+                tile = f"{symbol}{'*' if index == selected else ' '}"
                 code = {1: "1;34", -1: "1;31", 0: "0"}[values[index]]
                 if index == selected:
-                    symbol += "*"
                     code = "1;33"
-                markers.append(self.emphasis(symbol, code))
-            self.line(f"  {row}: " + "  ".join(markers))
+                markers.append(self.emphasis(f"[{tile}]", code))
+            stagger = "   " if row % 2 else ""
+            self.line(f"{stagger}{row}: " + " ".join(markers))
         observation = transition.observation
-        self.line(f"observation: occupancy={list(values)}")
-        self.line("observation: defensive_fire_ready=" +
-                  str(list(observation["defensive_fire_ready"])))
-        self.line("observation: remaining_steps=" +
-                  str(observation["remaining_steps"]))
+        self.line("policy inputs (same row/column coordinates):")
+        self._plane("occupancy", values, columns)
+        self._plane("fire-ready", observation["defensive_fire_ready"], columns)
+        self.line(f"  remaining steps: {observation['remaining_steps']}")
         legal = [f"{i} -> {divmod(i, columns)}" for i, allowed in
                  enumerate(transition.legal_action_mask) if allowed]
         self.line("legal: " + (", ".join(legal) if legal else "none"))
+
+    def _plane(self, label, values, columns):
+        self.line(f"  {label}:")
+        for row in range(len(values) // columns):
+            start = row * columns
+            cells = " ".join(
+                f"{value:>2}" for value in values[start:start + columns]
+            )
+            self.line(f"    {row}: {cells}")
 
     def result(self, transition):
         info = transition.info

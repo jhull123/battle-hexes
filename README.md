@@ -47,7 +47,9 @@ Activate `.venv312` before running this script. It checks that `python3` is
 Python 3.12 and uses that interpreter for all tests and linting; CI also uses
 Python 3.12.
 
-The script runs Flake8 and Ruff. Ruff's enabled rules and settings live in
+The script runs Flake8, Ruff, and the focused Pylint module-length rule.
+Pylint enforces a 300-line production-module limit; existing oversized
+modules have a file-local `too-many-lines` grandfather directive. Ruff's enabled rules and settings live in
 `pyproject.toml`, which is the source of truth. Run Ruff alone from the
 repository root after installing `requirements-test.txt`:
 

@@ -24,8 +24,20 @@ class EpisodeRecorder(BaseCallback):
         return True
 
 
+class SnapshotPPO(MaskablePPO):
+    """Notify the artifact writer only after an optimizer update completes."""
+
+    def train(self):
+        super().train()
+        if self.snapshot_hook is not None:
+            self.snapshot_hook(self)
+
+    def _excluded_save_params(self):
+        return super()._excluded_save_params() + ["snapshot_hook"]
+
+
 def train(seed=0, step_limit=50, total_timesteps=256, n_steps=64,
-          batch_size=32, policy_kwargs=None):
+          batch_size=32, policy_kwargs=None, snapshot_hook=None):
     """Train one CPU environment; return the model and observed episodes."""
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise ValueError("seed must be an integer")
@@ -38,13 +50,17 @@ def train(seed=0, step_limit=50, total_timesteps=256, n_steps=64,
         raise ValueError("require n_steps > 1 and 1 < batch_size <= n_steps")
 
     env = MaskedBattleHexesEnv(step_limit=step_limit, training_seed=seed)
-    model = MaskablePPO(
+    model = SnapshotPPO(
         "MultiInputPolicy", env, seed=seed, device="cpu", verbose=0,
         n_steps=n_steps, batch_size=batch_size,
         policy_kwargs=policy_kwargs or {"net_arch": [32, 32]},
     )
+    model.snapshot_hook = snapshot_hook
     recorder = EpisodeRecorder()
     model.learn(total_timesteps=total_timesteps, callback=recorder)
+    recorder.episode_seeds = list(env.episode_seeds)
+    if snapshot_hook is not None:
+        snapshot_hook(model, final=True)
     return model, recorder
 
 
