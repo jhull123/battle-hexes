@@ -43,32 +43,41 @@ def _record(
     )
 
 
-def play_game(model, policy, seed, step_limit):
-    """Use a fresh environment for every policy and game seed."""
-    env = MaskedBattleHexesEnv(step_limit=step_limit, training_seed=seed)
-    if policy == "ppo":
-        summaries = []
+def _play_ppo_game(model, env):
+    summaries = []
 
-        def callback(locals_, globals_):
-            for info in locals_["infos"]:
-                if "ppo_episode" in info:
-                    summaries.append(info["ppo_episode"])
+    def callback(locals_, globals_):
+        for info in locals_["infos"]:
+            if "ppo_episode" in info:
+                summaries.append(info["ppo_episode"])
 
-        rewards, lengths = evaluate_policy(
-            model,
-            env,
-            n_eval_episodes=1,
-            deterministic=True,
-            return_episode_rewards=True,
-            warn=False,
-            callback=callback,
+    rewards, lengths = evaluate_policy(
+        model,
+        env,
+        n_eval_episodes=1,
+        deterministic=True,
+        return_episode_rewards=True,
+        warn=False,
+        callback=callback,
+    )
+    if len(summaries) != 1 or len(rewards) != 1 or len(lengths) != 1:
+        raise ValueError(
+            "Masked evaluation did not finish exactly one episode"
         )
-        if len(summaries) != 1 or len(rewards) != 1 or len(lengths) != 1:
-            raise ValueError(
-                "Masked evaluation did not finish exactly one episode"
-            )
-        return summaries[0], lengths[0], rewards[0]
+    return summaries[0], lengths[0], rewards[0]
 
+
+def _baseline_action(env, policy, rng, first, legal):
+    if policy == "random":
+        return rng.choice(legal)
+    if policy == "hold":
+        return _hold(env)
+    if policy == "center_hold":
+        return 12 if first else _hold(env)
+    raise ValueError(f"Unknown policy: {policy}")
+
+
+def _play_baseline_game(env, policy, seed, step_limit):
     obs, info = env.reset(seed=seed)
     rng = random.Random(seed)
     first = True
@@ -76,14 +85,7 @@ def play_game(model, policy, seed, step_limit):
     for length in range(1, step_limit + 1):
         mask = env.action_masks()
         legal = np.flatnonzero(mask).tolist()
-        if policy == "random":
-            action = rng.choice(legal)
-        elif policy == "hold":
-            action = _hold(env)
-        elif policy == "center_hold":
-            action = 12 if first else _hold(env)
-        else:
-            raise ValueError(f"Unknown policy: {policy}")
+        action = _baseline_action(env, policy, rng, first, legal)
         if action not in legal:
             raise ValueError(
                 f"Illegal {policy} action {action} for seed {seed}"
@@ -94,6 +96,14 @@ def play_game(model, policy, seed, step_limit):
         if terminated or truncated:
             return info.get("ppo_episode"), length, total
     raise ValueError("Episode did not complete or cut off")
+
+
+def play_game(model, policy, seed, step_limit):
+    """Use a fresh environment for every policy and game seed."""
+    env = MaskedBattleHexesEnv(step_limit=step_limit, training_seed=seed)
+    if policy == "ppo":
+        return _play_ppo_game(model, env)
+    return _play_baseline_game(env, policy, seed, step_limit)
 
 
 def evaluate_games(model, split, entry, seeds, step_limit):

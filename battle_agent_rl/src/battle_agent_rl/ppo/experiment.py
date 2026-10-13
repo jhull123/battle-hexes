@@ -100,13 +100,24 @@ def _select_on_validation(run_dir, manifest):
     return selected, selected_records
 
 
-def _report_held_out(run_dir, manifest, selected, selected_validation):
-    held = _evaluate(run_dir, manifest, selected, "held_out")
+def _held_out_metrics(selected, selected_validation, held):
     comparisons, conclusion = bootstrap(held)
     validation_intervals, _ = bootstrap(selected_validation)
+    return dict(
+        selected=selected,
+        metrics=summarize(held),
+        paired_intervals=comparisons,
+        validation_paired_intervals=validation_intervals,
+        validation_score_interval=score_interval(selected_validation),
+        held_out_score_interval=score_interval(held),
+        conclusion=conclusion,
+    )
+
+
+def _held_out_text(selected, selected_validation, held, report):
+    comparisons = report["paired_intervals"]
+    conclusion = report["conclusion"]
     text = table(selected, summarize(held))
-    validation_score_interval = score_interval(selected_validation)
-    held_score_interval = score_interval(held)
     text += (
         f"\nSelected sha256={selected['sha256']}\n"
         f"Held-out paired 95% intervals (10,000 seed resamples):\n"
@@ -118,27 +129,24 @@ def _report_held_out(run_dir, manifest, selected, selected_validation):
         "loss nor a draw (score 0).\n"
         "Validation vs held-out PPO scores: "
         f"{summarize(selected_validation)['ppo']['score']:.3f} "
-        f"{validation_score_interval} vs "
+        f"{report['validation_score_interval']} vs "
         f"{summarize(held)['ppo']['score']:.3f} "
-        f"{held_score_interval}; independent seed sets "
+        f"{report['held_out_score_interval']}; independent seed sets "
         "may differ. Review large differences for selection overfitting.\n"
     )
-    result = _save_report(
+    return text
+
+
+def _report_held_out(run_dir, manifest, selected, selected_validation):
+    held = _evaluate(run_dir, manifest, selected, "held_out")
+    report = _held_out_metrics(selected, selected_validation, held)
+    return _save_report(
         run_dir,
         "held-out",
         held,
-        text,
-        dict(
-            selected=selected,
-            metrics=summarize(held),
-            paired_intervals=comparisons,
-            validation_paired_intervals=validation_intervals,
-            validation_score_interval=validation_score_interval,
-            held_out_score_interval=held_score_interval,
-            conclusion=conclusion,
-        ),
+        _held_out_text(selected, selected_validation, held, report),
+        report,
     )
-    return result
 
 
 def select_and_report(run_dir):
