@@ -8,7 +8,11 @@ from .environment import PPOTrainingEnvironment
 
 def policy_observation(transition):
     """Encode the current core transition for training or prediction."""
-    data = transition.observation
+    return encode_observation(transition.observation)
+
+
+def encode_observation(data):
+    """Convert shared core-state values to the fixed SB3 input dtypes."""
     return {
         "occupancy": np.array(data["occupancy"], dtype=np.int8),
         "defensive_fire_ready": np.array(

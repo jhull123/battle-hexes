@@ -152,9 +152,27 @@ overfitting without reusing its games to choose the checkpoint.
 **Dependencies:** 03. Basic update metrics belong in 03; this increment adds
 reliable evaluation and durable artifacts.
 
-### 05 — Inference player in core games
+### 05 — Inference player in core games (done)
 
-**Specification (design only; not implemented):** [05-inference-player.md](05-inference-player.md).
+**Specification:** [05-inference-player.md](05-inference-player.md).
+
+**Delivered:** CPU `PPOPlayer` with validated selected/explicit manifest
+checkpoint loading, fixed-scenario binding and live turn/budget guards;
+shared core-state observation, mask, path and turn resolution with the trainer;
+and a bounded seeded local core-game command with separate completed/cutoff
+reporting. Usage and parity protocol are documented in
+[`battle_agent_rl/PPO.md`](../../battle_agent_rl/PPO.md#local-core-game-inference).
+
+**Evidence:** Focused tests cover artifact/contract and scenario rejection,
+readiness and post-fire retreat encoding, invalid actions/paths without budget
+consumption, same-turn guard before/after applying plans and rebind, frozen
+weights, and seed-matched observation/mask/action/fire/combat and ending parity
+with the evaluation adapter, including last-decision completion. Full
+server-side checks pass (210 core, 58 RL, 193 API tests; 11 API integration
+skips; Flake8/Ruff). The selected 256-step checkpoint replayed on seeds 0,
+2 and 42 with 17, 4 and 9 decisions respectively; each decision and core
+fire/combat log matched fresh Gym evaluation. This is integration evidence,
+not evidence of improved playing strength.
 
 **Objective:** Use a frozen policy through the ordinary core `Player` contract.
 
