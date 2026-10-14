@@ -154,7 +154,7 @@ reliable evaluation and durable artifacts.
 
 ### 05 — Inference player in core games
 
-**Planned specification:** `05-inference-player.md`.
+**Specification (design only; not implemented):** [05-inference-player.md](05-inference-player.md).
 
 **Objective:** Use a frozen policy through the ordinary core `Player` contract.
 
