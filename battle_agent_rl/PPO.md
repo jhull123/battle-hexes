@@ -3,12 +3,13 @@
 ## Status
 
 The fixed 5×5, one-unit-per-side environment, seeded rollout inspector,
-masked PPO training loop and checkpoint evaluation are implemented (see the
+masked PPO training loop, checkpoint evaluation and core-compatible inference
+player are implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
 Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
 destinations. The fixed-protocol held-out comparison does not support
-improvement over all baselines; a core-compatible inference player is a later
-increment.
+improvement over all baselines; the inference player does not change that
+finding.
 
 ## Run locally
 
@@ -133,6 +134,41 @@ opponent do not establish broader skill. The local artifacts for this run are
 in `/tmp/opencode/ppo-04-evidence`; use the commands above to create durable
 artifacts at a location of your choice.
 
+## Local core-game inference
+
+Run a bounded, ordinary core `Game` with a frozen manifest-selected checkpoint
+(or pass `--checkpoint checkpoint-000000256.zip` for an explicit manifest
+entry when selection has not yet happened):
+
+```sh
+export PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
+export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+python -m battle_agent_rl.ppo.local_game /tmp/opencode/ppo-04-evidence --seed 42
+```
+
+From Python, construct
+`PPOPlayer.from_checkpoint("Learner", [Faction("learner", "Learner", "blue")],
+run_dir, checkpoint=None, step_limit=None)`, put it first in the fixed 5×5
+game against `SeededRandomPlayer`, then call `player.bind_game(game)` before
+its first turn. The default checkpoint is the frozen manifest `selected` entry;
+if none exists, give the path of an entry listed in `checkpoints`. An optional
+`step_limit` must match the manifest. Loading validates versions, policy
+contract, digest and spaces on CPU. The player refuses other board/settings/
+unit/opponent configurations and repeated same-turn calls. Its callbacks do
+not learn, advance turns or classify results. Use a fresh player for each game.
+
+The local command prints each decision's occupancy, defensive-fire readiness,
+remaining steps, legal mask indexes and chosen destination. It uses the same
+`random.Random(seed)` for the opponent, defensive fire and combat as training,
+resolves each returned movement plan and combat through core, and reports
+`completed` versus `cutoff` separately; a cutoff leaves core in progress.
+Core `GamePlayer.play(max_turns=...)` has a different turn bound and RNG
+protocol and cannot substitute for this demonstration. On the existing
+256-timestep selected checkpoint, seeds 0, 2 and 42 yielded 17, 4 and 9
+decisions, all completed as learner wins; each decision's observation, mask
+and action and the resulting fire/combat logs matched a fresh Gym checkpoint
+evaluation replay with the same seed. This verifies integration, not skill.
+
 ## Evidence and observation audit
 
 Uniform random play over seeds 0–99 won 36, lost 44 and drew 20 games (mean
@@ -163,8 +199,7 @@ outcome traces and timesteps; parameters and update metrics agreed within
 Keep training and inference on the same observation, mask and action-to-plan
 mapping, with core authoritative for movement, combat and victory. The
 center-then-hold comparison challenges the current policy's strength; revisit
-training/representation before claiming improvement, then connect a frozen
-policy to the core
-`Player` interface. Design multi-unit decisions and variable-sized inputs
-before expanding the scenario; see the numbered specifications in the
+training/representation before claiming improvement. Frozen inference now uses
+the core `Player` interface. Design multi-unit decisions and variable-sized
+inputs before expanding the scenario; see the numbered specifications in the
 [schedule](../specs/ppo-agent/implementation-schedule.md).

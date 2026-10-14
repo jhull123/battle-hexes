@@ -3,18 +3,13 @@
 from dataclasses import dataclass
 import random
 
-from battle_hexes_core.combat.combat import Combat
-from battle_hexes_core.defensivefire.defensive_fire import (
-    DefensiveFireSettings,
-)
-from battle_hexes_core.game.board import Board
-from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import PlayerType
-from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
-from battle_hexes_core.unit.unit import Unit
 
-from .players import LearningPlayer, SeededRandomPlayer
+from .players import LearningPlayer
+from .policy_state import action_mask, action_plan, observation
+from .scenario import create_game
+from .turn_resolution import play_cycle
 
 
 @dataclass(frozen=True)
@@ -44,27 +39,10 @@ class PPOTrainingEnvironment:
 
     def reset(self, seed=None) -> Transition:
         rng = random.Random(seed)
-        board = Board(self.ROWS, self.COLUMNS)
-        learner_faction = Faction("learner", "Learner", "blue")
-        opponent_faction = Faction("opponent", "Opponent", "red")
         self.learner = LearningPlayer(
-            "Learner", PlayerType.CPU, [learner_faction]
+            "Learner", PlayerType.CPU, [Faction("learner", "Learner", "blue")]
         )
-        opponent = SeededRandomPlayer(
-            "Opponent", PlayerType.CPU, [opponent_faction], board, rng
-        )
-        board.add_unit(Unit(
-            "learner", "Learner", learner_faction, self.learner,
-            "Infantry", 2, 2, 2,
-        ), 2, 0)
-        board.add_unit(Unit(
-            "opponent", "Opponent", opponent_faction, opponent,
-            "Infantry", 2, 2, 2,
-        ), 2, 4)
-        self.game = Game([self.learner, opponent], board, rng=rng)
-        self.game.set_defensive_fire_settings(
-            DefensiveFireSettings(base_probability=0.25)
-        )
+        self.game = create_game(self.learner, rng)
         self.rng = rng
         self.step_count = 0
         self.done = False
@@ -80,7 +58,7 @@ class PPOTrainingEnvironment:
 
         destination = self._set_learning_plan(action)
         combat_start = len(self.game.combat_log)
-        fire_results = self._play_cycle()
+        fire_results = play_cycle(self.game, self.learner, self.rng)
         self.step_count += 1
         self.done = (
             self.game.get_game_status().state == "completed"
@@ -93,48 +71,14 @@ class PPOTrainingEnvironment:
         )
 
     def _set_learning_plan(self, action):
-        board = self.game.get_board()
-        unit = board.get_units_for_player(self.learner)[0]
-        destination = board.get_hex(
-            action // self.COLUMNS, action % self.COLUMNS
-        )
-        start = board.get_hex(*unit.get_coords())
-        path = board.shortest_path(unit, start, destination)
-        if not path:
-            raise RuntimeError("Core could not route a legal destination")
-        self.learner.selected_plan = UnitMovementPlan(unit, path)
-        return destination
-
-    def _play_cycle(self):
-        fire_results = self._play_turn(self.learner)
-        if self.game.get_game_status().state == "in_progress":
-            self.game.next_player()
-            opponent = self.game.get_current_player()
-            fire_results.extend(self._play_turn(opponent))
-            if self.game.get_game_status().state == "in_progress":
-                self.game.next_player()
-        return fire_results
-
-    def _play_turn(self, player):
-        resolution = self.game.apply_movement_plans(player.movement())
-        if self.game.get_game_status().state == "in_progress":
-            Combat(self.game, rng=self.rng).resolve_combat()
-            self.game.update_game_status(finalize=True)
-        return resolution.defensive_fire_results
+        plan = action_plan(self.game, self.learner, action)
+        self.learner.selected_plan = plan
+        return plan.path[-1]
 
     def _mask(self) -> tuple[bool, ...]:
-        board = self.game.get_board()
-        units = board.get_units_for_player(self.learner)
-        if self.done or self.game.get_game_status().state != "in_progress" \
-                or not units:
-            return (False,) * (self.ROWS * self.COLUMNS)
-        unit = units[0]
-        start = board.get_hex(*unit.get_coords())
-        reachable = board.get_reachable_hexes(unit, start)
-        return tuple(tile in reachable for tile in board.hexes)
+        return action_mask(self.game, self.learner, active=not self.done)
 
     def _transition(self, destination, fire_results, combats):
-        board = self.game.get_board()
         status = self.game.get_game_status()
         terminated = status.state == "completed"
         truncated = not terminated and self.done
@@ -143,22 +87,10 @@ class PPOTrainingEnvironment:
             reward = (
                 1 if status.winner_player_name == self.learner.name else -1
             )
-        occupants = tuple(
-            board.get_unit_at(tile.row, tile.column) for tile in board.hexes
-        )
-        occupancy = tuple(self._occupant_value(unit) for unit in occupants)
-        defensive_fire_ready = tuple(
-            int(unit.public_defensive_fire_status(self.learner))
-            if unit is not None else 0
-            for unit in occupants
-        )
-
         return Transition(
-            observation={
-                "occupancy": occupancy,
-                "defensive_fire_ready": defensive_fire_ready,
-                "remaining_steps": self.step_limit - self.step_count,
-            },
+            observation=observation(
+                self.game, self.learner, self.step_limit - self.step_count
+            ),
             legal_action_mask=self._mask(),
             reward=reward,
             terminated=terminated,
@@ -172,8 +104,3 @@ class PPOTrainingEnvironment:
                 "combats": combats,
             },
         )
-
-    def _occupant_value(self, unit):
-        if unit is None:
-            return 0
-        return 1 if self.learner.owns(unit) else -1
