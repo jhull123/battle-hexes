@@ -50,10 +50,11 @@ def validate_initial_game(game, learner):
             or learner.name != "Learner" or players[1].name != "Opponent"):
         raise ValueError("Unsupported PPO player order, factions or opponent")
     validate_live_game(game, learner)
-    units = board.get_units()
-    if (len(units) != 2 or len(board.get_known_units()) != 2
-            or not _unit_matches(units[0], learner, "learner", (2, 0))
-            or not _unit_matches(units[1], players[1], "opponent", (2, 4))):
+    if (len(board.get_units()) != 2 or len(board.get_known_units()) != 2
+            or not _unit_matches(board.get_unit_at(2, 0), learner,
+                                 "learner", (2, 0))
+            or not _unit_matches(board.get_unit_at(2, 4), players[1],
+                                 "opponent", (2, 4))):
         raise ValueError("Unsupported PPO initial units or positions")
     if (game.get_turn_number() != 1
             or game.current_phase != "movement" or game.pending_combats
@@ -105,7 +106,8 @@ def validate_live_game(game, learner):
 
 
 def _unit_matches(unit, player, name, coords):
-    return (unit.player is player and unit.faction is player.factions[0]
+    return (unit is not None and unit.player is player
+            and unit.faction is player.factions[0]
             and unit.id == name and unit.name == name.title()
             and unit.type == "Infantry" and unit.echelon is None
             and (unit.attack, unit.defense, unit.move) == (2, 2, 2)

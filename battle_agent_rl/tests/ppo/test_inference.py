@@ -133,6 +133,25 @@ def test_binding_scenario_and_turn_guards(run, bound):
     p.end_game_cb()
 
 
+def test_binding_ignores_board_unit_insertion_order(run):
+    p = player(run)
+    game = create_game(p, random.Random(42))
+    board = game.get_board()
+    learner_unit = board.get_units_for_player(p)[0]
+    board.remove_units(learner_unit)
+    board.add_unit(learner_unit, 2, 0)
+    assert [unit.id for unit in board.get_units()] == [
+        "opponent", "learner",
+    ]
+
+    p.bind_game(game)
+    plan = p.movement()[0]
+    assert plan.unit is learner_unit
+    assert plan.path[-1] in board.get_reachable_hexes(
+        learner_unit, board.get_hex(2, 0)
+    )
+
+
 def test_current_state_mask_readiness_and_invalid_prediction(bound):
     p, game, rng = bound
     env = MaskedBattleHexesEnv(step_limit=4)
