@@ -188,9 +188,25 @@ working through core.
 
 **Dependencies:** 03 and 04.
 
-### 06 — Multi-unit decision design and scenario growth
+### 06 — Multi-unit decision design and scenario growth (done)
 
-**Specification (implementation pending):** [06-multi-unit-design.md](06-multi-unit-design.md).
+**Specification:** [06-multi-unit-design.md](06-multi-unit-design.md).
+
+**Delivered:** Independent 9×9 two-slot-per-side prototype with persistent
+identities, 162 joint unit/destination actions, live movement/fire between
+learner choices, once-per-side combat, fixed padded observations, bounded
+cycle cutoff, thin Gym adapter and audited random/hold CLI. The existing 5×5
+trainer, checkpoints and player remain unchanged. Invocation and limitations
+are in [`battle_agent_rl/PPO.md`](../../battle_agent_rl/PPO.md#multi-unit-prototype).
+
+**Evidence:** Focused tests cover all four roster subsets, stable stacks and
+casualties, legal paths and NumPy actions, non-mutating invalid inputs, reversed
+orders and single-shot live fire, retreat, once-per-turn combat, win/loss/draw
+rewards, bounded cutoff and reproducible inspection. CPU masked policy predicts
+legal actions under both/one/hold-only masks with unchanged weights and rejects
+the 1v1 policy. Full server-side checks pass (210 core, 75 RL, 193 API tests;
+11 API integration skips; Flake8/Ruff). Seed-17 two-cycle random inspection
+replayed identically; seed-3 one-cycle hold ended in cutoff with core active.
 
 **Objective:** Choose and prove an action/observation contract for more than
 one unit before widening the training task.
@@ -212,6 +228,12 @@ extends unchanged.
 Connecting a trained player to the API/UI, broader scenarios, self-play, or
 reward shaping requires separate specifications when their prerequisites and
 success criteria are clear. None is silently included in the first trainer.
+
+After multi-unit training and inference are proven, explicitly decide whether
+to retire the 5×5 decision engine or retain it only for legacy checkpoint and
+evidence replay. Consolidate shared environment, Gym, and inspection plumbing
+where practical; do not leave two actively maintained decision engines by
+default.
 
 ## Open Questions
 

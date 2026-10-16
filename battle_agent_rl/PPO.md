@@ -4,7 +4,8 @@
 
 The fixed 5×5, one-unit-per-side environment, seeded rollout inspector,
 masked PPO training loop, checkpoint evaluation and core-compatible inference
-player are implemented (see the
+player are implemented. A separate 9×9 multi-unit decision prototype is also
+implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
 Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
 destinations. The fixed-protocol held-out comparison does not support
@@ -194,12 +195,50 @@ seed-12 CPU runs (Python 3.12.3, Torch 2.5.1+cpu, NumPy 2.5.4, Gymnasium
 outcome traces and timesteps; parameters and update metrics agreed within
 `rtol=1e-6, atol=1e-7`. Results need not match across hardware or versions.
 
+## Multi-unit prototype
+
+Increment 06 provides a separate fixed 9×9, one- or two-unit-per-side
+environment. It is **not** a replacement for the 5×5 trainer, its checkpoints,
+or `PPOPlayer`. Learner decisions choose a slot and row-major destination:
+`action = slot * 81 + row * 9 + column` (162 actions). Core resolves movement
+and defensive fire immediately; once every living unit has received one order,
+core resolves combat and runs the opponent's complete turn. At a decision, the
+mask contains only the pending slots' reachable cells. `MultiUnitEnvironment`
+supports `reset(seed)` and `step(action)`; `MaskedMultiUnitEnv` exposes a Gym
+`Dict` observation and native `action_masks()` to `MaskablePPO`'s
+`MultiInputPolicy`. No training campaign or multi-unit checkpoint/player is
+included. For inference with a compatible initialized model, use
+`multi_unit_gym.predict_joint_action(model, observation, mask)`; it checks
+the model spaces before masked prediction. The contract identifier is
+`battle-hexes-9x9-2slot-unit-destination-live-v1`.
+
+From the repository root, inspect bounded deterministic play without trainer
+dependencies (the Python 3.12 environment may be activated first):
+
+```sh
+export PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
+python -m battle_agent_rl.ppo.multi_unit_inspection --seed 17 --cycle-limit 2 --policy random
+python -m battle_agent_rl.ppo.multi_unit_inspection --seed 3 --cycle-limit 1 --policy hold --learner-count 1 --opponent-count 2
+```
+
+The inspector prints slot positions and mutable fire/movement inputs, legal
+indexes, selected orders, core events and the ending; it audits each state
+against core and fails on inconsistencies. `cycle_limit` is a count of complete
+two-sided turns, not learner orders. At most twice that many learner decisions
+occur; a cutoff remains `in_progress` in core. Slots retain identity across
+elimination; dead and absent units have zero-valued inputs except `present`
+for dead units. This design demonstrates legal timing and stable inputs, not
+policy strength or compatibility with the core `Player.movement()` batch
+contract. Broader scenarios, training and core-player integration need later
+design.
+
 ## Direction
 
 Keep training and inference on the same observation, mask and action-to-plan
 mapping, with core authoritative for movement, combat and victory. The
 center-then-hold comparison challenges the current policy's strength; revisit
 training/representation before claiming improvement. Frozen inference now uses
-the core `Player` interface. Design multi-unit decisions and variable-sized
-inputs before expanding the scenario; see the numbered specifications in the
+the core `Player` interface. The multi-unit decision contract now has a fixed
+prototype; design variable-sized inputs before expanding the scenario; see the
+numbered specifications in the
 [schedule](../specs/ppo-agent/implementation-schedule.md).
