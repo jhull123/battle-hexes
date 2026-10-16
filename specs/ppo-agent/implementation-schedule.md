@@ -229,6 +229,12 @@ Connecting a trained player to the API/UI, broader scenarios, self-play, or
 reward shaping requires separate specifications when their prerequisites and
 success criteria are clear. None is silently included in the first trainer.
 
+After multi-unit training and inference are proven, explicitly decide whether
+to retire the 5×5 decision engine or retain it only for legacy checkpoint and
+evidence replay. Consolidate shared environment, Gym, and inspection plumbing
+where practical; do not leave two actively maintained decision engines by
+default.
+
 ## Open Questions
 
 No questions.
