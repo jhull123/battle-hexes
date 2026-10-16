@@ -9,48 +9,64 @@ The finish line is a trained, evaluated, frozen PPO player that a human can
 select and play against through core/API/UI on
 [`d_day_crossroads`](../../battle_hexes_core/src/battle_hexes_core/scenarios/d_day_crossroads.json).
 One explicitly declared PPO side is sufficient. The fixed 9×9 prototype from
-[06](06-multi-unit-design.md) is an intermediate verification environment;
-its input contract and weights are not assumed to transfer to Crossroads.
+[06](06-multi-unit-design.md) first becomes an explicitly experimental,
+human-visible integration slice in 07. That slice uses a **trained, saved and
+reloaded** multi-unit checkpoint, not an initialized policy. Smoke training
+proves plumbing, not playing strength; its input contract and weights do not
+transfer to Crossroads. The 9×9 selection remains visibly experimental until the
+Crossroads release in 12, when it is hidden or retired rather than left as a
+permanent player option.
 Measured weakness is an acceptable evaluation result. Demonstrated playing
 strength belongs to [schedule 3](crossroads-strength-schedule.md), which will
 be defined only after this schedule is fully implemented and verified.
 Self-play, arbitrary boards, broad scenario expansion, and open-ended policy
 tuning are outside this schedule.
 
-## 07 — Supported play contract and live core turns
+## 07 — Trained 9×9 human-visible slice
 
-**Objective:** Make the multi-unit decision contract usable in ordinary games
-before committing to a training campaign.
+**Objective:** Train and reload a compatible 9×9 multi-unit policy, then prove
+live human-versus-PPO play end to end before the Crossroads campaign.
 
-**Bounded scope:** Declare the supported Crossroads version, PPO side, and
-human-opponent boundary. Resolve live per-unit decisions versus
-`Player.movement()`'s precomputed batch in core execution and the API movement
-path, preserving 06's post-movement/fire feedback and once-per-side combat.
-Keep core authoritative and independent of trainer dependencies. Establish
-execution that can accommodate Crossroads' roster and phases; the 9×9 case
-may provide the initial execution evidence.
+**Bounded scope:** In the fixed 9×9 2v2 scenario from 06, run bounded masked-PPO
+smoke training with legal masked rollouts and actual parameter updates. Save a
+versioned, validated checkpoint and let a human explicitly select its frozen,
+reloaded policy as a clearly labeled experimental opponent in core/API/UI.
+Build training, artifact and inference plumbing reusable with a different
+Crossroads contract; do not assume 9×9 weights or inputs transfer. Preserve
+live per-unit decisions, post-move fire/retreat feedback, once-per-side combat,
+persisted pending decisions and checkpoint identity across reload/resume, and
+existing batch-player behavior. No 9×9 strength campaign, skill claim or
+external cutoff presented as core completion. Leave the API design and supported
+seat/execution details to the 07 spec.
 
 **Dependencies:** 01–06.
 
-**Observable completion evidence:** A recorded support and execution contract,
-plus core/API traces showing that a subsequent decision sees the preceding
-move's actual fire/retreat effects, with correct combat and turn handoff.
-Existing batch players still work. No speculative batch, game mutation inside
-`movement()`, or training cutoff presented as a completed game is used.
+**Observable completion evidence:** A bounded training run records legal masked
+rollouts and changed parameters; its versioned checkpoint reloads with matching
+masked choices, rejects incompatible inputs, and remains frozen during play.
+A declared, bounded seed set reports win/loss/draw/cutoff counts without a
+strength threshold. In a backend-connected UI run, a human selects that
+experimental checkpoint, watches live per-unit moves and fire/retreat, reloads
+mid-turn with pending orders intact, and reaches a core-confirmed completed
+result displayed in the UI. Traces verify once-per-side combat and turn handoff;
+existing batch-player games still work. A CLI-only trace, initialized policy
+or cutoff does not pass.
 
 ## 08 — Crossroads environment and policy contract
 
 **Objective:** Make actual Crossroads the training and inference task before
-the main training campaign.
+the main training campaign, using 07's live-play path.
 
-**Bounded scope:** Load the existing scenario through core and establish a
-Crossroads-specific observation/action contract and masked environment. Cover
+**Bounded scope:** Declare the supported Crossroads version, PPO side and
+human-opponent boundary. Load the existing scenario through core and establish
+a Crossroads-specific observation/action contract and masked environment. Cover
 the 18×18 board, six Airborne versus up to five Germans, heterogeneous units,
 terrain, roads, stacking, reinforcements, objective control, and eight-turn
 limit. Audit policy access to decision-relevant state, stable unit identity,
 and live legal actions. Align rewards and remaining-time semantics with core
 scoring and completion, keeping external cutoffs distinct. Define a new
-versioned contract rather than silently reinterpreting 06's fixed inputs.
+versioned contract rather than silently reinterpreting 06's fixed inputs;
+adapt 07's training and artifact interfaces without transferring its weights.
 
 **Dependencies:** 07.
 
@@ -66,13 +82,14 @@ PPO side and human opponent can use the same game semantics.
 **Objective:** Produce a trained Crossroads checkpoint with an honest,
 reproducible baseline comparison for the supported side.
 
-**Bounded scope:** Run a bounded masked-PPO campaign under 08's contract with
-durable checkpoints and recorded scenario/configuration. Predeclare opponent/
-RNG protocols, training/validation/held-out separation, checkpoint selection,
-comparison criteria, and random, hold, and an objective-aware tactical baseline.
+**Bounded scope:** Extend 07's masked training and versioned checkpoint plumbing
+to a bounded campaign under 08's Crossroads contract, rather than build a second
+trainer. Record scenario/configuration; predeclare opponent and RNG protocols,
+training/validation/held-out separation, checkpoint selection, comparison
+criteria, and random, hold, and an objective-aware tactical baseline.
 Select on validation only, then freeze the checkpoint for held-out reporting.
 
-**Dependencies:** 08.
+**Dependencies:** 07's training/artifacts and 08's Crossroads contract.
 
 **Observable completion evidence:** A repeatable run demonstrates parameter
 updates and legal live multi-unit decisions on actual Crossroads. Reloadable
@@ -86,12 +103,14 @@ over every baseline or imply generalization beyond the declared task.
 ## 10 — Frozen-policy Crossroads inference parity
 
 **Objective:** Use the evaluated checkpoint as a frozen Crossroads core player
-against a human-controlled opponent.
+against a human-controlled opponent through 07's live execution path.
 
 **Bounded scope:** Load and bind the selected artifact to the declared Crossroads
-side using 07's live execution path. Share training/inference observation, mask,
-unit identity, reinforcement, horizon, and action conversion semantics; reject
-incompatible artifacts and game configurations. Keep learning out of execution.
+side using 07's validated loading, frozen inference, live execution and
+persisted-decision path, not a second UI integration. Share training/inference
+observation, mask, unit identity, reinforcement, horizon, and action conversion
+semantics; reject incompatible artifacts and game configurations. Keep learning
+out of execution.
 
 **Dependencies:** 07–09.
 
@@ -117,29 +136,30 @@ paths or the exact legacy artifacts and replay purpose that justify retention.
 Active training and player workflows use the Crossroads-capable engine;
 retained legacy replay is demonstrably isolated and runnable. Crossroads
 training, evaluation, and inference evidence remains reproducible after the
-change; the 9×9 case remains only as useful verification coverage.
+change; 9×9 can remain useful verification coverage after its experimental
+player selection is hidden or retired in 12.
 
-## 12 — Selectable human-versus-PPO Crossroads games
+## 12 — Promote Crossroads through the playable path
 
-**Objective:** Deliver the evaluated player through the game's normal API/UI.
+**Objective:** Make the evaluated Crossroads player the selectable human-versus-
+PPO target through the API/UI path proven in 07.
 
-**Bounded scope:** Expose Crossroads and PPO player selection for the declared
-side, provision the frozen artifact for API inference, and enforce scenario/seat
-compatibility. Connect creation and persisted-game restoration to the live
-player, preserving artifact identity and required decision state. Integrate
-movement results, combat, turn handoff, and terminal display with the existing
-human/CPU phase flow.
+**Bounded scope:** Extend 07's selection, live decision, reload/resume and
+terminal display to the declared Crossroads side and 09's evaluated, frozen
+artifact; enforce scenario/seat and artifact compatibility. Do not rebuild the
+UI integration. At this Crossroads release, hide or retire the experimental
+9×9 opponent selection (retaining only useful internal verification coverage).
 
 **Dependencies:** 07–11.
 
 **Observable completion evidence:** In a backend-connected run, a human selects
-Crossroads and the PPO opponent, starts a game, plays alternating turns,
-reloads/resumes it, and reaches a core-confirmed completed result and objective
-scores displayed in the UI. Every advertised PPO side has completed-game
-evidence; unsupported combinations are unavailable or rejected clearly. The
-serving checkpoint matches 09's evaluated artifact, remains frozen, and has
-documented availability, supported limits, and measured performance. A 9×9 or
-mock-only demo or bounded cutoff does not satisfy this gate.
+Crossroads and the PPO opponent, plays alternating turns, reloads/resumes, and
+reaches a core-confirmed completed result with objective scores in the UI.
+Every advertised PPO side has completed-game evidence; unsupported combinations
+are unavailable or rejected clearly, and the experimental 9×9 selection is no
+longer offered. The serving checkpoint matches 09's evaluated artifact,
+remains frozen, and has documented availability, supported limits, and measured
+performance. The 07 demo or an external cutoff does not satisfy this gate.
 
 ## Open Questions
 

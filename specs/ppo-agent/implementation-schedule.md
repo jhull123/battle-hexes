@@ -231,7 +231,8 @@ extends unchanged.
 
 Future work is tracked only in the
 [active playable-player schedule](playable-player-schedule.md), including
-multi-unit training, core/API/UI play, and the 5×5 engine retirement decision.
+bounded 9×9 smoke training and its experimental core/API/UI slice, Crossroads
+training and playable release, and the 5×5 engine retirement decision.
 
 ## Open Questions
 
