@@ -7,7 +7,7 @@ tags: [design, ppo, reinforcement-learning]
 
 # Introduction
 
-Choose **policy-selected `(unit, destination)` actions**, resolving movement and defensive fire immediately, with combat once after each side finishes its orders. The policy sees both armies and can choose which unit draws defensive fire before moving another. Increment 06 is **implementation pending**.
+Choose **policy-selected `(unit, destination)` actions**, resolving movement and defensive fire immediately, with combat once after each side finishes its orders. The policy sees both armies and can choose which unit draws defensive fire before moving another. Increment 06 is **implemented**; see the [schedule](implementation-schedule.md) for completion evidence.
 
 ## 1. Purpose & Scope
 
