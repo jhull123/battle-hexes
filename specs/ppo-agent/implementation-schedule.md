@@ -200,14 +200,6 @@ schemes against legal movement, turn timing, variable unit counts, masking,
 credit assignment, and policy input size. Prototype the selected contract on a
 small multi-unit scenario; then plan broader scenarios or self-play separately.
 
-**Design note:** Use a fixed 9×9, two-unit-per-side prototype with interior
-starts and policy-selected `(unit, destination)` actions. The larger board
-provides room for two-hex retreats, reducing the structural edge pressure of
-5×5; retain explicit successful-interior and edge-blocked retreat checks.
-A single fixed starting layout can still encourage layout-specific behavior.
-Varied starting positions and broader scenarios belong in a later training
-increment with its own evaluation protocol, not a generalization claim for 06.
-
 **Completion evidence:** A reviewed contract and focused prototype demonstrate
 legal complete turns and stable observations across the supported cases.
 Training performance is a later gate, not proof of this design alone.
