@@ -190,7 +190,7 @@ working through core.
 
 ### 06 — Multi-unit decision design and scenario growth
 
-**Planned specification:** `06-multi-unit-design.md`.
+**Specification (implementation pending):** [06-multi-unit-design.md](06-multi-unit-design.md).
 
 **Objective:** Choose and prove an action/observation contract for more than
 one unit before widening the training task.
