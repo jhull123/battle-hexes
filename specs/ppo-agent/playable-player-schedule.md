@@ -31,6 +31,10 @@ live human-versus-PPO play end to end before the Crossroads campaign.
 smoke training with legal masked rollouts and actual parameter updates. Save a
 versioned, validated checkpoint and let a human explicitly select its frozen,
 reloaded policy as a clearly labeled experimental opponent in core/API/UI.
+Register a playable scenario consistent with the training rules and define how
+human games reach core completion without treating a training cutoff as a game
+result. Any changed rules require a versioned contract and matching training/
+inference evidence.
 Build training, artifact and inference plumbing reusable with a different
 Crossroads contract; do not assume 9×9 weights or inputs transfer. Preserve
 live per-unit decisions, post-move fire/retreat feedback, once-per-side combat,
