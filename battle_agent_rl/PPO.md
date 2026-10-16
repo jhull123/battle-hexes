@@ -9,7 +9,7 @@ implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
 Increments 01–06 are completed foundation work; the
 [active playable-player schedule](../specs/ppo-agent/playable-player-schedule.md)
-begins at 07 and tracks the path to a selectable human-versus-PPO game.
+begins at 07 and tracks the path to a selectable human-versus-PPO Crossroads game.
 Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
 destinations. The fixed-protocol held-out comparison does not support
 improvement over all baselines; the inference player does not change that
@@ -244,4 +244,7 @@ training/representation before claiming improvement. Frozen 5×5 inference uses
 the core `Player` interface; multi-unit inference still needs live per-unit
 integration. Follow the
 [active schedule](../specs/ppo-agent/playable-player-schedule.md) for the bounded
-path to human play on explicitly supported scenarios.
+path to a trained, evaluated Crossroads opponent on a declared side. The ultimate
+goal is demonstrated Crossroads playing strength;
+[schedule 3](../specs/ppo-agent/crossroads-strength-schedule.md) is an inactive
+placeholder to be defined after the active schedule is fully implemented.
