@@ -19,6 +19,9 @@ from battle_hexes_api.command_adapters import (
     MovementAdapter,
     MovementResponseSerializer,
 )
+from battle_hexes_api.command_adapters.ppo_order import PpoOrderAdapter
+from battle_hexes_api.schemas.ppo_order import PpoOrderResponse
+from battle_hexes_api.schemas.api_model import api_model_json_bytes
 from battle_hexes_api.persistence import CommandRequest, CommandServiceError
 from battle_hexes_api.persistence.command_errors import CommandErrorTranslator
 from battle_hexes_api.persistence.identity import digest_idempotency_key
@@ -153,6 +156,20 @@ def generate_movement(request: Request, game_id: str,
 
 def _movement_serializer(request, game_id):
     return MovementResponseSerializer(None)
+
+
+def _ppo_serializer(game, result, version):
+    model = PpoOrderResponse.from_result(game, result, version)
+    return 200, api_model_json_bytes(model), "application/json", {}
+
+
+@router.post("/games/{game_id}/ppo/order")
+def order_ppo(request: Request, game_id: str,
+              idempotency_key: str | None = Header(None),
+              expected_game_version: str | None = Header(None)):
+    return _execute(request, game_id, f"/games/{game_id}/ppo/order",
+                    idempotency_key, expected_game_version, None,
+                    PpoOrderAdapter(), _ppo_serializer)
 
 
 @router.post("/games/{game_id}/move")

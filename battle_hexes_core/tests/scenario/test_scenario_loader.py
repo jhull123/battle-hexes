@@ -155,11 +155,11 @@ def test_iterators_yield_all_scenarios():
 
     assert scenario_ids == {
         "d_day_crossroads", "east_front_frozen_roadblock", "elim_1", "elim_2",
-        "village_1"
+        "village_1", "ppo_9x9_experimental"
     }
     assert core_ids == {
         "d_day_crossroads", "east_front_frozen_roadblock", "elim_1", "elim_2",
-        "village_1"
+        "village_1", "ppo_9x9_experimental"
     }
 
 

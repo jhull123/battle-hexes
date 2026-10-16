@@ -1,0 +1,52 @@
+import { PpoPlayer } from '../../src/player/ppo-player.js';
+import { MovementAnimator } from '../../src/animation/movement-animator.js';
+import { applyMovementResponse } from '../../src/model/movement-response-handler.js';
+
+jest.mock('../../src/animation/movement-animator.js', () => ({
+  MovementAnimator: jest.fn(),
+}));
+jest.mock('../../src/model/movement-response-handler.js', () => ({
+  applyMovementResponse: jest.fn(),
+}));
+
+test('PPO applies and acknowledges each live order before requesting another', async () => {
+  const sequence = [];
+  MovementAnimator.mockImplementation(() => ({
+    animate: async () => { sequence.push('animate'); },
+  }));
+  applyMovementResponse.mockImplementation(() => { sequence.push('fire'); });
+  const first = { plan: { unitId: 'learner-0', path: [{ row: 3, column: 2 }] },
+    game: { ppoTurn: { pendingUnitIds: ['learner-1'] } } };
+  const second = { plan: { unitId: 'learner-1', path: [{ row: 5, column: 2 }] },
+    game: { ppoTurn: { pendingUnitIds: [] } } };
+  const service = {
+    orderPpo: jest.fn(async () => {
+      sequence.push('request');
+      return sequence.filter((item) => item === 'request').length === 1 ? first : second;
+    }),
+    acknowledgeResponseApplication: jest.fn(() => { sequence.push('ack'); }),
+  };
+  const player = new PpoPlayer('Learner', [], { service });
+  let active = player;
+  const board = { getHex: () => ({}) };
+  const game = {
+    ppoTurn: { pendingUnitIds: ['learner-0', 'learner-1'] },
+    isGameOver: () => false,
+    getCurrentPlayer: () => active,
+    getCurrentPhase: () => 'Movement',
+    getId: () => 'game-id',
+    getUnitById: () => ({}),
+    getBoard: () => board,
+    applyApiState: (response) => {
+      sequence.push('state');
+      game.ppoTurn = response.game.ppoTurn;
+      if (game.ppoTurn.pendingUnitIds.length === 0) active = null;
+    },
+  };
+  await player.play(game);
+  expect(sequence).toEqual([
+    'request', 'animate', 'fire', 'state', 'ack',
+    'request', 'animate', 'fire', 'state', 'ack',
+  ]);
+  expect(service.orderPpo).toHaveBeenCalledTimes(2);
+});

@@ -24,6 +24,15 @@ tuning are outside this schedule.
 
 ## 07 — Trained 9×9 human-visible slice
 
+**Implementation status:** v2 scenario, masked smoke training/evaluation,
+validated artifact, persisted per-order API turns and web selection/animation
+are present. Unit and API tests include a completed HTTP game and an
+in-memory repository restart simulation. The mandatory browser-visible
+playthrough against an actual backend with **durable** storage, mid-turn reload,
+fire/retreat and completed result is still unverified; 07 remains planned and
+is **not** marked done. See [PPO.md](../../battle_agent_rl/PPO.md#experimental-trained-99-game-increment-07-in-progress)
+for local commands and measured smoke outcomes.
+
 **Objective:** Train and reload a compatible 9×9 multi-unit policy, then prove
 live human-versus-PPO play end to end before the Crossroads campaign.
 

@@ -32,6 +32,12 @@ From this directory, start the server locally in development mode:
 ```
 
 The launcher makes the sibling packages available without installing them.
+If `/tmp/opencode/ppo-07-smoke-v2` contains `manifest.json` and
+`checkpoint.zip`, the launcher automatically configures it for the experimental
+9×9 PPO player. To use another trained run, set
+`BATTLE_HEXES_PPO_RUN_DIR=/path/to/run` before starting `./dev.sh`. The
+configured directory is inherited by the API process; it is not enough to set
+the variable in a separate shell after the server has started.
 
 ## Running Tests
 

@@ -1,6 +1,6 @@
 import p5 from 'p5';
 import { ScrollingHexLandscape, DEFAULT_SCROLL_SPEED } from './animation/scrolling-hex-landscape.js';
-import { initializePlayerTypePicker } from './title-screen-player-types.js';
+import { initializePlayerTypePicker, populatePlayerTypeOptions } from './title-screen-player-types.js';
 import { initializeScenarioPicker } from './title-screen-scenarios.js';
 import { battleHexesService } from './service/service-factory.js';
 
@@ -17,6 +17,23 @@ export const initializeTitleScreen = ({
     documentRef,
     service,
   });
+
+  if (scenarioPicker && playerPicker) {
+    playerPicker.ready.then((types) => {
+      const selectForScenario = () => {
+        const experimental = scenarioPicker.selectElement.value === 'ppo_9x9_experimental';
+        playerPicker.selectElements.forEach((select, index) => {
+          const allowed = experimental
+            ? types.filter(({ id }) => id === (index === 0 ? 'ppo-9x9-experimental' : 'human'))
+            : types.filter(({ id }) => id !== 'ppo-9x9-experimental');
+          populatePlayerTypeOptions(select, allowed,
+            experimental ? allowed[0]?.id : select.value);
+        });
+      };
+      scenarioPicker.selectElement.addEventListener('change', selectForScenario);
+      scenarioPicker.ready.then(selectForScenario);
+    });
+  }
 
   const enterBattleButton = documentRef?.getElementById?.('enter-battle-button');
   const playerTypeStatus = documentRef?.getElementById?.('player-type-status');
@@ -49,7 +66,9 @@ export const initializeTitleScreen = ({
         enterBattleButton.disabled = false;
         enterBattleButton.textContent = defaultLabel;
         if (playerTypeStatus) {
-          playerTypeStatus.textContent = 'Failed to start game. Please try again.';
+          playerTypeStatus.textContent = error.code === 'ppoArtifactUnavailable'
+            ? 'The trained PPO checkpoint is unavailable on this server.'
+            : 'Failed to start game. Please try again.';
         }
       }
     });

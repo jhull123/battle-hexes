@@ -37,6 +37,16 @@ class SampleHumanPlayer(Player):
         return None
 
 
+class ExperimentalPpoPlayer(Player):
+    """The API's atomic order command, never batch movement, owns this side."""
+
+    def movement(self):
+        raise RuntimeError("Use the live PPO order command")
+
+    def combat_results(self, combat_results):
+        pass
+
+
 class GameCreator:
     """Utility class for constructing game instances."""
 
@@ -56,6 +66,14 @@ class GameCreator:
             ``q-learning``) used to configure the players participating in the
             game.
         """
+        if scenario_id == "ppo_9x9_experimental":
+            if list(player_type_ids) != ["ppo-9x9-experimental", "human"]:
+                raise ValueError(
+                    "Experimental PPO requires PPO first, human second")
+        elif "ppo-9x9-experimental" in player_type_ids:
+            raise ValueError(
+                "Experimental PPO requires its fixed 9x9 scenario")
+
         scenario = load_scenario(scenario_id)
 
         player_order: list[str] = []
@@ -92,6 +110,10 @@ class GameCreator:
         game.scenario_id = scenario_id
         game.player_type_ids = list(player_type_ids)
 
+        if scenario_id == "ppo_9x9_experimental":
+            from battle_hexes_api.ppo_state import initial_state
+            initial_state(game)
+
         return game
 
     @staticmethod
@@ -109,6 +131,10 @@ class GameCreator:
                 factions=factions,
                 board=board,
             )
+
+        if type_id == "ppo-9x9-experimental":
+            return ExperimentalPpoPlayer(name=name, type=PlayerType.CPU,
+                                         factions=factions)
 
         if type_id == "random":
             return RandomPlayer(

@@ -4,6 +4,7 @@ import gymnasium as gym
 import numpy as np
 
 from .multi_unit_environment import MultiUnitEnvironment
+from .playable_environment import PlayableEnvironment
 from .multi_unit_state import ACTIONS, CONTRACT
 
 
@@ -53,14 +54,17 @@ class MaskedMultiUnitEnv(gym.Env):
     metadata = {"render_modes": []}
 
     def __init__(self, cycle_limit=50, training_seed=0, learner_count=2,
-                 opponent_count=2):
+                 opponent_count=2, playable=False):
         super().__init__()
-        self.game_env = MultiUnitEnvironment(cycle_limit, learner_count,
-                                             opponent_count)
-        self.observation_space = multi_unit_observation_space(cycle_limit)
+        self.game_env = (PlayableEnvironment(cycle_limit) if playable else
+                         MultiUnitEnvironment(cycle_limit, learner_count,
+                                              opponent_count))
+        self.observation_space = multi_unit_observation_space(
+            50 if playable else cycle_limit)
         self.action_space = gym.spaces.Discrete(ACTIONS)
         self._next_seed = training_seed
         self._transition = None
+        self.episode_seeds = []
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
@@ -69,6 +73,7 @@ class MaskedMultiUnitEnv(gym.Env):
             self.action_space.seed(seed)
         episode_seed = self._next_seed
         self._next_seed += 1
+        self.episode_seeds.append(episode_seed)
         self._transition = self.game_env.reset(episode_seed)
         return encode_observation(self._transition.observation), {
             **self._transition.info, "episode_seed": episode_seed}
@@ -76,6 +81,8 @@ class MaskedMultiUnitEnv(gym.Env):
     def step(self, action):
         if isinstance(action, np.ndarray) and action.shape == ():
             action = action.item()
+        self.last_action_legal = bool(
+            self._transition.legal_action_mask[action])
         self._transition = self.game_env.step(action)
         result = self._transition
         return (encode_observation(result.observation), float(result.reward),

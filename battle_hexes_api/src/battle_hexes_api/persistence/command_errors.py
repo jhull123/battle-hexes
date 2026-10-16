@@ -61,6 +61,13 @@ class CommandErrorTranslator:
         "gameNotFound": "The game was not found.",
         "gameVersionConflict": "The game version has changed.",
         "savedGameIncompatible": "The saved game is incompatible.",
+        "invalidPpoTurn": "Not an active experimental PPO order.",
+        "ppoPredictionInvalid": (
+            "The frozen PPO policy returned an invalid order."
+        ),
+        "ppoArtifactUnavailable": (
+            "The game-bound PPO artifact is unavailable."
+        ),
         "gamePersistenceCapacityExceeded": (
             "The game is too large to persist."
         ),

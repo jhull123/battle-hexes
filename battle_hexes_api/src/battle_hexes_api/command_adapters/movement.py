@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
 from .common import notify_game_completion, reject_completed_game
+from battle_hexes_api.ppo_state import capture_rng, is_ppo_game
+from battle_hexes_api.ppo_human import (check_human_board,
+                                        reject_ppo_command, require_human)
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,8 @@ class MovementAdapter:
 
     def __call__(self, game):
         reject_completed_game(game)
+        if is_ppo_game(game):
+            reject_ppo_command()
         result = _apply_plans(game, game.get_current_player().movement())
         notify_game_completion(game)
         return result
@@ -39,8 +44,14 @@ class HumanMoveAdapter:
 
     def __call__(self, game):
         reject_completed_game(game)
+        require_human(game, "movement")
+        if is_ppo_game(game):
+            check_human_board(game, self._sparse_board)
         plans = self._sparse_board.to_movement_plans(game.get_board())
         result = _apply_plans(game, plans)
+        if is_ppo_game(game):
+            game.finalize_completed_phase()
+        capture_rng(game)
         notify_game_completion(game)
         return result
 
@@ -54,9 +65,14 @@ class EndMovementAdapter:
 
     def __call__(self, game):
         reject_completed_game(game)
+        require_human(game, "movement")
+        if is_ppo_game(game):
+            check_human_board(game, self._sparse_board)
         plans = self._sparse_board.to_movement_plans(game.get_board())
         result = _apply_plans(game, plans)
-        self._scorer_factory().award_hold_objectives(game)
-        game.end_movement()
+        if not is_ppo_game(game) or not game.finalize_completed_phase():
+            self._scorer_factory().award_hold_objectives(game)
+            game.end_movement()
+        capture_rng(game)
         notify_game_completion(game)
         return result

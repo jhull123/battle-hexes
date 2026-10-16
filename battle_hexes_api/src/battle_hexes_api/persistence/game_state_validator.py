@@ -29,6 +29,9 @@ class GameStateValidator:
         self._validate_units(document, scenario, context)
         self._validate_runtime(document, context)
         self._validate_pending_combats(document, context)
+        from battle_hexes_api.ppo_state import validate_state
+        validate_state(document.ppo_state.model_dump() if document.ppo_state
+                       else None, document)
         try:
             validate_histories(
                 document.reinforcement_history,
