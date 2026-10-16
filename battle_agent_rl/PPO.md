@@ -7,6 +7,11 @@ masked PPO training loop, checkpoint evaluation and core-compatible inference
 player are implemented. A separate 9×9 multi-unit decision prototype is also
 implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
+Increments 01–06 are completed foundation work; the
+[active playable-player schedule](../specs/ppo-agent/playable-player-schedule.md)
+begins at 07 with bounded 9×9 multi-unit smoke training and a human-visible
+game against its saved, reloaded checkpoint. It ends with a selectable
+human-versus-PPO Crossroads game.
 Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
 destinations. The fixed-protocol held-out comparison does not support
 improvement over all baselines; the inference player does not change that
@@ -229,16 +234,28 @@ occur; a cutoff remains `in_progress` in core. Slots retain identity across
 elimination; dead and absent units have zero-valued inputs except `present`
 for dead units. This design demonstrates legal timing and stable inputs, not
 policy strength or compatibility with the core `Player.movement()` batch
-contract. Broader scenarios, training and core-player integration need later
-design.
+contract. Increment 07 plans a bounded masked-PPO smoke run with parameter
+updates, a versioned checkpoint, and frozen core/API/UI play using that trained
+artifact. Report measured outcomes honestly without a strength threshold; do
+not grow this into a 9×9 skill campaign or assume its weights or policy-input
+contract transfer to Crossroads. The experimental 9×9 opponent is to be hidden
+or retired when the evaluated Crossroads player is delivered in 12; useful
+internal 9×9 verification can remain. See the
+[active schedule](../specs/ppo-agent/playable-player-schedule.md).
 
 ## Direction
 
 Keep training and inference on the same observation, mask and action-to-plan
 mapping, with core authoritative for movement, combat and victory. The
 center-then-hold comparison challenges the current policy's strength; revisit
-training/representation before claiming improvement. Frozen inference now uses
-the core `Player` interface. The multi-unit decision contract now has a fixed
-prototype; design variable-sized inputs before expanding the scenario; see the
-numbered specifications in the
-[schedule](../specs/ppo-agent/implementation-schedule.md).
+training/representation before claiming improvement. Frozen 5×5 inference uses
+the core `Player` interface; multi-unit inference still needs live per-unit
+integration. Follow the
+[active schedule](../specs/ppo-agent/playable-player-schedule.md) for the bounded
+path from the 07 human-visible 9×9 vertical slice to a trained, evaluated
+Crossroads opponent on a declared side. Schedule 2's final playable target is
+Crossroads, not the experimental prototype; its campaign extends 07's training
+and checkpoint plumbing under a separate contract. The ultimate goal is
+demonstrated Crossroads playing strength;
+[schedule 3](../specs/ppo-agent/crossroads-strength-schedule.md) is an inactive
+placeholder to be defined after the active schedule is fully implemented.
