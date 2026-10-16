@@ -9,31 +9,44 @@ from battle_agent_rl.ppo.multi_unit_gym import predict_joint_action
 from battle_agent_rl.ppo.multi_unit_gym import MaskedMultiUnitEnv
 from battle_agent_rl.ppo.multi_unit_state import joint_mask, slot_observation
 from battle_agent_rl.ppo.multi_unit_train import train
-from battle_agent_rl.ppo.playable_artifact import load_model
+from battle_agent_rl.ppo.playable_artifact import fingerprint, load_model
 from battle_agent_rl.ppo.playable_environment import PlayableEnvironment
-from battle_agent_rl.ppo.playable_scenario import create_game
+from battle_agent_rl.ppo.playable_scenario import TURN_LIMIT, create_game
+from battle_agent_rl.ppo.playable_scenario import scenario_data
 from battle_agent_rl.ppo.playable_turn import apply_order
 
 
 def test_core_loaded_horizon_and_early_cutoff():
     game, learner, opponent, slots = create_game(random.Random(0))
-    assert game.turn_limit == 50
+    assert game.turn_limit == TURN_LIMIT == 10
     assert [unit.get_coords() for unit in slots] == [
         (3, 2), (5, 2), (3, 6), (5, 6)]
     assert game.players == [learner, opponent]
     env = PlayableEnvironment(cycle_limit=1)
     state = env.reset(12)
-    assert state.observation["remaining_cycles"] == [50]
+    assert state.observation["remaining_cycles"] == [TURN_LIMIT]
     assert state.legal_action_mask[29] and state.legal_action_mask[128]
     state = env.step(29)
     assert not state.terminated and state.legal_action_mask[128]
     assert not state.legal_action_mask[29]
     state = env.step(128)
     assert state.truncated and state.info["core_status"] == "in_progress"
-    assert state.observation["remaining_cycles"] == [49]
+    assert state.observation["remaining_cycles"] == [TURN_LIMIT - 1]
 
 
-def test_core_turn_50_is_a_zero_score_draw():
+def test_scenario_fingerprint_ignores_display_name_colors_and_sounds():
+    scenario = scenario_data()
+    cosmetic_change = scenario.model_copy(update={
+        "name": "Renamed scenario",
+        "factions": [
+            faction.model_copy(update={"color": "purple", "sounds": {}})
+            for faction in scenario.factions
+        ],
+    })
+    assert fingerprint(cosmetic_change) == fingerprint(scenario)
+
+
+def test_core_turn_10_is_a_zero_score_draw():
     rng = random.Random(0)
     game, _, _, slots = create_game(rng)
     while game.get_game_status().state == "in_progress":
@@ -44,7 +57,7 @@ def test_core_turn_50_is_a_zero_score_draw():
         pending = [True, True]
         for action in actions:
             apply_order(game, side, pending, action, rng)
-    assert game.turn_number == 50
+    assert game.turn_number == TURN_LIMIT
     assert game.get_game_status().winner_player_name is None
     assert game.score_tracker.get_scores() == {"Learner": 0, "Opponent": 0}
     assert game.current_phase is None
@@ -60,12 +73,20 @@ def test_live_fire_and_retreat_feed_next_pending_decision():
     assert len(fire) == 1 and fire[0].outcome == "retreat"
     assert not combats and game.current_phase == "movement"
     assert pending == [False, True]
-    observation = slot_observation(game, slots, pending, 50, learner)
+    observation = slot_observation(game, slots, pending, TURN_LIMIT, learner)
     mask = joint_mask(game, slots[:2], pending)
     assert observation["positions"][0][4 * 9 + 2] == 1
     assert observation["forced_retreat"][0] == 1
     assert observation["fire_spent"][2] == 1
     assert not any(mask[:81]) and any(mask[81:])
+
+
+def _reject_incompatible_manifest(run_dir, manifest, **changes):
+    path = run_dir / "manifest.json"
+    path.write_text(json.dumps({**manifest, **changes}))
+    with pytest.raises(ValueError, match="Incompatible"):
+        load_model(run_dir)
+    path.write_text(json.dumps(manifest))
 
 
 def test_trained_checkpoint_reloads_and_replays(tmp_path):
@@ -90,33 +111,31 @@ def test_trained_checkpoint_reloads_and_replays(tmp_path):
                report["episodes"] if row["outcome"] == "cutoff")
     with pytest.raises(ValueError, match="disjoint"):
         evaluate(run_dir, [0])
-    altered = json.loads((run_dir / "manifest.json").read_text())
-    altered["contract"] = "battle-hexes-9x9-2slot-unit-destination-live-v1"
-    (run_dir / "manifest.json").write_text(json.dumps(altered))
-    with pytest.raises(ValueError, match="Incompatible"):
-        load_model(run_dir)
-    (run_dir / "manifest.json").write_text(json.dumps(manifest))
-    altered = {**manifest, "versions": {
-        **manifest["versions"], "torch": "incompatible"}}
-    (run_dir / "manifest.json").write_text(json.dumps(altered))
-    with pytest.raises(ValueError, match="Incompatible"):
-        load_model(run_dir)
-    (run_dir / "manifest.json").write_text(json.dumps(manifest))
+    _reject_incompatible_manifest(
+        run_dir, manifest,
+        contract="battle-hexes-9x9-2slot-unit-destination-live-v1")
+    _reject_incompatible_manifest(
+        run_dir, manifest,
+        contract="battle-hexes-9x9-2slot-unit-destination-live-turnlimit50-v2",
+        scenario_version="1", turn_limit=50)
+    _reject_incompatible_manifest(
+        run_dir, manifest,
+        versions={**manifest["versions"], "torch": "incompatible"})
     archive = run_dir / "checkpoint.zip"
     archive.write_bytes(b"invalid archive")
     with pytest.raises(ValueError, match="digest mismatch"):
         load_model(run_dir)
 
 
-def test_v1_spaces_cannot_be_served_as_v2(tmp_path):
+def test_v1_spaces_cannot_be_served_as_v3(tmp_path):
     from sb3_contrib import MaskablePPO
     from battle_agent_rl.ppo.playable_artifact import save_run
 
-    run_dir = tmp_path / "v2"
+    run_dir = tmp_path / "v3"
     env = MaskedMultiUnitEnv(cycle_limit=3)
     v1 = MaskablePPO("MultiInputPolicy", env, device="cpu", n_steps=16,
                      batch_size=8)
-    # A valid v2 manifest cannot make a v1 archive's spaces compatible.
+    # A valid v3 manifest cannot make a v1 archive's spaces compatible.
     save_run(run_dir, v1, seed=0, total_timesteps=16, n_steps=16,
              batch_size=8, episode_seeds=[0], outcomes={}, changed=True)
     manifest_path = run_dir / "manifest.json"

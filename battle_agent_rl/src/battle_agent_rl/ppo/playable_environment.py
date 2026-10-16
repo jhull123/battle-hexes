@@ -1,17 +1,17 @@
-"""Core-loaded 50-turn 2v2 environment; external cap never changes input."""
+"""Core-loaded 10-turn 2v2 environment; external cap never changes input."""
 
 import random
 
 from .multi_unit_environment import Transition
 from .multi_unit_state import joint_mask, slot_observation
-from .playable_scenario import create_game
+from .playable_scenario import TURN_LIMIT, create_game
 from .playable_turn import apply_order
 
 
 class PlayableEnvironment:
-    def __init__(self, cycle_limit=50):
-        if type(cycle_limit) is not int or not 1 <= cycle_limit <= 50:
-            raise ValueError("cycle_limit must be between 1 and 50")
+    def __init__(self, cycle_limit=TURN_LIMIT):
+        if type(cycle_limit) is not int or not 1 <= cycle_limit <= TURN_LIMIT:
+            raise ValueError(f"cycle_limit must be between 1 and {TURN_LIMIT}")
         self.cycle_limit = cycle_limit
         self.game = None
 
@@ -59,8 +59,9 @@ class PlayableEnvironment:
         else:
             outcome = "cutoff" if self.done else None
         return Transition(
-            slot_observation(self.game, self.slots, self.pending,
-                             max(0, 51 - self.game.turn_number), self.learner),
+            slot_observation(
+                self.game, self.slots, self.pending,
+                max(0, TURN_LIMIT + 1 - self.game.turn_number), self.learner),
             joint_mask(self.game, self.slots[:2], self.pending,
                        active=not self.done),
             1 if outcome == "win" else -1 if outcome == "loss" else 0,

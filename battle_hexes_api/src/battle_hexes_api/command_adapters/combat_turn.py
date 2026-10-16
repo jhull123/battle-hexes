@@ -7,7 +7,8 @@ from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
 from .common import notify_game_completion, reject_completed_game
 from battle_hexes_api.ppo_state import capture_rng, is_ppo_game
-from battle_hexes_api.ppo_human import check_human_board, require_human
+from battle_hexes_api.ppo_opponent import (check_opponent_board,
+                                           require_opponent)
 
 
 @dataclass(frozen=True)
@@ -32,9 +33,9 @@ class CombatAdapter:
 
     def __call__(self, game):
         reject_completed_game(game)
-        require_human(game, "combat")
+        require_opponent(game, "combat")
         if is_ppo_game(game):
-            check_human_board(game, self._sparse_board)
+            check_opponent_board(game, self._sparse_board)
         self._sparse_board.apply_to_board(game.get_board())
         combat = (self._combat_factory(game, rng=game.ppo_rng)
                   if is_ppo_game(game) else self._combat_factory(game))
@@ -59,9 +60,9 @@ class EndTurnAdapter:
 
     def __call__(self, game):
         reject_completed_game(game)
-        require_human(game, "end_turn")
+        require_opponent(game, "end_turn")
         if is_ppo_game(game):
-            check_human_board(game, self._sparse_board)
+            check_opponent_board(game, self._sparse_board)
         self._sparse_board.apply_to_board(game.get_board())
         self._scorer_factory().recalculate_scenario_victory(game)
         game.end_turn()

@@ -24,7 +24,9 @@ export const initializeTitleScreen = ({
         const experimental = scenarioPicker.selectElement.value === 'ppo_9x9_experimental';
         playerPicker.selectElements.forEach((select, index) => {
           const allowed = experimental
-            ? types.filter(({ id }) => id === (index === 0 ? 'ppo-9x9-experimental' : 'human'))
+            ? types.filter(({ id }) => index === 0
+              ? id === 'ppo-9x9-experimental'
+              : id !== 'ppo-9x9-experimental')
             : types.filter(({ id }) => id !== 'ppo-9x9-experimental');
           populatePlayerTypeOptions(select, allowed,
             experimental ? allowed[0]?.id : select.value);

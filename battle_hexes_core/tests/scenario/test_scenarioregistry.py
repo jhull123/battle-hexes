@@ -23,8 +23,8 @@ class TestScenarioRegistry(unittest.TestCase):
             "East Front: Frozen Roadblock",
             "Elimination Demo 1",
             "Elimination Demo 2",
+            "Elimination Demo 3",
             "Village Demo 1",
-            "Experimental — trained 9×9 PPO (no skill claim)",
         }
         actual_names = {s.name for s in scenarios}
         self.assertEqual(expected_names, actual_names)

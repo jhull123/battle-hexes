@@ -12,6 +12,7 @@ from battle_agent_rl.ppo.multi_unit_gym import predict_joint_action
 from battle_agent_rl.ppo.playable_artifact import load_model
 from battle_agent_rl.ppo.playable_environment import PlayableEnvironment
 from battle_agent_rl.ppo.playable_scenario import slots_for_game
+from battle_agent_rl.ppo.playable_scenario import SCENARIO_VERSION, TURN_LIMIT
 from battle_agent_rl.ppo.multi_unit_state import joint_mask, slot_observation
 from battle_agent_rl.ppo.playable_turn import apply_order
 from battle_hexes_api.application import create_app
@@ -51,7 +52,7 @@ def _order(client, game_id, version, key):
         "Idempotency-Key": key, "Expected-Game-Version": str(version)})
 
 
-def _human_command(client, game_id, game, path, key):
+def _opponent_command(client, game_id, game, path, key):
     board = {"units": [
         {"id": unit["id"], "row": unit["row"],
          "column": unit["column"]} for unit in game["board"]["units"]]}
@@ -63,7 +64,7 @@ def _human_command(client, game_id, game, path, key):
     return response.json()
 
 
-def test_creation_requires_artifact_and_fixed_seats(
+def test_creation_requires_artifact_and_ppo_first_seat(
         artifact, monkeypatch, caplog):
     monkeypatch.delenv("BATTLE_HEXES_PPO_RUN_DIR", raising=False)
     with TestClient(create_app()) as client:
@@ -84,6 +85,34 @@ def test_creation_requires_artifact_and_fixed_seats(
                                json={"scenarioId": "elim_1", "playerTypes":
                                      ["ppo-9x9-experimental", "human"]})
         assert response.status_code == 422
+        response = client.post(
+            "/games", headers={"Idempotency-Key": "random-opponent"},
+            json={"scenarioId": "ppo_9x9_experimental",
+                  "playerTypes": ["ppo-9x9-experimental", "random"]})
+        assert response.status_code == 200
+
+
+def test_ppo_game_exposes_defensive_fire_audio_for_both_factions(
+        artifact, monkeypatch):
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))
+    with TestClient(create_app()) as client:
+        created = _create(client)
+        assert created.status_code == 200, created.text
+        game = created.json()
+        assert game["turnLimit"] == TURN_LIMIT
+        assert game["scenarioVersion"] == SCENARIO_VERSION
+        for player in game["players"]:
+            sounds = player["factions"][0]["sounds"]["defensiveFire"]
+            assert sounds == {
+                "effect": "m1_trio_rifle_shots.ogg",
+                "noEffect": "m1_single_rifle_shot.ogg",
+            }
+        loaded = client.get(f"/games/{game['id']}")
+        assert loaded.status_code == 200
+        assert [player["factions"][0]["sounds"] for player in
+                loaded.json()["players"]] == [
+                    player["factions"][0]["sounds"] for player in
+                    game["players"]]
 
 
 def test_training_and_live_adapter_share_initial_masked_decision(
@@ -95,7 +124,8 @@ def test_training_and_live_adapter_share_initial_masked_decision(
     game.defensive_fire_resolver.rng = game.ppo_rng
     slots = slots_for_game(game)
     pending = [True, True]
-    observation = slot_observation(game, slots, pending, 50, game.players[0])
+    observation = slot_observation(game, slots, pending,
+                                   TURN_LIMIT, game.players[0])
     mask = joint_mask(game, slots[:2], pending)
     env = PlayableEnvironment()
     state = env.reset(0)
@@ -128,8 +158,10 @@ def test_fire_retreat_and_rng_survive_hydration(artifact, monkeypatch):
     game.ppo_state["pending_unit_ids"] = ["learner-1"]
     capture_rng(game)
     codec = GameStateCodec()
-    stored = StoredGame(str(game.id), 2, 1, game.scenario_id, "1",
-                        codec.encode(game, scenario_version="1"), 0, 100)
+    stored = StoredGame(str(game.id), 2, 1, game.scenario_id,
+                        SCENARIO_VERSION,
+                        codec.encode(game, scenario_version=SCENARIO_VERSION),
+                        0, 100)
     restored = codec.decode(stored)
     assert restored.ppo_state["pending_unit_ids"] == ["learner-1"]
     assert restored.ppo_rng.getstate() == game.ppo_rng.getstate()
@@ -196,6 +228,79 @@ def test_mid_turn_restart_receipt_rng_and_handoff(artifact, monkeypatch):
         assert repo.load_game(game_id).version == 5
 
 
+def _handoff_to_cpu(client, opponent):
+    created = _create(client, ["ppo-9x9-experimental", opponent])
+    assert created.status_code == 200, created.text
+    game_id = created.json()["id"]
+    forbidden = client.post(f"/games/{game_id}/movement", headers={
+        "Idempotency-Key": "early-batch", "Expected-Game-Version": "1"})
+    assert forbidden.status_code == 409
+    first = _order(client, game_id, 1, "first")
+    assert first.status_code == 200, first.text
+    second = _order(client, game_id, 2, "second")
+    assert second.status_code == 200, second.text
+    assert second.json()["game"]["activePlayer"] == "Opponent"
+    return game_id
+
+
+def _run_cpu_turn(client, repo, game_id, opponent):
+    loaded = client.get(f"/games/{game_id}")
+    assert loaded.status_code == 200, loaded.text
+    assert loaded.json()["playerTypeIds"] == [
+        "ppo-9x9-experimental", opponent]
+    assert loaded.json()["ppoTurn"]["pendingUnitIds"] == []
+    moved = client.post(f"/games/{game_id}/movement", headers={
+        "Idempotency-Key": "cpu-batch", "Expected-Game-Version": "3"})
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["plans"]
+    assert moved.json()["game"]["activePlayer"] == "Opponent"
+    assert client.post(f"/games/{game_id}/movement", headers={
+        "Idempotency-Key": "cpu-batch", "Expected-Game-Version": "3"
+    }).content == moved.content
+    assert client.post(f"/games/{game_id}/movement", headers={
+        "Idempotency-Key": "stale-batch", "Expected-Game-Version": "3"
+    }).status_code == 409
+    assert repo.load_game(game_id).version == 4
+    saved_state = json.loads(repo.load_game(game_id).state)
+    assert saved_state["ppo_state"]["pending_unit_ids"] == []
+    assert saved_state["ppo_state"]["rng_state"]
+    board = {"units": [
+        {"id": unit["id"], "row": unit["row"],
+         "column": unit["column"]}
+        for unit in moved.json()["game"]["board"]["units"]]}
+    forbidden = client.post(f"/games/{game_id}/move", json=board,
+                            headers={"Idempotency-Key": "cpu-human-move",
+                                     "Expected-Game-Version": "4"})
+    assert forbidden.status_code == 409
+    game = moved.json()["game"]
+    for phase in ("movement", "combat", "end_turn"):
+        if game["currentPhase"] != phase:
+            continue
+        path = {"movement": "end-movement", "combat": "combat",
+                "end_turn": "end-turn"}[phase]
+        result = _opponent_command(client, game_id, game, path,
+                                   f"cpu-{phase}")
+        game = result.get("game") or client.get(f"/games/{game_id}").json()
+    return game
+
+
+@pytest.mark.parametrize("opponent", ["random", "q-learning"])
+def test_cpu_opponent_turn_survives_restart_and_returns_to_ppo(
+        artifact, monkeypatch, opponent):
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))
+    repo = _repository()
+    with TestClient(create_app(repository=repo)) as client:
+        game_id = _handoff_to_cpu(client, opponent)
+    with TestClient(create_app(repository=repo)) as client:
+        game = _run_cpu_turn(client, repo, game_id, opponent)
+        assert game["activePlayer"] == "Learner"
+        assert game["currentPhase"] == "movement"
+        assert game["ppoTurn"]["pendingUnitIds"] == [
+            "learner-0", "learner-1"]
+        assert _order(client, game_id, game["gameVersion"],
+                      "next-ppo-order").status_code == 200
+
+
 def test_hydration_rejects_tampered_identity(artifact, monkeypatch):
     monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))
     with TestClient(create_app()) as client:
@@ -203,6 +308,12 @@ def test_hydration_rejects_tampered_identity(artifact, monkeypatch):
         stored = client.app.state.game_repository.load_game(
             created.json()["id"])
         state = json.loads(stored.state)
+        legacy = {**state, "scenario_version": "1"}
+        with pytest.raises(SavedGameIncompatibleError,
+                           match="scenario_version"):
+            GameStateCodec().decode(replace(
+                stored, scenario_version="1",
+                state=json.dumps(legacy).encode()))
         state["ppo_state"]["pending_unit_ids"] = ["opponent-0"]
         corrupted = replace(stored, state=json.dumps(state).encode())
         with pytest.raises(SavedGameIncompatibleError):
@@ -238,12 +349,12 @@ def test_http_game_reaches_core_completion(artifact, monkeypatch):
                 phase = game["currentPhase"]
                 path = {"movement": "end-movement", "combat": "combat",
                         "end_turn": "end-turn"}[phase]
-                result = _human_command(client, game_id, game, path,
-                                        f"human-completion-{step}")
+                result = _opponent_command(client, game_id, game, path,
+                                           f"human-completion-{step}")
                 game = result.get("game") or client.get(
                     f"/games/{game_id}").json()
         assert game["gameStatus"]["state"] == "completed"
-        assert game["turnNumber"] <= 50
+        assert game["turnNumber"] <= TURN_LIMIT
         assert game["currentPhase"] is None
         assert client.get(f"/games/{game_id}").json()["gameStatus"] == \
             game["gameStatus"]

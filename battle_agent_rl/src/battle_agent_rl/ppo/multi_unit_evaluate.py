@@ -7,9 +7,10 @@ from .artifacts import write_json
 from .multi_unit_gym import predict_joint_action
 from .playable_artifact import load_model
 from .playable_environment import PlayableEnvironment
+from .playable_scenario import TURN_LIMIT
 
 
-def evaluate(run_dir, seeds=range(1000, 1020), cycle_limit=50):
+def evaluate(run_dir, seeds=range(1000, 1020), cycle_limit=TURN_LIMIT):
     model, manifest = load_model(run_dir)
     seeds = list(seeds)
     if (not seeds or len(seeds) != len(set(seeds)) or
@@ -41,7 +42,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True)
     parser.add_argument("--seeds", default="1000:1020")
-    parser.add_argument("--cycle-limit", type=int, default=50)
+    parser.add_argument("--cycle-limit", type=int, default=TURN_LIMIT)
     args = parser.parse_args()
     start, stop = map(int, args.seeds.split(":"))
     if start >= stop:

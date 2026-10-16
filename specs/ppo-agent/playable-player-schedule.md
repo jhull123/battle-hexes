@@ -24,7 +24,9 @@ tuning are outside this schedule.
 
 ## 07 — Trained 9×9 human-visible slice
 
-**Implementation status:** v2 scenario, masked smoke training/evaluation,
+**Implementation status:** v3 contract on the version-2 10-turn scenario,
+masked smoke training/evaluation (0 wins, 0 losses, 20 draws, 0 cutoffs on
+seeds 1000–1019), defensive-fire sound mappings,
 validated artifact, persisted per-order API turns and web selection/animation
 are present. Unit and API tests include a completed HTTP game and an
 in-memory repository restart simulation. The mandatory browser-visible

@@ -17,8 +17,7 @@ SUPPORTED_PLAYER_TYPES: tuple[PlayerTypeDefinition, ...] = (
     PlayerTypeDefinition(id="human", name="Human"),
     PlayerTypeDefinition(id="random", name="Random Player"),
     PlayerTypeDefinition(id="q-learning", name="Q-Learning Player"),
-    PlayerTypeDefinition(id="ppo-9x9-experimental", name=(
-        "Experimental — trained 9×9 PPO (no skill claim)")),
+    PlayerTypeDefinition(id="ppo-9x9-experimental", name="Trained 9×9 PPO"),
 )
 
 

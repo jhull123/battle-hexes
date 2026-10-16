@@ -10,13 +10,20 @@ from sb3_contrib import MaskablePPO
 
 from .artifacts import versions, write_json
 from .multi_unit_gym import multi_unit_observation_space
-from .playable_scenario import (CONTRACT, SCENARIO_ID, SLOT_IDS, TURN_LIMIT,
-                                scenario_data, validate_scenario)
+from .playable_scenario import (
+    CONTRACT, SCENARIO_ID, SCENARIO_VERSION, SLOT_IDS, TURN_LIMIT,
+    scenario_data, validate_scenario,
+)
 
 
-def fingerprint():
-    scenario = validate_scenario(scenario_data())
-    data = json.dumps(scenario.model_dump(mode="json"), sort_keys=True)
+def fingerprint(scenario=None):
+    scenario = validate_scenario(scenario or scenario_data())
+    payload = scenario.model_dump(mode="json")
+    payload.pop("name", None)
+    for faction in payload.get("factions", []):
+        faction.pop("color", None)
+        faction.pop("sounds", None)
+    data = json.dumps(payload, sort_keys=True)
     return hashlib.sha256(data.encode()).hexdigest()
 
 
@@ -35,7 +42,8 @@ def save_run(run_dir, model, *, seed, total_timesteps, n_steps, batch_size,
                optimizer_updates)
     manifest = {
         "format_version": 2, "contract": CONTRACT, "scenario_id": SCENARIO_ID,
-        "scenario_version": "1", "scenario_sha256": fingerprint(),
+        "scenario_version": SCENARIO_VERSION,
+        "scenario_sha256": fingerprint(),
         "turn_limit": TURN_LIMIT, "slot_ids": list(SLOT_IDS),
         "player_types": ["ppo-9x9-experimental", "human"],
         "observation_space": repr(multi_unit_observation_space(TURN_LIMIT)),
@@ -57,11 +65,18 @@ def save_run(run_dir, model, *, seed, total_timesteps, n_steps, batch_size,
 def read_manifest(run_dir):
     try:
         manifest = json.loads((Path(run_dir) / "manifest.json").read_text())
+        if manifest.get("scenario_sha256") != fingerprint():
+            raise ValueError(
+                "PPO artifact scenario fingerprint mismatch: scenario rules, "
+                "units, terrain, or objectives differ from the trained "
+                "scenario (name, faction colors and sounds are excluded). "
+                "Regenerate the artifact manifest/checkpoint for this "
+                "fingerprint."
+            )
         expected = (manifest["format_version"] == 2
                     and manifest["contract"] == CONTRACT
                     and manifest["scenario_id"] == SCENARIO_ID
-                    and manifest["scenario_version"] == "1"
-                    and manifest["scenario_sha256"] == fingerprint()
+                    and manifest["scenario_version"] == SCENARIO_VERSION
                     and manifest["turn_limit"] == TURN_LIMIT
                     and manifest["slot_ids"] == list(SLOT_IDS)
                     and manifest["player_types"] ==
@@ -77,7 +92,11 @@ def read_manifest(run_dir):
                 ("checkpoint.zip",) or len(entry["sha256"]) != 64 or
                 not manifest["training"]["parameters_changed"] or
                 manifest["training"]["optimizer_updates"] < 1):
-            raise ValueError("Incompatible PPO artifact manifest")
+            raise ValueError(
+                "Incompatible PPO artifact manifest: contract, scenario "
+                "version, slots, player types, policy spaces, runtime "
+                "versions, or training evidence did not match"
+            )
         return manifest
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
         raise ValueError(

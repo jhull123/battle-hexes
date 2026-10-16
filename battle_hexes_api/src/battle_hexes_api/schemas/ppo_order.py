@@ -5,6 +5,7 @@ from .game_log import CombatEventModel
 from .game_model import GameModel, PpoTurnModel
 from .movement import DefensiveFireEventModel, MovementPlanModel
 from battle_hexes_core.scenario.scenario_loader import load_scenario
+from battle_agent_rl.ppo.playable_scenario import SCENARIO_VERSION
 
 
 class PpoOrderResponse(ApiBaseModel):
@@ -20,7 +21,7 @@ class PpoOrderResponse(ApiBaseModel):
         from dataclasses import asdict
         projection = GameModel.from_game(
             game, load_scenario(game.scenario_id), game_version=version,
-            scenario_version="1")
+            scenario_version=SCENARIO_VERSION)
         return cls(
             game_version=version, game=projection,
             ppo_turn=projection.ppo_turn,

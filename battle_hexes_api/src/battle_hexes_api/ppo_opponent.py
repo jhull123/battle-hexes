@@ -1,4 +1,4 @@
-"""Ownership and phase checks for the human half of an experimental game."""
+"""Ownership and phase checks for the non-PPO side of a PPO game."""
 
 from battle_hexes_api.ppo_state import is_ppo_game
 from battle_hexes_api.persistence.command_errors import CommandErrorTranslator
@@ -8,13 +8,28 @@ def reject_ppo_command():
     raise CommandErrorTranslator.error(409, "invalidPpoTurn")
 
 
-def require_human(game, phase):
-    if is_ppo_game(game) and (game.current_player is not game.players[1] or
-                              game.current_phase != phase):
+def require_opponent(game, phase):
+    if not is_ppo_game(game):
+        return
+    if (game.current_player is not game.players[1]
+            or game.current_phase != phase):
         reject_ppo_command()
 
 
-def check_human_board(game, sparse_board):
+def require_human(game, phase):
+    require_opponent(game, phase)
+    if is_ppo_game(game) and game.player_type_ids[1] != "human":
+        reject_ppo_command()
+
+
+def require_cpu_opponent(game):
+    require_opponent(game, "movement")
+    if is_ppo_game(game) and game.player_type_ids[1] not in (
+            "random", "q-learning"):
+        reject_ppo_command()
+
+
+def check_opponent_board(game, sparse_board):
     """No client can reposition a PPO unit or alter a resolved prior phase."""
     units = {unit.id: unit for unit in game.board.get_units()}
     if len(sparse_board.units) != len(units) or \

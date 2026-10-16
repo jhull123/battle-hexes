@@ -27,5 +27,10 @@ export class PpoPlayer extends CpuPlayer {
         return;
       }
     }
+    const nextPlayer = game.getCurrentPlayer();
+    if (!game.isGameOver() && nextPlayer && nextPlayer !== this
+        && !nextPlayer.isHuman()) {
+      return nextPlayer.play(game);
+    }
   }
 }

@@ -7,7 +7,7 @@ masked PPO training loop, checkpoint evaluation and core-compatible inference
 player are implemented. A separate 9×9 multi-unit decision prototype is also
 implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
-An experimental 50-turn, core-loaded 9×9 v2 slice now has bounded masked
+An experimental 10-turn, core-loaded 9×9 v3 slice now has bounded masked
 training, frozen checkpoint replay, and a one-order-at-a-time API/web path.
 Increment 07 is **not yet marked complete**: the required backend-connected
 browser demonstration with durable storage, mid-turn reload, visible fire and
@@ -256,22 +256,27 @@ environment. From the repository root:
 ```sh
 export PYTHONPATH="$PWD/battle_hexes_core/src:$PWD/battle_agent_rl/src:$PWD/battle_hexes_api/src"
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-python -m battle_agent_rl.ppo.multi_unit_train --seed 0 --total-timesteps 64 --n-steps 16 --batch-size 8 --run-dir /tmp/opencode/ppo-07-smoke-v2
-python -m battle_agent_rl.ppo.multi_unit_evaluate --run-dir /tmp/opencode/ppo-07-smoke-v2 --seeds 1000:1020
-export BATTLE_HEXES_PPO_RUN_DIR=/tmp/opencode/ppo-07-smoke-v2
+python -m battle_agent_rl.ppo.multi_unit_train --seed 0 --total-timesteps 64 --n-steps 16 --batch-size 8 --run-dir /tmp/opencode/ppo-07-smoke-v4
+python -m battle_agent_rl.ppo.multi_unit_evaluate --run-dir /tmp/opencode/ppo-07-smoke-v4 --seeds 1000:1020
+export BATTLE_HEXES_PPO_RUN_DIR=/tmp/opencode/ppo-07-smoke-v4
 uvicorn battle_hexes_api.main:app --port 8000
 ```
 
 Build and serve the web app separately in `battle-hexes-web` with
-`npm run build && npm run serve`, then open `http://localhost:4173`. Select
-**Experimental — trained 9×9 PPO (no skill claim)**: only PPO first and human
-second are supported. The server requires its configured run directory and
-validates the manifest, scenario fingerprint, versions, policy spaces and
+`npm run build && npm run serve`, then open `http://localhost:4173` and select
+**Elimination Demo 3**. PPO occupies the first seat; the second seat may be
+Human, Random, or Q-Learning. CPU opponents use their existing batch movement
+and combat turn, then return control to PPO. Elimination Demo 3 uses the
+10-turn core limit and both factions have Elimination Demo 1's defensive-fire
+sounds; browser audio permissions still apply. The checkpoint remains specific
+to this scenario and does not support arbitrary boards or rosters; no skill
+claim is made. The server requires its configured run directory and validates
+the manifest, scenario fingerprint, versions, policy spaces and
 checkpoint digest before creating a game; clients never select a model file.
 `BATTLE_HEXES_PPO_RUN_DIR` must be set in the **same shell/process environment
 that starts Uvicorn**, and it must point to the run directory containing both
 `manifest.json` and `checkpoint.zip` (not to either file). For example:
-`export BATTLE_HEXES_PPO_RUN_DIR=/absolute/path/to/ppo-07-smoke-v2`.
+`export BATTLE_HEXES_PPO_RUN_DIR=/absolute/path/to/ppo-07-smoke-v4`.
 When selection fails, the API server log identifies whether that variable is
 unset, its directory/manifest is missing, dependencies failed to import, or
 manifest/checkpoint validation failed. The browser intentionally receives only
@@ -279,21 +284,23 @@ a generic unavailable message. A `GET /v1/models` 404 is an unrelated optional
 model-discovery probe; this app does not serve that route.
 Retain the run directory for the full lifetime of saved games. Changing the
 configured artifact does not silently swap a game-bound checkpoint: games
-whose original artifact is unavailable fail on reload. The default API store
+whose original artifact is unavailable fail on reload. Saved version-1
+Elimination Demo 3 games cannot resume under the version-2 10-turn rules, even
+if their original checkpoint remains available. The default API store
 is in-memory and does **not** survive process restart; configure DynamoDB
 (`DYNAMODB_ENABLED=true`, `DDB_TABLE_NAME=...`) for a durable playthrough.
 The browser resumes the current pending order via `GET /games/{id}` on reload.
 
 The seed-0 64-step smoke run collected 64 legal masked orders and 40 SB3
 PPO epochs (80 minibatch optimizer steps), changed policy parameters, and saved
-a v2 artifact. The predeclared `1000:1020` replay produced 0 wins, 3 losses,
-17 draws and 0 cutoffs on the 50-turn core scenario. These are smoke/integration results,
-not evidence of playing strength. An early evaluation `--cycle-limit 3`
-reports cutoffs with core still in progress and still supplies the true
-50-turn horizon to the policy. The example run/evaluation artifacts are local
-to `/tmp/opencode/ppo-07-smoke-v2`; create a new run directory if it already
-exists. The v1 inspector, its training-free dependencies, and the 5×5 path
-remain separate.
+a v3 artifact. The predeclared `1000:1020` replay produced 0 wins, 0 losses,
+20 draws and 0 cutoffs under the 10-turn core rule. These are smoke/integration
+results, **not** evidence of playing strength or a fix for edge-holding. An
+early evaluation `--cycle-limit 3` reports cutoffs with core still in progress
+and still supplies the true 10-turn horizon to the policy. The run/evaluation
+artifacts are local to `/tmp/opencode/ppo-07-smoke-v4`; create a new run
+directory if it already exists. The v1 inspector, its training-free
+dependencies, and the 5×5 path remain separate.
 
 ## Direction
 
@@ -301,7 +308,7 @@ Keep training and inference on the same observation, mask and action-to-plan
 mapping, with core authoritative for movement, combat and victory. The
 center-then-hold comparison challenges the current policy's strength; revisit
 training/representation before claiming improvement. Frozen 5×5 inference uses
-the core `Player` interface; the 9×9 v2 slice uses live per-unit inference,
+the core `Player` interface; the 9×9 v3 slice uses live per-unit inference,
 while Crossroads still needs its own contract. Follow the
 [active schedule](../specs/ppo-agent/playable-player-schedule.md) for the bounded
 path from the 07 human-visible 9×9 vertical slice to a trained, evaluated

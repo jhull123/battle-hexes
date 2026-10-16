@@ -50,3 +50,40 @@ test('PPO applies and acknowledges each live order before requesting another', a
   ]);
   expect(service.orderPpo).toHaveBeenCalledTimes(2);
 });
+
+test('PPO hands off to a CPU opponent after the last order is applied', async () => {
+  const sequence = [];
+  MovementAnimator.mockImplementation(() => ({
+    animate: async () => { sequence.push('animate'); },
+  }));
+  applyMovementResponse.mockImplementation(() => { sequence.push('fire'); });
+  const cpu = {
+    isHuman: () => false,
+    play: jest.fn(() => { sequence.push('cpu-turn'); }),
+  };
+  const service = {
+    orderPpo: jest.fn(async () => ({
+      plan: { unitId: 'learner-0', path: [{ row: 3, column: 2 }] },
+    })),
+    acknowledgeResponseApplication: jest.fn(() => { sequence.push('ack'); }),
+  };
+  const player = new PpoPlayer('Learner', [], { service });
+  let active = player;
+  const game = {
+    ppoTurn: { pendingUnitIds: ['learner-0'] },
+    isGameOver: () => false,
+    getCurrentPlayer: () => active,
+    getCurrentPhase: () => 'Movement',
+    getId: () => 'game-id',
+    getUnitById: () => ({}),
+    getBoard: () => ({ getHex: () => ({}) }),
+    applyApiState: () => {
+      sequence.push('state');
+      game.ppoTurn.pendingUnitIds = [];
+      active = cpu;
+    },
+  };
+  await player.play(game);
+  expect(cpu.play).toHaveBeenCalledWith(game);
+  expect(sequence).toEqual(['animate', 'fire', 'state', 'ack', 'cpu-turn']);
+});

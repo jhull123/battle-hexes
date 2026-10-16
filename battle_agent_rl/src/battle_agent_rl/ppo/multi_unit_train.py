@@ -1,4 +1,4 @@
-"""Bounded v2 masked-PPO smoke trainer."""
+"""Bounded playable masked-PPO smoke trainer."""
 
 import argparse
 from collections import Counter

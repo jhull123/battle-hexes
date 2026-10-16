@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 from battle_agent_rl.ppo.multi_unit_state import joint_mask, slot_observation
-from battle_agent_rl.ppo.playable_scenario import slots_for_game
+from battle_agent_rl.ppo.playable_scenario import TURN_LIMIT, slots_for_game
 from battle_agent_rl.ppo.playable_turn import apply_order
 from battle_hexes_api.ppo_artifact import configured_model
 from battle_hexes_api.ppo_state import (capture_rng, is_ppo_game,
@@ -39,8 +39,9 @@ class PpoOrderAdapter:
         mask = joint_mask(game, slots[:2], pending)
         if not any(mask):
             raise CommandErrorTranslator.error(409, "invalidPpoTurn")
-        observation = slot_observation(game, slots, pending,
-                                       51 - game.turn_number, game.players[0])
+        observation = slot_observation(
+            game, slots, pending, TURN_LIMIT + 1 - game.turn_number,
+            game.players[0])
         try:
             action = predict_joint_action(model, observation, mask)
             plan, fire, combats = apply_order(game, slots[:2], pending,

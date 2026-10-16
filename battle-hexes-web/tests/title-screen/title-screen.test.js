@@ -99,15 +99,15 @@ describe('title screen interactions', () => {
       .toBe('Failed to start game. Please try again.');
   });
 
-  test('experimental scenario restricts both seats and restores ordinary choices', async () => {
+  test('Elimination Demo 3 offers PPO first and any other player type second', async () => {
     mockService.listScenarios.mockResolvedValue([
       { id: 'elim_1', name: 'Scenario 1' },
-      { id: 'ppo_9x9_experimental', name: 'Experimental — trained 9×9 PPO (no skill claim)' },
+      { id: 'ppo_9x9_experimental', name: 'Elimination Demo 3' },
     ]);
     mockService.listPlayerTypes.mockResolvedValue([
       { id: 'human', name: 'Human' },
       { id: 'random', name: 'Random' },
-      { id: 'ppo-9x9-experimental', name: 'Experimental — trained 9×9 PPO (no skill claim)' },
+      { id: 'ppo-9x9-experimental', name: 'Trained 9×9 PPO' },
     ]);
     await import('../../src/title-screen.js');
     await flushPromises();
@@ -117,7 +117,7 @@ describe('title screen interactions', () => {
     const first = document.getElementById('player1-type');
     const second = document.getElementById('player2-type');
     expect([...first.options].map((option) => option.value)).toEqual(['ppo-9x9-experimental']);
-    expect([...second.options].map((option) => option.value)).toEqual(['human']);
+    expect([...second.options].map((option) => option.value)).toEqual(['human', 'random']);
     scenario.value = 'elim_1';
     scenario.dispatchEvent(new Event('change'));
     expect([...first.options].map((option) => option.value)).toEqual(['human', 'random']);

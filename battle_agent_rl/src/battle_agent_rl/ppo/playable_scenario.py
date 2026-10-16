@@ -1,4 +1,4 @@
-"""Immutable v2 scenario and shared slot identities for training and play."""
+"""Versioned playable scenario and shared slot identities for training/play."""
 
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
@@ -6,9 +6,10 @@ from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 
 
 SCENARIO_ID = "ppo_9x9_experimental"
-CONTRACT = "battle-hexes-9x9-2slot-unit-destination-live-turnlimit50-v2"
+CONTRACT = "battle-hexes-9x9-2slot-unit-destination-live-turnlimit10-v3"
+SCENARIO_VERSION = "2"
 SLOT_IDS = ("learner-0", "learner-1", "opponent-0", "opponent-1")
-TURN_LIMIT = 50
+TURN_LIMIT = 10
 
 
 class LocalPlayer(Player):
@@ -22,7 +23,7 @@ def scenario_data():
 
 def validate_scenario(scenario=None):
     scenario = scenario or scenario_data()
-    if (scenario.id != SCENARIO_ID or scenario.version != "1"
+    if (scenario.id != SCENARIO_ID or scenario.version != SCENARIO_VERSION
             or scenario.turn_limit != TURN_LIMIT
             or tuple(unit.id for unit in scenario.units) != SLOT_IDS):
         raise ValueError("Incompatible playable PPO scenario or slot mapping")
@@ -44,5 +45,5 @@ def create_game(rng):
     _, _, _, game = GameCreator().build_game_components(scenario, players)
     game.defensive_fire_resolver.rng = rng
     game.scenario_id = SCENARIO_ID
-    game.scenario_version = "1"
+    game.scenario_version = SCENARIO_VERSION
     return game, players[0], players[1], slots_for_game(game)

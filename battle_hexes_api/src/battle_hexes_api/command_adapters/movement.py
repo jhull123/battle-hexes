@@ -6,8 +6,9 @@ from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
 from .common import notify_game_completion, reject_completed_game
 from battle_hexes_api.ppo_state import capture_rng, is_ppo_game
-from battle_hexes_api.ppo_human import (check_human_board,
-                                        reject_ppo_command, require_human)
+from battle_hexes_api.ppo_opponent import (check_opponent_board,
+                                           require_cpu_opponent,
+                                           require_human, require_opponent)
 
 
 @dataclass(frozen=True)
@@ -30,8 +31,11 @@ class MovementAdapter:
     def __call__(self, game):
         reject_completed_game(game)
         if is_ppo_game(game):
-            reject_ppo_command()
+            require_cpu_opponent(game)
         result = _apply_plans(game, game.get_current_player().movement())
+        if is_ppo_game(game):
+            game.finalize_completed_phase()
+            capture_rng(game)
         notify_game_completion(game)
         return result
 
@@ -46,7 +50,7 @@ class HumanMoveAdapter:
         reject_completed_game(game)
         require_human(game, "movement")
         if is_ppo_game(game):
-            check_human_board(game, self._sparse_board)
+            check_opponent_board(game, self._sparse_board)
         plans = self._sparse_board.to_movement_plans(game.get_board())
         result = _apply_plans(game, plans)
         if is_ppo_game(game):
@@ -65,9 +69,9 @@ class EndMovementAdapter:
 
     def __call__(self, game):
         reject_completed_game(game)
-        require_human(game, "movement")
+        require_opponent(game, "movement")
         if is_ppo_game(game):
-            check_human_board(game, self._sparse_board)
+            check_opponent_board(game, self._sparse_board)
         plans = self._sparse_board.to_movement_plans(game.get_board())
         result = _apply_plans(game, plans)
         if not is_ppo_game(game) or not game.finalize_completed_phase():

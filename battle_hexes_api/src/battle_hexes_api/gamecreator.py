@@ -67,9 +67,11 @@ class GameCreator:
             game.
         """
         if scenario_id == "ppo_9x9_experimental":
-            if list(player_type_ids) != ["ppo-9x9-experimental", "human"]:
+            if (len(player_type_ids) != 2
+                    or player_type_ids[0] != "ppo-9x9-experimental"
+                    or player_type_ids[1] == "ppo-9x9-experimental"):
                 raise ValueError(
-                    "Experimental PPO requires PPO first, human second")
+                    "PPO requires the first seat and a non-PPO opponent")
         elif "ppo-9x9-experimental" in player_type_ids:
             raise ValueError(
                 "Experimental PPO requires its fixed 9x9 scenario")

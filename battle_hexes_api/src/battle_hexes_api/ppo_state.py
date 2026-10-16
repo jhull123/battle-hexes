@@ -48,7 +48,8 @@ def validate_state(state, game_or_document):
     player_types = (getattr(game_or_document, "player_type_ids", None) or
                     [player.type_id for player in game_or_document.players])
     scenario_id = game_or_document.scenario_id
-    if scenario_id != SCENARIO_ID or player_types != [TYPE_ID, "human"]:
+    if (scenario_id != SCENARIO_ID or len(player_types) != 2
+            or player_types[0] != TYPE_ID or player_types[1] == TYPE_ID):
         if state is not None or TYPE_ID in player_types:
             raise SavedGameIncompatibleError("ppo_scenario_or_seat")
         return

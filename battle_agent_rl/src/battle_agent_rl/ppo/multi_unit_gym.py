@@ -5,6 +5,7 @@ import numpy as np
 
 from .multi_unit_environment import MultiUnitEnvironment
 from .playable_environment import PlayableEnvironment
+from .playable_scenario import TURN_LIMIT
 from .multi_unit_state import ACTIONS, CONTRACT
 
 
@@ -53,14 +54,16 @@ def multi_unit_observation_space(cycle_limit):
 class MaskedMultiUnitEnv(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self, cycle_limit=50, training_seed=0, learner_count=2,
+    def __init__(self, cycle_limit=None, training_seed=0, learner_count=2,
                  opponent_count=2, playable=False):
         super().__init__()
+        if cycle_limit is None:
+            cycle_limit = TURN_LIMIT if playable else 50
         self.game_env = (PlayableEnvironment(cycle_limit) if playable else
                          MultiUnitEnvironment(cycle_limit, learner_count,
                                               opponent_count))
         self.observation_space = multi_unit_observation_space(
-            50 if playable else cycle_limit)
+            TURN_LIMIT if playable else cycle_limit)
         self.action_space = gym.spaces.Discrete(ACTIONS)
         self._next_seed = training_seed
         self._transition = None
