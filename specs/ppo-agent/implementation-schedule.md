@@ -1,5 +1,9 @@
 # PPO Agent Implementation Specification Schedule
 
+Increments 01–06 are completed foundation work. This document retains their
+history; the [active playable-player schedule](playable-player-schedule.md)
+continues at 07.
+
 ## Purpose
 
 Divide the [PPO vision](../../battle_agent_rl/PPO.md) into small increments
@@ -223,17 +227,11 @@ Training performance is a later gate, not proof of this design alone.
 **Dependencies:** Learnings from 02–05. Do not assume the 1v1 action index
 extends unchanged.
 
-## Later activation
+## Continuation
 
-Connecting a trained player to the API/UI, broader scenarios, self-play, or
-reward shaping requires separate specifications when their prerequisites and
-success criteria are clear. None is silently included in the first trainer.
-
-After multi-unit training and inference are proven, explicitly decide whether
-to retire the 5×5 decision engine or retain it only for legacy checkpoint and
-evidence replay. Consolidate shared environment, Gym, and inspection plumbing
-where practical; do not leave two actively maintained decision engines by
-default.
+Future work is tracked only in the
+[active playable-player schedule](playable-player-schedule.md), including
+multi-unit training, core/API/UI play, and the 5×5 engine retirement decision.
 
 ## Open Questions
 

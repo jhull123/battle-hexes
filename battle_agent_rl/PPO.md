@@ -7,6 +7,9 @@ masked PPO training loop, checkpoint evaluation and core-compatible inference
 player are implemented. A separate 9×9 multi-unit decision prototype is also
 implemented (see the
 [schedule](../specs/ppo-agent/implementation-schedule.md)).
+Increments 01–06 are completed foundation work; the
+[active playable-player schedule](../specs/ppo-agent/playable-player-schedule.md)
+begins at 07 and tracks the path to a selectable human-versus-PPO game.
 Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
 destinations. The fixed-protocol held-out comparison does not support
 improvement over all baselines; the inference player does not change that
@@ -229,16 +232,16 @@ occur; a cutoff remains `in_progress` in core. Slots retain identity across
 elimination; dead and absent units have zero-valued inputs except `present`
 for dead units. This design demonstrates legal timing and stable inputs, not
 policy strength or compatibility with the core `Player.movement()` batch
-contract. Broader scenarios, training and core-player integration need later
-design.
+contract. Training and core-player integration are planned in the
+[active schedule](../specs/ppo-agent/playable-player-schedule.md).
 
 ## Direction
 
 Keep training and inference on the same observation, mask and action-to-plan
 mapping, with core authoritative for movement, combat and victory. The
 center-then-hold comparison challenges the current policy's strength; revisit
-training/representation before claiming improvement. Frozen inference now uses
-the core `Player` interface. The multi-unit decision contract now has a fixed
-prototype; design variable-sized inputs before expanding the scenario; see the
-numbered specifications in the
-[schedule](../specs/ppo-agent/implementation-schedule.md).
+training/representation before claiming improvement. Frozen 5×5 inference uses
+the core `Player` interface; multi-unit inference still needs live per-unit
+integration. Follow the
+[active schedule](../specs/ppo-agent/playable-player-schedule.md) for the bounded
+path to human play on explicitly supported scenarios.
