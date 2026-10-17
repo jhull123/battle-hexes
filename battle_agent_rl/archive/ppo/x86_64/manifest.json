@@ -2,7 +2,7 @@
   "action_space": "Discrete(162)",
   "checkpoint": {
     "path": "checkpoint.zip",
-    "sha256": "b85abc07d44898cb576a3a1cce2290623685b40e1fd80be6924d4e68fb467cd7"
+    "sha256": "9f5fe0451ee226dee763f8c43e174bda45db35230ec90cfea48b7c1eb7dd5e1c"
   },
   "contract": "battle-hexes-9x9-2slot-unit-destination-live-turnlimit10-v3",
   "device": "cpu",
