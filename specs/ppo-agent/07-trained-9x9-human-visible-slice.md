@@ -94,7 +94,7 @@ Deliver the v3 policy/scenario contract, bounded training and evaluation invocat
 
 ## 11. Related Specifications / Further Reading
 
-[06 — Multi-unit design](06-multi-unit-design.md) · [04 — Checkpoints](04-evaluation-and-checkpoints.md) · [05 — Core inference](05-inference-player.md) · [Active schedule](playable-player-schedule.md) · [PPO vision](../../battle_agent_rl/PPO.md)
+[06 — Multi-unit design](06-multi-unit-design.md) · [04 — Checkpoints](04-evaluation-and-checkpoints.md) · [05 — Core inference](05-inference-player.md) · [Bundled serving artifact](07-bundled-serving-artifact.md) · [Active schedule](playable-player-schedule.md) · [PPO vision](../../battle_agent_rl/PPO.md)
 
 ## Open Questions
 
