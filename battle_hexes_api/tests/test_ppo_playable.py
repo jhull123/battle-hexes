@@ -1,6 +1,7 @@
 """Real trained artifact through the versioned API and detached state codec."""
 
 import json
+import logging
 import random
 import shutil
 from dataclasses import replace
@@ -9,6 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from battle_agent_rl.ppo.multi_unit_train import train
+from battle_agent_rl.ppo import playable_artifact
 from battle_agent_rl.ppo.multi_unit_gym import predict_joint_action
 from battle_agent_rl.ppo.playable_artifact import load_model
 from battle_agent_rl.ppo.playable_environment import PlayableEnvironment
@@ -91,6 +93,28 @@ def test_creation_requires_artifact_and_ppo_first_seat(
             json={"scenarioId": "ppo_9x9_experimental",
                   "playerTypes": ["ppo-9x9-experimental", "random"]})
         assert response.status_code == 200
+
+
+def test_python_patch_mismatch_allows_ppo_creation_but_minor_does_not(
+        artifact, monkeypatch, caplog):
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))
+    installed = playable_artifact.versions()
+    major, minor, _ = map(int, installed["python"].split("."))
+    monkeypatch.setattr(playable_artifact, "versions", lambda: {
+        **installed, "python": f"{major}.{minor}.999"})
+    with caplog.at_level(logging.WARNING), TestClient(create_app()) as client:
+        created = _create(client)
+    assert created.status_code == 200, created.text
+    assert any(record.levelno == logging.WARNING and record.name ==
+               "battle_agent_rl.ppo.playable_artifact"
+               for record in caplog.records)
+
+    monkeypatch.setattr(playable_artifact, "versions", lambda: {
+        **installed, "python": f"{major}.{minor + 1}.0"})
+    with TestClient(create_app()) as client:
+        unavailable = _create(client)
+    assert unavailable.status_code == 503
+    assert unavailable.json()["code"] == "ppoArtifactUnavailable"
 
 
 def test_ppo_game_exposes_defensive_fire_audio_for_both_factions(

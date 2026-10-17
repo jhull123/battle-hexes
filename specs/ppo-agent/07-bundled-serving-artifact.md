@@ -25,7 +25,7 @@ This increment supports only the existing `ppo_9x9_experimental` version-2 scena
 
 ### REQ-002 — Match the serving runtime
 
-- Install the CPU PPO inference stack required by `MaskablePPO.load` in the API image. Pin the Python runtime and the exact Python, NumPy, PyTorch, Gymnasium, Stable-Baselines3, and SB3-Contrib versions checked by the existing manifest, using a reproducible ARM64-compatible installation. Training for the committed artifact and serving must use those same recorded versions. Do not relax compatibility checks simply to make the image load.
+- Install the CPU PPO inference stack required by `MaskablePPO.load` in the API image. Use Python 3.12 for training and serving: record the full training version in the manifest, require matching Python major/minor at load, and log a warning if the patch version differs. Continue to require exact NumPy, PyTorch, Gymnasium, Stable-Baselines3, and SB3-Contrib versions, using a reproducible ARM64-compatible installation. The image may retain a pinned Python patch version for reproducible builds, but a native ARM64 trainer may use another Python 3.12 patch version with the same library versions. Reject a native ARM64 trainer using another Python major/minor before replacing its tracked artifact. Do not weaken the other compatibility checks.
 - Keep PPO dependencies out of `battle_hexes_core`. Do not train during the Docker build, image startup, or ECS deployment. The image may be larger than the present API image; verify its build and startup before changing ECS resources.
 - Avoid adding a second, divergent version list. Document the training/serving environment and the dependency lock or exact pins in one maintainable place.
 
@@ -49,7 +49,7 @@ This increment supports only the existing `ppo_9x9_experimental` version-2 scena
 
 ## 4. Acceptance criteria
 
-1. A clean checkout contains both architecture directories, each with one manifest and checkpoint. Their digest, v3 contract, scenario fingerprint, spaces, and runtime versions validate on the matching architecture without relying on a pre-existing temporary directory. Repeated local training replaces only the selected directory.
+1. A clean checkout contains both architecture directories, each with one manifest and checkpoint. Their digest, v3 contract, scenario fingerprint, spaces, Python major/minor and exact library versions validate on the matching architecture without relying on a pre-existing temporary directory. A Python patch mismatch warns but loads; a major/minor or library mismatch fails. Repeated local training replaces only the selected directory; native ARM64 training refuses a mismatched Python major/minor before deletion.
 2. The ARM64 API image starts with no `BATTLE_HEXES_PPO_RUN_DIR` supplied externally and serves a PPO creation, one order, and subsequent GET. A missing/corrupt/wrong-version artifact fails explicitly rather than silently selecting other weights.
 3. The image-level test records the artifact digest and measured memory; ECS resources are adequate or adjusted based on that evidence. Existing non-PPO creation and commands still pass.
 4. After replacement, old saved PPO games return a specific checkpoint-unavailable error in HTTP, logs and the browser; new games use the new digest. `./server-side-checks.sh`, `npm run test-and-build`, and `./cloudformation-checks.sh` (if the template changes) pass. Increment 07 remains incomplete until its separate durable backend/browser playthrough is recorded.

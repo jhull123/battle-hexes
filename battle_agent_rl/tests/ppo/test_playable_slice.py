@@ -1,5 +1,6 @@
 import json
 import hashlib
+import logging
 import random
 
 import pytest
@@ -9,7 +10,8 @@ from battle_agent_rl.ppo.multi_unit_gym import predict_joint_action
 from battle_agent_rl.ppo.multi_unit_gym import MaskedMultiUnitEnv
 from battle_agent_rl.ppo.multi_unit_state import joint_mask, slot_observation
 from battle_agent_rl.ppo.multi_unit_train import train
-from battle_agent_rl.ppo.playable_artifact import fingerprint, load_model
+from battle_agent_rl.ppo.playable_artifact import (fingerprint, load_model,
+                                                   read_manifest)
 from battle_agent_rl.ppo.playable_environment import PlayableEnvironment
 from battle_agent_rl.ppo.playable_scenario import TURN_LIMIT, create_game
 from battle_agent_rl.ppo.playable_scenario import scenario_data
@@ -125,6 +127,29 @@ def test_trained_checkpoint_reloads_and_replays(tmp_path):
     archive.write_bytes(b"invalid archive")
     with pytest.raises(ValueError, match="digest mismatch"):
         load_model(run_dir)
+
+
+def test_python_patch_mismatch_warns_but_major_or_minor_mismatch_fails(
+        tmp_path, caplog):
+    run_dir = tmp_path / "trained"
+    _, manifest = train(0, 16, 16, 8, run_dir)
+    path = run_dir / "manifest.json"
+    major, minor, _ = map(int, manifest["versions"]["python"].split("."))
+    manifest["versions"]["python"] = f"{major}.{minor}.999"
+    path.write_text(json.dumps(manifest))
+    with caplog.at_level(logging.WARNING):
+        _, loaded = load_model(run_dir)
+    assert loaded["versions"]["python"] == f"{major}.{minor}.999"
+    assert any(record.levelno == logging.WARNING and record.name ==
+               "battle_agent_rl.ppo.playable_artifact"
+               for record in caplog.records)
+
+    for python_version in (f"{major}.{minor + 1}.0",
+                           f"{major + 1}.{minor}.0", f"{major}.{minor}"):
+        manifest["versions"]["python"] = python_version
+        path.write_text(json.dumps(manifest))
+        with pytest.raises(ValueError, match="Incompatible"):
+            read_manifest(run_dir)
 
 
 def test_v1_spaces_cannot_be_served_as_v3(tmp_path):

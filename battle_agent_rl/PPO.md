@@ -27,8 +27,9 @@ from the [root README](../README.md#setting-up-the-api) activated:
 
 The trainer requests 16 steps (seed 0, rollout 16, batch 8), requires legal
 masked actions and updated weights, and replaces **only** the selected model.
-On ARM64 hardware, training is native but must use the pinned serving runtime;
-the x86-to-ARM64 command uses the pinned training image. To play, run
+On ARM64 hardware, training is native and requires Python 3.12 with the exact
+serving library versions; a different Python patch version is allowed. The
+x86-to-ARM64 command uses the pinned training image. To play, run
 `npm run build && npm run serve` in `battle-hexes-web`, open
 `http://localhost:4173`, and select **Elimination Demo 3 → Trained 9×9 PPO**.
 PPO takes the first seat; Human, Random or Q-Learning takes the second.
@@ -36,7 +37,9 @@ PPO takes the first seat; Human, Random or Q-Learning takes the second.
 `dev.sh` selects by host architecture; `BATTLE_HEXES_PPO_RUN_DIR` can override
 it. The deployment image instead bundles the committed ARM64 model and **never
 trains during build or deployment**. The manifest checks scenario, policy
-contract, spaces, SHA-256 and exact runtime versions before loading on CPU.
+contract, spaces, SHA-256, Python major/minor and exact library versions before
+loading on CPU. The full training Python version stays in the manifest; a
+different serving Python patch version logs a warning but still loads.
 For example, ARM64 PyTorch `2.5.1` and x86 `2.5.1+cpu` are not interchangeable.
 Replacing either model expires saved games tied to its previous digest: GET
 and orders fail with a clear server-log and browser message; they never use the
@@ -61,7 +64,9 @@ optimizer steps. Replay on the declared seeds 1000–1019 (win/loss/draw/cutoff)
 | arm64 | `242ea5aba62c3a1df33dcf0a494fe2fc8579a2aa8bb44c68dccd8ced11472091` | 1 / 0 / 19 / 0 |
 
 The manifest records the exact versions and training configuration. ARM64
-training and serving use the Python 3.12.3 base in the Dockerfile and
+training under Docker/QEMU and image serving use the Python 3.12.3 base in the
+Dockerfile; native ARM64 training may use another 3.12 patch version
+with matching library versions. The dependencies are pinned in
 [`requirements-ppo-serving.txt`](../requirements-ppo-serving.txt) (NumPy
 2.5.4, PyTorch 2.5.1, Gymnasium 1.2.3, SB3/SB3-Contrib 2.7.0). These are
 integration results, **not** evidence of skill. Re-evaluate after retraining:

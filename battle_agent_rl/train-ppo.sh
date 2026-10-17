@@ -37,6 +37,30 @@ else
     exit 1
   fi
   export PYTHONPATH="$REPO_ROOT/battle_hexes_core/src:$REPO_ROOT/battle_agent_rl/src${PYTHONPATH:+:$PYTHONPATH}"
+  if [[ "$ARCH" == arm64 ]]; then
+    if ! python - "$REPO_ROOT/requirements-ppo-serving.txt" <<'PY'
+import sys
+from pathlib import Path
+
+if sys.version_info[:2] != (3, 12):
+    sys.exit('Native ARM64 training requires Python 3.12.')
+
+from battle_agent_rl.ppo.artifacts import versions
+
+expected = {
+    name.replace('-', '_'): version
+    for line in Path(sys.argv[1]).read_text().splitlines()
+    if '==' in line and not line.lstrip().startswith('#')
+    for name, version in [line.strip().split('==', 1)]
+}
+actual = versions()
+if any(actual.get(name) != version for name, version in expected.items()):
+    sys.exit('Native ARM64 training requires the pinned PPO serving libraries.')
+PY
+    then
+      exit 1
+    fi
+  fi
   python -c 'import battle_agent_rl.ppo.multi_unit_train'  # check dependencies first
   train=(python -m battle_agent_rl.ppo.multi_unit_train)
   model_path="$RUN_DIR"
