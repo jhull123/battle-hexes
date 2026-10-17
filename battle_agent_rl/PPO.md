@@ -40,7 +40,7 @@ trains during build or deployment**. The manifest checks scenario, policy
 contract, spaces, SHA-256, Python major/minor and exact library versions before
 loading on CPU. The full training Python version stays in the manifest; a
 different serving Python patch version logs a warning but still loads.
-For example, ARM64 PyTorch `2.5.1` and x86 `2.5.1+cpu` are not interchangeable.
+Architecture-specific library builds are not interchangeable.
 Replacing either model expires saved games tied to its previous digest: GET
 and orders fail with a clear server-log and browser message; they never use the
 new weights silently. The default API store is in-memory and does not survive
@@ -55,27 +55,23 @@ for observation fields, turn timing and persistence rules.
 
 ### Checkpoint evidence and replay
 
-Both committed models used seed 0 and collected 16 legal steps with 20
-optimizer steps. Replay on the declared seeds 1000–1019 (win/loss/draw/cutoff):
+For each architecture, `archive/ppo/<architecture>/manifest.json` records the
+checkpoint SHA-256, training configuration and runtime versions; the adjacent
+`checkpoint.zip` is the artifact it identifies. Use
+[`requirements-ppo-serving.txt`](../requirements-ppo-serving.txt) for serving
+dependency pins and the Dockerfile for the ARM64 image's Python base. Native
+ARM64 training may use another Python 3.12 patch version with matching library
+versions. Do not copy checkpoint digests, version pins or replay counts into
+this document: replacing a model can invalidate all three.
 
-| Model | SHA-256 | Outcomes |
-| --- | --- | --- |
-| x86_64 | `b85abc07d44898cb576a3a1cce2290623685b40e1fd80be6924d4e68fb467cd7` | 0 / 0 / 20 / 0 |
-| arm64 | `242ea5aba62c3a1df33dcf0a494fe2fc8579a2aa8bb44c68dccd8ced11472091` | 1 / 0 / 19 / 0 |
-
-The manifest records the exact versions and training configuration. ARM64
-training under Docker/QEMU and image serving use the Python 3.12.3 base in the
-Dockerfile; native ARM64 training may use another 3.12 patch version
-with matching library versions. The dependencies are pinned in
-[`requirements-ppo-serving.txt`](../requirements-ppo-serving.txt) (NumPy
-2.5.4, PyTorch 2.5.1, Gymnasium 1.2.3, SB3/SB3-Contrib 2.7.0). These are
-integration results, **not** evidence of skill. Re-evaluate after retraining:
+Replay each committed model on the declared seeds 1000–1019 in its matching
+runtime, especially after retraining or changing game rules:
 
 ```sh
 export PYTHONPATH="$PWD/battle_agent_rl/src:$PWD/battle_hexes_core/src"
 python -m battle_agent_rl.ppo.multi_unit_evaluate \
   --run-dir battle_agent_rl/archive/ppo/x86_64 --seeds 1000:1020
-# For ARM64 on x86, after ./battle_agent_rl/train-ppo.sh arm64:
+# For ARM64 on x86, using the matching training image:
 docker run --rm --platform linux/arm64 \
   -v "$PWD/battle_agent_rl/archive/ppo:/models" \
   --entrypoint python battle-hexes-ppo-training:arm64 \
@@ -84,10 +80,14 @@ docker run --rm --platform linux/arm64 \
 ```
 
 Evaluation writes `evaluation.json` next to the model; it is ignored by Git,
-not a third tracked artifact. The [ARM64 image smoke check](../battle_hexes_api/README.md#arm64-deployment-image)
-passed PPO creation/order/GET and ordinary play under 256 CPU / 512 MiB. On
-x86/QEMU, startup took 47 seconds and peak memory was about 444 MiB with one
-in-memory client; production DynamoDB and concurrency remain unmeasured.
+not a third tracked artifact. Check its `checkpointDigest` against the
+manifest and its per-seed episodes against the win/loss/draw/cutoff counts
+before reporting results for that model. A short smoke run and replay are
+integration evidence, **not** evidence of skill.
+
+The [ARM64 image smoke check](../battle_hexes_api/README.md#arm64-deployment-image)
+exercises the bundled model and ordinary play under the deployment task limit.
+It does not measure production DynamoDB behavior or concurrency.
 
 ## Run locally
 
