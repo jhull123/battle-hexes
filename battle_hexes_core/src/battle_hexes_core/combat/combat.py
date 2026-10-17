@@ -154,8 +154,14 @@ class Combat:
                     attackers,
                     defense_factor,
                 )
-                self.board.remove_units(attackers_to_remove + defenders)
-                eliminated = attackers_to_remove + list(defenders)
+                lost_attack = sum(
+                    unit.get_attack() for unit in attackers_to_remove
+                )
+                defenders_to_remove = self._defenders_to_remove(
+                    defenders, lost_attack
+                )
+                eliminated = attackers_to_remove + defenders_to_remove
+                self.board.remove_units(eliminated)
             case _:
                 raise Exception(
                     'Unhandled combat result:',
@@ -249,6 +255,21 @@ class Combat:
             if len(best_subset) == size:
                 break
         return best_subset
+
+    @staticmethod
+    def _defenders_to_remove(defenders, lost_attack):
+        """Match lost attack strength, keeping an exchange on both sides."""
+        best_subset = []
+        best_total = 0
+        for size in range(1, len(defenders) + 1):
+            for combo in combinations(defenders, size):
+                total = sum(unit.get_defense() for unit in combo)
+                if total <= lost_attack and total > best_total:
+                    best_subset = list(combo)
+                    best_total = total
+        if best_subset:
+            return best_subset
+        return [min(defenders, key=lambda unit: unit.get_defense())]
 
     def find_combat(self) -> list:
         results = []
