@@ -27,8 +27,14 @@ tuning are outside this schedule.
 **Implementation status:** v3 contract on the version-2 10-turn scenario,
 masked smoke training/evaluation (0 wins, 0 losses, 20 draws, 0 cutoffs on
 seeds 1000–1019), defensive-fire sound mappings,
-validated artifact, persisted per-order API turns and web selection/animation
-are present. Unit and API tests include a completed HTTP game and an
+validated artifacts under `battle_agent_rl/archive/ppo/` for x86_64 and ARM64,
+persisted per-order API turns and web selection/animation are present. A bundled
+ARM64 image loads its pinned checkpoint and served
+PPO and ordinary HTTP games under the current 256 CPU / 512 MiB limit; its
+declared 20-seed replay recorded 1 win, 0 losses, 19 draws and 0 cutoffs.
+Local training explicitly replaces the selected architecture's Git-managed
+model; old saved-game digests fail clearly in API logs and the browser.
+Unit and API tests include a completed HTTP game and an
 in-memory repository restart simulation. The mandatory browser-visible
 playthrough against an actual backend with **durable** storage, mid-turn reload,
 fire/retreat and completed result is still unverified; 07 remains planned and

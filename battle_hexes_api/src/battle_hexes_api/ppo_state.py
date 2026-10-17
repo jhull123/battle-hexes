@@ -1,6 +1,7 @@
 """Persisted, JSON-only PPO turn state and configured artifact access."""
 
 import json
+import logging
 import random
 
 from battle_agent_rl.ppo.playable_scenario import (CONTRACT, SCENARIO_ID,
@@ -10,6 +11,7 @@ from battle_hexes_api.ppo_artifact import configured_model
 
 
 TYPE_ID = "ppo-9x9-experimental"
+logger = logging.getLogger(__name__)
 
 
 def is_ppo_game(game):
@@ -128,6 +130,11 @@ def restore_state(game, document):
         if state["checkpoint_path"] != manifest["checkpoint"]["path"]:
             raise ValueError("Checkpoint path mismatch")
     except ValueError as error:
+        logger.error(
+            "Saved PPO game %s cannot resume: checkpoint digest %s is no "
+            "longer available in the configured artifact (%s)",
+            game.id, state["checkpoint_digest"], error,
+        )
         raise SavedGameIncompatibleError("ppo_artifact_unavailable") from error
     game.ppo_state = state
     game.ppo_rng = rng

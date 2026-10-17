@@ -2,30 +2,92 @@
 
 ## Status
 
-The fixed 5×5, one-unit-per-side environment, seeded rollout inspector,
-masked PPO training loop, checkpoint evaluation and core-compatible inference
-player are implemented. A separate 9×9 multi-unit decision prototype is also
-implemented (see the
-[schedule](../specs/ppo-agent/implementation-schedule.md)).
-An experimental 10-turn, core-loaded 9×9 v3 slice now has bounded masked
-training, frozen checkpoint replay, and a one-order-at-a-time API/web path.
-Increment 07 is **not yet marked complete**: the required backend-connected
-browser demonstration with durable storage, mid-turn reload, visible fire and
-a displayed completed result has not been recorded.
-Increments 01–06 are completed foundation work; the
-[active playable-player schedule](../specs/ppo-agent/playable-player-schedule.md)
-begins at 07 with bounded 9×9 multi-unit smoke training and a human-visible
-game against its saved, reloaded checkpoint. It ends with a selectable
-human-versus-PPO Crossroads game.
-Core owns game rules; PPO uses SB3-Contrib `MaskablePPO` to learn legal
-destinations. The fixed-protocol held-out comparison does not support
-improvement over all baselines; the inference player does not change that
-finding.
+The 5×5 one-unit foundation (increments 01–05) and 9×9 multi-unit prototype
+(06) are implemented. The experimental, 10-turn 9×9 PPO opponent (07) has
+trained checkpoints and a one-order-at-a-time API/web path. **Increment 07 is
+not complete:** a backend-connected browser game with durable storage, mid-turn
+reload, visible fire/retreat and a displayed core-completed result still needs
+to be recorded. The [active schedule](../specs/ppo-agent/playable-player-schedule.md)
+continues toward a Crossroads opponent; these 9×9 weights do not transfer to it.
+Core remains authoritative for rules and results. Training uses SB3-Contrib
+`MaskablePPO`; smoke training does not establish playing strength.
+
+## Experimental trained 9×9 game (increment 07 in progress)
+
+One Git-tracked model per architecture lives in
+`battle_agent_rl/archive/ppo/{x86_64,arm64}/`, each with `manifest.json` and
+`checkpoint.zip`. From the repository root, with the Python 3.12 environment
+from the [root README](../README.md#setting-up-the-api) activated:
+
+```sh
+./battle_agent_rl/train-ppo.sh          # replace the host architecture's model
+./battle_agent_rl/train-ppo.sh arm64    # optional: ARM64 on x86 via Docker/QEMU
+./battle_hexes_api/dev.sh              # serve the host architecture's model
+```
+
+The trainer requests 16 steps (seed 0, rollout 16, batch 8), requires legal
+masked actions and updated weights, and replaces **only** the selected model.
+On ARM64 hardware, training is native but must use the pinned serving runtime;
+the x86-to-ARM64 command uses the pinned training image. To play, run
+`npm run build && npm run serve` in `battle-hexes-web`, open
+`http://localhost:4173`, and select **Elimination Demo 3 → Trained 9×9 PPO**.
+PPO takes the first seat; Human, Random or Q-Learning takes the second.
+
+`dev.sh` selects by host architecture; `BATTLE_HEXES_PPO_RUN_DIR` can override
+it. The deployment image instead bundles the committed ARM64 model and **never
+trains during build or deployment**. The manifest checks scenario, policy
+contract, spaces, SHA-256 and exact runtime versions before loading on CPU.
+For example, ARM64 PyTorch `2.5.1` and x86 `2.5.1+cpu` are not interchangeable.
+Replacing either model expires saved games tied to its previous digest: GET
+and orders fail with a clear server-log and browser message; they never use the
+new weights silently. The default API store is in-memory and does not survive
+a server restart; DynamoDB is needed for durable games.
+
+The 9×9 v3 action is a unit slot plus row-major destination (162 actions).
+Core-derived masks restrict each live decision; defensive fire resolves before
+the next order, and combat runs once per side. The scenario has a 10-turn core
+limit. A training/evaluation cutoff leaves core `in_progress`, not a draw.
+See the [07 contract](../specs/ppo-agent/07-trained-9x9-human-visible-slice.md)
+for observation fields, turn timing and persistence rules.
+
+### Checkpoint evidence and replay
+
+Both committed models used seed 0 and collected 16 legal steps with 20
+optimizer steps. Replay on the declared seeds 1000–1019 (win/loss/draw/cutoff):
+
+| Model | SHA-256 | Outcomes |
+| --- | --- | --- |
+| x86_64 | `b85abc07d44898cb576a3a1cce2290623685b40e1fd80be6924d4e68fb467cd7` | 0 / 0 / 20 / 0 |
+| arm64 | `242ea5aba62c3a1df33dcf0a494fe2fc8579a2aa8bb44c68dccd8ced11472091` | 1 / 0 / 19 / 0 |
+
+The manifest records the exact versions and training configuration. ARM64
+training and serving use the Python 3.12.3 base in the Dockerfile and
+[`requirements-ppo-serving.txt`](../requirements-ppo-serving.txt) (NumPy
+2.5.4, PyTorch 2.5.1, Gymnasium 1.2.3, SB3/SB3-Contrib 2.7.0). These are
+integration results, **not** evidence of skill. Re-evaluate after retraining:
+
+```sh
+export PYTHONPATH="$PWD/battle_agent_rl/src:$PWD/battle_hexes_core/src"
+python -m battle_agent_rl.ppo.multi_unit_evaluate \
+  --run-dir battle_agent_rl/archive/ppo/x86_64 --seeds 1000:1020
+# For ARM64 on x86, after ./battle_agent_rl/train-ppo.sh arm64:
+docker run --rm --platform linux/arm64 \
+  -v "$PWD/battle_agent_rl/archive/ppo:/models" \
+  --entrypoint python battle-hexes-ppo-training:arm64 \
+  -m battle_agent_rl.ppo.multi_unit_evaluate \
+  --run-dir /models/arm64 --seeds 1000:1020
+```
+
+Evaluation writes `evaluation.json` next to the model; it is ignored by Git,
+not a third tracked artifact. The [ARM64 image smoke check](../battle_hexes_api/README.md#arm64-deployment-image)
+passed PPO creation/order/GET and ordinary play under 256 CPU / 512 MiB. On
+x86/QEMU, startup took 47 seconds and peak memory was about 444 MiB with one
+in-memory client; production DynamoDB and concurrency remain unmeasured.
 
 ## Run locally
 
-Use Python 3.12. From the repository root, after setting up `.venv312` as in
-the [root README](../README.md#setting-up-the-api):
+The earlier fixed **5×5** environment, trainer and core `PPOPlayer` are
+separate from the playable 9×9 opponent. To inspect them from the repo root:
 
 ```sh
 source .venv312/bin/activate
@@ -34,287 +96,65 @@ source .venv312/bin/activate
 ./train-and-inspect-ppo.sh
 ```
 
-The inspector does not need trainer dependencies; run
-`./inspect-ppo-rollout.sh --help` for options. `random` samples sorted legal
-indexes with a policy-local `random.Random(seed)` separate from the game RNG;
-`hold` keeps the learner in place. The trace shows the pre-action board,
-observation, legal indexes/coordinates, action, defensive fire, combat, reward
-and final state. `L` is learner, `O` opponent, `.` empty and `*` the chosen
-destination, which can differ from the post-combat unit position. A cutoff
-leaves core status in progress. `NO_COLOR=1` disables styling.
-
-`./train-and-inspect-ppo.sh` runs the verified short masked-PPO smoke training
-(seed 0, four-step limit, 32 timesteps, rollout 16, batch size 8), then
-inspects episode seed 42. It uses the repo's `.venv312` automatically when
-present; from an isolated worktree, activate a Python 3.12 environment first.
-Pass trainer options after the script name to override the defaults. For
-example, `./train-and-inspect-ppo.sh --total-timesteps 256 --n-steps 64
---batch-size 32 --step-limit 50` runs a longer inspection. PPO dependencies
-must be installed as described in the root README.
-
-The environment's row-major 25-cell observation has `occupancy` (learner 1,
-opponent -1, empty 0), `defensive_fire_ready` (0/1) and `remaining_steps`.
-The boolean action mask marks legal destinations; the current cell is hold.
-Rewards are +1 for a win, -1 for a loss and 0 otherwise. At an ending the mask
-is all false; a step-limit cutoff is `truncated`, not a core draw. The Gym
-adapter (`ppo.gym_env.MaskedBattleHexesEnv`) exposes the same inputs to
-`MultiInputPolicy`. Always pass the current mask for prediction:
-`model.predict(obs, action_masks=env.action_masks(), deterministic=True)`.
-
-The 5×5 layout is a fixed row-major encoding of hex cells, not square-grid
-movement: core computes hex reachability and paths, and the mask prevents
-illegal destinations. The current MLP does not explicitly receive hex-neighbor
-or distance features, though, so it must learn useful spatial relationships
-from experience. Keep this simple representation as the first baseline; the
-32-timestep smoke run only verifies plumbing, not playing strength. Evaluate
-on held-out seeds against random and hold before changing it. If learning
-stalls or is too sample-hungry, try explicit hex-aware features (for example,
-distance to the opponent) before moving to a graph-based policy. Revisit the
-representation when adding larger or variable-sized boards.
-
-The trainer uses one CPU environment and a seeded random opponent. Explicit
-`reset(seed=s)` starts game seed `s`; automatic resets advance to `s+1`,
-`s+2`, etc. The Gym action space is seeded too. The CLI requires positive
-`--step-limit` and `--total-timesteps`, `--n-steps > 1`, and
-`1 < --batch-size <= --n-steps`; the values above are its defaults. It reports
-actual collected steps (which may exceed the request), completed episode
-outcomes/length/return and PPO update losses. Losses do not measure playing
-skill. Optional `--inspect-episode SEED` uses the just-trained in-memory model
-for one deterministic, mask-aware episode, bounded by `--step-limit`. It prints
-each board, legal index and coordinate, selected action, reward and ending
-through the same audited inspector as the random/hold baseline. The supplied
-seed makes this spot check repeatable; without `--run-dir` the model is not
-saved. Compare two identical training commands' summaries
-and inspection traces, and inspect decisions where most destinations are
-illegal: every printed PPO action must appear in that decision's legal list.
+The inspector needs no training dependencies; `./inspect-ppo-rollout.sh --help`
+and `./train-and-inspect-ppo.sh --help` show options. The trainer smoke run
+does not save a model by default. For a saved 5×5 experiment, use the commands
+in [checkpoint evaluation](#checkpoint-evaluation) below.
 
 ## Checkpoint evaluation
 
-From the repository root with `.venv312` active and the PPO dependencies
-installed, run (the directory must not already exist):
+The **5×5** trainer saves snapshots into a new `--run-dir`; the evaluator
+selects a checkpoint on validation seeds and tests it on distinct held-out
+seeds. With `.venv312` active, from the repo root:
 
 ```sh
-export PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
-export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-python -m battle_agent_rl.ppo.train --seed 0 --step-limit 50 --total-timesteps 512 --n-steps 64 --batch-size 32 --run-dir /tmp/ppo-run --checkpoint-interval 4
-python -m battle_agent_rl.ppo.evaluate --run-dir /tmp/ppo-run
-python -m battle_agent_rl.ppo.evaluate --run-dir /tmp/ppo-run --checkpoint checkpoint-000000256.zip --split validation
+export PYTHONPATH="$PWD/battle_agent_rl/src:$PWD/battle_hexes_core/src"
+python -m battle_agent_rl.ppo.train --seed 0 --step-limit 50 \
+  --total-timesteps 512 --n-steps 64 --batch-size 32 \
+  --run-dir /tmp/ppo-5x5-run --checkpoint-interval 4
+python -m battle_agent_rl.ppo.evaluate --run-dir /tmp/ppo-5x5-run
 ```
 
-`--checkpoint-interval` counts completed optimizer updates; a snapshot is
-also saved at the final update. Training is one uninterrupted `learn` run.
-`--run-dir` creates a new directory, preventing accidental overwrite. For
-alternate, predeclared sets, pass `--seed-lists FILE` *at training time*;
-the JSON file has ordered integer arrays `validation` and `held_out`.
-Defaults are 1,000,000–1,000,199 and 2,000,000–2,000,199. The run manifest
-records the complete lists, training episode seeds (including the unfinished
-episode), training configuration, completed-update interval, step limit,
-CPU/software versions, fixed policy-input contract, baselines, selection rule,
-and `.zip` checkpoint paths, update positions, and SHA-256 digests. A changed
-step limit, policy-input space, contract or software version rejects reload.
-The replay command reloads a checkpoint without training. Held-out replay is
-restricted to the already selected checkpoint.
-
-`validation-episodes.json` and `validation-table.txt` contain all candidate
-results ordered by collected timesteps; `validation-report.json` records the
-selection. Only the highest validation game score advances, with ties broken
-by lower timesteps then path. `held-out-episodes.json`, `held-out-table.txt`
-and `held-out-report.json` contain the frozen comparison; `replay-*-*` files
-hold a standalone reload's results. Per-episode JSON records `split`,
-`checkpoint`, `training_timesteps`, `policy`, `game_seed`, `outcome`, `length`
-(learner decisions), and `return`. Tables count wins/losses/core draws and
-cutoffs separately, report rates over all games, score (win 1, draw 0.5,
-loss/cutoff 0), mean/median decisions, mean return and paired differences.
-Held-out paired 95% intervals resample whole game seeds 10,000 times with
-`random.Random(0)`; a positive lower endpoint against random, hold and
-center-then-hold is required to support improvement. Cutoffs remain core
-`in_progress`, neither a loss nor a draw. A selected checkpoint may be
-audited using the existing inspector after `load_checkpoint`:
-`inspect_trained_episode(model, seed, step_limit)`.
-
-The fixed experiment at seed 0, step limit 50, 512 requested/collected
-timesteps, rollout 64, batch 32, interval 4, evaluated both 256- and
-512-timestep snapshots on all 200 validation seeds; their scores tied at
-0.708, so 256 was selected. Its held-out score on 200 distinct seeds was
-0.677 (95% score interval [0.620, 0.733]); validation's score interval was
-[0.650, 0.763]. Held-out paired differences were +0.230 vs random
-([0.143, 0.315]), +0.128 vs hold ([0.053, 0.203]) and -0.087 vs
-center-then-hold ([-0.160, -0.018]). The overall result is **worse** against
-the predeclared tactical baseline. This small fixed scenario and random
-opponent do not establish broader skill. The local artifacts for this run are
-in `/tmp/opencode/ppo-04-evidence`; use the commands above to create durable
-artifacts at a location of your choice.
+The fixed 512-step experiment selected the 256-step snapshot (validation
+score 0.708). On 200 held-out seeds it scored 0.677; its paired score
+difference against center-then-hold was **-0.087** (95% interval
+[-0.160, -0.018]). The result does **not** support improvement over all
+baselines. See [spec 04](../specs/ppo-agent/04-evaluation-and-checkpoints.md)
+and the [foundation schedule](../specs/ppo-agent/implementation-schedule.md)
+for selection protocol and evidence.
 
 ## Local core-game inference
 
-Run a bounded, ordinary core `Game` with a frozen manifest-selected checkpoint
-(or pass `--checkpoint checkpoint-000000256.zip` for an explicit manifest
-entry when selection has not yet happened):
-
-```sh
-export PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
-export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-python -m battle_agent_rl.ppo.local_game /tmp/opencode/ppo-04-evidence --seed 42
-```
-
-From Python, construct
-`PPOPlayer.from_checkpoint("Learner", [Faction("learner", "Learner", "blue")],
-run_dir, checkpoint=None, step_limit=None)`, put it first in the fixed 5×5
-game against `SeededRandomPlayer`, then call `player.bind_game(game)` before
-its first turn. The default checkpoint is the frozen manifest `selected` entry;
-if none exists, give the path of an entry listed in `checkpoints`. An optional
-`step_limit` must match the manifest. Loading validates versions, policy
-contract, digest and spaces on CPU. The player refuses other board/settings/
-unit/opponent configurations and repeated same-turn calls. Its callbacks do
-not learn, advance turns or classify results. Use a fresh player for each game.
-
-The local command prints each decision's occupancy, defensive-fire readiness,
-remaining steps, legal mask indexes and chosen destination. It uses the same
-`random.Random(seed)` for the opponent, defensive fire and combat as training,
-resolves each returned movement plan and combat through core, and reports
-`completed` versus `cutoff` separately; a cutoff leaves core in progress.
-Core `GamePlayer.play(max_turns=...)` has a different turn bound and RNG
-protocol and cannot substitute for this demonstration. On the existing
-256-timestep selected checkpoint, seeds 0, 2 and 42 yielded 17, 4 and 9
-decisions, all completed as learner wins; each decision's observation, mask
-and action and the resulting fire/combat logs matched a fresh Gym checkpoint
-evaluation replay with the same seed. This verifies integration, not skill.
+With a selected 5×5 checkpoint, run
+`python -m battle_agent_rl.ppo.local_game /tmp/ppo-5x5-run --seed 42`.
+`PPOPlayer.from_checkpoint(...)` loads the frozen policy on CPU, validates its
+scenario/contract/digest, and must be bound to the fixed game before play. It
+never learns during a turn. See [spec 05](../specs/ppo-agent/05-inference-player.md)
+for the Python interface and parity checks.
 
 ## Evidence and observation audit
 
-Uniform random play over seeds 0–99 won 36, lost 44 and drew 20 games (mean
-4.92 steps). The inspector verifies each observation and legal mask against
-core, including after combat and at endings. For this fixed task:
-
-| Decision factor | Policy access |
-| --- | --- |
-| Positions and eliminated units | Occupancy. |
-| Defensive-fire eligibility | Readiness plane; includes opponent off-turn fire risk. |
-| Legal movement and hold | Core-derived mask; every legal destination has a path. |
-| Remaining time to cutoff | `remaining_steps`, added by the 02 audit. |
-| Unit attributes, terrain and fire settings | Fixed by the scenario. |
-| Movement/retreat history | Current readiness and positions capture its next-decision effects; new turns refresh movement. |
-| Turn/status/event history | Diagnostic `info`, not policy input. |
-| Future opponent choices and rolls | Private seeded randomness. |
-
-No mask change was needed. A cutoff remains distinguishable from a completed
-game even when its core status is `in_progress`. For reproducibility, two
-seed-12 CPU runs (Python 3.12.3, Torch 2.5.1+cpu, NumPy 2.5.4, Gymnasium
-1.2.3, SB3/SB3-Contrib 2.7.0, `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1`, limit 2,
-32 timesteps, n_steps 16, batch size 8, [16, 16] network) matched action and
-outcome traces and timesteps; parameters and update metrics agreed within
-`rtol=1e-6, atol=1e-7`. Results need not match across hardware or versions.
+The 5×5 observation contains row-major occupancy, defensive-fire readiness
+and remaining steps; its core-derived mask includes legal destinations and
+hold. Future rolls remain private. Uniform random play over seeds 0–99 won
+36, lost 44 and drew 20. A step-limit cutoff is **not** a core draw; the
+inspector audits observations and masks against core at each decision. See
+[spec 02](../specs/ppo-agent/02-rollout-inspection.md) for the audit and
+[spec 03](../specs/ppo-agent/03-masked-ppo-training.md) for reproducibility.
 
 ## Multi-unit prototype
 
-Increment 06 provides a separate fixed 9×9, one- or two-unit-per-side
-environment. It is **not** a replacement for the 5×5 trainer, its checkpoints,
-or `PPOPlayer`. Learner decisions choose a slot and row-major destination:
-`action = slot * 81 + row * 9 + column` (162 actions). Core resolves movement
-and defensive fire immediately; once every living unit has received one order,
-core resolves combat and runs the opponent's complete turn. At a decision, the
-mask contains only the pending slots' reachable cells. `MultiUnitEnvironment`
-supports `reset(seed)` and `step(action)`; `MaskedMultiUnitEnv` exposes a Gym
-`Dict` observation and native `action_masks()` to `MaskablePPO`'s
-`MultiInputPolicy`. No training campaign or multi-unit checkpoint/player is
-included. For inference with a compatible initialized model, use
-`multi_unit_gym.predict_joint_action(model, observation, mask)`; it checks
-the model spaces before masked prediction. The contract identifier is
-`battle-hexes-9x9-2slot-unit-destination-live-v1`.
-
-From the repository root, inspect bounded deterministic play without trainer
-dependencies (the Python 3.12 environment may be activated first):
-
-```sh
-export PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
-python -m battle_agent_rl.ppo.multi_unit_inspection --seed 17 --cycle-limit 2 --policy random
-python -m battle_agent_rl.ppo.multi_unit_inspection --seed 3 --cycle-limit 1 --policy hold --learner-count 1 --opponent-count 2
-```
-
-The inspector prints slot positions and mutable fire/movement inputs, legal
-indexes, selected orders, core events and the ending; it audits each state
-against core and fails on inconsistencies. `cycle_limit` is a count of complete
-two-sided turns, not learner orders. At most twice that many learner decisions
-occur; a cutoff remains `in_progress` in core. Slots retain identity across
-elimination; dead and absent units have zero-valued inputs except `present`
-for dead units. This design demonstrates legal timing and stable inputs, not
-policy strength or compatibility with the core `Player.movement()` batch
-contract. Increment 07 now has bounded masked-PPO smoke training, a versioned
-checkpoint and frozen core/API/UI plumbing, but its durable-browser acceptance
-gate remains unverified. Report measured outcomes without a strength threshold; do
-not grow this into a 9×9 skill campaign or assume its weights or policy-input
-contract transfer to Crossroads. The experimental 9×9 opponent is to be hidden
-or retired when the evaluated Crossroads player is delivered in 12; useful
-internal 9×9 verification can remain. See the
-[active schedule](../specs/ppo-agent/playable-player-schedule.md).
-
-## Experimental trained 9×9 game (increment 07 in progress)
-
-Install `requirements-ppo.txt` alongside the API requirements in a Python 3.12
-environment. From the repository root:
-
-```sh
-export PYTHONPATH="$PWD/battle_hexes_core/src:$PWD/battle_agent_rl/src:$PWD/battle_hexes_api/src"
-export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-python -m battle_agent_rl.ppo.multi_unit_train --seed 0 --total-timesteps 64 --n-steps 16 --batch-size 8 --run-dir /tmp/opencode/ppo-07-smoke-v4
-python -m battle_agent_rl.ppo.multi_unit_evaluate --run-dir /tmp/opencode/ppo-07-smoke-v4 --seeds 1000:1020
-export BATTLE_HEXES_PPO_RUN_DIR=/tmp/opencode/ppo-07-smoke-v4
-uvicorn battle_hexes_api.main:app --port 8000
-```
-
-Build and serve the web app separately in `battle-hexes-web` with
-`npm run build && npm run serve`, then open `http://localhost:4173` and select
-**Elimination Demo 3**. PPO occupies the first seat; the second seat may be
-Human, Random, or Q-Learning. CPU opponents use their existing batch movement
-and combat turn, then return control to PPO. Elimination Demo 3 uses the
-10-turn core limit and both factions have Elimination Demo 1's defensive-fire
-sounds; browser audio permissions still apply. The checkpoint remains specific
-to this scenario and does not support arbitrary boards or rosters; no skill
-claim is made. The server requires its configured run directory and validates
-the manifest, scenario fingerprint, versions, policy spaces and
-checkpoint digest before creating a game; clients never select a model file.
-`BATTLE_HEXES_PPO_RUN_DIR` must be set in the **same shell/process environment
-that starts Uvicorn**, and it must point to the run directory containing both
-`manifest.json` and `checkpoint.zip` (not to either file). For example:
-`export BATTLE_HEXES_PPO_RUN_DIR=/absolute/path/to/ppo-07-smoke-v4`.
-When selection fails, the API server log identifies whether that variable is
-unset, its directory/manifest is missing, dependencies failed to import, or
-manifest/checkpoint validation failed. The browser intentionally receives only
-a generic unavailable message. A `GET /v1/models` 404 is an unrelated optional
-model-discovery probe; this app does not serve that route.
-Retain the run directory for the full lifetime of saved games. Changing the
-configured artifact does not silently swap a game-bound checkpoint: games
-whose original artifact is unavailable fail on reload. Saved version-1
-Elimination Demo 3 games cannot resume under the version-2 10-turn rules, even
-if their original checkpoint remains available. The default API store
-is in-memory and does **not** survive process restart; configure DynamoDB
-(`DYNAMODB_ENABLED=true`, `DDB_TABLE_NAME=...`) for a durable playthrough.
-The browser resumes the current pending order via `GET /games/{id}` on reload.
-
-The seed-0 64-step smoke run collected 64 legal masked orders and 40 SB3
-PPO epochs (80 minibatch optimizer steps), changed policy parameters, and saved
-a v3 artifact. The predeclared `1000:1020` replay produced 0 wins, 0 losses,
-20 draws and 0 cutoffs under the 10-turn core rule. These are smoke/integration
-results, **not** evidence of playing strength or a fix for edge-holding. An
-early evaluation `--cycle-limit 3` reports cutoffs with core still in progress
-and still supplies the true 10-turn horizon to the policy. The run/evaluation
-artifacts are local to `/tmp/opencode/ppo-07-smoke-v4`; create a new run
-directory if it already exists. The v1 inspector, its training-free
-dependencies, and the 5×5 path remain separate.
+Increment 06's fixed 9×9 v1 inspector is independent of both the 5×5 player
+and the trained v3 game. Inspect it without trainer dependencies using
+`python -m battle_agent_rl.ppo.multi_unit_inspection --seed 17 --cycle-limit 2 --policy random`
+with `PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src`. The 162-action
+slot/destination mask allows only pending living units' reachable cells;
+cutoffs leave core in progress. See [spec 06](../specs/ppo-agent/06-multi-unit-design.md).
 
 ## Direction
 
-Keep training and inference on the same observation, mask and action-to-plan
-mapping, with core authoritative for movement, combat and victory. The
-center-then-hold comparison challenges the current policy's strength; revisit
-training/representation before claiming improvement. Frozen 5×5 inference uses
-the core `Player` interface; the 9×9 v3 slice uses live per-unit inference,
-while Crossroads still needs its own contract. Follow the
-[active schedule](../specs/ppo-agent/playable-player-schedule.md) for the bounded
-path from the 07 human-visible 9×9 vertical slice to a trained, evaluated
-Crossroads opponent on a declared side. Schedule 2's final playable target is
-Crossroads, not the experimental prototype; its campaign extends 07's training
-and checkpoint plumbing under a separate contract. The ultimate goal is
-demonstrated Crossroads playing strength;
-[schedule 3](../specs/ppo-agent/crossroads-strength-schedule.md) is an inactive
-placeholder to be defined after the active schedule is fully implemented.
+Keep training and inference on the same observation/action contract, with
+core responsible for rules and victory. The experimental 9×9 player is not a
+Crossroads policy and should be hidden or retired when the evaluated
+Crossroads opponent arrives. Follow the [active schedule](../specs/ppo-agent/playable-player-schedule.md);
+strength work beyond that is deferred to [schedule 3](../specs/ppo-agent/crossroads-strength-schedule.md).
