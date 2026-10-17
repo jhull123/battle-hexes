@@ -2,6 +2,7 @@
 
 import json
 import random
+import shutil
 from dataclasses import replace
 
 import pytest
@@ -328,6 +329,40 @@ def test_hydration_rejects_tampered_identity(artifact, monkeypatch):
         with pytest.raises(SavedGameIncompatibleError):
             GameStateCodec().decode(replace(
                 stored, state=json.dumps(state).encode()))
+
+
+def test_retrained_checkpoint_rejects_old_game_with_clear_error(
+        artifact, tmp_path, monkeypatch, caplog):
+    run_dir = tmp_path / "current"
+    shutil.copytree(artifact, run_dir)
+    replacement = tmp_path / "replacement"
+    train(1, 16, 16, 8, replacement)
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
+
+    with TestClient(create_app()) as client:
+        created = _create(client)
+        assert created.status_code == 200
+        game = created.json()
+        old_digest = game["ppoTurn"]["checkpointDigest"]
+        for filename in ("manifest.json", "checkpoint.zip"):
+            shutil.copyfile(replacement / filename, run_dir / filename)
+
+        loaded = client.get(f"/games/{game['id']}")
+        assert loaded.status_code == 409
+        assert loaded.json()["code"] == "ppoSavedCheckpointUnavailable"
+        assert "Start a new game" in loaded.json()["message"]
+        order = _order(client, game["id"], game["gameVersion"], "old-model")
+        assert order.status_code == 409
+        assert order.json()["code"] == "ppoSavedCheckpointUnavailable"
+        assert old_digest in caplog.text
+        assert "cannot resume" in caplog.text
+
+        fresh = client.post("/games", headers={"Idempotency-Key": "new-model"},
+                            json={"scenarioId": "ppo_9x9_experimental",
+                                  "playerTypes": ["ppo-9x9-experimental",
+                                                  "human"]})
+        assert fresh.status_code == 200
+        assert fresh.json()["ppoTurn"]["checkpointDigest"] != old_digest
 
 
 def test_http_game_reaches_core_completion(artifact, monkeypatch):

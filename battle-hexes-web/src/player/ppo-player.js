@@ -2,6 +2,7 @@ import { CpuPlayer } from './cpu-player.js';
 import { MovementAnimator } from '../animation/movement-animator.js';
 import { applyMovementResponse } from '../model/movement-response-handler.js';
 import { eventBus } from '../event-bus.js';
+import { showPpoCheckpointError } from '../ppo-checkpoint-error.js';
 
 /** A single server-side prediction and its fire must finish before the next. */
 export class PpoPlayer extends CpuPlayer {
@@ -24,6 +25,7 @@ export class PpoPlayer extends CpuPlayer {
         eventBus.emit('redraw');
       } catch (error) {
         console.error('Experimental PPO order failed', error);
+        showPpoCheckpointError(error);
         return;
       }
     }

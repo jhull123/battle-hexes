@@ -87,3 +87,31 @@ test('PPO hands off to a CPU opponent after the last order is applied', async ()
   expect(cpu.play).toHaveBeenCalledWith(game);
   expect(sequence).toEqual(['animate', 'fire', 'state', 'ack', 'cpu-turn']);
 });
+
+test('PPO order failure shows the replaced-checkpoint message', async () => {
+  const banner = { hidden: true, textContent: '' };
+  global.document = { getElementById: () => banner };
+  const player = new PpoPlayer('Learner', [], { service: {
+    orderPpo: async () => {
+      throw Object.assign(new Error('Start a new game.'), {
+        code: 'ppoSavedCheckpointUnavailable',
+      });
+    },
+  } });
+  const game = {
+    ppoTurn: { pendingUnitIds: ['learner-0'] },
+    isGameOver: () => false,
+    getCurrentPlayer: () => player,
+    getCurrentPhase: () => 'Movement',
+    getId: () => 'old-game',
+  };
+  const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await player.play(game);
+    expect(banner.textContent).toBe('Start a new game.');
+    expect(banner.hidden).toBe(false);
+  } finally {
+    log.mockRestore();
+    delete global.document;
+  }
+});

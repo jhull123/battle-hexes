@@ -250,57 +250,91 @@ internal 9×9 verification can remain. See the
 
 ## Experimental trained 9×9 game (increment 07 in progress)
 
-Install `requirements-ppo.txt` alongside the API requirements in a Python 3.12
-environment. From the repository root:
+Two trained v3 checkpoints are Git-managed at
+`battle_agent_rl/archive/ppo/x86_64/` and `battle_agent_rl/archive/ppo/arm64/`.
+Each directory holds only `manifest.json` and `checkpoint.zip`. There are no
+versioned run folders; the manifest still records the policy contract and
+runtime versions so mismatched weights cannot be used. To explicitly replace
+one model, from the repository root run:
 
 ```sh
-export PYTHONPATH="$PWD/battle_hexes_core/src:$PWD/battle_agent_rl/src:$PWD/battle_hexes_api/src"
-export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-python -m battle_agent_rl.ppo.multi_unit_train --seed 0 --total-timesteps 64 --n-steps 16 --batch-size 8 --run-dir /tmp/opencode/ppo-07-smoke-v4
-python -m battle_agent_rl.ppo.multi_unit_evaluate --run-dir /tmp/opencode/ppo-07-smoke-v4 --seeds 1000:1020
-export BATTLE_HEXES_PPO_RUN_DIR=/tmp/opencode/ppo-07-smoke-v4
-uvicorn battle_hexes_api.main:app --port 8000
+source .venv312/bin/activate
+./battle_agent_rl/train-ppo.sh          # host architecture, native Python
+./battle_agent_rl/train-ppo.sh arm64    # optional: ARM64 on x86 via Docker/QEMU
+./battle_hexes_api/dev.sh              # serves the matching local architecture
 ```
 
-Build and serve the web app separately in `battle-hexes-web` with
-`npm run build && npm run serve`, then open `http://localhost:4173` and select
-**Elimination Demo 3**. PPO occupies the first seat; the second seat may be
-Human, Random, or Q-Learning. CPU opponents use their existing batch movement
-and combat turn, then return control to PPO. Elimination Demo 3 uses the
-10-turn core limit and both factions have Elimination Demo 1's defensive-fire
-sounds; browser audio permissions still apply. The checkpoint remains specific
-to this scenario and does not support arbitrary boards or rosters; no skill
-claim is made. The server requires its configured run directory and validates
-the manifest, scenario fingerprint, versions, policy spaces and
-checkpoint digest before creating a game; clients never select a model file.
-`BATTLE_HEXES_PPO_RUN_DIR` must be set in the **same shell/process environment
-that starts Uvicorn**, and it must point to the run directory containing both
-`manifest.json` and `checkpoint.zip` (not to either file). For example:
-`export BATTLE_HEXES_PPO_RUN_DIR=/absolute/path/to/ppo-07-smoke-v4`.
-When selection fails, the API server log identifies whether that variable is
-unset, its directory/manifest is missing, dependencies failed to import, or
-manifest/checkpoint validation failed. The browser intentionally receives only
-a generic unavailable message. A `GET /v1/models` 404 is an unrelated optional
-model-discovery probe; this app does not serve that route.
-Retain the run directory for the full lifetime of saved games. Changing the
-configured artifact does not silently swap a game-bound checkpoint: games
-whose original artifact is unavailable fail on reload. Saved version-1
-Elimination Demo 3 games cannot resume under the version-2 10-turn rules, even
-if their original checkpoint remains available. The default API store
-is in-memory and does **not** survive process restart; configure DynamoDB
-(`DYNAMODB_ENABLED=true`, `DDB_TABLE_NAME=...`) for a durable playthrough.
-The browser resumes the current pending order via `GET /games/{id}` on reload.
+The launcher defaults to the host architecture; pass `x86_64` or `arm64` to
+target one explicitly. On x86, ARM64 training builds a training-only image with
+the same pins as deployment, then runs it locally; it does not train at deploy
+time. On ARM64 hardware it trains in the active native Python environment,
+which must match the pinned serving runtime. Install `requirements.txt` and
+`requirements-ppo.txt` for native development. The training command clears
+only the selected architecture's old generated files before invoking the
+bounded trainer; it refuses unexpected files. Commit both the new manifest and
+checkpoint together. Evaluation output is ignored by Git, not a third model.
+The API Docker image independently serves the committed ARM64 model, while
+`dev.sh` serves the committed model matching the host (unless explicitly
+overridden). A local Python environment with different recorded versions must
+retrain its architecture before serving; checks are not relaxed.
 
-The seed-0 64-step smoke run collected 64 legal masked orders and 40 SB3
-PPO epochs (80 minibatch optimizer steps), changed policy parameters, and saved
-a v3 artifact. The predeclared `1000:1020` replay produced 0 wins, 0 losses,
-20 draws and 0 cutoffs under the 10-turn core rule. These are smoke/integration
-results, **not** evidence of playing strength or a fix for edge-holding. An
-early evaluation `--cycle-limit 3` reports cutoffs with core still in progress
-and still supplies the true 10-turn horizon to the policy. The run/evaluation
-artifacts are local to `/tmp/opencode/ppo-07-smoke-v4`; create a new run
-directory if it already exists. The v1 inspector, its training-free
-dependencies, and the 5×5 path remain separate.
+In another terminal run `npm run build && npm run serve` in `battle-hexes-web`
+and open `http://localhost:4173` to select **Elimination Demo 3**. PPO occupies
+the first seat; Human, Random or Q-Learning may play second.
+
+### Bundled ARM64 image (deployment verification)
+
+The API image bundles `battle_agent_rl/archive/ppo/arm64/` at a fixed path and
+validates its manifest and checkpoint during build; it never trains during
+build, startup or deployment. Python 3.12.3 and the exact ARM64 runtime pins
+are in the Dockerfile and
+[`requirements-ppo-serving.txt`](../requirements-ppo-serving.txt). For the
+build, HTTP smoke check and resource limits, see the
+[API README](../battle_hexes_api/README.md#arm64-release-image-deployment-verification).
+PyTorch ARM64 `2.5.1` and x86 `2.5.1+cpu` have different recorded versions.
+The Git-tracked x86 model was trained with seed 0, 16 legal timesteps and 20
+optimizer steps; its checkpoint SHA-256 is
+`b85abc07d44898cb576a3a1cce2290623685b40e1fd80be6924d4e68fb467cd7`.
+On seeds 1000–1019 it produced 0 wins, 0 losses, 20 draws and 0 cutoffs.
+
+The bundled seed-0 run requested and collected 16 timesteps (rollout 16,
+batch 8), all 16 sampled actions were legal, one episode completed in a draw,
+and 20 minibatch optimizer steps across 10 PPO epochs changed the policy
+parameters. Its archive is 384 KiB, SHA-256
+`242ea5aba62c3a1df33dcf0a494fe2fc8579a2aa8bb44c68dccd8ced11472091`.
+The manifest records Python 3.12.3, NumPy 2.5.4, PyTorch 2.5.1,
+Gymnasium 1.2.3, Stable-Baselines3 2.7.0 and SB3-Contrib 2.7.0; the
+Dockerfile's Python base and `requirements-ppo-serving.txt` are the
+installation sources for these exact versions. Training and serving use the
+same pinned ARM64 runtime. These are connectivity checks, not a skill measurement.
+Fresh-process deterministic replay on the declared seeds 1000–1019 produced
+1 win (seed 1004), 0 losses, 19 draws and 0 cutoffs; all 20 core games
+completed. The per-seed report from this verification is in
+`/tmp/opencode/ppo-arch-arm-evaluation.json` outside the tracked model. New
+commits of either architecture's model should be evaluated again before
+deployment.
+The released ARM64 image validated the artifact at build time and served, over
+HTTP with no external artifact setting, PPO creation, one masked order and GET,
+plus ordinary game creation, movement and GET. Under `--cpus 0.25 --memory
+512m` on x86/QEMU it started in 47 seconds; startup memory was 101.1 MiB,
+post-inference steady memory 431.6 MiB and cgroup peak 465,440,768 bytes
+(about 444 MiB). The existing ECS 512 MiB limit passed this bounded single-
+client, in-memory check, so no resource change was made. This is not a load
+test or the durable browser acceptance demonstration; deployment with DynamoDB
+and concurrent games may need separate measurement.
+
+Elimination Demo 3 has a 10-turn core limit and defensive-fire sound mappings
+for both factions. The checkpoint is specific to this scenario, not arbitrary
+boards or rosters. The server validates its manifest, digest, scenario,
+spaces and versions before creating a PPO game; clients never choose a model
+path. Retraining either architecture replaces its tracked model and **expires
+saved games bound to its previous digest**. GET or order returns a specific
+checkpoint-unavailable error, with an explanation in server logs and the
+browser; it never silently swaps in the new weights. Start a new game after
+retraining. The default in-memory API store does not survive process restart;
+configure DynamoDB for durable games. The browser resumes a pending order from
+`GET /games/{id}` while its checkpoint is still current. Increment 07 remains
+open until the durable backend-connected browser playthrough is verified.
 
 ## Direction
 
