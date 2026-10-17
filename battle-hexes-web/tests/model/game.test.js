@@ -241,6 +241,25 @@ describe('resolveCombat', () => {
   });
 
 describe('game status', () => {
+  test('reads completed status and pending slots from a PPO order response', () => {
+    const status = { state: 'completed', reason: 'draw', message: 'Scores: 0–0.' };
+    game.applyApiState({
+      gameVersion: 2,
+      game: {
+        gameStatus: status,
+        ppoTurn: { pendingUnitIds: [], checkpointDigest: 'digest', contract: 'v2' },
+        activePlayer: null,
+        currentPhase: null,
+      },
+    });
+
+    expect(game.isGameOver()).toBe(true);
+    expect(game.getGameStatus()).toEqual(status);
+    expect(game.ppoTurn.pendingUnitIds).toEqual([]);
+    expect(game.getCurrentPlayer()).toBeNull();
+    expect(game.getCurrentPhase()).toBeNull();
+  });
+
   test('is not over when backend status is in progress regardless of local board state', () => {
     game.updateGameStatus({ state: 'in_progress' });
 

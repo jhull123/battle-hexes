@@ -46,6 +46,7 @@ class GameStateEncoder:
             "defensive_fire_history": [
                 asdict(event) for event in game.defensive_fire_log
             ],
+            "ppo_state": getattr(game, "ppo_state", None),
         }
         return Document.model_validate(raw_document)
 

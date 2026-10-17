@@ -74,7 +74,7 @@ new p5((p) => {
     menu.setGame(game);
     p.resizeCanvas(getCanvasWidth(), getCanvasHeight());
 
-    if (!game.getCurrentPlayer().isHuman()) {
+    if (!game.isGameOver() && !game.getCurrentPlayer().isHuman()) {
       game.getCurrentPlayer().play(game);
     }
 
@@ -96,7 +96,7 @@ new p5((p) => {
     eventBus.emit('redraw');
   });
 
-  if (!game.getCurrentPlayer().isHuman()) {
+  if (!game.isGameOver() && !game.getCurrentPlayer().isHuman()) {
     game.getCurrentPlayer().play(game);
   }
 
