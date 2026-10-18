@@ -1,6 +1,6 @@
 """Ownership and phase checks for the non-PPO side of a PPO game."""
 
-from battle_hexes_api.ppo_state import is_ppo_game
+from .ppo_state import is_ppo_game
 from battle_hexes_api.persistence.command_errors import CommandErrorTranslator
 
 

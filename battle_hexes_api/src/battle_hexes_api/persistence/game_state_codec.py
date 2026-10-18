@@ -25,7 +25,11 @@ class GameStateCodec:
     def __init__(
         self,
         scenario_loader: Callable[[str], ScenarioData] = load_scenario_data,
+        integrations=None,
     ) -> None:
+        if integrations is None:
+            from battle_hexes_api.agent_integrations import integrations
+        self._integrations = integrations
         self._scenario_loader = scenario_loader
         self._encoder = GameStateEncoder(self.STATE_SCHEMA_VERSION)
         self._validator = GameStateValidator(self.STATE_SCHEMA_VERSION)
@@ -38,7 +42,11 @@ class GameStateCodec:
             if scenario.version != scenario_version:
                 self._incompatible("scenario_version")
             document = self._encoder.encode(game, scenario, scenario_version)
+            document.ppo_state = self._integrations.for_game(
+                game).encode_state(game)
             self._validator.validate(document, scenario)
+            self._integrations.for_document(document).validate_state(
+                document, scenario)
             return canonical_json_bytes(document.model_dump(mode="json"))
         except SavedGameIncompatibleError:
             raise
@@ -58,7 +66,11 @@ class GameStateCodec:
             if scenario.version != document.scenario_version:
                 self._incompatible("scenario_version")
             self._validator.validate(document, scenario)
-            return self._hydrator.hydrate(document, scenario)
+            integration = self._integrations.for_document(document)
+            integration.validate_state(document, scenario)
+            game = self._hydrator.hydrate(document, scenario)
+            integration.restore_state(game, document)
+            return game
         except SavedGameIncompatibleError:
             raise
         except Exception as error:

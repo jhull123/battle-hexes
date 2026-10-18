@@ -4,11 +4,9 @@ from dataclasses import dataclass
 
 from battle_hexes_core.combat.combat import Combat
 from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
+from battle_hexes_api.agent_integrations import integrations
 
 from .common import notify_game_completion, reject_completed_game
-from battle_hexes_api.ppo_state import capture_rng, is_ppo_game
-from battle_hexes_api.ppo_opponent import (check_opponent_board,
-                                           require_opponent)
 
 
 @dataclass(frozen=True)
@@ -26,19 +24,21 @@ class CombatAdapter:
         sparse_board,
         combat_factory=Combat,
         scorer_factory=ObjectiveScorer,
+        agent_integrations=integrations,
     ):
         self._sparse_board = sparse_board
         self._combat_factory = combat_factory
         self._scorer_factory = scorer_factory
+        self._integrations = agent_integrations
 
     def __call__(self, game):
         reject_completed_game(game)
-        require_opponent(game, "combat")
-        if is_ppo_game(game):
-            check_opponent_board(game, self._sparse_board)
+        integration = self._integrations.for_game(game)
+        integration.authorize(game, "combat", self._sparse_board)
         self._sparse_board.apply_to_board(game.get_board())
-        combat = (self._combat_factory(game, rng=game.ppo_rng)
-                  if is_ppo_game(game) else self._combat_factory(game))
+        rng = integration.combat_rng(game)
+        combat = (self._combat_factory(game) if rng is None else
+                  self._combat_factory(game, rng=rng))
         results = combat.resolve_combat()
         game.end_combat()
         scorer = self._scorer_factory()
@@ -46,7 +46,7 @@ class CombatAdapter:
         scorer.recalculate_scenario_victory(game)
         if game.get_game_status().state == "completed":
             game.end_turn()
-        capture_rng(game)
+        integration.capture_rng(game)
         notify_game_completion(game)
         return CombatCommandResult(results)
 
@@ -54,23 +54,19 @@ class CombatAdapter:
 class EndTurnAdapter:
     """Synchronize state, update victory, and advance the turn."""
 
-    def __init__(self, sparse_board, scorer_factory=ObjectiveScorer):
+    def __init__(self, sparse_board, scorer_factory=ObjectiveScorer,
+                 agent_integrations=integrations):
         self._sparse_board = sparse_board
         self._scorer_factory = scorer_factory
+        self._integrations = agent_integrations
 
     def __call__(self, game):
         reject_completed_game(game)
-        require_opponent(game, "end_turn")
-        if is_ppo_game(game):
-            check_opponent_board(game, self._sparse_board)
+        integration = self._integrations.for_game(game)
+        integration.authorize(game, "end-turn", self._sparse_board)
         self._sparse_board.apply_to_board(game.get_board())
         self._scorer_factory().recalculate_scenario_victory(game)
         game.end_turn()
-        if is_ppo_game(game):
-            game.ppo_state["pending_unit_ids"] = (
-                [unit.id for unit in game.board.get_units_for_player(
-                    game.players[0])]
-                if game.current_player is game.players[0] else [])
-            capture_rng(game)
+        integration.after_end_turn(game)
         notify_game_completion(game)
         return None
