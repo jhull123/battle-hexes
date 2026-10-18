@@ -129,7 +129,8 @@ def read_manifest(run_dir):
             f"Missing or invalid PPO artifact: {error}") from error
 
 
-def load_model(run_dir, digest=None):
+def validate_artifact(run_dir, digest=None):
+    """Check the configured checkpoint's identity without loading a policy."""
     manifest = read_manifest(run_dir)
     entry = manifest["checkpoint"]
     if digest is not None and digest != entry["sha256"]:
@@ -138,6 +139,16 @@ def load_model(run_dir, digest=None):
     try:
         if _digest(archive) != entry["sha256"]:
             raise ValueError("Checkpoint digest mismatch")
+    except OSError as error:
+        raise ValueError(
+            f"Missing or damaged PPO checkpoint: {error}") from error
+    return manifest
+
+
+def load_model(run_dir, digest=None):
+    manifest = validate_artifact(run_dir, digest)
+    archive = Path(run_dir) / manifest["checkpoint"]["path"]
+    try:
         model = MaskablePPO.load(archive, device="cpu")
         if (model.observation_space != multi_unit_observation_space(TURN_LIMIT)
                 or repr(model.action_space) != manifest["action_space"]):

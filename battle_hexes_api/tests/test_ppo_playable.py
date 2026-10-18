@@ -1,5 +1,6 @@
 """Real trained artifact through the versioned API and detached state codec."""
 
+import hashlib
 import json
 import logging
 import random
@@ -35,6 +36,19 @@ def artifact(tmp_path_factory):
     run_dir = tmp_path_factory.mktemp("ppo") / "trained"
     train(0, 16, 16, 8, run_dir)
     return run_dir
+
+
+@pytest.fixture
+def model_loads(monkeypatch):
+    loads = []
+    original_load = playable_artifact.MaskablePPO.load
+
+    def record_load(*args, **kwargs):
+        loads.append(args[0])
+        return original_load(*args, **kwargs)
+
+    monkeypatch.setattr(playable_artifact.MaskablePPO, "load", record_load)
+    return loads
 
 
 def _repository():
@@ -93,6 +107,24 @@ def test_creation_requires_artifact_and_ppo_first_seat(
             json={"scenarioId": "ppo_9x9_experimental",
                   "playerTypes": ["ppo-9x9-experimental", "random"]})
         assert response.status_code == 200
+
+
+def test_creation_rejects_checkpoint_that_hashes_but_cannot_load(
+        artifact, tmp_path, monkeypatch):
+    run_dir = tmp_path / "invalid-model"
+    shutil.copytree(artifact, run_dir)
+    archive = run_dir / "checkpoint.zip"
+    archive.write_bytes(b"not a policy")
+    manifest_path = run_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["checkpoint"]["sha256"] = hashlib.sha256(
+        archive.read_bytes()).hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
+    with TestClient(create_app()) as client:
+        response = _create(client)
+        assert response.status_code == 503
+        assert response.json()["code"] == "ppoArtifactUnavailable"
 
 
 def test_python_patch_mismatch_allows_ppo_creation_but_minor_does_not(
@@ -253,6 +285,41 @@ def test_mid_turn_restart_receipt_rng_and_handoff(artifact, monkeypatch):
         assert repo.load_game(game_id).version == 5
 
 
+def test_reads_and_opponent_commands_never_reload_ppo_model(
+        artifact, tmp_path, monkeypatch, model_loads):
+    run_dir = tmp_path / "serving"
+    shutil.copytree(artifact, run_dir)
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
+    with TestClient(create_app()) as client:
+        created = _create(client)
+        assert created.status_code == 200, created.text
+        game_id = created.json()["id"]
+        assert len(model_loads) == 1
+        assert client.get(f"/games/{game_id}").status_code == 200
+        assert len(model_loads) == 1
+
+        first = _order(client, game_id, 1, "first")
+        assert first.status_code == 200, first.text
+        assert len(model_loads) == 1
+        assert client.get(f"/games/{game_id}").status_code == 200
+        second = _order(client, game_id, 2, "second")
+        assert second.status_code == 200, second.text
+        assert len(model_loads) == 1
+
+        state = second.json()["game"]
+        assert state["activePlayer"] == "Opponent"
+        board = {"units": [
+            {"id": unit["id"], "row": unit["row"],
+             "column": unit["column"]} for unit in state["board"]["units"]]}
+        finished = client.post(
+            f"/games/{game_id}/end-movement", json=board, headers={
+                "Idempotency-Key": "opponent-finish",
+                "Expected-Game-Version": "3"})
+        assert finished.status_code == 200, finished.text
+        assert client.get(f"/games/{game_id}").status_code == 200
+        assert len(model_loads) == 1
+
+
 def _handoff_to_cpu(client, opponent):
     created = _create(client, ["ppo-9x9-experimental", opponent])
     assert created.status_code == 200, created.text
@@ -320,8 +387,10 @@ def test_cpu_opponent_turn_survives_restart_and_returns_to_ppo(
         game = _run_cpu_turn(client, repo, game_id, opponent)
         assert game["activePlayer"] == "Learner"
         assert game["currentPhase"] == "movement"
+        living = {unit["id"] for unit in game["board"]["units"]}
         assert game["ppoTurn"]["pendingUnitIds"] == [
-            "learner-0", "learner-1"]
+            unit_id for unit_id in ("learner-0", "learner-1")
+            if unit_id in living]
         assert _order(client, game_id, game["gameVersion"],
                       "next-ppo-order").status_code == 200
 
@@ -356,18 +425,21 @@ def test_hydration_rejects_tampered_identity(artifact, monkeypatch):
 
 
 def test_retrained_checkpoint_rejects_old_game_with_clear_error(
-        artifact, tmp_path, monkeypatch, caplog):
+        artifact, tmp_path, monkeypatch, caplog, model_loads):
     run_dir = tmp_path / "current"
     shutil.copytree(artifact, run_dir)
     replacement = tmp_path / "replacement"
     train(1, 16, 16, 8, replacement)
     monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
-
     with TestClient(create_app()) as client:
         created = _create(client)
         assert created.status_code == 200
         game = created.json()
         old_digest = game["ppoTurn"]["checkpointDigest"]
+        assert len(model_loads) == 1
+        before = _order(client, game["id"], 1, "before-replacement")
+        assert before.status_code == 200
+        assert len(model_loads) == 1
         for filename in ("manifest.json", "checkpoint.zip"):
             shutil.copyfile(replacement / filename, run_dir / filename)
 
@@ -387,6 +459,29 @@ def test_retrained_checkpoint_rejects_old_game_with_clear_error(
                                                   "human"]})
         assert fresh.status_code == 200
         assert fresh.json()["ppoTurn"]["checkpointDigest"] != old_digest
+        assert len(model_loads) == 2
+        assert _order(client, fresh.json()["id"], 1,
+                      "after-replacement").status_code == 200
+        assert len(model_loads) == 2
+
+
+def test_cached_checkpoint_corruption_rejects_reads_and_orders(
+        artifact, tmp_path, monkeypatch):
+    run_dir = tmp_path / "serving"
+    shutil.copytree(artifact, run_dir)
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
+    with TestClient(create_app()) as client:
+        created = _create(client)
+        game = created.json()
+        first = _order(client, game["id"], 1, "first")
+        assert first.status_code == 200, first.text
+        (run_dir / "checkpoint.zip").write_bytes(b"corrupt")
+        loaded = client.get(f"/games/{game['id']}")
+        assert loaded.status_code == 409
+        assert loaded.json()["code"] == "ppoSavedCheckpointUnavailable"
+        order = _order(client, game["id"], 2, "second")
+        assert order.status_code == 409
+        assert order.json()["code"] == "ppoSavedCheckpointUnavailable"
 
 
 def test_http_game_reaches_core_completion(artifact, monkeypatch):
