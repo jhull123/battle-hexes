@@ -5,7 +5,7 @@ import uuid
 
 from pydantic import ConfigDict, Field
 
-from battle_hexes_api.ppo_state import is_ppo_game
+from battle_hexes_api.agent_integrations.ppo_state import is_ppo_game
 from .api_model import ApiBaseModel
 from .board import BoardModel
 from .combat_results_table import CombatResultsTableModel

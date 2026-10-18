@@ -66,15 +66,18 @@ class GameCreator:
             ``q-learning``) used to configure the players participating in the
             game.
         """
-        if scenario_id == "ppo_9x9_experimental":
-            if (len(player_type_ids) != 2
-                    or player_type_ids[0] != "ppo-9x9-experimental"
-                    or player_type_ids[1] == "ppo-9x9-experimental"):
-                raise ValueError(
-                    "PPO requires the first seat and a non-PPO opponent")
-        elif "ppo-9x9-experimental" in player_type_ids:
+        from battle_hexes_api.agent_integrations import integrations
+        from battle_hexes_api.persistence.errors import (
+            SavedGameIncompatibleError,
+        )
+
+        try:
+            integration = integrations.select(scenario_id, player_type_ids,
+                                              False)
+        except SavedGameIncompatibleError as error:
             raise ValueError(
-                "Experimental PPO requires its fixed 9x9 scenario")
+                "Experimental PPO requires the first seat, its fixed 9x9 "
+                "scenario and a supported opponent") from error
 
         scenario = load_scenario(scenario_id)
 
@@ -112,9 +115,7 @@ class GameCreator:
         game.scenario_id = scenario_id
         game.player_type_ids = list(player_type_ids)
 
-        if scenario_id == "ppo_9x9_experimental":
-            from battle_hexes_api.ppo_state import initial_state
-            initial_state(game)
+        integration.initial_state(game)
 
         return game
 

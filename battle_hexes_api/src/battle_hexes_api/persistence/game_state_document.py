@@ -14,14 +14,6 @@ class Player(Model):
     type_id: Literal["human", "random", "q-learning", "ppo-9x9-experimental"]
 
 
-class PpoState(Model):
-    contract: str
-    checkpoint_digest: str
-    checkpoint_path: str
-    pending_unit_ids: list[str]
-    rng_state: list
-
-
 class PendingCombat(Model):
     attacker_unit_ids: list[str]
     defender_unit_ids: list[str]
@@ -77,4 +69,4 @@ class Document(Model):
     reinforcement_history: list[dict[str, Any]]
     combat_history: list[dict[str, Any]]
     defensive_fire_history: list[dict[str, Any]]
-    ppo_state: PpoState | None = None
+    ppo_state: Any = None

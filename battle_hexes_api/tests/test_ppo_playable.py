@@ -22,7 +22,7 @@ from battle_agent_rl.ppo.playable_turn import apply_order
 from battle_hexes_api.application import create_app
 from battle_hexes_api.command_adapters.ppo_order import PpoOrderAdapter
 from battle_hexes_api.gamecreator import GameCreator
-from battle_hexes_api.ppo_state import capture_rng
+from battle_hexes_api.agent_integrations.ppo_state import capture_rng
 from battle_hexes_api.persistence import (EncodedItemBudget,
                                           GameRepositoryInMemory, StoredGame,
                                           SystemClock)
@@ -422,6 +422,31 @@ def test_hydration_rejects_tampered_identity(artifact, monkeypatch):
         with pytest.raises(SavedGameIncompatibleError):
             GameStateCodec().decode(replace(
                 stored, state=json.dumps(state).encode()))
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda state: state.update(ppo_state=None),
+    lambda state: state["ppo_state"].update(unexpected=1),
+    lambda state: state["ppo_state"].update(rng_state=[3, [], None]),
+    lambda state: state["ppo_state"].update(pending_unit_ids=["opponent-0"]),
+])
+def test_ppo_extension_rejects_invalid_snapshot_and_live_encode(
+        artifact, monkeypatch, mutation):
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))
+    game = GameCreator.create_sample_game(
+        "ppo_9x9_experimental", ["ppo-9x9-experimental", "human"])
+    codec = GameStateCodec()
+    document = json.loads(codec.encode(
+        game, scenario_version=SCENARIO_VERSION))
+    mutation(document)
+    stored = StoredGame(str(game.id), 1, 1, game.scenario_id,
+                        SCENARIO_VERSION, json.dumps(document).encode(),
+                        0, 100)
+    with pytest.raises(SavedGameIncompatibleError):
+        codec.decode(stored)
+    game.ppo_state = document["ppo_state"]
+    with pytest.raises(SavedGameIncompatibleError):
+        codec.encode(game, scenario_version=SCENARIO_VERSION)
 
 
 def test_retrained_checkpoint_rejects_old_game_with_clear_error(

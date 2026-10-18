@@ -6,8 +6,8 @@ from battle_agent_rl.ppo.multi_unit_state import joint_mask, slot_observation
 from battle_agent_rl.ppo.playable_scenario import TURN_LIMIT, slots_for_game
 from battle_agent_rl.ppo.playable_turn import apply_order
 from battle_hexes_api.ppo_artifact import configured_model
-from battle_hexes_api.ppo_state import (capture_rng, is_ppo_game,
-                                        validate_state)
+from battle_hexes_api.agent_integrations.ppo_state import (
+    capture_rng, is_ppo_game, validate_state)
 from battle_hexes_api.persistence.command_errors import CommandErrorTranslator
 
 

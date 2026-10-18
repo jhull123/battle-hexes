@@ -144,13 +144,18 @@ def _headers(key, version):
     return key, version
 
 
+def _agent_integrations(request):
+    return request.app.state.agent_integrations
+
+
 @router.post("/games/{game_id}/movement")
 def generate_movement(request: Request, game_id: str,
                       idempotency_key: str | None = Header(None),
                       expected_game_version: str | None = Header(None)):
     key, version = _headers(idempotency_key, expected_game_version)
     return _execute(request, game_id, f"/games/{game_id}/movement", key,
-                    version, None, MovementAdapter(),
+                    version, None, MovementAdapter(
+                        _agent_integrations(request)),
                     _movement_serializer(request, game_id))
 
 
@@ -179,7 +184,8 @@ def resolve_human_move(request: Request, game_id: str,
                        expected_game_version: str | None = Header(None)):
     return _execute(request, game_id, f"/games/{game_id}/move",
                     idempotency_key, expected_game_version, sparse_board,
-                    HumanMoveAdapter(sparse_board),
+                    HumanMoveAdapter(sparse_board,
+                                     _agent_integrations(request)),
                     _movement_serializer(request, game_id))
 
 
@@ -190,7 +196,9 @@ def end_movement(request: Request, game_id: str,
                  expected_game_version: str | None = Header(None)):
     return _execute(request, game_id, f"/games/{game_id}/end-movement",
                     idempotency_key, expected_game_version, sparse_board,
-                    EndMovementAdapter(sparse_board),
+                    EndMovementAdapter(
+                        sparse_board,
+                        agent_integrations=_agent_integrations(request)),
                     _movement_serializer(request, game_id))
 
 
@@ -201,7 +209,10 @@ def resolve_combat(request: Request, game_id: str,
                    expected_game_version: str | None = Header(None)):
     return _execute(request, game_id, f"/games/{game_id}/combat",
                     idempotency_key, expected_game_version, sparse_board,
-                    CombatAdapter(sparse_board), CombatResponseSerializer())
+                    CombatAdapter(
+                        sparse_board,
+                        agent_integrations=_agent_integrations(request)),
+                    CombatResponseSerializer())
 
 
 @router.post("/games/{game_id}/end-turn")
@@ -212,7 +223,10 @@ def end_turn(request: Request, game_id: str,
     serializer = EndTurnResponseSerializer(None)
     return _execute(request, game_id, f"/games/{game_id}/end-turn",
                     idempotency_key, expected_game_version, sparse_board,
-                    EndTurnAdapter(sparse_board), serializer)
+                    EndTurnAdapter(
+                        sparse_board,
+                        agent_integrations=_agent_integrations(request)),
+                    serializer)
 
 
 @router.get("/scenarios", response_model=list[ScenarioModel])

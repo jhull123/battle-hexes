@@ -4,6 +4,8 @@ import json
 import logging
 import random
 
+from pydantic import BaseModel, ConfigDict
+
 from battle_agent_rl.ppo.playable_scenario import (CONTRACT, SCENARIO_ID,
                                                    SLOT_IDS, TURN_LIMIT)
 from battle_hexes_api.persistence.errors import SavedGameIncompatibleError
@@ -14,6 +16,16 @@ from battle_hexes_api.ppo_artifact import (
 
 TYPE_ID = "ppo-9x9-experimental"
 logger = logging.getLogger(__name__)
+
+
+class PpoState(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    contract: str
+    checkpoint_digest: str
+    checkpoint_path: str
+    pending_unit_ids: list[str]
+    rng_state: list
 
 
 def is_ppo_game(game):
@@ -49,11 +61,17 @@ def _tuples(value):
 
 def validate_state(state, game_or_document):
     """Reject corrupt state before any prediction or core mutation."""
+    if state is not None:
+        try:
+            state = PpoState.model_validate(state).model_dump()
+        except ValueError as error:
+            raise SavedGameIncompatibleError("ppo_turn_state") from error
     player_types = (getattr(game_or_document, "player_type_ids", None) or
                     [player.type_id for player in game_or_document.players])
     scenario_id = game_or_document.scenario_id
     if (scenario_id != SCENARIO_ID or len(player_types) != 2
-            or player_types[0] != TYPE_ID or player_types[1] == TYPE_ID):
+            or player_types[0] != TYPE_ID or player_types[1] not in (
+                "human", "random", "q-learning")):
         if state is not None or TYPE_ID in player_types:
             raise SavedGameIncompatibleError("ppo_scenario_or_seat")
         return
@@ -115,6 +133,8 @@ def _pending_ready(value, pending):
 
 def _restore_rng(state):
     try:
+        if not isinstance(state["rng_state"], list):
+            raise ValueError("RNG state must be a JSON list")
         rng = random.Random()
         rng.setstate(_tuples(state["rng_state"]))
     except (KeyError, TypeError, ValueError, IndexError) as error:
@@ -122,10 +142,7 @@ def _restore_rng(state):
     return rng
 
 
-def restore_state(game, document):
-    if document.ppo_state is None:
-        return
-    state = document.ppo_state.model_dump()
+def restore_state(game, state):
     rng = validate_state(state, game)
     try:
         manifest = configured_artifact(state["checkpoint_digest"])

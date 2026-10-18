@@ -26,8 +26,6 @@ class GameStateHydrator:
         self._restore_runtime(game, document, players)
         self._restore_histories(game, document)
         self._reconnect_players(game, players)
-        from battle_hexes_api.ppo_state import restore_state
-        restore_state(game, document)
         return game
 
     @staticmethod
