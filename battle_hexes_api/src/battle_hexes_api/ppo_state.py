@@ -7,7 +7,9 @@ import random
 from battle_agent_rl.ppo.playable_scenario import (CONTRACT, SCENARIO_ID,
                                                    SLOT_IDS, TURN_LIMIT)
 from battle_hexes_api.persistence.errors import SavedGameIncompatibleError
-from battle_hexes_api.ppo_artifact import configured_model
+from battle_hexes_api.ppo_artifact import (
+    configured_artifact, configured_model,
+)
 
 
 TYPE_ID = "ppo-9x9-experimental"
@@ -126,7 +128,7 @@ def restore_state(game, document):
     state = document.ppo_state.model_dump()
     rng = validate_state(state, game)
     try:
-        _, manifest = configured_model(state["checkpoint_digest"])
+        manifest = configured_artifact(state["checkpoint_digest"])
         if state["checkpoint_path"] != manifest["checkpoint"]["path"]:
             raise ValueError("Checkpoint path mismatch")
     except ValueError as error:
