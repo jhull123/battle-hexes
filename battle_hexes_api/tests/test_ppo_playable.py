@@ -1,13 +1,16 @@
 """Real trained artifact through the versioned API and detached state codec."""
 
 import json
+import logging
 import random
+import shutil
 from dataclasses import replace
 
 import pytest
 from fastapi.testclient import TestClient
 
 from battle_agent_rl.ppo.multi_unit_train import train
+from battle_agent_rl.ppo import playable_artifact
 from battle_agent_rl.ppo.multi_unit_gym import predict_joint_action
 from battle_agent_rl.ppo.playable_artifact import load_model
 from battle_agent_rl.ppo.playable_environment import PlayableEnvironment
@@ -90,6 +93,28 @@ def test_creation_requires_artifact_and_ppo_first_seat(
             json={"scenarioId": "ppo_9x9_experimental",
                   "playerTypes": ["ppo-9x9-experimental", "random"]})
         assert response.status_code == 200
+
+
+def test_python_patch_mismatch_allows_ppo_creation_but_minor_does_not(
+        artifact, monkeypatch, caplog):
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))
+    installed = playable_artifact.versions()
+    major, minor, _ = map(int, installed["python"].split("."))
+    monkeypatch.setattr(playable_artifact, "versions", lambda: {
+        **installed, "python": f"{major}.{minor}.999"})
+    with caplog.at_level(logging.WARNING), TestClient(create_app()) as client:
+        created = _create(client)
+    assert created.status_code == 200, created.text
+    assert any(record.levelno == logging.WARNING and record.name ==
+               "battle_agent_rl.ppo.playable_artifact"
+               for record in caplog.records)
+
+    monkeypatch.setattr(playable_artifact, "versions", lambda: {
+        **installed, "python": f"{major}.{minor + 1}.0"})
+    with TestClient(create_app()) as client:
+        unavailable = _create(client)
+    assert unavailable.status_code == 503
+    assert unavailable.json()["code"] == "ppoArtifactUnavailable"
 
 
 def test_ppo_game_exposes_defensive_fire_audio_for_both_factions(
@@ -328,6 +353,40 @@ def test_hydration_rejects_tampered_identity(artifact, monkeypatch):
         with pytest.raises(SavedGameIncompatibleError):
             GameStateCodec().decode(replace(
                 stored, state=json.dumps(state).encode()))
+
+
+def test_retrained_checkpoint_rejects_old_game_with_clear_error(
+        artifact, tmp_path, monkeypatch, caplog):
+    run_dir = tmp_path / "current"
+    shutil.copytree(artifact, run_dir)
+    replacement = tmp_path / "replacement"
+    train(1, 16, 16, 8, replacement)
+    monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
+
+    with TestClient(create_app()) as client:
+        created = _create(client)
+        assert created.status_code == 200
+        game = created.json()
+        old_digest = game["ppoTurn"]["checkpointDigest"]
+        for filename in ("manifest.json", "checkpoint.zip"):
+            shutil.copyfile(replacement / filename, run_dir / filename)
+
+        loaded = client.get(f"/games/{game['id']}")
+        assert loaded.status_code == 409
+        assert loaded.json()["code"] == "ppoSavedCheckpointUnavailable"
+        assert "Start a new game" in loaded.json()["message"]
+        order = _order(client, game["id"], game["gameVersion"], "old-model")
+        assert order.status_code == 409
+        assert order.json()["code"] == "ppoSavedCheckpointUnavailable"
+        assert old_digest in caplog.text
+        assert "cannot resume" in caplog.text
+
+        fresh = client.post("/games", headers={"Idempotency-Key": "new-model"},
+                            json={"scenarioId": "ppo_9x9_experimental",
+                                  "playerTypes": ["ppo-9x9-experimental",
+                                                  "human"]})
+        assert fresh.status_code == 200
+        assert fresh.json()["ppoTurn"]["checkpointDigest"] != old_digest
 
 
 def test_http_game_reaches_core_completion(artifact, monkeypatch):

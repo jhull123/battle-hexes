@@ -17,6 +17,7 @@ import './styles/gameoverdialog.css';
 import { GameCreator } from './model/game-creator.js';
 import { battleHexesService } from './service/service-factory.js';
 import { applyMovementResponse } from './model/movement-response-handler.js';
+import { showPpoCheckpointError } from './ppo-checkpoint-error.js';
 import {
   getLastLoadedConfig,
   loadGameData,
@@ -24,9 +25,15 @@ import {
   updateUrlWithGameId,
 } from './model/game-loader.js';
 
-const gameData = await loadGameData();
+let gameData;
+try {
+  gameData = await loadGameData();
+} catch (error) {
+  if (!showPpoCheckpointError(error)) throw error;
+  console.error('Saved PPO game cannot be loaded', error);
+}
 
-new p5((p) => {
+if (gameData) new p5((p) => {
   const hexRadius = 42;
   const hexHeight = Math.sqrt(3) * hexRadius;
   const hexDiameter = hexRadius * 2;

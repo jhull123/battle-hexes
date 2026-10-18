@@ -1,0 +1,50 @@
+{
+  "action_space": "Discrete(162)",
+  "checkpoint": {
+    "path": "checkpoint.zip",
+    "sha256": "979688bebe368e89ceee0fb4b62924aa7516877ead325b07b9dc521e198994e0"
+  },
+  "contract": "battle-hexes-9x9-2slot-unit-destination-live-turnlimit10-v3",
+  "device": "cpu",
+  "format_version": 2,
+  "observation_space": "Dict('alive': MultiBinary(4), 'defensive_fire_ready': MultiBinary(4), 'fire_eligible_last_turn': MultiBinary(4), 'fire_spent': MultiBinary(4), 'forced_retreat': MultiBinary(4), 'movement_remaining': Box(0, 2, (4,), int8), 'pending': MultiBinary(2), 'positions': MultiBinary((4, 81)), 'present': MultiBinary(4), 'remaining_cycles': Box(0, 10, (1,), int32))",
+  "player_types": [
+    "ppo-9x9-experimental",
+    "human"
+  ],
+  "scenario_id": "ppo_9x9_experimental",
+  "scenario_sha256": "2377dcba229b9b8fefb91bb040698d3559cfa4f00e7c2ebbd19a28bb736ccc95",
+  "scenario_version": "2",
+  "slot_ids": [
+    "learner-0",
+    "learner-1",
+    "opponent-0",
+    "opponent-1"
+  ],
+  "training": {
+    "actual_timesteps": 16,
+    "batch_size": 8,
+    "episode_seeds": [
+      0,
+      1
+    ],
+    "n_steps": 16,
+    "optimizer_updates": 20,
+    "outcomes": {
+      "draw": 1
+    },
+    "parameters_changed": true,
+    "ppo_epochs": 10,
+    "total_timesteps": 16
+  },
+  "training_seed": 0,
+  "turn_limit": 10,
+  "versions": {
+    "gymnasium": "1.2.3",
+    "numpy": "2.5.4",
+    "python": "3.12.3",
+    "sb3_contrib": "2.7.0",
+    "stable_baselines3": "2.7.0",
+    "torch": "2.5.1"
+  }
+}

@@ -2,7 +2,9 @@
 
 import hashlib
 import json
+import logging
 import pickle
+import re
 from pathlib import Path
 from zipfile import BadZipFile
 
@@ -14,6 +16,28 @@ from .playable_scenario import (
     CONTRACT, SCENARIO_ID, SCENARIO_VERSION, SLOT_IDS, TURN_LIMIT,
     scenario_data, validate_scenario,
 )
+
+
+logger = logging.getLogger(__name__)
+
+
+def _compatible_versions(recorded, current):
+    if not isinstance(recorded, dict) or recorded.keys() != current.keys():
+        return False
+    if any(recorded[name] != value for name, value in current.items()
+           if name != "python"):
+        return False
+    python_pattern = r"(\d+)\.(\d+)\.\d+"
+    trained = re.fullmatch(python_pattern, recorded["python"])
+    serving = re.fullmatch(python_pattern, current["python"])
+    if not trained or not serving or trained.groups() != serving.groups():
+        return False
+    if recorded["python"] != current["python"]:
+        logger.warning(
+            "PPO artifact trained on Python %s; serving on Python %s "
+            "(same major/minor, different patch version)",
+            recorded["python"], current["python"])
+    return True
 
 
 def fingerprint(scenario=None):
@@ -85,7 +109,8 @@ def read_manifest(run_dir):
                     repr(multi_unit_observation_space(TURN_LIMIT))
                     and manifest["action_space"] == "Discrete(162)"
                     and manifest["device"] == "cpu"
-                    and manifest["versions"] == versions())
+                    and _compatible_versions(manifest["versions"],
+                                             versions()))
         entry = manifest["checkpoint"]
         path = Path(entry["path"])
         if (not expected or path.is_absolute() or path.parts !=
@@ -95,7 +120,8 @@ def read_manifest(run_dir):
             raise ValueError(
                 "Incompatible PPO artifact manifest: contract, scenario "
                 "version, slots, player types, policy spaces, runtime "
-                "versions, or training evidence did not match"
+                "versions (Python major/minor or other exact packages), "
+                "or training evidence did not match"
             )
         return manifest
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:

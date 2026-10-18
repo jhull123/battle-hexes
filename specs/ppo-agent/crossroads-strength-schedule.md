@@ -23,6 +23,11 @@ Supporting both sides, self-play, or other training extensions should be
 considered only when the evidence and chosen strength goal justify them.
 Arbitrary boards and broad scenario expansion are not assumed prerequisites.
 
+As a future operational consideration, evaluate keeping the active and previous
+validated checkpoint per architecture, promoting a newly trained model only
+after validation. Keep model retention bounded; this is not a prerequisite for
+improving Crossroads playing strength.
+
 ## Open Questions
 
 No questions.
