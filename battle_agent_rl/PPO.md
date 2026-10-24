@@ -2,17 +2,18 @@
 
 ## Status
 
-The 5×5 one-unit foundation (increments 01–05) and 9×9 multi-unit prototype
-(06) are implemented. The experimental, 10-turn 9×9 PPO opponent (07) has
-trained checkpoints and a one-order-at-a-time API/web path. **Increment 07 is
-not complete:** a backend-connected browser game with durable storage, mid-turn
-reload, visible fire/retreat and a displayed core-completed result still needs
-to be recorded. The [active schedule](../specs/ppo-agent/playable-player-schedule.md)
+The 5×5 one-unit foundation (increments 01–05), 9×9 multi-unit prototype
+(06), and experimental, 10-turn 9×9 PPO opponent (07) are complete. Increment
+07 has trained checkpoints and a one-order-at-a-time API/web path; its deployed
+browser acceptance run covered durable saved-state resume, visible fire and
+combat retreat, and a displayed core-completed result. See the
+[acceptance evidence](../specs/ppo-agent/evidence/07-dev-browser-acceptance-2026-10-24.md).
+The [active schedule](../specs/ppo-agent/playable-player-schedule.md)
 continues toward a Crossroads opponent; these 9×9 weights do not transfer to it.
 Core remains authoritative for rules and results. Training uses SB3-Contrib
 `MaskablePPO`; smoke training does not establish playing strength.
 
-## Experimental trained 9×9 game (increment 07 in progress)
+## Experimental trained 9×9 game (increment 07 complete)
 
 One Git-tracked model per architecture lives in
 `battle_agent_rl/archive/ppo/{x86_64,arm64}/`, each with `manifest.json` and
