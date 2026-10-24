@@ -175,6 +175,48 @@ class TestCombat(unittest.TestCase):
         self.assertEqual(1, len(units))
         self.assertEqual(self.red_unit, units[0])
 
+    def test_exchange_only_eliminates_defenders_up_to_attacker_strength(self):
+        second_defender = Unit(
+            id=str(uuid.uuid4()),
+            name='Second Blue Unit',
+            faction=self.blue_faction,
+            player=self.blue_player,
+            type='Recon',
+            attack=2,
+            defense=2,
+            move=6,
+        )
+        self.red_unit.attack = 2
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.board.add_unit(second_defender, 6, 5)
+        self.combat.set_static_die_roll(2)
+
+        result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual(CombatResult.EXCHANGE, result.get_combat_result())
+        self.assertEqual((1, 2), result.get_final_odds())
+        survivors = self.board.get_units()
+        self.assertEqual(1, len(survivors))
+        self.assertIn(survivors[0], (self.blue_unit, second_defender))
+        self.assertIsNone(self.red_unit.get_coords())
+        eliminated = self.game.combat_log[0].eliminated_units
+        self.assertEqual(2, len(eliminated))
+        self.assertIn('Red Unit', eliminated)
+        self.assertNotIn(survivors[0].get_name(), eliminated)
+
+    def test_exchange_eliminates_defender_when_none_fit(self):
+        self.red_unit.attack = 2
+        self.blue_unit.defense = 3
+        self.board.add_unit(self.red_unit, 6, 4)
+        self.board.add_unit(self.blue_unit, 6, 5)
+        self.combat.set_static_die_roll(2)
+
+        result = self.combat.resolve_combat().get_battles()[0]
+
+        self.assertEqual(CombatResult.EXCHANGE, result.get_combat_result())
+        self.assertEqual([], self.board.get_units())
+
     def test_find_combat_includes_all_adjacent_units(self):
         red_unit2 = Unit(
             id=str(uuid.uuid4()),

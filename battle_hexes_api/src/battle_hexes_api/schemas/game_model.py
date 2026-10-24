@@ -5,8 +5,8 @@ import uuid
 
 from pydantic import ConfigDict, Field
 
+from battle_hexes_api.agent_integrations.ppo_state import is_ppo_game
 from .api_model import ApiBaseModel
-
 from .board import BoardModel
 from .combat_results_table import CombatResultsTableModel
 from .game_status import GameStatus
@@ -14,6 +14,13 @@ from .game_log import GameLogRecordModel, game_log_from_game
 from .objective import ObjectiveModel
 from .player import PlayerModel
 from .reinforcement import ReinforcementsModel
+
+
+class PpoTurnModel(ApiBaseModel):
+    pending_unit_ids: list[str]
+    checkpoint_digest: str
+    contract: str
+
 
 if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
     from battle_hexes_core.game.game import Game
@@ -52,6 +59,8 @@ class GameModel(ApiBaseModel):
         exclude_if=lambda value: value is None,
     )
     combat_results_table: CombatResultsTableModel
+    ppo_turn: PpoTurnModel | None = Field(
+        default=None, exclude_if=lambda value: value is None)
 
     @classmethod
     def from_game(
@@ -93,4 +102,8 @@ class GameModel(ApiBaseModel):
             combat_results_table=CombatResultsTableModel.from_core(
                 game.get_combat_results_table()
             ),
+            ppo_turn=PpoTurnModel(**{
+                key: game.ppo_state[key] for key in
+                ("pending_unit_ids", "checkpoint_digest", "contract")
+            }) if is_ppo_game(game) else None,
         )
