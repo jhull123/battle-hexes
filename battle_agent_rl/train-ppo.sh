@@ -47,12 +47,19 @@ if sys.version_info[:2] != (3, 12):
 
 from battle_agent_rl.ppo.artifacts import versions
 
-expected = {
-    name.replace('-', '_'): version
-    for line in Path(sys.argv[1]).read_text().splitlines()
-    if '==' in line and not line.lstrip().startswith('#')
-    for name, version in [line.strip().split('==', 1)]
-}
+def pinned_versions(path):
+    expected = {}
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.partition('#')[0].strip()
+        if line.startswith('-r '):
+            expected.update(pinned_versions(path.parent / line[3:].strip()))
+        elif '==' in line:
+            name, version = line.split('==', 1)
+            expected[name.strip().replace('-', '_')] = version.strip()
+    return expected
+
+
+expected = pinned_versions(Path(sys.argv[1]))
 actual = versions()
 if any(actual.get(name) != version for name, version in expected.items()):
     sys.exit('Native ARM64 training requires the pinned PPO serving libraries.')
