@@ -6,7 +6,7 @@ FROM python:3.12.3-slim-bookworm@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f
 WORKDIR /app
 
 # Install Python dependencies
-COPY requirements.txt requirements-ppo-serving.txt ./
+COPY requirements.txt requirements-ppo.txt requirements-ppo-serving.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-ppo-serving.txt
 
 # Copy application source
