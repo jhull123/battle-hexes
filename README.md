@@ -34,7 +34,7 @@ dependencies to run all Python checks:
 python3.12 -m venv .venv312
 source .venv312/bin/activate
 pip install 'torch==2.5.1+cpu' --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt -r requirements-test.txt -r requirements-ppo.txt
+pip install -r requirements.txt -r requirements-test.txt -r requirements-ppo-x86-serving.txt
 ```
 
 You can run unit tests and linting for all Python packages with:
