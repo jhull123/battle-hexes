@@ -1,0 +1,7 @@
+# Frozen x86_64 runtime for the committed 9x9 v3 PPO checkpoint.
+# Install the CPU Torch wheel from its dedicated index before this file.
+numpy==2.5.4
+torch==2.5.1+cpu
+gymnasium==1.2.3
+stable-baselines3==2.7.0
+sb3-contrib==2.7.0
