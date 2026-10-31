@@ -84,6 +84,10 @@ or cutoff does not pass.
 
 **Specification:** [08-crossroads-environment-policy-contract.md](08-crossroads-environment-policy-contract.md).
 
+**Status: planned.** Supported Crossroads seats: Human as Player 1 / Airborne;
+PPO as Player 2 / Wehrmacht. Core retains Airborne-first turn order and scoring.
+This does not change 07's first-seat experimental PPO contract or artifacts.
+
 **Objective:** Make actual Crossroads the training and inference task before
 the main training campaign, using 07's live-play path.
 
