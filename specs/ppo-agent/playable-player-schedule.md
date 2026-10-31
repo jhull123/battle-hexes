@@ -82,6 +82,8 @@ or cutoff does not pass.
 
 ## 08 — Crossroads environment and policy contract
 
+**Specification:** [08-crossroads-environment-policy-contract.md](08-crossroads-environment-policy-contract.md).
+
 **Objective:** Make actual Crossroads the training and inference task before
 the main training campaign, using 07's live-play path.
 
