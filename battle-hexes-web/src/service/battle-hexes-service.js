@@ -8,6 +8,7 @@
  * - getGame(gameId)
  * - resolveHumanMove(gameId, sparseBoard)
  * - generateCpuMovement(gameId)
+ * - orderPpo(gameId)
  * - resolveCombat(gameId, sparseBoard)
  * - endMovement(gameId, sparseBoard)
  * - endTurn(gameId, sparseBoard)
@@ -20,6 +21,7 @@ export class BattleHexesService {
   getGame() { throw new Error('Not implemented'); }
   resolveHumanMove() { throw new Error('Not implemented'); }
   generateCpuMovement() { throw new Error('Not implemented'); }
+  orderPpo() { throw new Error('Not implemented'); }
   resolveCombat() { throw new Error('Not implemented'); }
   endMovement() { throw new Error('Not implemented'); }
   endTurn() { throw new Error('Not implemented'); }

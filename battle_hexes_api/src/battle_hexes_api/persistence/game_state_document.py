@@ -11,7 +11,7 @@ class Model(BaseModel):
 
 class Player(Model):
     name: str
-    type_id: Literal["human", "random", "q-learning"]
+    type_id: Literal["human", "random", "q-learning", "ppo-9x9-experimental"]
 
 
 class PendingCombat(Model):
@@ -69,3 +69,4 @@ class Document(Model):
     reinforcement_history: list[dict[str, Any]]
     combat_history: list[dict[str, Any]]
     defensive_fire_history: list[dict[str, Any]]
+    ppo_state: Any = None

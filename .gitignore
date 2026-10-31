@@ -7,3 +7,5 @@
 *.swp
 *.swo
 *~
+# Replay reports are diagnostics, not part of either tracked PPO model.
+battle_agent_rl/archive/ppo/*/evaluation.json

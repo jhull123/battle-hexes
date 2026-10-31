@@ -37,6 +37,16 @@ class SampleHumanPlayer(Player):
         return None
 
 
+class ExperimentalPpoPlayer(Player):
+    """The API's atomic order command, never batch movement, owns this side."""
+
+    def movement(self):
+        raise RuntimeError("Use the live PPO order command")
+
+    def combat_results(self, combat_results):
+        pass
+
+
 class GameCreator:
     """Utility class for constructing game instances."""
 
@@ -56,6 +66,19 @@ class GameCreator:
             ``q-learning``) used to configure the players participating in the
             game.
         """
+        from battle_hexes_api.agent_integrations import integrations
+        from battle_hexes_api.persistence.errors import (
+            SavedGameIncompatibleError,
+        )
+
+        try:
+            integration = integrations.select(scenario_id, player_type_ids,
+                                              False)
+        except SavedGameIncompatibleError as error:
+            raise ValueError(
+                "Experimental PPO requires the first seat, its fixed 9x9 "
+                "scenario and a supported opponent") from error
+
         scenario = load_scenario(scenario_id)
 
         player_order: list[str] = []
@@ -92,6 +115,8 @@ class GameCreator:
         game.scenario_id = scenario_id
         game.player_type_ids = list(player_type_ids)
 
+        integration.initial_state(game)
+
         return game
 
     @staticmethod
@@ -109,6 +134,10 @@ class GameCreator:
                 factions=factions,
                 board=board,
             )
+
+        if type_id == "ppo-9x9-experimental":
+            return ExperimentalPpoPlayer(name=name, type=PlayerType.CPU,
+                                         factions=factions)
 
         if type_id == "random":
             return RandomPlayer(

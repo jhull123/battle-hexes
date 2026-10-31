@@ -19,6 +19,7 @@ export class Game {
   #gameLog;
   #combatResultsTable;
   #gameVersion;
+  #ppoTurn;
 
   constructor(id, phases, players, board, {
     scenarioId = null,
@@ -33,11 +34,13 @@ export class Game {
     gameLog = [],
     combatResultsTable,
     gameVersion = 1,
+    ppoTurn = null,
   } = {}) {
     if (!Number.isInteger(gameVersion) || gameVersion < 1) {
       throw new TypeError('gameVersion must be a positive integer');
     }
     this.#gameVersion = gameVersion;
+    this.#ppoTurn = ppoTurn;
     this.#id = id;
     this.#phases = phases;
     this.#currentPhase = gameStatus?.state === 'completed'
@@ -100,6 +103,10 @@ export class Game {
 
   get gameVersion() {
     return this.#gameVersion;
+  }
+
+  get ppoTurn() {
+    return this.#ppoTurn;
   }
 
   getCurrentPhase() {
@@ -241,6 +248,9 @@ export class Game {
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'gameLog')) {
       this.#gameLog = state.gameLog;
     }
+    if (Object.prototype.hasOwnProperty.call(state ?? {}, 'ppoTurn')) {
+      this.#ppoTurn = state.ppoTurn;
+    }
     if (Object.prototype.hasOwnProperty.call(state ?? {}, 'combatResultsTable')) {
       this.#combatResultsTable = state.combatResultsTable;
     }
@@ -277,6 +287,9 @@ export class Game {
   }
 
   #extractGameStatus(responseData) {
+    if (Object.prototype.hasOwnProperty.call(responseData?.game ?? {}, 'gameStatus')) {
+      return responseData.game.gameStatus;
+    }
     if (Object.prototype.hasOwnProperty.call(responseData ?? {}, 'gameStatus')) {
       return responseData.gameStatus;
     }

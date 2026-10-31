@@ -78,7 +78,7 @@ export const initializeScenarioPicker = ({
 
   const statusElement = documentRef.getElementById('scenario-status');
 
-  loadScenarios({ selectElement, statusElement, service });
+  const ready = loadScenarios({ selectElement, statusElement, service });
 
-  return { selectElement, statusElement };
+  return { selectElement, statusElement, ready };
 };
