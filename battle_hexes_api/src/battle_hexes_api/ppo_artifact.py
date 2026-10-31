@@ -30,7 +30,7 @@ def _run_dir():
 
 
 def configured_artifact(digest=None):
-    """Validate the current manifest and checkpoint without loading a model."""
+    """Reuse stable-pair validation; check the game-bound digest each time."""
     run_dir = _run_dir()
     try:
         from battle_agent_rl.ppo.playable_artifact import validate_artifact

@@ -51,6 +51,19 @@ def model_loads(monkeypatch):
     return loads
 
 
+@pytest.fixture
+def checkpoint_hashes(monkeypatch):
+    hashes = []
+    original_digest = playable_artifact._digest
+
+    def record_digest(path):
+        hashes.append(path)
+        return original_digest(path)
+
+    monkeypatch.setattr(playable_artifact, "_digest", record_digest)
+    return hashes
+
+
 def _repository():
     clock = SystemClock()
     return GameRepositoryInMemory(clock, InMemoryItemSizer(),
@@ -285,10 +298,16 @@ def test_mid_turn_restart_receipt_rng_and_handoff(artifact, monkeypatch):
         assert repo.load_game(game_id).version == 5
 
 
-def test_reads_and_opponent_commands_never_reload_ppo_model(
-        artifact, tmp_path, monkeypatch, model_loads):
+def test_reads_and_opponent_commands_reuse_ppo_validation_and_model(
+        artifact, tmp_path, monkeypatch, model_loads,
+        checkpoint_hashes, caplog):
     run_dir = tmp_path / "serving"
     shutil.copytree(artifact, run_dir)
+    manifest_path = run_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    major, minor, _ = manifest["versions"]["python"].split(".")
+    manifest["versions"]["python"] = f"{major}.{minor}.999"
+    manifest_path.write_text(json.dumps(manifest))
     monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(run_dir))
     with TestClient(create_app()) as client:
         created = _create(client)
@@ -318,6 +337,12 @@ def test_reads_and_opponent_commands_never_reload_ppo_model(
         assert finished.status_code == 200, finished.text
         assert client.get(f"/games/{game_id}").status_code == 200
         assert len(model_loads) == 1
+
+    assert len(checkpoint_hashes) == 1
+    warnings = [record for record in caplog.records
+                if record.levelno == logging.WARNING and record.name ==
+                "battle_agent_rl.ppo.playable_artifact"]
+    assert len(warnings) == 1
 
 
 def _handoff_to_cpu(client, opponent):
