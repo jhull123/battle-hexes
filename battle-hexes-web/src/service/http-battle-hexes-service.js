@@ -154,6 +154,7 @@ export class HttpBattleHexesService extends BattleHexesService {
   }
   resolveHumanMove(gameId, body) { return this.#post(`/games/${gameId}/move`, 'resolveHumanMove', body, gameId); }
   generateCpuMovement(gameId) { return this.#post(`/games/${gameId}/movement`, 'generateCpuMovement', undefined, gameId); }
+  orderPpo(gameId) { return this.#post(`/games/${gameId}/ppo/order`, 'orderPpo', undefined, gameId); }
   resolveCombat(gameId, body) { return this.#post(`/games/${gameId}/combat`, 'resolveCombat', body, gameId); }
   endMovement(gameId, body) { return this.#post(`/games/${gameId}/end-movement`, 'endMovement', body, gameId); }
   endTurn(gameId, body) { return this.#post(`/games/${gameId}/end-turn`, 'endTurn', body, gameId); }

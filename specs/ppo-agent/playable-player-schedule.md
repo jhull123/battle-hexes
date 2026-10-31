@@ -2,8 +2,9 @@
 
 This is the active schedule, beginning at 07. Increments 01–06 are completed
 foundation work; their specifications and evidence remain in the
-[foundation schedule](implementation-schedule.md). All increments below are
-planned. Mark completion only after delivery and verification of the evidence.
+[foundation schedule](implementation-schedule.md). Increment 07 is complete;
+08–12 remain planned. Mark completion only after delivery and verification of
+the evidence.
 
 The finish line is a trained, evaluated, frozen PPO player that a human can
 select and play against through core/API/UI on
@@ -23,6 +24,29 @@ Self-play, arbitrary boards, broad scenario expansion, and open-ended policy
 tuning are outside this schedule.
 
 ## 07 — Trained 9×9 human-visible slice
+
+**Status: complete (2026-10-24).** The deployed browser acceptance result and
+exact game/revision evidence are recorded in
+[07 dev browser acceptance](evidence/07-dev-browser-acceptance-2026-10-24.md).
+The run covered saved PPO-order resume, a human mid-turn reload, visible
+defensive fire and combat retreat, and a core-completed UI result. This closes
+07's integration gate, not a playing-strength or Crossroads gate.
+
+**Implementation status:** v3 contract on the version-2 10-turn scenario,
+masked smoke training/evaluation (0 wins, 0 losses, 20 draws, 0 cutoffs on
+seeds 1000–1019), defensive-fire sound mappings,
+validated artifacts under `battle_agent_rl/archive/ppo/` for x86_64 and ARM64,
+persisted per-order API turns and web selection/animation are present. A bundled
+ARM64 image loads its pinned checkpoint and served
+PPO and ordinary HTTP games under the current 256 CPU / 512 MiB limit; its
+declared 20-seed replay recorded 1 win, 0 losses, 19 draws and 0 cutoffs.
+Local training explicitly replaces the selected architecture's Git-managed
+model; old saved-game digests fail clearly in API logs and the browser.
+Unit and API tests include a completed HTTP game and an
+in-memory repository restart simulation. The mandatory browser-visible
+playthrough against the deployed, configured-durable backend is verified in
+the acceptance record above. See [PPO.md](../../battle_agent_rl/PPO.md#experimental-trained-99-game-increment-07-complete)
+for local commands and measured smoke outcomes.
 
 **Objective:** Train and reload a compatible 9×9 multi-unit policy, then prove
 live human-versus-PPO play end to end before the Crossroads campaign.

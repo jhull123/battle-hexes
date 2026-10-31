@@ -98,4 +98,28 @@ describe('title screen interactions', () => {
     expect(document.getElementById('player-type-status').textContent)
       .toBe('Failed to start game. Please try again.');
   });
+
+  test('Elimination Demo 3 offers PPO first and any other player type second', async () => {
+    mockService.listScenarios.mockResolvedValue([
+      { id: 'elim_1', name: 'Scenario 1' },
+      { id: 'ppo_9x9_experimental', name: 'Elimination Demo 3' },
+    ]);
+    mockService.listPlayerTypes.mockResolvedValue([
+      { id: 'human', name: 'Human' },
+      { id: 'random', name: 'Random' },
+      { id: 'ppo-9x9-experimental', name: 'Trained 9×9 PPO' },
+    ]);
+    await import('../../src/title-screen.js');
+    await flushPromises();
+    const scenario = document.getElementById('scenario-select');
+    scenario.value = 'ppo_9x9_experimental';
+    scenario.dispatchEvent(new Event('change'));
+    const first = document.getElementById('player1-type');
+    const second = document.getElementById('player2-type');
+    expect([...first.options].map((option) => option.value)).toEqual(['ppo-9x9-experimental']);
+    expect([...second.options].map((option) => option.value)).toEqual(['human', 'random']);
+    scenario.value = 'elim_1';
+    scenario.dispatchEvent(new Event('change'));
+    expect([...first.options].map((option) => option.value)).toEqual(['human', 'random']);
+  });
 });

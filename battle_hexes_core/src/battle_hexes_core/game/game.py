@@ -277,6 +277,20 @@ class Game:
             return self.update_game_status()
         return self.game_status
 
+    def finalize_completed_phase(self) -> bool:
+        """Close a live phase when core has completed during movement/combat.
+
+        This stays in the grandfathered Game module: terminal phase ownership
+        is a core transition, not an API or PPO serialization concern.
+        """
+        if self.get_game_status().state != "completed":
+            return False
+        self._terminal = True
+        self.current_player = None
+        self.current_phase = None
+        self.pending_combats = []
+        return True
+
     def _snapshot_defensive_fire_eligibility(
             self,
             player: Player,

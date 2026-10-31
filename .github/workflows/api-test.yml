@@ -10,6 +10,7 @@ on:
       - 'pyproject.toml'
       - 'requirements-test.txt'
       - 'requirements-ppo.txt'
+      - 'requirements-ppo-x86-serving.txt'
       - '.github/workflows/api-test.yml'
   workflow_dispatch:
 
@@ -32,7 +33,11 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-test.txt
           pip install 'torch==2.5.1+cpu' --index-url https://download.pytorch.org/whl/cpu
-          pip install -r requirements-ppo.txt
+          pip install -r requirements-ppo-x86-serving.txt
+
+      - name: Verify committed x86 PPO checkpoint loads
+        run: |
+          PYTHONPATH=battle_hexes_core/src:battle_agent_rl/src python -c "from battle_agent_rl.ppo.playable_artifact import load_model; load_model('battle_agent_rl/archive/ppo/x86_64')"
 
       - name: Run checks
         run: ./server-side-checks.sh

@@ -3,7 +3,6 @@
 from dataclasses import asdict, dataclass
 import json
 import logging
-import sys
 from time import perf_counter
 
 from .errors import (
@@ -41,15 +40,14 @@ class LoggingTelemetrySink:
     """Emit a bounded JSON event suitable for log metrics and queries."""
 
     def __init__(self):
-        if not logger.handlers:
-            handler = logging.StreamHandler(sys.__stderr__ or sys.stderr)
-            handler.setFormatter(logging.Formatter("%(message)s"))
-            logger.addHandler(handler)
-            logger.propagate = False
-        logger.setLevel(logging.INFO)
+        # Let the application configure handlers/thresholds. DEBUG telemetry
+        # should not install a private stderr handler that bypasses Uvicorn's
+        # normal INFO console threshold.
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = True
 
     def emit(self, event):
-        logger.info(
+        logger.debug(
             "repository_operation_completed %s",
             json.dumps(event.fields(), sort_keys=True, separators=(",", ":")),
         )
