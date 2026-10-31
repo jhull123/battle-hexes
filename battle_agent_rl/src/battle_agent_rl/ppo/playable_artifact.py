@@ -11,6 +11,7 @@ from zipfile import BadZipFile
 from sb3_contrib import MaskablePPO
 
 from .artifacts import versions, write_json
+from .artifact_validation_cache import ArtifactValidationCache
 from .multi_unit_gym import multi_unit_observation_space
 from .playable_scenario import (
     CONTRACT, SCENARIO_ID, SCENARIO_VERSION, SLOT_IDS, TURN_LIMIT,
@@ -19,6 +20,7 @@ from .playable_scenario import (
 
 
 logger = logging.getLogger(__name__)
+_validation_cache = ArtifactValidationCache()
 
 
 def _compatible_versions(recorded, current):
@@ -130,11 +132,24 @@ def read_manifest(run_dir):
 
 
 def validate_artifact(run_dir, digest=None):
-    """Check the configured checkpoint's identity without loading a policy."""
+    """Reuse validation only while both files' filesystem identities match.
+
+    Always compare the caller's game-bound digest, even on a cache hit.
+    """
+    try:
+        manifest = _validation_cache.validate(
+            run_dir, tuple(sorted(versions().items())), _validate_artifact)
+    except OSError as error:
+        raise ValueError(
+            f"Missing or damaged PPO artifact: {error}") from error
+    if digest is not None and digest != manifest["checkpoint"]["sha256"]:
+        raise ValueError("Game-bound checkpoint identity mismatch")
+    return manifest
+
+
+def _validate_artifact(run_dir):
     manifest = read_manifest(run_dir)
     entry = manifest["checkpoint"]
-    if digest is not None and digest != entry["sha256"]:
-        raise ValueError("Game-bound checkpoint identity mismatch")
     archive = Path(run_dir) / entry["path"]
     try:
         if _digest(archive) != entry["sha256"]:

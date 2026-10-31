@@ -42,6 +42,21 @@ contract, spaces, SHA-256, Python major/minor and exact library versions before
 loading on CPU. The full training Python version stays in the manifest; a
 different serving Python patch version logs a warning but still loads.
 Architecture-specific library builds are not interchangeable.
+Successful validation is cached per process for the most recent manifest/
+checkpoint pair. Every access stats both files (device, inode, size, nanosecond
+mtime and ctime); a change, including same-path replacement or a same-size write
+with restored mtime, requires full compatibility and SHA-256 validation again.
+Runtime versions also form part of the cache key. Validation compares metadata
+before and after hashing and rejects a changing pair; failures are not cached.
+Unchanged pairs avoid repeated checkpoint reads and Python patch warnings,
+including when loading a model. Each saved game's digest is still checked on
+every restore, and callers receive copies of validated manifest data.
+This assumes an administrator-controlled local filesystem with reliable stat
+metadata, not hostile metadata spoofing or snapshots that preserve every stat
+field. It cannot make validation/loading atomic with concurrent artifact writes;
+publish artifacts while serving is stopped for a race-free rollout. Restart
+workers after changing runtime code or scenario rules. Each worker validates
+independently; there is no TTL or persistent validation cache.
 Replacing either model expires saved games tied to its previous digest: GET
 and orders fail with a clear server-log and browser message; they never use the
 new weights silently. The default API store is in-memory and does not survive
