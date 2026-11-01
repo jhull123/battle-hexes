@@ -70,6 +70,11 @@ tests and linter across **all** Python packages. The script adjusts
 - Before changing PPO-related code, specs, or documentation, read
   `battle_agent_rl/PPO.md` and `specs/ppo-agent/implementation-schedule.md`,
   plus the relevant numbered specification.
+- Read `battle_agent_rl/PPO-EXPLAINER.md` when changing PPO or game/scenario
+  behavior it describes. Update it in the same change for affected observations,
+  actions/masks, rules, turn timing, rewards, architecture, or implementation
+  status; verify its examples against core and the active contract. Preserve
+  its plain-language style and distinguish planned from implemented behavior.
 - If implementation would deviate from a numbered specification, explain the
   proposed deviation and its reason to the user and ask them how to proceed
   before making that deviation. Do not silently redefine the contract.
