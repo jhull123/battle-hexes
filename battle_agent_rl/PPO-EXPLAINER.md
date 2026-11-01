@@ -57,7 +57,7 @@ and illegal choices; the mask filters them.
 | 3 | MG Trupp A (reinforcement) | 972–1295 |
 | 4 | StuG. III Zug A (reinforcement) | 1296–1619 |
 
-Slots never shift after a death. Reinforcement slots exist from the start but
+Slots never shift after an elimination. Reinforcement slots exist from the start but
 cannot act before deployment. Airborne units are not in PPO's action space.
 
 ### Encoding and decoding an order
@@ -96,7 +96,7 @@ mask = [False, False, ..., True, ..., False]
 ```
 
 Only reachable destinations for deployed units with pending orders are enabled.
-Dead, awaiting, and already-ordered units have entirely false action blocks.
+Eliminated, awaiting, and already-ordered units have entirely false action blocks.
 The zero-movement Feldwache has a hold-only order.
 
 After one order resolves, including defensive fire and retreat, we rebuild the
@@ -195,7 +195,7 @@ German B's **position cell** is 77, but its **hold action** is `324 + 77 = 401`.
 Those numbers have different meanings.
 
 Reinforcement status is 0 scheduled, 1 delayed, or 2 entered. Unit status still
-distinguishes a deployed unit that later dies. Zero-filled off-board positions
+distinguishes a deployed unit that later is eliminated. Zero-filled off-board positions
 alone cannot tell those situations apart.
 
 ## What does the neural network do with this?
