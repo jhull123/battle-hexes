@@ -12,6 +12,12 @@ Make actual Crossroads the shared training/inference task, without transferring 
 
 Implement [schedule 2, increment 08](playable-player-schedule.md#08--crossroads-environment-and-policy-contract) under `battle_agent_rl.ppo`. Support **PPO as Player 2 / Wehrmacht**, versus **Human as Player 1 / Airborne**. Preserve core player order: Airborne first, Wehrmacht second. Use seeded random/hold controllers as non-learning verification substitutes for the human. Deliver the environment, shared conversion and live-turn contract, thin Gymnasium adapter, inspection, and compatibility plumbing. Campaign training/evaluation (09), evaluated frozen-player parity (10), and API/UI promotion (12) remain out of scope; preserve 07's first-seat PPO behavior and artifacts. **08 remains planned.**
 
+**Implementation note:** only scenario binding/compatibility, permanent slots,
+observation encoding, pending-unit masks and validated action-to-core-plan
+conversion are delivered. See the [partial audit](evidence/08-state-action-audit.md).
+Turn orchestration, Gym adaptation, inspection/human driver and trainer/artifact
+integration remain planned. This is not completion of increment 08.
+
 ## 2. Definitions
 
 - **PPO:** Proximal Policy Optimization, using existing SB3-Contrib `MaskablePPO`.
@@ -28,8 +34,19 @@ Implement [schedule 2, increment 08](playable-player-schedule.md#08--crossroads-
 - **REQ-004 — Rules and reward:** Initialize scores through core at reset; thereafter use core's objective scorer in the shared workflow at ordinary-game scoring points, including after combat, before final turn-limit evaluation. Encoding must not score or evaluate victory. Keep `scoring_side=Airborne`: Airborne scores occupied objectives; Wehrmacht scores every other objective, including empty ones. Scores are current control, not accumulated captures. Read winner/reason from core; Wehrmacht does not gain Airborne's early-elimination victory condition. Reward once at completion **relative to Wehrmacht**: Wehrmacht win `+1`, Airborne win `-1`, draw `0`; otherwise `0`, including cutoff and nonterminal elimination. No reward shaping.
 - **REQ-005 — Horizon:** `remaining_cycles = max(0, 9 - game.turn_number)` includes the current cycle and ignores external caps. Accept an external cycle cap of 1–8, default 8. Check cutoff after Wehrmacht ends the capped cycle, **before Airborne acts next**; core completion takes precedence. A normal core end-turn may already have advanced the turn/deployed the next cycle's reinforcements; retain that state, without extra opponent movement. Core decides turn 8 at the end of Wehrmacht's turn. At completion/cutoff clear pending and masks, retain actual final state and true scenario horizon, and reject further steps until reset. At most 36 learner orders occur: three per cycle in turns 1–2, at most five in turns 3–8.
 - **CON-001:** Core remains the sole rules/scoring/completion authority and gains no PPO dependency. Preserve 5×5, 06 and 07 contracts; do not replace committed weights, change public player choices, add HTTP routes or migrate saved games in this increment.
+- **CON-002 — Reuse boundary:** Use **scenario-specific task definitions; scenario-independent decision machinery**. Crossroads is the first supported task for the reusable layer, not a separate scenario-specific PPO engine. Keep its scenario ID/version, pinned gameplay fingerprint, supported learner seat, ordered roster, bounds and concrete policy contract in a small task definition. Shared roster binding, spaces, observation encoding, pending masks and action conversion take explicit configuration: no named factions/units, fixed slot counts, board dimensions, single-group assumption or eight-turn horizon. Do not add a parallel trainer/turn engine or migrate 06/07 contracts as part of this extraction. This is implementation reuse toward a generalized Battle Hexes PPO player, not multi-scenario training, newly advertised scenario support or evidence of policy generalization.
 
 ## 4. Interfaces & Data Contracts
+
+### Implementation responsibilities (no policy-contract change)
+
+- **Task definition / scenario compatibility:** `crossroads_scenario.TASK` pins the supported task; shared `scenario_binding` loads/validates through core and rejects incompatible scenario, seat, roster or live static gameplay. Concrete dimensions, objective order, reinforcement-group order and horizon come from the approved scenario. `crossroads_contract` delegates its concrete spaces to the shared space builder.
+- **Decision machinery:** `decision_contract`, `decision_binding`, `decision_observation` and `decision_actions` own configured dimensions/bounds, permanent identities, public-state arrays, legal pending-order masks and validated conversion. Reinforcement rows follow configured group IDs, including zero/multiple-group internal fixtures; omitting entered groups from core's pending menu must not shift identities/statuses.
+- **Roles:** learner/opponent derive from the configured learner seat, without reordering core players. Resolve the objective scoring player independently from core's `victory.scoring_side`; `objective_control` means that player's occupation, while `scores` remain learner then opponent. For this task that still means Airborne control and Wehrmacht-first scores. Encoding never computes scores, victory or transitions.
+
+The concrete Crossroads contract below—including all fields, shapes, dtypes,
+bounds, identities, indices and readiness/lifecycle semantics—is unchanged.
+No general-purpose environment or new orchestration is delivered by this slice.
 
 ### Identity, actions and masks
 
@@ -79,6 +96,12 @@ Derive unit lifecycle from the fixed roster, core board and reinforcement-group 
 ## 6. Test Automation Strategy
 
 Use `pytest` under `battle_agent_rl/tests/ppo`, real core transitions and controlled RNG/state fixtures for blocked arrivals, empty turns, fire/retreat and ending precedence. Check `observation_space.contains`, mask/path equivalence and matching seeded action/event replays. Do not depend on random seeds alone to encounter edge cases. Run `./server-side-checks.sh` after implementation; no web/e2e or strength gate is required.
+
+For the state/action extraction, retain concrete Crossroads regression/space
+checks and add proportionate internal reuse tests with materially different
+dimensions, roster, learner seat, scoring-side assignment and group count.
+Exercise the same binding/encoding/mask/conversion implementations, not copies.
+These tests do not advertise additional scenarios or close 08's remaining gates.
 
 ## 7. Rationale & Context
 

@@ -5,8 +5,11 @@ This is the plain-language companion to [PPO.md](PPO.md) and the
 Keep it in sync when the game or PPO contract changes; it explains the contract,
 not a separate set of rules.
 
-**Current status:** the Crossroads setup below is specified for increment 08,
-but not yet implemented or trained. The playable 9×9 demo from 07 is different:
+**Current status:** Crossroads scenario binding, permanent slots, observations,
+legal-action masks and action-to-core-plan conversion are implemented. Increment
+08 is still incomplete: turn execution/orchestration, the Gym adapter, policy/
+artifact integration and inspection driver remain planned. No Crossroads model
+has been trained. The playable 9×9 demo from 07 is different:
 it uses two PPO units, 162 actions, and PPO in the first seat. Its existing
 trainer uses `[32, 32]` hidden layers. Do not confuse those artifacts with the
 planned Crossroads model.
@@ -29,11 +32,33 @@ Core game → observation + legal-action mask → PPO chooses one action
 Core still owns movement, defensive fire, combat, scoring, and completion.
 The neural network chooses orders; it does not replace the rules engine.
 
+## One set of machinery, explicit task definitions
+
+The design is **scenario-specific task definitions; scenario-independent
+decision machinery**. Crossroads is the first supported task for the reusable
+layer. Its definition supplies the approved scenario/version and fingerprint,
+PPO seat, unit order, policy contract and input bounds. Shared code binds those
+units and builds observations, spaces, masks and core plans using the configured
+board size, roster, reinforcement groups and horizon—not named German units or
+hard-coded Crossroads counts.
+
+Learner and opponent are roles, not faction names or fixed first/second seats.
+The side whose occupation earns objective points is a separate role read from
+core's scoring rule. For Crossroads, the learner is Wehrmacht and that scoring
+side is Airborne. Shared code does not assume the scoring side is the opponent.
+
+This supports the long-term goal of a generalized Battle Hexes PPO player, but
+reusable code is **not** a generalized trained policy. Smaller boards, changed
+seats and multiple reinforcement groups are internal reuse tests only. There is
+no multi-scenario training or newly advertised scenario support; the fixed 06/07
+demo contracts and weights remain unchanged. The concrete Crossroads inputs
+below are exactly the same as before this refactor.
+
 ## Who plays whom?
 
 For Crossroads, **PPO plays Player 2 / Wehrmacht**. The human plays
 **Player 1 / Airborne**, and Airborne still moves first. Seeded random or hold
-controllers stand in for the human during environment checks.
+controllers will stand in for the human during the planned environment checks.
 
 The board is 18×18, with three objectives and an eight-turn limit. Wehrmacht
 starts with three units; two more are scheduled to arrive on turn 3.
@@ -99,11 +124,17 @@ Only reachable destinations for deployed units with pending orders are enabled.
 Eliminated, awaiting, and already-ordered units have entirely false action blocks.
 The zero-movement Feldwache has a hold-only order.
 
-After one order resolves, including defensive fire and retreat, we rebuild the
-mask before choosing again. Each unit gets **one order per friendly movement
-phase**, starting with its full movement allowance. It can move less than its
+The planned turn driver will rebuild the mask after each order resolves,
+including defensive fire and retreat, before choosing again. Each unit gets
+**one order per friendly movement phase**, starting with its full movement
+allowance. It can move less than its
 maximum, but cannot split its movement into multiple orders. Hold also spends
 the order.
+
+The delivered converter only validates and returns a core plan; it does not
+apply it or spend an order. Its caller keeps pending unit IDs separately from
+movement points. This matters for hold: a unit can still have all its movement
+points after using its one order. The mask excludes stale pending casualties.
 
 An all-false mask means there are no legal actions. The environment must advance
 automatically or finish the episode, not ask PPO to choose from an empty menu.
@@ -229,7 +260,11 @@ The architecture is a modest CPU baseline, not a promise of playing strength.
 Training time also depends on how many simulated games are needed and how
 quickly core can run them.
 
-## Turns, rewards, and endings
+## Turns, rewards, and endings (planned environment)
+
+The following describes the remaining turn-driver contract, not a delivered
+Crossroads environment. Tests currently advance real core state explicitly to
+audit the delivered encoder and masks; they do not complete increment 08.
 
 The non-learning environment resolves the opening Airborne turn before returning
 its first Wehrmacht decision. Each step applies one German order. After the
