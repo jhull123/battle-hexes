@@ -19,6 +19,53 @@ continues toward a Crossroads opponent; these 9×9 weights do not transfer to it
 Core remains authoritative for rules and results. Training uses SB3-Contrib
 `MaskablePPO`; smoke training does not establish playing strength.
 
+## Crossroads state/action layer (increment 08 partial)
+
+**08 is incomplete.** Delivered under `battle_agent_rl.ppo`:
+
+- `crossroads_scenario`: core-loaded version-1 Crossroads, pinned gameplay
+  fingerprint and live side/rules/roster checks. Core stays Airborne-first;
+  learner-first slots include both reserved reinforcements and retain casualties.
+- `crossroads_contract` / `crossroads_observation`: exact space declarations
+  and fresh, unnormalized public-state NumPy arrays, including stacks, core fire
+  readiness, terrain/roads, objectives, existing scores and true horizon.
+- `crossroads_actions`: pending-ID snapshots, fresh 1,620-bit core-reachable
+  masks and validated single-action conversion to `UnitMovementPlan`. Invalid
+  actions do not change core, pending orders or RNG. Core path validation is
+  shared with 06/07; their contracts and committed artifacts are unchanged.
+
+For an already core-advanced **Wehrmacht movement** decision:
+
+```python
+from battle_agent_rl.ppo.crossroads_scenario import bind_game
+from battle_agent_rl.ppo.crossroads_actions import (
+    action_mask, action_plan, pending_at_movement_start,
+)
+from battle_agent_rl.ppo.crossroads_observation import observation
+
+binding = bind_game(game, game.players[1])
+pending = set(pending_at_movement_start(binding))  # Once at movement start.
+inputs = observation(binding, pending)
+mask = action_mask(binding, pending)
+slot, plan = action_plan(binding, pending, action)  # Read-only conversion.
+```
+
+The caller owns order consumption: remove the selected unit ID after its core
+resolution, even for hold, retreat or elimination; do not regenerate pending
+from movement points. Dead IDs are filtered from inputs/masks. `active=False`
+clears pending inputs/masks for an external ending without falsifying horizon.
+`crossroads_scenario.create_game(rng)` creates **raw Airborne-first core state**,
+not an environment reset: it does not score or play the opening turn. Encoding
+only reads already-computed scores and never deploys, scores or evaluates rules.
+Space declarations load Gymnasium lazily; state inspection needs no trainer.
+
+**Still planned:** live order execution/turn orchestration (including opening
+Airborne, scoring, empty turns, rewards and cutoffs), non-learning inspection/
+human driver, Gym adapter, initialized-policy checks, trainer/artifact task
+selection and compatibility integration. Training campaigns remain increment 09.
+There is no Crossroads checkpoint or playable player yet. See the
+[partial input/mask audit](../specs/ppo-agent/evidence/08-state-action-audit.md).
+
 ## Experimental trained 9×9 game (increment 07 complete)
 
 One Git-tracked model per architecture lives in

@@ -12,6 +12,12 @@ Make actual Crossroads the shared training/inference task, without transferring 
 
 Implement [schedule 2, increment 08](playable-player-schedule.md#08--crossroads-environment-and-policy-contract) under `battle_agent_rl.ppo`. Support **PPO as Player 2 / Wehrmacht**, versus **Human as Player 1 / Airborne**. Preserve core player order: Airborne first, Wehrmacht second. Use seeded random/hold controllers as non-learning verification substitutes for the human. Deliver the environment, shared conversion and live-turn contract, thin Gymnasium adapter, inspection, and compatibility plumbing. Campaign training/evaluation (09), evaluated frozen-player parity (10), and API/UI promotion (12) remain out of scope; preserve 07's first-seat PPO behavior and artifacts. **08 remains planned.**
 
+**Implementation note:** only scenario binding/compatibility, permanent slots,
+observation encoding, pending-unit masks and validated action-to-core-plan
+conversion are delivered. See the [partial audit](evidence/08-state-action-audit.md).
+Turn orchestration, Gym adaptation, inspection/human driver and trainer/artifact
+integration remain planned. This is not completion of increment 08.
+
 ## 2. Definitions
 
 - **PPO:** Proximal Policy Optimization, using existing SB3-Contrib `MaskablePPO`.

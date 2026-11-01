@@ -88,6 +88,15 @@ or cutoff does not pass.
 PPO as Player 2 / Wehrmacht. Core retains Airborne-first turn order and scoring.
 This does not change 07's first-seat experimental PPO contract or artifacts.
 
+**Partial delivery (state/action only):** core scenario binding and gameplay
+compatibility, fixed five-German/six-Airborne slots including reserved arrivals,
+fresh observation arrays and exact space declarations, pending-ID legal masks,
+and validated action-to-core-plan conversion. The
+[partial audit](evidence/08-state-action-audit.md) records focused evidence.
+Turn orchestration, non-learning inspection/human driver, Gym adapter and
+trainer/artifact integration remain planned; no Crossroads training campaign
+has run. This does **not** satisfy 08's full completion gate or AC-001–AC-006.
+
 **Objective:** Make actual Crossroads the training and inference task before
 the main training campaign, using 07's live-play path.
 
