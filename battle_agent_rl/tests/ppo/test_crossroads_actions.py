@@ -5,11 +5,11 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from battle_agent_rl.ppo.crossroads_actions import (
+from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
 from battle_agent_rl.ppo.crossroads_contract import action_space
-from battle_agent_rl.ppo.crossroads_observation import observation
+from battle_agent_rl.ppo.decision_observation import observation
 
 
 def snapshot(binding, pending):
@@ -23,11 +23,9 @@ def snapshot(binding, pending):
                      game.get_current_player().name, game.get_game_status(),
                      game.pending_combats, game.defensive_fire_log,
                      game.combat_log, game.reinforcements_deployer.game_log,
-                     (binding.reinforcement_group.id,
-                      binding.reinforcement_group.arrival_turn,
-                      binding.reinforcement_group.coords,
-                      binding.reinforcement_group.entered,
-                      tuple(u.id for u in binding.reinforcement_group.units)),
+                     tuple((g.id, g.arrival_turn, g.coords, g.entered,
+                            tuple(u.id for u in g.units))
+                           for g in binding.reinforcement_groups),
                      game.score_tracker.get_scores(), set(pending),
                      game.defensive_fire_resolver.rng.getstate()))
 

@@ -5,12 +5,38 @@ import numpy as np
 from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
-from battle_agent_rl.ppo.crossroads_actions import (
+from battle_agent_rl.ppo.decision_actions import (
     action_mask, pending_at_movement_start,
 )
 from battle_agent_rl.ppo.crossroads_contract import observation_space
-from battle_agent_rl.ppo.crossroads_observation import observation
+from battle_agent_rl.ppo.decision_observation import observation
 from battle_agent_rl.ppo.crossroads_scenario import bind_game
+
+
+def test_concrete_spaces_and_dtypes_remain_the_08_contract(german_decision):
+    from gymnasium import spaces
+
+    expected = spaces.Dict({
+        "positions": spaces.MultiBinary((11, 324)),
+        "unit_status": spaces.Box(0, 2, (11,), dtype=np.int8),
+        "unit_stats": spaces.Box(0, 7, (11, 4), dtype=np.float32),
+        "movement_remaining": spaces.Box(0, 7, (11,), dtype=np.int8),
+        "fire_flags": spaces.MultiBinary((11, 4)),
+        "pending": spaces.MultiBinary(5),
+        "terrain": spaces.Box(-2, 3, (324, 3), dtype=np.float32),
+        "road_edges": spaces.Box(0, 1, (324, 6), dtype=np.float32),
+        "objective_points": spaces.Box(0, 1, (324,), dtype=np.int8),
+        "objective_control": spaces.MultiBinary(3),
+        "scores": spaces.Box(0, 3, (2,), dtype=np.int8),
+        "reinforcement": spaces.Box(0, 17, (1, 4), dtype=np.int32),
+        "remaining_cycles": spaces.Box(0, 8, (1,), dtype=np.int32),
+    })
+    assert observation_space() == expected
+    obs = observation(german_decision, set())
+    assert obs.keys() == expected.spaces.keys()
+    for key, value in obs.items():
+        assert value.dtype == expected[key].dtype
+        assert value.shape == expected[key].shape
 
 
 def test_opening_hold_observation_exact_values(german_decision):

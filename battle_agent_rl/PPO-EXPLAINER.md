@@ -32,6 +32,28 @@ Core game → observation + legal-action mask → PPO chooses one action
 Core still owns movement, defensive fire, combat, scoring, and completion.
 The neural network chooses orders; it does not replace the rules engine.
 
+## One set of machinery, explicit task definitions
+
+The design is **scenario-specific task definitions; scenario-independent
+decision machinery**. Crossroads is the first supported task for the reusable
+layer. Its definition supplies the approved scenario/version and fingerprint,
+PPO seat, unit order, policy contract and input bounds. Shared code binds those
+units and builds observations, spaces, masks and core plans using the configured
+board size, roster, reinforcement groups and horizon—not named German units or
+hard-coded Crossroads counts.
+
+Learner and opponent are roles, not faction names or fixed first/second seats.
+The side whose occupation earns objective points is a separate role read from
+core's scoring rule. For Crossroads, the learner is Wehrmacht and that scoring
+side is Airborne. Shared code does not assume the scoring side is the opponent.
+
+This supports the long-term goal of a generalized Battle Hexes PPO player, but
+reusable code is **not** a generalized trained policy. Smaller boards, changed
+seats and multiple reinforcement groups are internal reuse tests only. There is
+no multi-scenario training or newly advertised scenario support; the fixed 06/07
+demo contracts and weights remain unchanged. The concrete Crossroads inputs
+below are exactly the same as before this refactor.
+
 ## Who plays whom?
 
 For Crossroads, **PPO plays Player 2 / Wehrmacht**. The human plays

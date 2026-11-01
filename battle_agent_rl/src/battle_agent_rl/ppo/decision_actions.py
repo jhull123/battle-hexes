@@ -4,7 +4,6 @@ from numbers import Integral
 
 import numpy as np
 
-from .crossroads_contract import ACTIONS, CELLS, COLUMNS, LEARNER_IDS
 from .destination_plan import destination_plan
 
 
@@ -16,32 +15,33 @@ def _movement_active(binding, active):
 
 
 def pending_at_movement_start(binding):
-    """Snapshot IDs once per friendly movement start, including Feldwache.
+    """Snapshot IDs at friendly movement start, including immobile units.
 
     The future turn driver owns consumption; do not rebuild pending
     after an order (a hold can leave movement points unchanged).
     """
     if not _movement_active(binding, True):
-        raise RuntimeError("Pending orders require Wehrmacht movement")
+        raise RuntimeError("Pending orders require learner movement")
     board_units = binding.game.board.get_units()
-    return frozenset(unit.id for unit in binding.slots[:5]
+    return frozenset(unit.id for unit in binding.learner_slots
                      if unit in board_units and unit.get_coords() is not None)
 
 
 def pending_flags(binding, pending, active=True):
-    if not set(pending).issubset(LEARNER_IDS):
-        raise ValueError("Unknown Wehrmacht pending identity")
+    if not set(pending).issubset(binding.spec.learner_ids):
+        raise ValueError("Unknown learner pending identity")
     board_units = binding.game.board.get_units()
     enabled = _movement_active(binding, active)
     return np.array([
         enabled and unit.id in pending and unit in board_units
-        and unit.get_coords() is not None for unit in binding.slots[:5]
+        and unit.get_coords() is not None for unit in binding.learner_slots
     ], dtype=np.int8)
 
 
 def action_mask(binding, pending, active=True):
     """Fresh core reachability mask; no orders or RNG are consumed."""
-    mask = np.zeros(ACTIONS, dtype=np.bool_)
+    spec = binding.spec
+    mask = np.zeros(spec.actions, dtype=np.bool_)
     board = binding.game.board
     for slot, enabled in enumerate(pending_flags(binding, pending, active)):
         if not enabled:
@@ -51,7 +51,8 @@ def action_mask(binding, pending, active=True):
             raise RuntimeError("Pending unit has spent movement points")
         start = board.get_hex(*unit.get_coords())
         for tile in board.get_reachable_hexes(unit, start, unit.move):
-            mask[slot * CELLS + tile.row * COLUMNS + tile.column] = True
+            mask[slot * spec.cells + tile.row * spec.board_size[1]
+                 + tile.column] = True
     return mask
 
 
@@ -59,12 +60,14 @@ def action_plan(binding, pending, action, active=True):
     """Return (permanent slot, core plan), leaving execution to the caller."""
     if isinstance(action, np.ndarray) and action.shape == ():
         action = action.item()
+    spec = binding.spec
     if (isinstance(action, bool) or not isinstance(action, Integral)
-            or not 0 <= action < ACTIONS):
-        raise ValueError("Action must be a scalar integer in [0, 1620)")
+            or not 0 <= action < spec.actions):
+        raise ValueError(
+            f"Action must be a scalar integer in [0, {spec.actions})")
     if not action_mask(binding, pending, active)[action]:
-        raise ValueError("Action is not a legal pending Wehrmacht destination")
-    slot, cell = divmod(int(action), CELLS)
-    destination = binding.game.board.get_hex(*divmod(cell, COLUMNS))
+        raise ValueError("Action is not a legal pending learner destination")
+    slot, cell = divmod(int(action), spec.cells)
+    destination = binding.game.board.get_hex(*divmod(cell, spec.board_size[1]))
     return slot, destination_plan(
         binding.game.board, binding.slots[slot], destination)

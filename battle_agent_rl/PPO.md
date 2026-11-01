@@ -19,29 +19,38 @@ continues toward a Crossroads opponent; these 9×9 weights do not transfer to it
 Core remains authoritative for rules and results. Training uses SB3-Contrib
 `MaskablePPO`; smoke training does not establish playing strength.
 
-## Crossroads state/action layer (increment 08 partial)
+## Reusable decisions; Crossroads task (increment 08 partial)
 
 **08 is incomplete.** Delivered under `battle_agent_rl.ppo`:
 
-- `crossroads_scenario`: core-loaded version-1 Crossroads, pinned gameplay
-  fingerprint and live side/rules/roster checks. Core stays Airborne-first;
-  learner-first slots include both reserved reinforcements and retain casualties.
-- `crossroads_contract` / `crossroads_observation`: exact space declarations
-  and fresh, unnormalized public-state NumPy arrays, including stacks, core fire
-  readiness, terrain/roads, objectives, existing scores and true horizon.
-- `crossroads_actions`: pending-ID snapshots, fresh 1,620-bit core-reachable
-  masks and validated single-action conversion to `UnitMovementPlan`. Invalid
-  actions do not change core, pending orders or RNG. Core path validation is
-  shared with 06/07; their contracts and committed artifacts are unchanged.
+- `crossroads_scenario.TASK`: the small, scenario-specific definition pins
+  scenario ID/version, gameplay fingerprint, supported learner seat, ordered
+  roster, concrete policy contract and observation bounds. Crossroads is the
+  **first supported task for this reusable layer**, not a separate engine.
+- `scenario_binding`: core loading and task compatibility checks;
+  `decision_binding`: permanent roster binding, all reinforcement groups and
+  explicit learner/opponent/scoring-player roles. Core player order is untouched.
+- `decision_contract`: task-supplied dimensions/bounds and exact space
+  construction. `decision_observation`: fresh, unnormalized public-state arrays
+  including stacks, readiness, terrain/roads, objectives, existing scores and
+  true horizon. Dimensions, roster counts and group counts are configuration.
+- `decision_actions`: pending-ID masks and validated action-to-core-plan
+  conversion, still read-only. Core path validation remains shared with 06/07;
+  their existing fixed contracts, behavior and committed artifacts are unchanged.
+
+The direction is **scenario-specific task definitions; scenario-independent
+decision machinery**, toward a generalized Battle Hexes PPO player. Reusing
+implementation does not imply policy generalization or multi-scenario training.
+Internal configuration probes are not additional advertised task support.
 
 For an already core-advanced **Wehrmacht movement** decision:
 
 ```python
 from battle_agent_rl.ppo.crossroads_scenario import bind_game
-from battle_agent_rl.ppo.crossroads_actions import (
+from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
-from battle_agent_rl.ppo.crossroads_observation import observation
+from battle_agent_rl.ppo.decision_observation import observation
 
 binding = bind_game(game, game.players[1])
 pending = set(pending_at_movement_start(binding))  # Once at movement start.
@@ -58,6 +67,11 @@ clears pending inputs/masks for an external ending without falsifying horizon.
 not an environment reset: it does not score or play the opening turn. Encoding
 only reads already-computed scores and never deploys, scores or evaluates rules.
 Space declarations load Gymnasium lazily; state inspection needs no trainer.
+Objective-control bits describe occupation by **core's configured scoring
+player**, not necessarily the opponent. Crossroads configures Airborne as that
+player, retaining all thirteen original fields/spaces, slot order and 1,620
+action indices. `crossroads_contract` supplies the concrete task spaces through
+the shared space builder; no policy contract or weights are reinterpreted.
 
 **Still planned:** live order execution/turn orchestration (including opening
 Airborne, scoring, empty turns, rewards and cutoffs), non-learning inspection/
@@ -228,7 +242,9 @@ cutoffs leave core in progress. See [spec 06](../specs/ppo-agent/06-multi-unit-d
 ## Direction
 
 Keep training and inference on the same observation/action contract, with
-core responsible for rules and victory. The experimental 9×9 player is not a
-Crossroads policy and should be hidden or retired when the evaluated
+scenario-specific task definitions and scenario-independent decision machinery;
+core remains responsible for rules and victory. A generalized implementation
+does not establish a policy's ability to play other scenarios. The experimental
+9×9 player is not a Crossroads policy and should be hidden or retired when the evaluated
 Crossroads opponent arrives. Follow the [active schedule](../specs/ppo-agent/playable-player-schedule.md);
 strength work beyond that is deferred to [schedule 3](../specs/ppo-agent/crossroads-strength-schedule.md).

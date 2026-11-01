@@ -2,58 +2,56 @@
 
 import numpy as np
 
-from .crossroads_actions import pending_flags
-from .crossroads_contract import CELLS, COLUMNS
+from .decision_actions import pending_flags
 
 
 def observation(binding, pending, active=True):
     game = binding.game
     board = game.board
-    group = binding.reinforcement_group
     result = _unit_arrays(binding)
     result.update(_board_arrays(board))
     result["pending"] = pending_flags(binding, pending, active)
     result["objective_control"] = np.array([
-        any(binding.opponent.owns(u) for u in board.get_units_at(*coords))
+        any(binding.scoring_player.owns(u)
+            for u in board.get_units_at(*coords))
         for coords in binding.objective_coords
     ], dtype=np.int8)
     result["scores"] = np.array([
         game.get_score_tracker().get_score(player)
         for player in (binding.learner, binding.opponent)
     ], dtype=np.int8)
-    status = (2 if group.entered else
-              {"scheduled": 0, "delayed": 1}[
-                  game.reinforcements_deployer.pending(game.turn_number)[0]
-                  .status])
-    result["reinforcement"] = np.array([
-        [group.arrival_turn, *group.coords, status]
-    ], dtype=np.int32)
+    result["reinforcement"] = _reinforcement_array(binding)
     result["remaining_cycles"] = np.array(
-        [max(0, 9 - game.turn_number)], dtype=np.int32)
+        [max(0, binding.spec.turn_limit + 1 - game.turn_number)],
+        dtype=np.int32)
     return result
 
 
 def _unit_arrays(binding):
+    units_count = len(binding.slots)
     result = {
-        "positions": np.zeros((11, CELLS), dtype=np.int8),
-        "unit_status": np.full(11, 2, dtype=np.int8),
+        "positions": np.zeros(
+            (units_count, binding.spec.cells), dtype=np.int8),
+        "unit_status": np.full(units_count, 2, dtype=np.int8),
         "unit_stats": np.array([
             [u.attack, u.defense, u.move, u.defensive_fire_modifier]
             for u in binding.slots
         ], dtype=np.float32),
-        "movement_remaining": np.zeros(11, dtype=np.int8),
-        "fire_flags": np.zeros((11, 4), dtype=np.int8),
+        "movement_remaining": np.zeros(units_count, dtype=np.int8),
+        "fire_flags": np.zeros((units_count, 4), dtype=np.int8),
     }
     units = binding.game.board.get_units()
-    group = binding.reinforcement_group
+    awaiting = {u for g in binding.reinforcement_groups if not g.entered
+                for u in g.units}
     for index, unit in enumerate(binding.slots):
         if unit not in units or unit.get_coords() is None:
-            if unit in group.units and not group.entered:
+            if unit in awaiting:
                 result["unit_status"][index] = 0
             continue
         result["unit_status"][index] = 1
         row, column = unit.get_coords()
-        result["positions"][index, row * COLUMNS + column] = 1
+        cell = row * binding.spec.board_size[1] + column
+        result["positions"][index, cell] = 1
         result["movement_remaining"][index] = (
             unit.current_turn_movement_points_remaining)
         result["fire_flags"][index] = [
@@ -66,10 +64,11 @@ def _unit_arrays(binding):
 
 
 def _board_arrays(board):
-    terrain = np.zeros((CELLS, 3), dtype=np.float32)
-    points = np.zeros(CELLS, dtype=np.int8)
+    cells = board.rows * board.columns
+    terrain = np.zeros((cells, 3), dtype=np.float32)
+    points = np.zeros(cells, dtype=np.int8)
     for tile in board.hexes:
-        cell = tile.row * COLUMNS + tile.column
+        cell = tile.row * board.columns + tile.column
         value = tile.terrain
         terrain[cell] = ((1, 1, 0) if value is None else
                          (value.move_cost, value.defensive_fire_modifier,
@@ -85,7 +84,7 @@ def _road_edges(board):
     for road_type, path in board.get_road_paths():
         for start, end in zip(path, path[1:]):
             edges[start, end] = edges[end, start] = costs[road_type]
-    result = np.zeros((CELLS, 6), dtype=np.float32)
+    result = np.zeros((board.rows * board.columns, 6), dtype=np.float32)
     for tile in board.hexes:
         # Match core's column parity, despite the historical R names.
         directions = (board.EVEN_R_DIRECTIONS if tile.column % 2 == 0
@@ -94,6 +93,20 @@ def _road_edges(board):
         for index, (dr, dc) in enumerate(directions):
             end = (tile.row + dr, tile.column + dc)
             if board.is_in_bounds(*end):
-                result[tile.row * COLUMNS + tile.column, index] = (
+                result[tile.row * board.columns + tile.column, index] = (
                     edges.get((start, end), 0))
     return result
+
+
+def _reinforcement_array(binding):
+    # Core pending() omits entered groups; associate by stable unit identities,
+    # not by list position (an earlier group may have already entered).
+    statuses = {tuple(u.id for u in g.units): g.status for g in
+                binding.game.reinforcements_deployer.pending(
+                    binding.game.turn_number)}
+    rows = []
+    for group in binding.reinforcement_groups:
+        status = (2 if group.entered else {"scheduled": 0, "delayed": 1}[
+            statuses[tuple(u.id for u in group.units)]])
+        rows.append([group.arrival_turn, *group.coords, status])
+    return np.array(rows, dtype=np.int32).reshape(-1, 4)

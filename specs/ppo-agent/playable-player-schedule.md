@@ -93,6 +93,10 @@ compatibility, fixed five-German/six-Airborne slots including reserved arrivals,
 fresh observation arrays and exact space declarations, pending-ID legal masks,
 and validated action-to-core-plan conversion. The
 [partial audit](evidence/08-state-action-audit.md) records focused evidence.
+The implementation separates scenario-specific task definitions from
+scenario-independent decision machinery; Crossroads is its first supported
+task. Internal configuration probes establish reuse, not policy generalization
+or additional advertised scenarios. The concrete Crossroads contract is unchanged.
 Turn orchestration, non-learning inspection/human driver, Gym adapter and
 trainer/artifact integration remain planned; no Crossroads training campaign
 has run. This does **not** satisfy 08's full completion gate or AC-001–AC-006.

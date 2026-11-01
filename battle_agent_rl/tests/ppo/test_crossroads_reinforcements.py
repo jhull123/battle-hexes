@@ -4,11 +4,11 @@ import numpy as np
 
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 
-from battle_agent_rl.ppo.crossroads_actions import (
+from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
 from battle_agent_rl.ppo.crossroads_contract import observation_space
-from battle_agent_rl.ppo.crossroads_observation import observation
+from battle_agent_rl.ppo.decision_observation import observation
 from battle_agent_rl.ppo.crossroads_scenario import bind_game
 
 
@@ -74,7 +74,7 @@ def test_blocked_group_awaits_and_retries_only_on_cycle_wrap(
     b.slots[0].set_coords(0, 16)  # One occupant blocks both arrivals.
     for _ in range(4):
         close_unopposed_side(b.game)
-    assert not b.reinforcement_group.entered
+    assert not b.reinforcement_groups[0].entered
     assert len(b.game.reinforcements_deployer.game_log) == 1
     assert observation(b, set())["unit_status"][3:5].tolist() == [0, 0]
     close_unopposed_side(b.game)  # Handoff is not another deployment attempt.
@@ -87,9 +87,9 @@ def test_blocked_group_awaits_and_retries_only_on_cycle_wrap(
     assert len(b.game.reinforcements_deployer.game_log) == 2
     b.slots[0].set_coords(3, 15)
     close_unopposed_side(b.game)
-    assert not b.reinforcement_group.entered
+    assert not b.reinforcement_groups[0].entered
     close_unopposed_side(b.game)  # Wrap into 5: succeeds.
-    assert b.game.turn_number == 5 and b.reinforcement_group.entered
+    assert b.game.turn_number == 5 and b.reinforcement_groups[0].entered
     assert observation(b, set())["reinforcement"][0, 3] == 2
     b.game.board.remove_units([b.slots[3], b.slots[4]])
     obs = observation(b, set())

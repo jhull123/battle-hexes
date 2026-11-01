@@ -12,9 +12,10 @@ from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 from battle_agent_rl.ppo.crossroads_contract import SLOT_IDS
 from battle_agent_rl.ppo.playable_scenario import LocalPlayer
 from battle_agent_rl.ppo.crossroads_scenario import (
-    GAMEPLAY_SHA256, bind_game, create_game, gameplay_fingerprint,
+    GAMEPLAY_SHA256, bind_game, create_game,
     slots_for_game, validate_scenario,
 )
+from battle_agent_rl.ppo.scenario_binding import gameplay_fingerprint
 
 
 def test_raw_game_is_actual_airborne_first_core_state(crossroads):
@@ -119,7 +120,7 @@ def test_live_binding_rejects_wrong_side_or_gameplay(crossroads, mutation):
     elif mutation == "objectives":
         game.board.get_hex(2, 3).objectives.clear()
     elif mutation == "reinforcement":
-        crossroads.reinforcement_group.arrival_turn = 4
+        crossroads.reinforcement_groups[0].arrival_turn = 4
     elif mutation == "turn_limit":
         game.turn_limit = 9
     elif mutation == "version":
