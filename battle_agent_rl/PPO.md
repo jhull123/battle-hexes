@@ -1,5 +1,11 @@
 # Battle Hexes PPO Agent
 
+For a plain-language walkthrough of the environment, model inputs, action space,
+and masks, see [PPO-EXPLAINER.md](PPO-EXPLAINER.md). Keep that explainer and its
+examples accurate in the same change when relevant game rules, PPO contracts,
+architecture, or implementation status change; distinguish planned Crossroads
+behavior from the existing playable 9×9 slice.
+
 ## Status
 
 The 5×5 one-unit foundation (increments 01–05), 9×9 multi-unit prototype
