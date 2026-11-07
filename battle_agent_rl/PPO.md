@@ -23,11 +23,13 @@ Core remains authoritative for rules and results. Training uses SB3-Contrib
 
 **08 is incomplete.** Delivered under `battle_agent_rl.ppo`:
 
-- `crossroads_scenario.TASK`: the small, scenario-specific definition pins
-  scenario ID/version, gameplay fingerprint, supported learner seat, ordered
-  roster, concrete policy contract and observation bounds. Crossroads is the
+- `crossroads_scenario.TASK`: built from the loaded scenario definition, keeping
+  only the PPO learner seat and interface version explicit. `scenario_task`
+  derives roster ownership/order, dimensions, objectives, reinforcement groups,
+  horizon and observation bounds through core. Crossroads is the
   **first supported task for this reusable layer**, not a separate engine.
-- `scenario_binding`: core loading and task compatibility checks;
+- `scenario_binding`: structural/model-interface compatibility, without an
+  exact-gameplay lock or reference-game comparison;
   `decision_binding`: permanent roster binding, all reinforcement groups and
   explicit learner/opponent/scoring-player roles. Core player order is untouched.
 - `decision_contract`: task-supplied dimensions/bounds and exact space
@@ -38,7 +40,7 @@ Core remains authoritative for rules and results. Training uses SB3-Contrib
   conversion, still read-only. Core path validation remains shared with 06/07;
   their existing fixed contracts, behavior and committed artifacts are unchanged.
 
-The direction is **scenario-specific task definitions; scenario-independent
+The direction is **scenario-derived task definitions; scenario-independent
 decision machinery**, toward a generalized Battle Hexes PPO player. Reusing
 implementation does not imply policy generalization or multi-scenario training.
 Internal configuration probes are not additional advertised task support.
@@ -69,9 +71,14 @@ only reads already-computed scores and never deploys, scores or evaluates rules.
 Space declarations load Gymnasium lazily; state inspection needs no trainer.
 Objective-control bits describe occupation by **core's configured scoring
 player**, not necessarily the opponent. Crossroads configures Airborne as that
-player, retaining all thirteen original fields/spaces, slot order and 1,620
-action indices. `crossroads_contract` supplies the concrete task spaces through
-the shared space builder; no policy contract or weights are reinterpreted.
+player. Complete scenario rosters are sorted by unit ID within each side,
+learner-first, including undeployed reserves; arrivals/casualties never shift
+slots. Current Crossroads retains all thirteen original fields/spaces, slot order
+and 1,620 action indices. The interface label is now
+`battle-hexes-unit-destination-live-v2`: configuration is scenario-derived, not
+fixed to eight turns. Variations may change spaces and slot/action mappings;
+this does not authorize policy reuse. `crossroads_contract` supplies spaces
+through the shared builder. No Crossroads weights exist; 06/07 are unchanged.
 
 **Still planned:** live order execution/turn orchestration (including opening
 Airborne, scoring, empty turns, rewards and cutoffs), non-learning inspection/

@@ -7,17 +7,23 @@ remains authoritative; its turn/adapter/integration acceptance gates are open.
 
 ## Delivered boundary
 
-**Scenario-specific task definitions; scenario-independent decision machinery.**
+**Scenario-derived task definitions; scenario-independent decision machinery.**
 `crossroads_scenario.TASK` is the small definition for core-loaded
-`d_day_crossroads` version `1`, Player 2 / Wehrmacht: scenario identity, pinned
-gameplay SHA-256, learner seat, ordered roster, bounds and concrete policy
-contract. Crossroads is the first supported task for the reusable layer, not a
-separate scenario-specific engine. Its observable contract has not changed.
+`d_day_crossroads`, currently version `1`, Player 2 / Wehrmacht. It selects the
+scenario, learner seat and interface version. `scenario_task` derives the
+complete roster and ownership from core-created identities, and derives board
+dimensions, objectives, groups, horizon and bounds from the loaded definition
+and core-resolved configuration. No duplicated gameplay constants or exact
+scenario lock remain. Crossroads is the first supported task for this reusable
+layer, not a separate engine.
 
-Shared `scenario_binding` validates scenario gameplay (excluding presentation
-names, descriptions, colors and sounds) and compares live static rules,
-owner/faction assignments, roster stats, terrain, roads, objectives and
-reinforcement declarations against an approved core-built game.
+Shared `scenario_binding` checks implementation/model-interface compatibility,
+not equality with reference gameplay. It checks dimensions/horizon, complete
+roster/owners, objective coordinates, group IDs and observation bounds. Numeric
+validation catches unsupported dtypes/ranges before encoding; objective control
+requires core's unambiguous scoring-side rule. Changes to fire settings, terrain,
+roads and unit stats within the configured interface are not rejected merely
+because they differ from current Crossroads.
 `decision_binding` retains identities through board history and all configured
 groups; learner/opponent roles come from the configured seat, and the objective
 scoring player is resolved separately from core's scoring-side metadata.
@@ -27,8 +33,17 @@ Shared `decision_contract` constructs spaces from dimensions and bounds;
 `decision_actions` owns pending masks and conversion using the existing shared
 core-path validator. None hard-code Crossroads IDs, five/eleven slots, 18×18,
 one group or eight turns. `crossroads_contract` is a concrete-space facade only.
-Unit/hex insertion order does not define slots. Crossroads still retains all
-eleven identities; its field schemas, slot order and 1,620 indices are unchanged.
+Slots are learner-first, lexicographically sorted by ID within each side's
+complete scenario roster, including undeployed reserves. JSON/board insertion
+order does not define slots. Arrivals and casualties never shift them.
+
+The interface label changed to `battle-hexes-unit-destination-live-v2`, replacing
+the fixed eight-turn Crossroads v1 label. The checked-in scenario retains all
+eleven identities, thirteen field schemas/bounds, slot order and 1,620 indices;
+this does not claim compatibility across changed definitions. Adding/renaming
+units can change slots/actions for a new episode, and changed dimensions or
+bounds can change spaces. Model reuse requires concrete interface checks, not
+just a matching version label. No Crossroads weights exist or are migrated.
 
 Raw game creation leaves Airborne active and scores uninitialized, as core
 creates them; it is not `reset()`. Tests initialize scoring and advance phases
@@ -76,18 +91,21 @@ With `.venv312` active and `PYTHONPATH=battle_agent_rl/src:battle_hexes_core/src
 ```sh
 python -m pytest battle_agent_rl/tests/ppo/test_crossroads_*.py \
   battle_agent_rl/tests/ppo/test_decision_reuse.py \
+  battle_agent_rl/tests/ppo/test_scenario_task.py \
   battle_agent_rl/tests/ppo/test_multi_unit.py \
   battle_agent_rl/tests/ppo/test_playable_slice.py -q
 ./server-side-checks.sh
 ```
 
-Focused checks: **109 passed** (76 Crossroads checks, 10 internal reuse checks
-and 23 existing 06/07 regressions). An explicit concrete-space assertion pins
+Focused checks: **118 passed** (57 Crossroads checks, 10 internal reuse checks,
+28 scenario-interface checks and 23 existing 06/07 regressions). Exact-gameplay
+rejection tests were replaced with variation/interface checks, not retained as
+obsolete constraints. An explicit concrete-space assertion pins
 all Crossroads field shapes, dtypes and bounds in addition to live-state values.
 
 The internal reuse fixture has a **5×7 board, four units, two learner slots,
 four-turn horizon and stacking limit 1**. It exercises both learner seats and
-both scoring-side assignments, non-board objective order, configurable bounds,
+both scoring-side assignments, non-board objective order, derived bounds,
 core default terrain, road metadata, core-reachable action mapping, caller-owned
 pending and invalid-action non-mutation. Two reinforcement groups exercise
 independent scheduled/delayed/entered status, immobile arrival holds, casualties
@@ -95,8 +113,24 @@ and stable identity when entered groups disappear from core's pending menu.
 A zero-group/zero-objective variant checks empty arrays. These are internal
 configuration probes through the same implementations, not new task support.
 
+An actual Crossroads-definition variation goes through `create_game`,
+`bind_game`, `slots_for_game` and the shared observation/mask/plan machinery:
+**19×20, 12 units (7 learner / 5 opponent), two groups, four objectives and an
+11-turn horizon**, changed ownership, unit stats, terrain, road costs, scoring
+side, fire settings and arrival schedule. Its bounds and spaces derive without
+editing task constants. Score bounds follow core's objective count, not summed
+point values; weighted and zero-point objectives are audited against core scoring.
+Other checks cover stacked objective sums and arrivals
+later than the scenario horizon, reserve IDs that sort before deployed units,
+reordered declarations, stable post-arrival/post-casualty rebinding and empty
+objective/group arrays. Unsupported cases fail clearly: missing/invalid horizon,
+invalid dimensions/seat, orphan/duplicate units, unknown owners or empty roles,
+unsupported objective rules, negative/nonfinite stats and `int8`/`int32` or
+`float32` overflow. Live interface-compatible gameplay variations bind without
+a reference-game comparison.
+
 Prescribed `./server-side-checks.sh` passes on Python 3.12.16: **213 core,
-179 RL and 224 API tests passed; 11 API integration tests skipped**. Both
+188 RL and 224 API tests passed; 11 API integration tests skipped**. Both
 legacy rollout smoke commands, Flake8, Ruff and the Pylint module-size check
 pass. The dependency's AnyIO pytest plugin emits a pytest deprecation warning.
 No 06/07 contracts, checkpoints/manifests or public player choices are changed.

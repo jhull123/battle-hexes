@@ -1,4 +1,4 @@
-"""Task-supplied decision dimensions, bounds and exact policy spaces."""
+"""Decision value types and exact policy spaces."""
 
 from dataclasses import dataclass
 
@@ -48,28 +48,6 @@ class DecisionSpec:
     @property
     def actions(self):
         return len(self.learner_ids) * self.cells
-
-
-@dataclass(frozen=True)
-class ScenarioTask:
-    """An explicitly supported task, not a multi-scenario training registry."""
-
-    scenario_id: str
-    scenario_version: str
-    gameplay_sha256: str
-    contract: str
-    learner_seat: int
-    learner_ids: tuple[str, ...]
-    opponent_ids: tuple[str, ...]
-    bounds: ObservationBounds
-
-    def decision_spec(self, scenario):
-        return DecisionSpec(
-            scenario.board_size, self.learner_seat, self.learner_ids,
-            self.opponent_ids,
-            tuple(o.coords for o in scenario.objectives or ()),
-            tuple(g.id for g in scenario.reinforcements or ()),
-            scenario.turn_limit, self.bounds)
 
 
 def observation_space(spec):

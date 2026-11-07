@@ -34,13 +34,16 @@ The neural network chooses orders; it does not replace the rules engine.
 
 ## One set of machinery, explicit task definitions
 
-The design is **scenario-specific task definitions; scenario-independent
+The design is **scenario-derived task definitions; scenario-independent
 decision machinery**. Crossroads is the first supported task for the reusable
-layer. Its definition supplies the approved scenario/version and fingerprint,
-PPO seat, unit order, policy contract and input bounds. Shared code binds those
-units and builds observations, spaces, masks and core plans using the configured
-board size, roster, reinforcement groups and horizon—not named German units or
-hard-coded Crossroads counts.
+layer. Its definition loads the scenario and chooses the PPO seat and interface
+version. Core supplies ownership and the complete roster, including reserves;
+shared code derives unit order, board size, objectives, reinforcement groups,
+horizon and input bounds. These facts are not copied into PPO constants, and
+valid scenario changes are not rejected for differing from today's Crossroads.
+The checks instead catch unsupported inputs, such as missing turn limits,
+unassigned units, unsupported objective rules or numbers too large for the
+observation's data types.
 
 Learner and opponent are roles, not faction names or fixed first/second seats.
 The side whose occupation earns objective points is a separate role read from
@@ -51,8 +54,12 @@ This supports the long-term goal of a generalized Battle Hexes PPO player, but
 reusable code is **not** a generalized trained policy. Smaller boards, changed
 seats and multiple reinforcement groups are internal reuse tests only. There is
 no multi-scenario training or newly advertised scenario support; the fixed 06/07
-demo contracts and weights remain unchanged. The concrete Crossroads inputs
-below are exactly the same as before this refactor.
+demo contracts and weights remain unchanged. For today's Crossroads file, the
+inputs and action numbers below remain the same. The interface label is now
+`battle-hexes-unit-destination-live-v2`, reflecting scenario-derived configuration
+rather than a fixed eight-turn task. Matching that label alone does not make a
+model compatible with another roster, board or set of input bounds. There are
+no Crossroads weights to migrate.
 
 ## Who plays whom?
 
@@ -84,6 +91,12 @@ and illegal choices; the mask filters them.
 
 Slots never shift after an elimination. Reinforcement slots exist from the start but
 cannot act before deployment. Airborne units are not in PPO's action space.
+The order is derived by sorting the complete scenario roster by unit ID within
+each side, learner first—not by looking at who is on the board. Sorting is
+case-sensitive. This gives the table above for today's file, even if its unit
+entries or reinforcement list are rearranged. Adding or renaming a unit can
+change the next episode's slots and action numbers, so a policy must not silently
+reuse an old mapping. Within an episode, arrivals and casualties never change it.
 
 ### Encoding and decoding an order
 
@@ -149,6 +162,13 @@ not secretly change the next valid fire or combat roll.
 The model receives a dictionary of NumPy arrays, not prose or a screenshot.
 The first five unit rows are Wehrmacht; the next six are Airborne A–F.
 Learner-first arrays do **not** change core's Airborne-first turn order.
+These shapes and bounds follow the loaded scenario: another valid definition
+can have different roster counts, board dimensions, objectives, groups and
+horizon. Unit limits include undeployed reserves; point limits include stacked
+objectives. Score limits follow core's objective count: its current control rule
+counts objectives, not their declared point values (including zero-point ones).
+Shared code uses core's resolved terrain
+and defaults, rather than a second set of scenario facts.
 
 | Field | Shape | What it tells PPO |
 | --- | --- | --- |
