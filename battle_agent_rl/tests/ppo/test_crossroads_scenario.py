@@ -7,22 +7,24 @@ import pytest
 
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
 from battle_hexes_core.game.player import PlayerType
-from battle_hexes_core.scenario.scenario_loader import load_scenario_data
+from battle_hexes_core.scenario.scenario_loader import (
+    ScenarioData, load_scenario_data,
+)
 from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
-from battle_agent_rl.ppo.crossroads_contract import (
-    SLOT_IDS, action_space as task_action_space,
-    observation_space as task_observation_space,
-)
 from battle_agent_rl.ppo.playable_scenario import LocalPlayer
-from battle_agent_rl.ppo.crossroads_scenario import (
-    TASK, bind_game, create_game, slots_for_game, validate_scenario,
-)
+from battle_agent_rl.ppo.scenario_task import ScenarioTask
 from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
 from battle_agent_rl.ppo.decision_contract import observation_space
 from battle_agent_rl.ppo.decision_observation import observation
+
+
+SLOT_IDS = (
+    "A / Inf. Zug", "B / Inf. Zug", "Crossroads Feldwache", "MG Trupp A",
+    "StuG. III Zug A", *(f"Airborne Inf. {c}" for c in "ABCDEF"),
+)
 
 
 def test_raw_game_is_actual_airborne_first_core_state(crossroads):
@@ -41,19 +43,19 @@ def test_raw_game_is_actual_airborne_first_core_state(crossroads):
         (3, 15), (4, 5), (6, 9), None, None]
 
 
-def test_presentation_and_insertion_order_do_not_define_slots():
-    scenario = validate_scenario()
+def test_presentation_and_insertion_order_do_not_define_slots(crossroads_task):
+    scenario = crossroads_task.scenario
     changed = scenario.model_copy(update={
         "name": "Display name", "description": "Display description",
         "units": list(reversed(scenario.units)),
         "hex_data": list(reversed(scenario.hex_data)),
         "factions": list(reversed(scenario.factions)),
     })
-    assert validate_scenario(changed) is changed
+    task = ScenarioTask(changed, learner_seat=1)
     game = GameCreator().build_game_components(
         changed.to_core(), [LocalPlayer(name, PlayerType.HUMAN, [])
                             for name in ("Player 1", "Player 2")])[-1]
-    bound = bind_game(game, game.players[1], changed)
+    bound = task.bind_game(game, game.players[1])
     assert tuple(u.id for u in bound.slots) == SLOT_IDS
     assert bound.objective_coords == ((2, 3), (3, 15), (6, 9))
 
@@ -79,13 +81,14 @@ def varied_scenario():
     payload["road_types"]["secondary"]["edge_move_cost"] = 2.5
     payload["defensive_fire"]["base_probability"] = .5
     payload["victory"]["scoring_side"] = "Wehrmacht"
-    return type(TASK.scenario).model_validate(payload)
+    return ScenarioData.model_validate(payload)
 
 
-def test_variation_uses_production_crossroads_facade(
-        varied_scenario, close_unopposed_side):
+def test_variation_uses_production_task_interface(
+        varied_scenario, close_unopposed_side, crossroads_task):
     scenario = varied_scenario
-    b = create_game(random.Random(91), scenario)
+    task = ScenarioTask(scenario, learner_seat=1)
+    b = task.create_game(random.Random(91))
     assert b.spec.board_size == (19, 20) and b.spec.turn_limit == 11
     assert len(b.spec.learner_ids) == 7 and len(b.spec.opponent_ids) == 5
     assert b.spec.learner_ids == tuple(sorted(b.spec.learner_ids))
@@ -110,15 +113,14 @@ def test_variation_uses_production_crossroads_facade(
     assert obs["reinforcement"].tolist() == [[4, 0, 16, 0], [10, 18, 19, 0]]
     assert obs["remaining_cycles"].tolist() == [11]
     assert observation_space(b.spec).contains(obs)
-    assert task_observation_space(scenario) == observation_space(b.spec)
-    assert task_action_space(scenario).n == 7 * 380
+    assert task.observation_space() == observation_space(b.spec)
+    assert task.action_space().n == 7 * 380
     for action in np.flatnonzero(action_mask(b, pending)):
         slot, plan = action_plan(b, pending, action)
         assert plan.unit is b.slots[slot]
-    assert bind_game(b.game, b.learner, scenario).slots == b.slots
-    assert slots_for_game(b.game, scenario) == b.slots
-    # The default task remains the original loaded snapshot.
-    assert TASK.spec.board_size == (18, 18)
+    assert task.bind_game(b.game, b.learner).slots == b.slots
+    # Independently loaded tasks retain their own configuration.
+    assert crossroads_task.spec.board_size == (18, 18)
 
 
 @pytest.mark.parametrize("mutation,match", [
@@ -128,7 +130,7 @@ def test_variation_uses_production_crossroads_facade(
     ("victory", "scoring-side"),
 ])
 def test_live_binding_rejects_interface_mismatches(
-        crossroads, mutation, match):
+        crossroads, crossroads_task, mutation, match):
     game, learner = crossroads.game, crossroads.learner
     if mutation == "side":
         learner = crossroads.opponent
@@ -147,17 +149,17 @@ def test_live_binding_rejects_interface_mismatches(
     elif mutation == "victory":
         game.victory = None
     with pytest.raises(ValueError, match=match):
-        bind_game(game, learner)
+        crossroads_task.bind_game(game, learner)
 
 
-def test_rebind_keeps_eliminated_and_reserved_slots(crossroads):
+def test_rebind_keeps_eliminated_and_reserved_slots(
+        crossroads, crossroads_task):
     game = crossroads.game
     game.board.remove_units(crossroads.slots[0])
     game.board.units = dict(reversed(list(game.board.units.items())))
-    rebound = bind_game(game, crossroads.learner)
+    rebound = crossroads_task.bind_game(game, crossroads.learner)
     assert rebound.slots == crossroads.slots
-    assert slots_for_game(game) == crossroads.slots
     rng = random.Random(91)
     before = rng.getstate()
-    create_game(rng)
+    crossroads_task.create_game(rng)
     assert rng.getstate() == before

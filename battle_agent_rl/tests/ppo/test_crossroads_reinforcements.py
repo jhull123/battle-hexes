@@ -7,13 +7,12 @@ from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
-from battle_agent_rl.ppo.crossroads_contract import observation_space
+from battle_agent_rl.ppo.decision_contract import observation_space
 from battle_agent_rl.ppo.decision_observation import observation
-from battle_agent_rl.ppo.crossroads_scenario import bind_game
 
 
 def test_arrival_before_airborne_then_casualty_before_first_order(
-        crossroads, close_unopposed_side):
+        crossroads, close_unopposed_side, crossroads_task):
     b = crossroads
     for _ in range(4):
         close_unopposed_side(b.game)
@@ -38,14 +37,14 @@ def test_arrival_before_airborne_then_casualty_before_first_order(
     pending = pending_at_movement_start(b)
     assert b.slots[3].id not in pending and b.slots[4].id in pending
     obs = observation(b, pending)
-    assert observation_space().contains(obs)
+    assert observation_space(b.spec).contains(obs)
     assert obs["unit_status"][3:5].tolist() == [2, 1]
     assert obs["movement_remaining"][3:5].tolist() == [0, 7]
     assert obs["fire_flags"][3:5].tolist() == [[0, 0, 0, 0], [1, 0, 0, 0]]
     assert obs["reinforcement"][0, 3] == 2
     assert not action_mask(b, pending)[972:1296].any()
     assert action_mask(b, pending)[1312]
-    assert bind_game(b.game, b.learner).slots == b.slots
+    assert crossroads_task.bind_game(b.game, b.learner).slots == b.slots
     close_unopposed_side(b.game)
     assert b.slots[4].has_defensive_fire(b.opponent)
 

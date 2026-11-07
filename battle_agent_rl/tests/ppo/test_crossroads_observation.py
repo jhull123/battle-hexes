@@ -8,9 +8,8 @@ from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 from battle_agent_rl.ppo.decision_actions import (
     action_mask, pending_at_movement_start,
 )
-from battle_agent_rl.ppo.crossroads_contract import observation_space
+from battle_agent_rl.ppo.decision_contract import observation_space
 from battle_agent_rl.ppo.decision_observation import observation
-from battle_agent_rl.ppo.crossroads_scenario import bind_game
 
 
 def test_concrete_spaces_and_dtypes_remain_the_08_contract(german_decision):
@@ -31,7 +30,7 @@ def test_concrete_spaces_and_dtypes_remain_the_08_contract(german_decision):
         "reinforcement": spaces.Box(0, 17, (1, 4), dtype=np.int32),
         "remaining_cycles": spaces.Box(0, 8, (1,), dtype=np.int32),
     })
-    assert observation_space() == expected
+    assert observation_space(german_decision.spec) == expected
     obs = observation(german_decision, set())
     assert obs.keys() == expected.spaces.keys()
     for key, value in obs.items():
@@ -43,7 +42,7 @@ def test_opening_hold_observation_exact_values(german_decision):
     b = german_decision
     pending = pending_at_movement_start(b)
     obs = observation(b, pending)
-    assert observation_space().contains(obs)
+    assert observation_space(b.spec).contains(obs)
     assert obs["positions"].shape == (11, 324)
     assert obs["positions"].argmax(axis=1).tolist() == [
         69, 77, 117, 0, 0, 227, 223, 286, 289, 288, 295]
@@ -65,12 +64,13 @@ def test_opening_hold_observation_exact_values(german_decision):
         [2, .85, -1], [1, 1, 0], [3, .75, -2], [1, .75, -1]])
 
 
-def test_fresh_arrays_and_insertion_independence(german_decision):
+def test_fresh_arrays_and_insertion_independence(
+        german_decision, crossroads_task):
     b = german_decision
     pending = pending_at_movement_start(b)
     original = observation(b, pending)
     b.game.board.units = dict(reversed(list(b.game.board.units.items())))
-    rebound = bind_game(b.game, b.learner)
+    rebound = crossroads_task.bind_game(b.game, b.learner)
     again = observation(rebound, pending)
     for key in original:
         assert not np.shares_memory(original[key], again[key])
@@ -137,7 +137,7 @@ def test_true_horizon_and_disabled_pending(german_decision):
     assert obs["remaining_cycles"].tolist() == [6]
     assert not obs["pending"].any()
     assert not action_mask(b, pending, active=False).any()
-    assert observation_space().contains(obs)
+    assert observation_space(b.spec).contains(obs)
     b.game.turn_number = 9
     assert observation(b, set())["remaining_cycles"].tolist() == [0]
 

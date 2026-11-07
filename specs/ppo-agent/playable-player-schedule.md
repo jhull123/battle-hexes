@@ -93,12 +93,15 @@ compatibility, scenario-derived permanent slots including reserved arrivals,
 fresh observation arrays and exact space declarations, pending-ID legal masks,
 and validated action-to-core-plan conversion. The
 [partial audit](evidence/08-state-action-audit.md) records focused evidence.
-The implementation separates scenario-derived task definitions from
-scenario-independent decision machinery; Crossroads is its first supported
-task. Internal configuration probes establish reuse, not policy generalization
-or additional advertised scenarios. Loaded scenario data now supplies ownership,
-rosters, dimensions, objectives, groups, horizon and bounds without duplicated
-task constants or an exact-gameplay lock. Learner-first, per-side unit-ID sorting
+`ScenarioTask` accepts loaded core data or an ID/directory through core's loader,
+without scenario-specific Python modules, a registry or name conditionals.
+Runtime/training configuration selects the learner seat; shared code owns the
+scenario-independent interface version. An unregistered temporary JSON scenario
+exercises production loading/binding/encoding/masks/conversion for either seat.
+Loaded data supplies ownership, rosters, dimensions, objectives, groups, horizon
+and bounds without duplicated facts or an exact-gameplay lock. This proves the
+data-driven state/action boundary, not a playable arbitrary-scenario environment
+or policy generalization. Learner-first, per-side unit-ID sorting
 preserves current Crossroads slots/actions/spaces. The interface is explicitly
 versioned `battle-hexes-unit-destination-live-v2`; variations are not implicitly
 policy-compatible. 06/07 behavior, contracts and artifacts remain unchanged.
