@@ -1,6 +1,7 @@
 """Permanent roster and explicit player/scoring roles over live core state."""
 
 from dataclasses import dataclass
+from collections import Counter
 
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player
@@ -8,6 +9,7 @@ from battle_hexes_core.game.reinforcement import ReinforcementGroup
 from battle_hexes_core.unit.unit import Unit
 
 from .decision_contract import DecisionSpec
+from .decision_bounds import validate_bounds
 
 
 @dataclass(frozen=True)
@@ -58,6 +60,10 @@ def bind_decision(game, spec):
     if (len(groups) != len(game.reinforcements_deployer.groups)
             or set(groups) != set(spec.reinforcement_ids)):
         raise ValueError("Incompatible reinforcement identities")
+    if Counter(o.coords for o in game.board.get_objectives()) != Counter(
+            spec.objective_coords):
+        raise ValueError("Incompatible decision objective coordinates")
+    validate_bounds(game, slots, spec.bounds)
     return DecisionBinding(
         game, spec, learner, opponent, _scoring_player(game, spec), slots,
         tuple(groups[group_id] for group_id in spec.reinforcement_ids))
@@ -67,10 +73,10 @@ def _scoring_player(game, spec):
     """Resolve core's scoring_side metadata, independently of learner seat."""
     victory = getattr(game, "victory", None)
     if victory is not None and victory.method == "objective_control":
-        for player in game.players:
-            if any(victory.scoring_side in (f.id, f.name)
-                   for f in player.factions):
-                return player
+        players = [p for p in game.players if any(
+            victory.scoring_side in (f.id, f.name) for f in p.factions)]
+        if len(players) == 1:
+            return players[0]
     if spec.objective_coords:
         raise ValueError("Objective inputs require a core scoring-side rule")
     return None

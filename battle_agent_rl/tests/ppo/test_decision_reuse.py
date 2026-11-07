@@ -1,6 +1,5 @@
 """Internal configuration probes, not additional supported PPO scenarios."""
 
-from dataclasses import replace
 import pickle
 import random
 
@@ -16,13 +15,14 @@ from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
 from battle_agent_rl.ppo.decision_contract import (
-    ObservationBounds, ScenarioTask, action_space, observation_space,
+    action_space, observation_space,
 )
 from battle_agent_rl.ppo.decision_observation import observation
 from battle_agent_rl.ppo.playable_scenario import LocalPlayer
 from battle_agent_rl.ppo.scenario_binding import (
-    bind_task, gameplay_fingerprint,
+    bind_task,
 )
+from battle_agent_rl.ppo.scenario_task import ScenarioTask
 
 
 @pytest.fixture
@@ -63,17 +63,7 @@ def small_scenario():
 
 def bind_fixture(scenario, learner_seat=0):
     """Use production task validation/binding; only fixture data differs."""
-    learner_ids = ("Support", "Scout") if learner_seat == 0 else (
-        "Reserve", "Guard")
-    opponent_ids = ("Reserve", "Guard") if learner_seat == 0 else (
-        "Support", "Scout")
-    roster = {unit.id for unit in scenario.units}
-    task = ScenarioTask(
-        scenario.id, scenario.version, gameplay_fingerprint(scenario),
-        "internal-reuse-test-only", learner_seat,
-        tuple(u for u in learner_ids if u in roster),
-        tuple(u for u in opponent_ids if u in roster),
-        ObservationBounds(3, 3, -1, 2, .5, 1, 2, 6))
+    task = ScenarioTask(scenario, learner_seat, "internal-reuse-test-only")
     players = [LocalPlayer(name, PlayerType.HUMAN, [])
                for name in ("Player 1", "Player 2")]
     game = GameCreator().build_game_components(scenario.to_core(), players)[-1]
@@ -84,13 +74,13 @@ def bind_fixture(scenario, learner_seat=0):
 def test_rectangular_board_roster_spaces_and_action_mapping(small_scenario):
     _, b = bind_fixture(small_scenario)
     pending = set(pending_at_movement_start(b))
-    assert pending == {"Scout"}  # Slot 0 is reserved, not the first actor.
+    assert pending == {"Scout"}
     obs = observation(b, pending)
     assert observation_space(b.spec).contains(obs)
     assert obs["positions"].shape == (4, 35)
-    assert obs["positions"].argmax(axis=1).tolist() == [0, 28, 0, 6]
-    assert obs["unit_status"].tolist() == [0, 1, 0, 1]
-    assert obs["pending"].tolist() == [0, 1]
+    assert obs["positions"].argmax(axis=1).tolist() == [28, 0, 6, 0]
+    assert obs["unit_status"].tolist() == [1, 0, 1, 0]
+    assert obs["pending"].tolist() == [1, 0]
     assert obs["reinforcement"].tolist() == [[2, 0, 5, 0], [2, 4, 1, 0]]
     assert obs["remaining_cycles"].tolist() == [4]
     assert obs["terrain"][0].tolist() == [1, 1, 0]  # No terrain configured.
@@ -98,18 +88,18 @@ def test_rectangular_board_roster_spaces_and_action_mapping(small_scenario):
     assert obs["road_edges"][28, 0] == .5
     mask = action_mask(b, pending)
     assert mask.shape == (70,) and mask.dtype == np.bool_
-    assert not mask[:35].any() and mask[63]
+    assert not mask[35:].any() and mask[28]
     reachable = b.game.board.get_reachable_hexes(
-        b.slots[1], b.game.board.get_hex(4, 0), 3)
+        b.slots[0], b.game.board.get_hex(4, 0), 3)
     assert set(np.flatnonzero(mask)) == {
-        35 + tile.row * 7 + tile.column for tile in reachable}
+        tile.row * 7 + tile.column for tile in reachable}
     before = pickle.dumps((b.game, pending))
     for action in np.flatnonzero(mask):
         slot, plan = action_plan(b, pending, action)
         assert action_space(b.spec).contains(action)
-        assert slot == 1 and plan.unit.id == "Scout"
+        assert slot == 0 and plan.unit.id == "Scout"
         assert (plan.path[-1].row, plan.path[-1].column) == divmod(
-            int(action) - 35, 7)
+            int(action), 7)
     assert pickle.dumps((b.game, pending)) == before
     again = observation(b, pending)
     for key in obs:
@@ -155,25 +145,25 @@ def test_multiple_groups_lifecycle_and_core_pending_status(
         close_unopposed_side(b.game)
     assert b.game.turn_number == 2
     obs = observation(b, pending_at_movement_start(b))
-    assert obs["unit_status"].tolist() == [1, 1, 0, 1]
+    assert obs["unit_status"].tolist() == [1, 1, 1, 0]
     assert obs["reinforcement"].tolist() == [[2, 0, 5, 0], [2, 4, 1, 2]]
-    assert obs["fire_flags"][0].tolist() == [1, 0, 0, 0]
-    assert np.flatnonzero(action_mask(b, {"Support"})).tolist() == [29]
+    assert obs["fire_flags"][1].tolist() == [1, 0, 0, 0]
+    assert np.flatnonzero(action_mask(b, {"Support"})).tolist() == [64]
     for _ in range(2):
         close_unopposed_side(b.game)
     assert observation(b, set())["reinforcement"][:, 3].tolist() == [1, 2]
-    b.game.board.remove_units(b.slots[0])
+    b.game.board.remove_units(b.slots[1])
     b.game.board.get_unit_by_id("Guard").set_coords(0, 6)
     for _ in range(2):
         close_unopposed_side(b.game)
     pending = pending_at_movement_start(b)
     obs = observation(b, pending)
-    assert obs["unit_status"].tolist() == [2, 1, 1, 1]
+    assert obs["unit_status"].tolist() == [1, 2, 1, 1]
     assert obs["reinforcement"][:, 3].tolist() == [2, 2]
     assert obs["remaining_cycles"].tolist() == [1]
-    assert not obs["fire_flags"][2, 0]  # New opposing arrival cannot fire.
-    assert not obs["positions"][0].any()
-    assert obs["unit_stats"][0].tolist() == [2, 1, 0, 1]
+    assert not obs["fire_flags"][3, 0]  # New opposing arrival cannot fire.
+    assert not obs["positions"][1].any()
+    assert obs["unit_stats"][1].tolist() == [2, 1, 0, 1]
     assert observation_space(b.spec).contains(obs)
     b.game.board.units = dict(reversed(list(b.game.board.units.items())))
     rebound = bind_task(b.game, b.learner, task, small_scenario)
@@ -216,7 +206,7 @@ def test_reused_validation_is_non_mutating(small_scenario):
     _, b = bind_fixture(small_scenario)
     pending = set(pending_at_movement_start(b))
     before = pickle.dumps((b.game, pending))
-    for action in (True, -1, 70, 63.0, np.array([63]), 29):
+    for action in (True, -1, 70, 28.0, np.array([28]), 64):
         with pytest.raises(ValueError):
             action_plan(b, pending, action)
         assert pickle.dumps((b.game, pending)) == before
@@ -224,10 +214,10 @@ def test_reused_validation_is_non_mutating(small_scenario):
     assert not action_mask(b, pending).any()
     assert not observation(b, pending)["pending"].any()
     pending.add("Scout")
-    b.slots[1].current_turn_movement_points_remaining = 2
+    b.slots[0].current_turn_movement_points_remaining = 2
     before = pickle.dumps((b.game, pending))
     with pytest.raises(RuntimeError):
-        action_plan(b, pending, 63)
+        action_plan(b, pending, 28)
     assert pickle.dumps((b.game, pending)) == before
 
 
@@ -236,6 +226,6 @@ def test_same_data_does_not_authorize_an_unconfigured_learner_seat(
     task, b = bind_fixture(small_scenario)
     with pytest.raises(ValueError):
         bind_task(b.game, b.opponent, task, small_scenario)
-    with pytest.raises(ValueError):
-        bind_task(b.game, b.opponent, replace(task, learner_seat=1),
-                  small_scenario)  # Ordered roster owners must agree too.
+    other_task, other = bind_fixture(small_scenario, learner_seat=1)
+    assert other_task.spec.learner_ids == ("Guard", "Reserve")
+    assert other.learner is other.game.players[1]

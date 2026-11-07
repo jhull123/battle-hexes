@@ -3,6 +3,7 @@
 import numpy as np
 
 from .decision_actions import pending_flags
+from .decision_bounds import terrain_values
 
 
 def observation(binding, pending, active=True):
@@ -69,10 +70,7 @@ def _board_arrays(board):
     points = np.zeros(cells, dtype=np.int8)
     for tile in board.hexes:
         cell = tile.row * board.columns + tile.column
-        value = tile.terrain
-        terrain[cell] = ((1, 1, 0) if value is None else
-                         (value.move_cost, value.defensive_fire_modifier,
-                          value.combat_odds_shift))
+        terrain[cell] = terrain_values(tile)
         points[cell] = sum(o.points for o in tile.objectives)
     return {"terrain": terrain, "objective_points": points,
             "road_edges": _road_edges(board)}

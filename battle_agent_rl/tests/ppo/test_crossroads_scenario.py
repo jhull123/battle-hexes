@@ -1,21 +1,28 @@
-"""Scenario fingerprint, live compatibility and insertion-independent slots."""
+"""Scenario-derived configuration and stable complete-roster identities."""
 
 import random
-from dataclasses import replace
 
+import numpy as np
 import pytest
 
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
 from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.scenario.scenario_loader import load_scenario_data
+from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
-from battle_agent_rl.ppo.crossroads_contract import SLOT_IDS
+from battle_agent_rl.ppo.crossroads_contract import (
+    SLOT_IDS, action_space as task_action_space,
+    observation_space as task_observation_space,
+)
 from battle_agent_rl.ppo.playable_scenario import LocalPlayer
 from battle_agent_rl.ppo.crossroads_scenario import (
-    GAMEPLAY_SHA256, bind_game, create_game,
-    slots_for_game, validate_scenario,
+    TASK, bind_game, create_game, slots_for_game, validate_scenario,
 )
-from battle_agent_rl.ppo.scenario_binding import gameplay_fingerprint
+from battle_agent_rl.ppo.decision_actions import (
+    action_mask, action_plan, pending_at_movement_start,
+)
+from battle_agent_rl.ppo.decision_contract import observation_space
+from battle_agent_rl.ppo.decision_observation import observation
 
 
 def test_raw_game_is_actual_airborne_first_core_state(crossroads):
@@ -32,50 +39,9 @@ def test_raw_game_is_actual_airborne_first_core_state(crossroads):
     assert len(game.board.get_objectives()) == 3
     assert [u.get_coords() for u in crossroads.slots[:5]] == [
         (3, 15), (4, 5), (6, 9), None, None]
-    assert gameplay_fingerprint(validate_scenario()) == GAMEPLAY_SHA256
 
 
-@pytest.mark.parametrize("field,value", [
-    ("id", "ppo_9x9_experimental"), ("version", "2"),
-    ("board_size", (9, 9)), ("turn_limit", 7), ("stacking_limit", 1),
-    ("units", []), ("reinforcements", []), ("roads", []),
-    ("objectives", []), ("terrain_default", "rough"),
-])
-def test_reject_changed_scenario(field, value):
-    scenario = load_scenario_data("d_day_crossroads")
-    changed = scenario.model_copy(update={field: value})
-    with pytest.raises(ValueError):
-        validate_scenario(changed)
-
-
-@pytest.mark.parametrize("field,change", [
-    ("victory", {"scoring_side": "Wehrmacht"}),
-    ("defensive_fire", {"base_probability": 0.5}),
-])
-def test_reject_changed_rule_objects(field, change):
-    scenario = load_scenario_data("d_day_crossroads")
-    changed = getattr(scenario, field).model_copy(update=change)
-    with pytest.raises(ValueError):
-        validate_scenario(scenario.model_copy(update={field: changed}))
-
-
-@pytest.mark.parametrize("kind", ["unit", "terrain", "arrival", "side"])
-def test_nested_gameplay_changes_are_not_just_metadata(kind):
-    scenario = load_scenario_data("d_day_crossroads")
-    payload = scenario.model_dump(mode="json")
-    if kind == "unit":
-        payload["units"][0]["defensive_fire_modifier"] = 1.1
-    elif kind == "terrain":
-        payload["terrain_types"]["forest"]["move_cost"] = 2
-    elif kind == "arrival":
-        payload["reinforcements"][0]["entry_location"]["coords"] = [0, 15]
-    else:
-        payload["factions"][0]["player"] = "Player 2"
-    with pytest.raises(ValueError):
-        validate_scenario(type(scenario).model_validate(payload))
-
-
-def test_presentation_and_insertion_order_do_not_define_identity():
+def test_presentation_and_insertion_order_do_not_define_slots():
     scenario = validate_scenario()
     changed = scenario.model_copy(update={
         "name": "Display name", "description": "Display description",
@@ -87,47 +53,100 @@ def test_presentation_and_insertion_order_do_not_define_identity():
     game = GameCreator().build_game_components(
         changed.to_core(), [LocalPlayer(name, PlayerType.HUMAN, [])
                             for name in ("Player 1", "Player 2")])[-1]
-    # The core builder does not attach a scenario_version: ordinary games bind.
     bound = bind_game(game, game.players[1], changed)
     assert tuple(u.id for u in bound.slots) == SLOT_IDS
     assert bound.objective_coords == ((2, 3), (3, 15), (6, 9))
 
 
-@pytest.mark.parametrize("mutation", [
-    "side", "roster", "stats", "owner", "fire", "terrain", "roads",
-    "objectives", "reinforcement", "turn_limit", "version", "victory",
+@pytest.fixture
+def varied_scenario():
+    payload = load_scenario_data("d_day_crossroads").model_dump(mode="json")
+    payload.update(id="internal-crossroads-variation", version="2",
+                   board_size=[19, 20], turn_limit=11, stacking_limit=3)
+    payload["units"][6].update(attack=12, movement=9)
+    payload["units"][0]["faction"] = "Wehrmacht"  # Ownership from core.
+    payload["units"].append({
+        "id": "Additional reserve", "name": "Reserve", "faction": "Wehrmacht",
+        "type": "Infantry", "attack": 1, "defense": 2, "movement": 2})
+    payload["reinforcements"].append({
+        "id": "second-wave", "units": ["Additional reserve"],
+        "arrival_turn": 10,
+        "entry_location": {"mode": "fixed", "coords": [18, 19]}})
+    payload["reinforcements"][0]["arrival_turn"] = 4
+    payload["objectives"].append({
+        "coords": [18, 0], "points": 4, "type": "occupy"})
+    payload["terrain_types"]["rough"].update(move_cost=5, combat_odds_shift=-4)
+    payload["road_types"]["secondary"]["edge_move_cost"] = 2.5
+    payload["defensive_fire"]["base_probability"] = .5
+    payload["victory"]["scoring_side"] = "Wehrmacht"
+    return type(TASK.scenario).model_validate(payload)
+
+
+def test_variation_uses_production_crossroads_facade(
+        varied_scenario, close_unopposed_side):
+    scenario = varied_scenario
+    b = create_game(random.Random(91), scenario)
+    assert b.spec.board_size == (19, 20) and b.spec.turn_limit == 11
+    assert len(b.spec.learner_ids) == 7 and len(b.spec.opponent_ids) == 5
+    assert b.spec.learner_ids == tuple(sorted(b.spec.learner_ids))
+    assert "Additional reserve" in b.spec.learner_ids
+    assert "Airborne Inf. A" in b.spec.learner_ids
+    assert b.spec.bounds.unit_stats_high == 12
+    assert b.spec.bounds.movement_high == 9
+    assert b.spec.bounds.terrain_low == -4
+    assert b.spec.bounds.terrain_high == 5
+    assert b.spec.bounds.road_high == 2.5
+    assert b.spec.bounds.objective_points_high == 4
+    assert b.spec.bounds.score_high == 4
+    assert b.spec.bounds.reinforcement_high == 19
+    assert b.scoring_player is b.learner
+    close_unopposed_side(b.game)
+    pending = pending_at_movement_start(b)
+    ObjectiveScorer().recalculate_scenario_victory(b.game)
+    obs = observation(b, pending)
+    assert obs["scores"].tolist() == [2, 2]
+    assert obs["positions"].shape == (12, 380)
+    assert obs["objective_control"].shape == (4,)
+    assert obs["reinforcement"].tolist() == [[4, 0, 16, 0], [10, 18, 19, 0]]
+    assert obs["remaining_cycles"].tolist() == [11]
+    assert observation_space(b.spec).contains(obs)
+    assert task_observation_space(scenario) == observation_space(b.spec)
+    assert task_action_space(scenario).n == 7 * 380
+    for action in np.flatnonzero(action_mask(b, pending)):
+        slot, plan = action_plan(b, pending, action)
+        assert plan.unit is b.slots[slot]
+    assert bind_game(b.game, b.learner, scenario).slots == b.slots
+    assert slots_for_game(b.game, scenario) == b.slots
+    # The default task remains the original loaded snapshot.
+    assert TASK.spec.board_size == (18, 18)
+
+
+@pytest.mark.parametrize("mutation,match", [
+    ("side", "seat"), ("roster", "roster"), ("stats", "bound"),
+    ("owner", "owners"), ("objectives", "objective"),
+    ("reinforcement", "reinforcement"), ("turn_limit", "horizon"),
+    ("victory", "scoring-side"),
 ])
-def test_live_binding_rejects_wrong_side_or_gameplay(crossroads, mutation):
-    game = crossroads.game
-    learner = crossroads.learner
+def test_live_binding_rejects_interface_mismatches(
+        crossroads, mutation, match):
+    game, learner = crossroads.game, crossroads.learner
     if mutation == "side":
         learner = crossroads.opponent
     elif mutation == "roster":
-        game.board.add_unit(game.board.get_units()[0], 1, 1)
         game.board.get_units()[0].id = "foreign"
-        game.board.add_unit(game.board.get_units()[0], 1, 1)
     elif mutation == "stats":
-        crossroads.slots[0].attack = 7
+        crossroads.slots[0].attack = 8
     elif mutation == "owner":
         crossroads.slots[0]._player = crossroads.opponent
-    elif mutation == "fire":
-        game.set_defensive_fire_settings(replace(
-            game.defensive_fire_resolver.settings, base_probability=0.5))
-    elif mutation == "terrain":
-        game.board.get_hex(0, 0).set_terrain(None)
-    elif mutation == "roads":
-        game.board.set_road_paths(())
     elif mutation == "objectives":
         game.board.get_hex(2, 3).objectives.clear()
     elif mutation == "reinforcement":
-        crossroads.reinforcement_groups[0].arrival_turn = 4
+        crossroads.reinforcement_groups[0].id = "unknown"
     elif mutation == "turn_limit":
         game.turn_limit = 9
-    elif mutation == "version":
-        game.scenario_version = "2"
     elif mutation == "victory":
         game.victory = None
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=match):
         bind_game(game, learner)
 
 
