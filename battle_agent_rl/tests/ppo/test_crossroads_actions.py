@@ -8,7 +8,7 @@ import pytest
 from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
-from battle_agent_rl.ppo.crossroads_contract import action_space
+from battle_agent_rl.ppo.decision_contract import action_space
 from battle_agent_rl.ppo.decision_observation import observation
 
 
@@ -47,7 +47,7 @@ def test_mask_exactly_matches_core_and_all_destinations_route(german_decision):
     before = snapshot(b, pending)
     for action in np.flatnonzero(mask):
         slot, plan = action_plan(b, pending, action)
-        assert action_space().contains(action)
+        assert action_space(b.spec).contains(action)
         assert plan.unit is b.slots[slot]
         assert (plan.path[0].row, plan.path[0].column) == (
             plan.unit.get_coords())

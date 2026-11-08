@@ -6,12 +6,17 @@ import pytest
 
 from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
-from battle_agent_rl.ppo.crossroads_scenario import create_game
+from battle_agent_rl.ppo.scenario_task import ScenarioTask
 
 
 @pytest.fixture
-def crossroads():
-    return create_game(random.Random(17))
+def crossroads_task():
+    return ScenarioTask.load("d_day_crossroads", learner_seat=1)
+
+
+@pytest.fixture
+def crossroads(crossroads_task):
+    return crossroads_task.create_game(random.Random(17))
 
 
 @pytest.fixture

@@ -5,9 +5,10 @@ This is the plain-language companion to [PPO.md](PPO.md) and the
 Keep it in sync when the game or PPO contract changes; it explains the contract,
 not a separate set of rules.
 
-**Current status:** Crossroads scenario binding, permanent slots, observations,
-legal-action masks and action-to-core-plan conversion are implemented. Increment
-08 is still incomplete: turn execution/orchestration, the Gym adapter, policy/
+**Current status:** Data-driven scenario loading/binding, permanent slots,
+observations, legal-action masks and action-to-core-plan conversion are
+implemented, including Crossroads. Increment 08 is still incomplete:
+turn execution/orchestration, the Gym adapter, policy/
 artifact integration and inspection driver remain planned. No Crossroads model
 has been trained. The playable 9×9 demo from 07 is different:
 it uses two PPO units, 162 actions, and PPO in the first seat. Its existing
@@ -32,13 +33,16 @@ Core game → observation + legal-action mask → PPO chooses one action
 Core still owns movement, defensive fire, combat, scoring, and completion.
 The neural network chooses orders; it does not replace the rules engine.
 
-## One set of machinery, explicit task definitions
+## One set of machinery, scenario data and a runtime seat
 
-The design is **scenario-derived task definitions; scenario-independent
-decision machinery**. Crossroads is the first supported task for the reusable
-layer. Its definition loads the scenario and chooses the PPO seat and interface
-version. Core supplies ownership and the complete roster, including reserves;
-shared code derives unit order, board size, objectives, reinforcement groups,
+The design is **scenario data plus runtime learner selection; shared decision
+machinery**. A scenario editor can create a new JSON file without adding Python
+code or registering its name. `ScenarioTask` accepts already-loaded core scenario
+data, or loads an ID from the usual scenario directory or a supplied directory.
+The caller chooses the learner seat in runtime/training configuration; it is not
+hardcoded in a scenario module. The interface version belongs to shared code,
+not the scenario. Core supplies ownership and the complete roster, including
+reserves; shared code derives unit order, board size, objectives, reinforcement groups,
 horizon and input bounds. These facts are not copied into PPO constants, and
 valid scenario changes are not rejected for differing from today's Crossroads.
 The checks instead catch unsupported inputs, such as missing turn limits,
@@ -51,11 +55,14 @@ core's scoring rule. For Crossroads, the learner is Wehrmacht and that scoring
 side is Airborne. Shared code does not assume the scoring side is the opponent.
 
 This supports the long-term goal of a generalized Battle Hexes PPO player, but
-reusable code is **not** a generalized trained policy. Smaller boards, changed
-seats and multiple reinforcement groups are internal reuse tests only. There is
-no multi-scenario training or newly advertised scenario support; the fixed 06/07
-demo contracts and weights remain unchanged. For today's Crossroads file, the
-inputs and action numbers below remain the same. The interface label is now
+data-driven loading is **not** a generalized trained policy. A differently named
+5×7 JSON file with four units and two reinforcement groups is tested through
+the production loading, binding, observation, mask and order-conversion path for
+either learner seat. That proves this decision boundary, not a new playable
+environment or checkpoint compatibility. There is no multi-scenario training;
+the fixed 06/07 demo contracts and weights remain unchanged. For today's
+Crossroads file, the inputs and action numbers below remain the same. The
+interface label remains
 `battle-hexes-unit-destination-live-v2`, reflecting scenario-derived configuration
 rather than a fixed eight-turn task. Matching that label alone does not make a
 model compatible with another roster, board or set of input bounds. There are

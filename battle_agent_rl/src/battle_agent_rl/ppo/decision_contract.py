@@ -5,6 +5,9 @@ from dataclasses import dataclass
 import numpy as np
 
 
+CONTRACT = "battle-hexes-unit-destination-live-v2"
+
+
 @dataclass(frozen=True)
 class ObservationBounds:
     unit_stats_high: float

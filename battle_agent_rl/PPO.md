@@ -19,42 +19,47 @@ continues toward a Crossroads opponent; these 9×9 weights do not transfer to it
 Core remains authoritative for rules and results. Training uses SB3-Contrib
 `MaskablePPO`; smoke training does not establish playing strength.
 
-## Reusable decisions; Crossroads task (increment 08 partial)
+## Data-driven state/actions (increment 08 partial)
 
 **08 is incomplete.** Delivered under `battle_agent_rl.ppo`:
 
-- `crossroads_scenario.TASK`: built from the loaded scenario definition, keeping
-  only the PPO learner seat and interface version explicit. `scenario_task`
-  derives roster ownership/order, dimensions, objectives, reinforcement groups,
-  horizon and observation bounds through core. Crossroads is the
-  **first supported task for this reusable layer**, not a separate engine.
-- `scenario_binding`: structural/model-interface compatibility, without an
-  exact-gameplay lock or reference-game comparison;
-  `decision_binding`: permanent roster binding, all reinforcement groups and
-  explicit learner/opponent/scoring-player roles. Core player order is untouched.
+- `scenario_task.ScenarioTask(scenario_data, learner_seat)`, or
+  `ScenarioTask.load(scenario_id, learner_seat=..., scenario_dir=...)`: accepts
+  core-loaded data or loads JSON through core, with no Python registration,
+  scenario-specific module or default learner seat. Derives roster ownership/
+  order, dimensions, objectives, reinforcement groups, horizon and bounds through core.
+  The shared implementation fixes the scenario-independent interface version.
+- `ScenarioTask.create_game(rng)` and `bind_game(game, learner=None)`:
+  raw creation and structural/model-interface binding, without an exact-gameplay
+  lock or reference-game comparison. `decision_binding` owns permanent rosters,
+  all reinforcement groups and explicit learner/opponent/scoring-player roles.
+  Core player order is untouched.
 - `decision_contract`: task-supplied dimensions/bounds and exact space
   construction. `decision_observation`: fresh, unnormalized public-state arrays
   including stacks, readiness, terrain/roads, objectives, existing scores and
-  true horizon. Dimensions, roster counts and group counts are configuration.
+  true horizon. Dimensions, roster counts and group counts follow scenario data.
+  `task.observation_space()` and `task.action_space()` use the shared builder.
 - `decision_actions`: pending-ID masks and validated action-to-core-plan
   conversion, still read-only. Core path validation remains shared with 06/07;
   their existing fixed contracts, behavior and committed artifacts are unchanged.
 
-The direction is **scenario-derived task definitions; scenario-independent
-decision machinery**, toward a generalized Battle Hexes PPO player. Reusing
-implementation does not imply policy generalization or multi-scenario training.
-Internal configuration probes are not additional advertised task support.
+The boundary is **scenario data plus runtime learner selection; shared decision
+machinery**. A scenario editor can add a differently named JSON file without
+changing Python, within the structural limits below. This is not an arbitrary
+scenario environment, policy generalization or multi-scenario training.
 
 For an already core-advanced **Wehrmacht movement** decision:
 
 ```python
-from battle_agent_rl.ppo.crossroads_scenario import bind_game
+from battle_agent_rl.ppo.scenario_task import ScenarioTask
 from battle_agent_rl.ppo.decision_actions import (
     action_mask, action_plan, pending_at_movement_start,
 )
 from battle_agent_rl.ppo.decision_observation import observation
 
-binding = bind_game(game, game.players[1])
+task = ScenarioTask.load("d_day_crossroads", learner_seat=1)
+# Or: ScenarioTask(already_loaded_scenario_data, learner_seat=1).
+binding = task.bind_game(game)
 pending = set(pending_at_movement_start(binding))  # Once at movement start.
 inputs = observation(binding, pending)
 mask = action_mask(binding, pending)
@@ -65,7 +70,7 @@ The caller owns order consumption: remove the selected unit ID after its core
 resolution, even for hold, retreat or elimination; do not regenerate pending
 from movement points. Dead IDs are filtered from inputs/masks. `active=False`
 clears pending inputs/masks for an external ending without falsifying horizon.
-`crossroads_scenario.create_game(rng)` creates **raw Airborne-first core state**,
+`task.create_game(rng)` creates **raw core state** (Airborne-first for Crossroads),
 not an environment reset: it does not score or play the opening turn. Encoding
 only reads already-computed scores and never deploys, scores or evaluates rules.
 Space declarations load Gymnasium lazily; state inspection needs no trainer.
@@ -74,11 +79,18 @@ player**, not necessarily the opponent. Crossroads configures Airborne as that
 player. Complete scenario rosters are sorted by unit ID within each side,
 learner-first, including undeployed reserves; arrivals/casualties never shift
 slots. Current Crossroads retains all thirteen original fields/spaces, slot order
-and 1,620 action indices. The interface label is now
+and 1,620 action indices. The interface label remains
 `battle-hexes-unit-destination-live-v2`: configuration is scenario-derived, not
 fixed to eight turns. Variations may change spaces and slot/action mappings;
-this does not authorize policy reuse. `crossroads_contract` supplies spaces
-through the shared builder. No Crossroads weights exist; 06/07 are unchanged.
+this does not authorize policy reuse. The old Crossroads forwarding modules and
+`scenario_binding` have been removed; callers use the cohesive task interface.
+No Crossroads weights exist; 06/07 are unchanged.
+
+Supported decision inputs need two nonempty complete rosters, unique IDs,
+positive dimensions and a finite positive turn limit. Objective inputs require
+core's unambiguous objective-control scoring role. Numeric fields must fit the
+existing `int8`/`int32`/`float32` contract; core validates scenario relationships.
+Slots/spaces stay fixed within a task/episode, not across different scenarios.
 
 **Still planned:** live order execution/turn orchestration (including opening
 Airborne, scoring, empty turns, rewards and cutoffs), non-learning inspection/
@@ -249,7 +261,7 @@ cutoffs leave core in progress. See [spec 06](../specs/ppo-agent/06-multi-unit-d
 ## Direction
 
 Keep training and inference on the same observation/action contract, with
-scenario-specific task definitions and scenario-independent decision machinery;
+scenario data and runtime learner selection in shared decision machinery;
 core remains responsible for rules and victory. A generalized implementation
 does not establish a policy's ability to play other scenarios. The experimental
 9×9 player is not a Crossroads policy and should be hidden or retired when the evaluated

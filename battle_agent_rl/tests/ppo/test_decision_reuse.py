@@ -1,4 +1,4 @@
-"""Internal configuration probes, not additional supported PPO scenarios."""
+"""Data-driven decision reuse, not trained-policy generalization."""
 
 import pickle
 import random
@@ -8,7 +8,9 @@ import pytest
 
 from battle_hexes_core.game.player import PlayerType
 from battle_hexes_core.gamecreator.gamecreator import GameCreator
-from battle_hexes_core.scenario.scenario_loader import ScenarioData
+from battle_hexes_core.scenario.scenario_loader import (
+    ScenarioData, load_scenario_data,
+)
 from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
 
 from battle_agent_rl.ppo.decision_actions import (
@@ -19,9 +21,6 @@ from battle_agent_rl.ppo.decision_contract import (
 )
 from battle_agent_rl.ppo.decision_observation import observation
 from battle_agent_rl.ppo.playable_scenario import LocalPlayer
-from battle_agent_rl.ppo.scenario_binding import (
-    bind_task,
-)
 from battle_agent_rl.ppo.scenario_task import ScenarioTask
 
 
@@ -29,7 +28,7 @@ from battle_agent_rl.ppo.scenario_task import ScenarioTask
 def small_scenario():
     return ScenarioData.model_validate({
         "id": "internal-reuse-fixture", "version": "test-only",
-        "name": "Not a supported task", "description": "Reuse probe",
+        "name": "Reuse fixture", "description": "Decision contract probe",
         "board_size": [5, 7], "turn_limit": 4, "stacking_limit": 1,
         "victory": {"method": "objective_control", "scoring_side": "Red"},
         "factions": [
@@ -63,12 +62,25 @@ def small_scenario():
 
 def bind_fixture(scenario, learner_seat=0):
     """Use production task validation/binding; only fixture data differs."""
-    task = ScenarioTask(scenario, learner_seat, "internal-reuse-test-only")
+    task = ScenarioTask(scenario, learner_seat)
     players = [LocalPlayer(name, PlayerType.HUMAN, [])
                for name in ("Player 1", "Player 2")]
     game = GameCreator().build_game_components(scenario.to_core(), players)[-1]
     game.defensive_fire_resolver.rng = random.Random(81)
-    return task, bind_task(game, players[learner_seat], task, scenario)
+    return task, task.bind_game(game, players[learner_seat])
+
+
+def assert_read_only_plans(binding, pending, mask):
+    before = pickle.dumps((binding.game, pending))
+    for action in np.flatnonzero(mask):
+        slot, plan = action_plan(binding, pending, action)
+        assert action_space(binding.spec).contains(action)
+        assert plan.unit is binding.slots[slot]
+        assert (plan.path[0].row, plan.path[0].column) == (
+            plan.unit.get_coords())
+        assert (plan.path[-1].row, plan.path[-1].column) == divmod(
+            int(action) % binding.spec.cells, binding.spec.board_size[1])
+    assert pickle.dumps((binding.game, pending)) == before
 
 
 def test_rectangular_board_roster_spaces_and_action_mapping(small_scenario):
@@ -93,14 +105,7 @@ def test_rectangular_board_roster_spaces_and_action_mapping(small_scenario):
         b.slots[0], b.game.board.get_hex(4, 0), 3)
     assert set(np.flatnonzero(mask)) == {
         tile.row * 7 + tile.column for tile in reachable}
-    before = pickle.dumps((b.game, pending))
-    for action in np.flatnonzero(mask):
-        slot, plan = action_plan(b, pending, action)
-        assert action_space(b.spec).contains(action)
-        assert slot == 0 and plan.unit.id == "Scout"
-        assert (plan.path[-1].row, plan.path[-1].column) == divmod(
-            int(action), 7)
-    assert pickle.dumps((b.game, pending)) == before
+    assert_read_only_plans(b, pending, mask)
     again = observation(b, pending)
     for key in obs:
         assert not np.shares_memory(obs[key], again[key])
@@ -166,7 +171,7 @@ def test_multiple_groups_lifecycle_and_core_pending_status(
     assert obs["unit_stats"][1].tolist() == [2, 1, 0, 1]
     assert observation_space(b.spec).contains(obs)
     b.game.board.units = dict(reversed(list(b.game.board.units.items())))
-    rebound = bind_task(b.game, b.learner, task, small_scenario)
+    rebound = task.bind_game(b.game, b.learner)
     assert rebound.slots == b.slots
     assert pending == {"Scout"}
     for key, value in obs.items():
@@ -225,7 +230,89 @@ def test_same_data_does_not_authorize_an_unconfigured_learner_seat(
         small_scenario):
     task, b = bind_fixture(small_scenario)
     with pytest.raises(ValueError):
-        bind_task(b.game, b.opponent, task, small_scenario)
+        task.bind_game(b.game, b.opponent)
     other_task, other = bind_fixture(small_scenario, learner_seat=1)
     assert other_task.spec.learner_ids == ("Guard", "Reserve")
     assert other.learner is other.game.players[1]
+
+
+@pytest.mark.parametrize("seat", [0, 1])
+@pytest.mark.parametrize("source", ["loaded-data", "id-directory"])
+def test_editor_json_runs_without_registration(
+        small_scenario, tmp_path, close_unopposed_side, seat, source):
+    """A new file uses the public loading/binding/decision path."""
+    scenario_id = "editor-created-river-map"
+    scenario = small_scenario.model_copy(update={
+        "id": scenario_id, "name": "River map", "version": "editor-7"})
+    path = tmp_path / f"{scenario_id}.json"
+    path.write_text(scenario.model_dump_json(), encoding="utf-8")
+    if source == "loaded-data":
+        task = ScenarioTask(load_scenario_data(
+            scenario_id, scenario_dir=tmp_path), learner_seat=seat)
+    else:
+        task = ScenarioTask.load(
+            scenario_id, scenario_dir=tmp_path, learner_seat=seat)
+    b = task.create_game(random.Random(81))
+    assert task.scenario_id == b.game.scenario_id == scenario_id
+    assert task.scenario_version == b.game.scenario_version == "editor-7"
+    assert task.contract == "battle-hexes-unit-destination-live-v2"
+    assert b.spec.board_size == (5, 7) and b.spec.turn_limit == 4
+    assert len(b.slots) == 4 and b.spec.actions == 70
+    assert b.spec.reinforcement_ids == ("blue-wave", "red-wave")
+    assert b.scoring_player is b.game.players[0]
+    assert b.learner is b.game.players[seat]
+    if seat == 1:
+        close_unopposed_side(b.game)
+    assert_editor_decision(task, b)
+    assert_editor_lifecycle(task, b, close_unopposed_side)
+
+
+def assert_editor_decision(task, b):
+    pending = set(pending_at_movement_start(b))
+    obs = observation(b, pending)
+    assert task.observation_space().contains(obs)
+    assert task.action_space().n == 70
+    assert obs["unit_status"].tolist() == [1, 0, 1, 0]
+    assert obs["reinforcement"].tolist() == [[2, 0, 5, 0], [2, 4, 1, 0]]
+    assert obs["remaining_cycles"].tolist() == [4]
+    mask = action_mask(b, pending)
+    unit = b.learner_slots[0]
+    board = b.game.board
+    reachable = board.get_reachable_hexes(
+        unit, board.get_hex(*unit.get_coords()), unit.move)
+    assert set(np.flatnonzero(mask)) == {
+        tile.row * 7 + tile.column for tile in reachable}
+    assert_read_only_plans(b, pending, mask)
+    before = pickle.dumps((b.game, pending))
+    with pytest.raises(ValueError):
+        action_plan(b, pending, 70)
+    assert pickle.dumps((b.game, pending)) == before
+    hold = unit.row * 7 + unit.column
+    _, plan = action_plan(b, pending, hold)
+    b.game.apply_movement_plans([plan])
+    pending.remove(unit.id)
+    assert not action_mask(b, pending).any()
+
+
+def assert_editor_lifecycle(task, b, close_unopposed_side):
+    # Test drives core directly; no environment/turn orchestration is added.
+    for _ in range(3):
+        close_unopposed_side(b.game)
+        if (b.game.turn_number == 2
+                and b.game.get_current_player() is b.learner):
+            break
+    assert b.game.turn_number == 2
+    pending = set(pending_at_movement_start(b))
+    assert pending == set(b.spec.learner_ids)
+    obs = observation(b, pending)
+    assert obs["unit_status"].tolist() == [1] * 4
+    assert obs["reinforcement"][:, 3].tolist() == [2, 2]
+    assert task.observation_space().contains(obs)
+    assert_read_only_plans(b, pending, action_mask(b, pending))
+    original_slots = b.slots
+    b.game.board.remove_units(b.learner_slots[1])
+    rebound = task.bind_game(b.game, b.learner)
+    assert rebound.slots == original_slots
+    assert observation(rebound, pending)["unit_status"].tolist() == [
+        1, 2, 1, 1]
+    assert not action_mask(rebound, pending)[35:].any()
