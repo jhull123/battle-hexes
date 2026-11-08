@@ -117,12 +117,12 @@ export const initializePlayerTypePicker = ({
 
   const statusElement = documentRef.getElementById('player-type-status');
 
-  loadPlayerTypes({
+  const ready = loadPlayerTypes({
     selectElements,
     statusElement,
     service,
     defaultSelections,
   });
 
-  return { selectElements, statusElement };
+  return { selectElements, statusElement, ready };
 };

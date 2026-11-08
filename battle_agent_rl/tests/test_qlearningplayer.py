@@ -237,6 +237,27 @@ class TestQLearningPlayerQUpdates(unittest.TestCase):
         self.assertGreater(updated_value, 0.0)
         self.assertNotIn((state2, action), self.player._q_table)
 
+    def test_combat_awards_follow_odds(self):
+        state = self.player.encode_unit_state(self.friend)
+        action = (ActionIntent.HOLD, ActionMagnitude.NONE)
+        for odds, multiplier in [((1, 7), -1), ((1, 2), -0.5),
+                                 ((1, 1), 0), ((2, 1), 1), ((7, 1), 2)]:
+            with self.subTest(odds=odds):
+                self.player._q_table.clear()
+                self.player._last_actions = {
+                    self.friend.get_id(): (self.friend, state, action)
+                }
+                results = CombatResults()
+                results.add_battle(CombatResultData(
+                    odds, 1, CombatResult.DEFENDER_ELIMINATED,
+                    ((self.friend,), (self.enemy,)),
+                ))
+                self.player.combat_results(results)
+                self.assertAlmostEqual(
+                    self.player._q_table[(state, action)],
+                    0.5 * multiplier * self.player._combat_bonus,
+                )
+
 
 class TestQLearningPlayerMovePlan(unittest.TestCase):
     def setUp(self):

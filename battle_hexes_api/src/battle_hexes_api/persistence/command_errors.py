@@ -61,6 +61,17 @@ class CommandErrorTranslator:
         "gameNotFound": "The game was not found.",
         "gameVersionConflict": "The game version has changed.",
         "savedGameIncompatible": "The saved game is incompatible.",
+        "ppoSavedCheckpointUnavailable": (
+            "The PPO checkpoint used by this saved game is no longer "
+            "available. Start a new game."
+        ),
+        "invalidPpoTurn": "Not an active experimental PPO order.",
+        "ppoPredictionInvalid": (
+            "The frozen PPO policy returned an invalid order."
+        ),
+        "ppoArtifactUnavailable": (
+            "The game-bound PPO artifact is unavailable."
+        ),
         "gamePersistenceCapacityExceeded": (
             "The game is too large to persist."
         ),
@@ -104,6 +115,10 @@ class CommandErrorTranslator:
                 error.current_version,
             )
         if isinstance(error, SavedGameIncompatibleError):
+            if str(error) == "ppo_artifact_unavailable":
+                return cls.error(
+                    409, "ppoSavedCheckpointUnavailable", game_id=game_id
+                )
             return cls.error(409, "savedGameIncompatible", game_id=game_id)
         if isinstance(error, PersistenceCapacityError):
             return cls.error(

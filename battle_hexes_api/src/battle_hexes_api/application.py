@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from battle_hexes_api.game_routes import router as game_router
+from battle_hexes_api.agent_integrations import integrations
 from battle_hexes_api.health import router as health_router
 from battle_hexes_api.health.startup import dependency_lifespan
 from battle_hexes_api.persistence import (
@@ -35,7 +36,7 @@ def create_app(
 ):
     """Create an isolated application, optionally injecting persistence."""
     runtime_clock = clock or SystemClock()
-    runtime_codec = codec or GameStateCodec()
+    runtime_codec = codec or GameStateCodec(integrations=integrations)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -51,6 +52,7 @@ def create_app(
                 instrumented_repository, runtime_codec, runtime_clock
             )
             app.state.game_state_codec = runtime_codec
+            app.state.agent_integrations = integrations
             yield
 
     app = FastAPI(lifespan=lifespan)

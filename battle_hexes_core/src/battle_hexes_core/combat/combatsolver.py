@@ -128,8 +128,9 @@ class CombatSolver:
         (7, 1): CombatResult.DEFENDER_ELIMINATED,
     }
 
-    def __init__(self):
+    def __init__(self, rng=None):
         self.static_die_roll = None
+        self.rng = rng if rng is not None else random
 
     def get_odds(self, attack_factor, defense_factor):
         gr_cmn_denom = gcd(attack_factor, defense_factor)
@@ -228,4 +229,4 @@ class CombatSolver:
     def _roll_die(self) -> int:
         if self.static_die_roll:
             return self.static_die_roll
-        return random.randint(1, 6)
+        return self.rng.randint(1, 6)

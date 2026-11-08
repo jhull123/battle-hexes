@@ -23,6 +23,20 @@ def _scenario_dir() -> Path:
     )
 
 
+def test_elimination_demo_3_has_short_limit_and_demo_1_fire_sounds():
+    directory = _scenario_dir()
+    demo_1 = load_scenario_data("elim_1", scenario_dir=directory)
+    demo_3 = load_scenario_data("ppo_9x9_experimental",
+                                scenario_dir=directory)
+    assert demo_3.version == "2"
+    assert demo_3.turn_limit == 10
+    assert [faction.sounds for faction in demo_3.factions] == [
+        faction.sounds for faction in demo_1.factions]
+    core = load_scenario("ppo_9x9_experimental", scenario_dir=directory)
+    assert [faction.sounds for faction in core.factions] == [
+        faction.sounds for faction in demo_1.factions]
+
+
 def test_load_scenario_data_from_directory():
     scenario = load_scenario_data(
         "elim_1", scenario_dir=_scenario_dir()
@@ -155,11 +169,11 @@ def test_iterators_yield_all_scenarios():
 
     assert scenario_ids == {
         "d_day_crossroads", "east_front_frozen_roadblock", "elim_1", "elim_2",
-        "village_1"
+        "village_1", "ppo_9x9_experimental"
     }
     assert core_ids == {
         "d_day_crossroads", "east_front_frozen_roadblock", "elim_1", "elim_2",
-        "village_1"
+        "village_1", "ppo_9x9_experimental"
     }
 
 

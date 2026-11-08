@@ -1,3 +1,6 @@
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 from itertools import combinations
 import logging
 
@@ -17,11 +20,11 @@ from battle_hexes_core.combat.combat_event import (
 
 
 class Combat:
-    def __init__(self, game: Game):
+    def __init__(self, game: Game, rng=None):
         self.game = game
         self.board = game.get_board()
         self.attacking_player = game.get_current_player()
-        self.combat_solver = CombatSolver()
+        self.combat_solver = CombatSolver(rng=rng)
         self.logger = logging.getLogger(__name__)
 
     def resolve_combat(self) -> CombatResults:
@@ -97,7 +100,8 @@ class Combat:
             odds_shift=selected_shift,
         )
 
-    def __update_board_for_result(
+    # Existing combat resolution branches; refactor separately.
+    def __update_board_for_result(  # noqa: PLR0915
             self,
             battle_participants,
             combat_result: CombatResultData
@@ -150,8 +154,14 @@ class Combat:
                     attackers,
                     defense_factor,
                 )
-                self.board.remove_units(attackers_to_remove + defenders)
-                eliminated = attackers_to_remove + list(defenders)
+                lost_attack = sum(
+                    unit.get_attack() for unit in attackers_to_remove
+                )
+                defenders_to_remove = self._defenders_to_remove(
+                    defenders, lost_attack
+                )
+                eliminated = attackers_to_remove + defenders_to_remove
+                self.board.remove_units(eliminated)
             case _:
                 raise Exception(
                     'Unhandled combat result:',
@@ -245,6 +255,21 @@ class Combat:
             if len(best_subset) == size:
                 break
         return best_subset
+
+    @staticmethod
+    def _defenders_to_remove(defenders, lost_attack):
+        """Match lost attack strength, keeping an exchange on both sides."""
+        best_subset = []
+        best_total = 0
+        for size in range(1, len(defenders) + 1):
+            for combo in combinations(defenders, size):
+                total = sum(unit.get_defense() for unit in combo)
+                if total <= lost_attack and total > best_total:
+                    best_subset = list(combo)
+                    best_total = total
+        if best_subset:
+            return best_subset
+        return [min(defenders, key=lambda unit: unit.get_defense())]
 
     def find_combat(self) -> list:
         results = []

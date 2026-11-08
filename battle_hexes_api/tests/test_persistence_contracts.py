@@ -127,6 +127,16 @@ def test_canonical_json_rejects_cycles():
     with pytest.raises(ValueError):
         canonical_json_bytes(body)
 
+    object_cycle = {}
+    object_cycle["child"] = [object_cycle]
+    with pytest.raises(ValueError, match="cycles"):
+        canonical_json_bytes(object_cycle)
+
+    shared = {"value": 1}
+    assert canonical_json_bytes([shared, shared]) == (
+        b'[{"value":1},{"value":1}]'
+    )
+
 
 def test_request_fingerprint_matches_fixed_vector():
     body = {"destination": {"column": 4, "row": 2}}

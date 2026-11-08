@@ -1,0 +1,5 @@
+# Frozen 9x9 v3 inference/training runtime for the ARM64 API image.
+# Python 3.12.3 is pinned in battle_hexes_api/Dockerfile.
+# ARM64 torch 2.5.1 is CPU-only and reports 2.5.1 (not x86's 2.5.1+cpu).
+-r requirements-ppo.txt
+torch==2.5.1

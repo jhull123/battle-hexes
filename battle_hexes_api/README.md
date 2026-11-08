@@ -1,57 +1,35 @@
 # Battle Hexes API
 
-Server-side functions for Battle Hexes.
+FastAPI backend for Battle Hexes. `GET /health` provides a basic health check.
 
-The API exposes a simple health check at `GET /health` for use with load
-balancers and uptime monitoring.
+## Run locally
 
-## Local Set-up
+From the repository root, [set up Python 3.12 and install dependencies](../README.md#setting-up-the-api), then:
 
-Create a virtual environment.
-
-    python3.12 -m venv .venv312
-
-Activate the virtual environment.
-
-    source .venv312/bin/activate
-
-Upgrade `pip`.
-
-    python -m pip install --upgrade pip
-
-Install dependencies from the repository root.
-
-    python -m pip install -r ../requirements.txt -r ../requirements-test.txt
-
-## Running Locally
-
-From this directory, start the server locally in development mode:
-
-```bash
-./dev.sh
+```sh
+source .venv312/bin/activate
+./battle_hexes_api/dev.sh
 ```
 
-The launcher makes the sibling packages available without installing them.
+`dev.sh` makes the sibling packages importable and selects the Git-tracked PPO
+model matching the host architecture. For training or replacing that model,
+see [PPO.md](../battle_agent_rl/PPO.md#experimental-trained-99-game-increment-07-in-progress).
 
-## Running Tests
+## Checks
 
-Use the following command to run the unit tests:
+From the repository root, run `./server-side-checks.sh` for Python tests and
+linting. To check only the API, run `./battle_hexes_api/checks.sh`.
 
-    pytest
+## ARM64 deployment image
 
-## Running Linters
+From the repository root:
 
-To run the `flake8` linter:
-
-    flake8 src/ tests/
-
-## Convenience script
-
-You can run the checks for this package directly:
-
-```bash
-./checks.sh
+```sh
+docker buildx build --platform linux/arm64 --provenance=false \
+  -f battle_hexes_api/Dockerfile -t battle-hexes-api:ppo-arm64 --load .
+./battle_hexes_api/image-smoke.sh battle-hexes-api:ppo-arm64
 ```
 
-Or from the repository root run `./server-side-checks.sh` to execute the tests
-and `flake8` across all Python packages.
+The smoke check exercises the bundled ARM64 model and ordinary game commands
+over HTTP under the current 256 CPU / 512 MiB task limit. It uses in-memory
+storage; it does not verify the separate durable browser-playthrough gate.

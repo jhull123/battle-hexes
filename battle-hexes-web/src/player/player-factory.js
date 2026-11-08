@@ -1,5 +1,6 @@
 import { playerTypes, Player } from './player.js';
 import { CpuPlayer } from './cpu-player.js';
+import { PpoPlayer } from './ppo-player.js';
 
 export class PlayerFactory {
   createPlayer(name, type, factions) {
@@ -8,6 +9,8 @@ export class PlayerFactory {
         return new Player(name, type, factions);
       case playerTypes.CPU:
         return new CpuPlayer(name, factions);
+      case 'PPO':
+        return new PpoPlayer(name, factions);
       default:
         throw new Error(`Unknown player type: ${type}`);
     }

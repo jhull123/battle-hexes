@@ -1,31 +1,14 @@
 # Battle Agent RL
 
-This package will host reinforcement learning based agents. It currently
-contains a simple Q-learning prototype that can battle against a random
-opponent.
+Reinforcement-learning agents for Battle Hexes. The Q-learning prototype plays
+against a random opponent; see [RLPLAN.md](RLPLAN.md) for its broader plan.
 
-See the `RLPLAN.md` file for information on the plan to develop various
-RL agents.
+For the seeded environment, rollout inspector, masked PPO trainer and current
+limitations, see [PPO.md](PPO.md).
 
-## Training scripts
+## Q-learning scripts
 
-Two helper scripts start training sessions with the required `PYTHONPATH`:
-
-```bash
-./train_qlearning.sh
-./train_multiunit_qlearning.sh
-```
-
-Each accepts the number of training episodes as an optional argument:
-
-```bash
-./train_qlearning.sh 10
-./train_multiunit_qlearning.sh 10
-```
-
-You can also invoke the trainer modules directly:
-
-```bash
-python -m battle_agent_rl.qlearningplayer.qlearningtrainer 10
-python -m battle_agent_rl.qmultiunittrainer 10
-```
+From the repository root, start a training session with
+`./battle_agent_rl/train_qlearning.sh` (or pass an episode count, e.g.
+`./battle_agent_rl/train_qlearning.sh 10`). The script sets `PYTHONPATH` for
+the sibling packages.

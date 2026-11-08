@@ -1,3 +1,6 @@
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 import uuid
 from dataclasses import dataclass
 from typing import List, Any
@@ -38,6 +41,7 @@ class Game:
         board: Board,
         turn_limit: int | None = None,
         reinforcements: list[ReinforcementGroup] | None = None,
+        rng=None,
     ):
         self.id = uuid.uuid4()
         self.players = players
@@ -63,7 +67,7 @@ class Game:
         )
         self.current_phase = "movement"
         self.pending_combats = []
-        self.defensive_fire_resolver = DefensiveFireResolver(board)
+        self.defensive_fire_resolver = DefensiveFireResolver(board, rng=rng)
         self._refresh_defensive_fire_availability()
         self.game_status = None
         self.combat_results_table = CombatSolver.get_combat_results_table()
@@ -272,6 +276,20 @@ class Game:
         if self.game_status is None:
             return self.update_game_status()
         return self.game_status
+
+    def finalize_completed_phase(self) -> bool:
+        """Close a live phase when core has completed during movement/combat.
+
+        This stays in the grandfathered Game module: terminal phase ownership
+        is a core transition, not an API or PPO serialization concern.
+        """
+        if self.get_game_status().state != "completed":
+            return False
+        self._terminal = True
+        self.current_player = None
+        self.current_phase = None
+        self.pending_combats = []
+        return True
 
     def _snapshot_defensive_fire_eligibility(
             self,

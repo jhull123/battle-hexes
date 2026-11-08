@@ -23,16 +23,7 @@ from battle_hexes_core.combat.combatsolver import CombatSolver
 from battle_hexes_core.scenario.scenario_loader import load_scenario_data
 
 
-@pytest.mark.parametrize(
-    ("die_roll", "expected_effect", "expected_state"),
-    [
-        (1, "retreated_units", "in_progress"),
-        (6, "eliminated_units", "completed"),
-    ],
-)
-def test_combat_commits_and_round_trips_real_unit_outcomes(
-    die_roll, expected_effect, expected_state
-):
+def _seed_combat_game():
     clock = SystemClock()
     codec = GameStateCodec()
     repository = GameRepositoryInMemory(
@@ -49,15 +40,28 @@ def test_combat_commits_and_round_trips_real_unit_outcomes(
     scenario_version = load_scenario_data("elim_1").version
     service = GameCommandService(repository, codec, clock)
     service.create(
-        CommandRequest(
-            "seed-combat-1234", "POST", "/games", {}, None
-        ),
+        CommandRequest("seed-combat-1234", "POST", "/games", {}, None),
         lambda: CreatedGame(game, "elim_1", scenario_version),
         CreateGameResponseSerializer(scenario_version),
     )
-    game_id = str(game.id)
     board = SparseBoard.from_game(game).model_dump(
         by_alias=True, mode="json"
+    )
+    return clock, codec, repository, str(game.id), board, scenario_version
+
+
+@pytest.mark.parametrize(
+    ("die_roll", "expected_effect", "expected_state"),
+    [
+        (1, "retreated_units", "in_progress"),
+        (6, "eliminated_units", "completed"),
+    ],
+)
+def test_combat_commits_and_round_trips_real_unit_outcomes(
+    die_roll, expected_effect, expected_state
+):
+    clock, codec, repository, game_id, board, scenario_version = (
+        _seed_combat_game()
     )
 
     with patch.object(CombatSolver, "_roll_die", return_value=die_roll):

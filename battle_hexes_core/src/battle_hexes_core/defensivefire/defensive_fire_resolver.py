@@ -9,8 +9,9 @@ from battle_hexes_core.defensivefire.defensive_fire import (
 
 
 class DefensiveFireResolver:
-    def __init__(self, board, settings: Any = None):
+    def __init__(self, board, settings: Any = None, rng=None):
         self.board = board
+        self.rng = rng if rng is not None else random
         self.logger = logging.getLogger(__name__)
         self.settings = self._coerce_settings(settings)
 
@@ -84,7 +85,7 @@ class DefensiveFireResolver:
         probability = self._clamp_probability(
             components["unclamped_probability"]
         )
-        roll = random.random()
+        roll = self.rng.random()
         defender.spend_defensive_fire(current_player)
         outcome, retreat_destination = self._resolve_outcome(
             defender,

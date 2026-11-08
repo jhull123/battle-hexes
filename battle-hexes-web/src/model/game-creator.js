@@ -39,6 +39,7 @@ export class GameCreator {
         gameLog: gameData?.gameLog ?? [],
         combatResultsTable: gameData.combatResultsTable,
         gameVersion: gameData.gameVersion,
+        ppoTurn: gameData.ppoTurn ?? null,
       },
     );
     this.#addTerrain(board, gameData.board);
@@ -115,7 +116,10 @@ export class GameCreator {
     for (let playerData of gameData.players) {
       players.push(
         playerFactory.createPlayer(
-          playerData.name, playerData.type, this.#getFactions(playerData)));
+          playerData.name,
+          gameData.playerTypeIds?.[0] === 'ppo-9x9-experimental'
+            && playerData.name === 'Learner' ? 'PPO' : playerData.type,
+          this.#getFactions(playerData)));
     }
 
     return new Players(players, gameData.activePlayer);

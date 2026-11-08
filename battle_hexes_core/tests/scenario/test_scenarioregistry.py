@@ -7,13 +7,13 @@ class TestScenarioRegistry(unittest.TestCase):
     def test_list_scenarios(self):
         registry = ScenarioRegistry()
         scenarios = registry.list_scenarios()
-        self.assertEqual(len(scenarios), 5)
+        self.assertEqual(len(scenarios), 6)
         self.assertTrue(all(isinstance(s, Scenario) for s in scenarios))
 
         # Check for specific scenarios, order might not be guaranteed
         expected_ids = {
             "d_day_crossroads", "east_front_frozen_roadblock", "elim_1",
-            "elim_2", "village_1"
+            "elim_2", "village_1", "ppo_9x9_experimental"
         }
         actual_ids = {s.id for s in scenarios}
         self.assertEqual(expected_ids, actual_ids)
@@ -23,6 +23,7 @@ class TestScenarioRegistry(unittest.TestCase):
             "East Front: Frozen Roadblock",
             "Elimination Demo 1",
             "Elimination Demo 2",
+            "Elimination Demo 3",
             "Village Demo 1",
         }
         actual_names = {s.name for s in scenarios}

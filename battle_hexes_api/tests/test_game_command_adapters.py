@@ -23,6 +23,9 @@ from battle_hexes_core.defensivefire.defensive_fire import (
 
 def command_game(state="in_progress"):
     game = MagicMock()
+    game.scenario_id = "ordinary"
+    game.player_type_ids = ["random", "human"]
+    game.ppo_state = None
     game.get_game_status.return_value = SimpleNamespace(state=state)
     game.is_game_over.return_value = False
     return game

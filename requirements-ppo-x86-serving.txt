@@ -1,0 +1,4 @@
+# Frozen x86_64 runtime for the committed 9x9 v3 PPO checkpoint.
+# Install the CPU Torch wheel from its dedicated index before this file.
+-r requirements-ppo.txt
+torch==2.5.1+cpu

@@ -1,3 +1,5 @@
+import logging
+
 from botocore.exceptions import EndpointConnectionError
 import pytest
 
@@ -69,17 +71,20 @@ def test_emits_bounded_outcomes_sizes_and_no_identifiers():
     assert "missing-secret-id" not in serialized
 
 
-def test_default_sink_emits_to_process_log(capfd):
+def test_default_sink_emits_at_debug_level(caplog):
     repository = GameRepositoryInMemory(
         ControlledClock(), InMemoryItemSizer(), EncodedItemBudget()
     )
 
-    instrument(repository, None).find_receipt("a" * 64)
+    with caplog.at_level(logging.DEBUG):
+        instrument(repository, None).find_receipt("a" * 64)
 
-    output = capfd.readouterr().err
-    assert "repository_operation_completed" in output
-    assert '"outcome":"not_found_expired"' in output
-    assert "a" * 64 not in output
+    assert "repository_operation_completed" in caplog.text
+    assert '"outcome":"not_found_expired"' in caplog.text
+    assert "a" * 64 not in caplog.text
+    record = next(record for record in caplog.records
+                  if "repository_operation_completed" in record.message)
+    assert record.levelno == logging.DEBUG
 
 
 def test_sink_failure_does_not_change_committed_result():

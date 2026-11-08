@@ -4,6 +4,8 @@
 .github
 .env
 *.venv
+.venv*/
+**/.venv*/
 __pycache__
 *.pyc
 
@@ -13,3 +15,6 @@ __pycache__
 
 # Frontend not needed for API image
 battle-hexes-web
+# The API image serves ARM64 only; x86 training output stays in Git, not the image.
+battle_agent_rl/archive/ppo/x86_64
+battle_agent_rl/archive/ppo/*/evaluation.json

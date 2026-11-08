@@ -1,5 +1,8 @@
 """Utilities for loading scenario definitions from JSON files."""
 
+# Grandfathered legacy module; split before removing this exception.
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 
 import json

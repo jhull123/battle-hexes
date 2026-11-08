@@ -1,0 +1,34 @@
+{
+  "version": "2",
+  "id": "ppo_9x9_experimental",
+  "name": "Elimination Demo 3",
+  "description": "Fixed two-versus-two experimental PPO match.",
+  "board_size": [9, 9],
+  "turn_limit": 10,
+  "defensive_fire": {"base_probability": 0.25, "minimum": 0, "maximum": 1},
+  "factions": [
+    {
+      "id": "learner", "name": "Learner", "color": "#4682B4", "player": "Learner",
+      "sounds": {"defensive_fire": {"effect": "m1_trio_rifle_shots.ogg", "no_effect": "m1_single_rifle_shot.ogg"}}
+    },
+    {
+      "id": "opponent", "name": "Opponent", "color": "#C81010", "player": "Opponent",
+      "sounds": {"defensive_fire": {"effect": "m1_trio_rifle_shots.ogg", "no_effect": "m1_single_rifle_shot.ogg"}}
+    }
+  ],
+  "units": [
+    {"id": "learner-0", "name": "Learner 0", "faction": "learner", "type": "Infantry", "attack": 2, "defense": 2, "movement": 2, "defensive_fire_modifier": 1},
+    {"id": "learner-1", "name": "Learner 1", "faction": "learner", "type": "Infantry", "attack": 2, "defense": 2, "movement": 2, "defensive_fire_modifier": 1},
+    {"id": "opponent-0", "name": "Opponent 0", "faction": "opponent", "type": "Infantry", "attack": 2, "defense": 2, "movement": 2, "defensive_fire_modifier": 1},
+    {"id": "opponent-1", "name": "Opponent 1", "faction": "opponent", "type": "Infantry", "attack": 2, "defense": 2, "movement": 2, "defensive_fire_modifier": 1}
+  ],
+  "terrain_default": "open",
+  "terrain_types": {"open": {"color": "#C6AA5C", "move_cost": 1, "defensive_fire_modifier": 1, "combat_odds_shift": 0}},
+  "hex_data": [
+    {"coords": [3, 2], "units": ["learner-0"]},
+    {"coords": [5, 2], "units": ["learner-1"]},
+    {"coords": [3, 6], "units": ["opponent-0"]},
+    {"coords": [5, 6], "units": ["opponent-1"]}
+  ],
+  "objectives": []
+}
