@@ -58,7 +58,17 @@ def _digest(path):
 
 
 def save_run(run_dir, model, *, seed, total_timesteps, n_steps, batch_size,
-             episode_seeds, outcomes, changed, optimizer_updates=None):
+             episode_seeds, outcomes, changed, optimizer_updates=None,
+             task=None, cycle_limit=None, opponent_policy="random"):
+    if task is not None:
+        from . import scenario_artifact
+        return scenario_artifact.save_run(
+            run_dir, model, task, seed=seed, total_timesteps=total_timesteps,
+            n_steps=n_steps, batch_size=batch_size,
+            episode_seeds=episode_seeds,
+            outcomes=outcomes, changed=changed,
+            optimizer_updates=optimizer_updates, cycle_limit=cycle_limit,
+            opponent_policy=opponent_policy)
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=False)
     archive = run_dir / "checkpoint.zip"
@@ -88,7 +98,10 @@ def save_run(run_dir, model, *, seed, total_timesteps, n_steps, batch_size,
     return manifest
 
 
-def read_manifest(run_dir):
+def read_manifest(run_dir, *, task=None):
+    if task is not None:
+        from . import scenario_artifact
+        return scenario_artifact.read_manifest(run_dir, task)
     try:
         manifest = json.loads((Path(run_dir) / "manifest.json").read_text())
         if manifest.get("scenario_sha256") != fingerprint():
@@ -131,11 +144,14 @@ def read_manifest(run_dir):
             f"Missing or invalid PPO artifact: {error}") from error
 
 
-def validate_artifact(run_dir, digest=None):
+def validate_artifact(run_dir, digest=None, *, task=None):
     """Reuse validation only while both files' filesystem identities match.
 
     Always compare the caller's game-bound digest, even on a cache hit.
     """
+    if task is not None:
+        from . import scenario_artifact
+        return scenario_artifact.validate_artifact(run_dir, task, digest)
     try:
         manifest = _validation_cache.validate(
             run_dir, tuple(sorted(versions().items())), _validate_artifact)
@@ -160,7 +176,10 @@ def _validate_artifact(run_dir):
     return manifest
 
 
-def load_model(run_dir, digest=None):
+def load_model(run_dir, digest=None, *, task=None):
+    if task is not None:
+        from . import scenario_artifact
+        return scenario_artifact.load_model(run_dir, task, digest)
     manifest = validate_artifact(run_dir, digest)
     archive = Path(run_dir) / manifest["checkpoint"]["path"]
     try:

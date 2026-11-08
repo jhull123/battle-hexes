@@ -9,12 +9,13 @@ not a separate set of rules.
 observations, legal-action masks and action-to-core-plan conversion are
 implemented, including Crossroads. The non-learning environment and seeded
 random/hold inspector now run complete games, resolving each order before the
-next choice. Increment 08 is still incomplete: the Gym adapter, policy/artifact
-integration and human driver remain planned for 08c. No Crossroads model
-has been trained. The playable 9×9 demo from 07 is different:
+next choice. Increment 08 is complete: the thin Gym adapter, task-bound policy/
+artifact integration and local explicit-human-order driver are verified. Only
+bounded temporary smoke training has run; there is no campaign-trained or
+serving Crossroads checkpoint. The playable 9×9 demo from 07 is different:
 it uses two PPO units, 162 actions, and PPO in the first seat. Its existing
 trainer uses `[32, 32]` hidden layers. Do not confuse those artifacts with the
-planned Crossroads model.
+Crossroads baseline.
 
 ## The basic loop
 
@@ -68,14 +69,16 @@ interface label remains
 `battle-hexes-unit-destination-live-v2`, reflecting scenario-derived configuration
 rather than a fixed eight-turn task. Matching that label alone does not make a
 model compatible with another roster, board or set of input bounds. There are
-no Crossroads weights to migrate.
+no older Crossroads weights to migrate.
 
 ## Who plays whom?
 
 For Crossroads, **PPO plays Player 2 / Wehrmacht**. The human plays
 **Player 1 / Airborne**, and Airborne still moves first. Seeded random or hold
-controllers stand in for the human in the delivered environment checks. Actual
-human-command and PPO-policy integration remain 08c work.
+controllers stand in for the human in environment checks. The local
+`scenario_human` driver instead waits for each explicit human command, then uses
+the very same conversion and core execution. PPO waits until its movement turn;
+an empty turn advances without a prediction. Browser integration remains later work.
 
 The board is 18×18, with three objectives and an eight-turn limit. Wehrmacht
 starts with three units; two more are scheduled to arrive on turn 3.
@@ -262,7 +265,7 @@ alone cannot tell those situations apart.
 
 ## What does the neural network do with this?
 
-The planned Crossroads baseline is `MaskablePPO` with `MultiInputPolicy`:
+The implemented Crossroads baseline is `MaskablePPO` with `MultiInputPolicy`:
 
 ```python
 policy_kwargs = {"net_arch": {"pi": [64, 64], "vf": [64, 64]}}
@@ -280,8 +283,9 @@ These board arrays are not automatically processed by a spatial CNN.
   of expected future return, used during training.
 
 Both networks use `Tanh` hidden activations. The mask is supplied separately;
-it is not another field in the observation dictionary. The intended inference
-call is:
+it is not another field in the observation dictionary. The task-bound policy
+wrapper first checks contract, seat, stable slots and exact spaces. It refuses
+an empty mask, then makes this inference call:
 
 ```python
 action, _ = model.predict(obs, action_masks=mask, deterministic=True)
@@ -291,18 +295,19 @@ The architecture is a modest CPU baseline, not a promise of playing strength.
 Training time also depends on how many simulated games are needed and how
 quickly core can run them.
 
-## Turns, rewards, and endings (implemented non-learning environment)
+## Turns, rewards, and endings (shared environment and local driver)
 
 The following now runs through `ScenarioEnvironment.reset()` and `step()`.
-Random and hold controllers exercise it without a neural network; the Gym,
-trained-policy and actual human-command connections are not yet delivered.
+Random and hold controllers exercise it without a neural network. The thin Gym
+adapter and local human/PPO driver reuse these transitions; they do not copy rules.
 
 The non-learning environment resolves the opening Airborne turn before returning
 its first Wehrmacht decision. Each step applies one German order. After the
 last order, it closes Wehrmacht's turn and, unless ended/capped, resolves the
 next Airborne turn before the next learner decision. Empty sides close through
-the same core phases without choosing an invented pass action. The planned human
-driver will wait for actual human commands instead of acting automatically.
+the same core phases without choosing an invented pass action. The human
+driver waits for actual commands instead of acting automatically. Invalid input
+asks again; EOF/interrupt aborts rather than silently choosing hold.
 
 Reinforcements arrive **before Airborne moves on turn 3**, not immediately
 before PPO moves. They can be attacked before their first order and cannot

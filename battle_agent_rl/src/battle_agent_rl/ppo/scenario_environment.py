@@ -21,6 +21,8 @@ class ScenarioEnvironment:
     Every active return is a learner movement decision. Internal empty turns
     use the same phase workflow as ordered turns, without a synthetic action.
     One seeded RNG is shared by core and opponent, never by the learner.
+    An optional opponent controller(binding, pending_ids) supplies one explicit
+    order at a time; waiting for human input preserves execution semantics.
     """
 
     def __init__(self, task, cycle_limit=None, opponent_policy="random"):
@@ -29,8 +31,10 @@ class ScenarioEnvironment:
             cycle_limit = horizon
         if type(cycle_limit) is not int or not 1 <= cycle_limit <= horizon:
             raise ValueError(f"cycle_limit must be between 1 and {horizon}")
-        if opponent_policy not in ("random", "hold"):
-            raise ValueError("opponent_policy must be random or hold")
+        if not callable(opponent_policy) and opponent_policy not in (
+                "random", "hold"):
+            raise ValueError(
+                "opponent_policy must be random, hold or a controller")
         self.task = task
         self.cycle_limit = cycle_limit
         self.opponent_policy = opponent_policy
@@ -101,8 +105,12 @@ class ScenarioEnvironment:
                 self._opponent_order(binding, orders)
 
     def _opponent_order(self, binding, orders):
-        action = choose_action(binding, self.pending,
-                               self.opponent_policy, self.rng)
+        # An explicit-order controller may block awaiting human input. It uses
+        # exactly the substitute controller's conversion/execution path.
+        action = (self.opponent_policy(binding, frozenset(self.pending))
+                  if callable(self.opponent_policy) else
+                  choose_action(binding, self.pending,
+                                self.opponent_policy, self.rng))
         _, plan = action_plan(binding, self.pending, action)
         orders.append(self._order_record(binding, action, plan))
         apply_live_plan(self.game, plan, self.pending, self.rng,

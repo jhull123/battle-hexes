@@ -15,6 +15,21 @@ def crossroads_task():
     return ScenarioTask.load("d_day_crossroads", learner_seat=1)
 
 
+@pytest.fixture(scope="module")
+def initialized_scenario_model():
+    from sb3_contrib import MaskablePPO
+    from battle_agent_rl.ppo.scenario_gym import MaskedScenarioEnv
+    from battle_agent_rl.ppo.scenario_manifest import (
+        POLICY_KWARGS, interface_record,
+    )
+    task = ScenarioTask.load("d_day_crossroads", learner_seat=1)
+    model = MaskablePPO(
+        "MultiInputPolicy", MaskedScenarioEnv(task), seed=23, device="cpu",
+        n_steps=16, batch_size=8, policy_kwargs=POLICY_KWARGS)
+    model.scenario_interface = interface_record(task)
+    return model
+
+
 @pytest.fixture
 def crossroads(crossroads_task):
     return crossroads_task.create_game(random.Random(17))
