@@ -84,7 +84,7 @@ or cutoff does not pass.
 
 **Specification:** [08-crossroads-environment-policy-contract.md](08-crossroads-environment-policy-contract.md).
 
-**Status: in progress; 08a merged, 08b next, 08c planned.**
+**Status: in progress; 08a merged, 08b implemented/verified, 08c planned.**
 Supported Crossroads seats: Human as Player 1 / Airborne;
 PPO as Player 2 / Wehrmacht. Core retains Airborne-first turn order and scoring.
 This does not change 07's first-seat experimental PPO contract or artifacts.
@@ -95,6 +95,17 @@ scripted human driver. See the spec's [delivery sequence](08-crossroads-environm
 for each chunk's acceptance gate and the [08a audit](evidence/08-state-action-audit.md)
 for merged evidence. Full completion still requires AC-001–AC-006; training
 campaigns remain 09. Preserve the data-driven boundary and 06/07 artifacts.
+
+**08b delivered:** `ScenarioEnvironment` executes loaded tasks with explicit
+learner seats, live pending-ID orders, opponent/opening and automatic empty
+turns, shared 07 core resolution, ordinary core scoring, terminal rewards and
+external cutoffs retaining the scenario horizon. A dependency-light random/hold
+inspector prints replayable decisions, inputs, events and authoritative results.
+[Execution evidence](evidence/08-executable-environment.md) covers AC-001–AC-004
+through production reset/step paths, controlled blocked/attacked arrivals,
+casualties/empty turns, post-combat scoring, completion precedence, seeded replay
+and Python 3.12 server checks. 08c's Gym/policy/trainer/artifact integration and
+human driver remain open; this does not complete increment 08.
 
 **Objective:** Make actual Crossroads the training and inference task before
 the main training campaign, using 07's live-play path.

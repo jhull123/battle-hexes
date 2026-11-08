@@ -7,9 +7,10 @@ not a separate set of rules.
 
 **Current status:** Data-driven scenario loading/binding, permanent slots,
 observations, legal-action masks and action-to-core-plan conversion are
-implemented, including Crossroads. Increment 08 is still incomplete:
-turn execution/orchestration, the Gym adapter, policy/
-artifact integration and inspection driver remain planned. No Crossroads model
+implemented, including Crossroads. The non-learning environment and seeded
+random/hold inspector now run complete games, resolving each order before the
+next choice. Increment 08 is still incomplete: the Gym adapter, policy/artifact
+integration and human driver remain planned for 08c. No Crossroads model
 has been trained. The playable 9×9 demo from 07 is different:
 it uses two PPO units, 162 actions, and PPO in the first seat. Its existing
 trainer uses `[32, 32]` hidden layers. Do not confuse those artifacts with the
@@ -58,8 +59,9 @@ This supports the long-term goal of a generalized Battle Hexes PPO player, but
 data-driven loading is **not** a generalized trained policy. A differently named
 5×7 JSON file with four units and two reinforcement groups is tested through
 the production loading, binding, observation, mask and order-conversion path for
-either learner seat. That proves this decision boundary, not a new playable
-environment or checkpoint compatibility. There is no multi-scenario training;
+either learner seat. It now also runs through the non-learning environment,
+including both groups' arrivals and core completion. That does not prove trained
+policy compatibility. There is no multi-scenario training;
 the fixed 06/07 demo contracts and weights remain unchanged. For today's
 Crossroads file, the inputs and action numbers below remain the same. The
 interface label remains
@@ -72,7 +74,8 @@ no Crossroads weights to migrate.
 
 For Crossroads, **PPO plays Player 2 / Wehrmacht**. The human plays
 **Player 1 / Airborne**, and Airborne still moves first. Seeded random or hold
-controllers will stand in for the human during the planned environment checks.
+controllers stand in for the human in the delivered environment checks. Actual
+human-command and PPO-policy integration remain 08c work.
 
 The board is 18×18, with three objectives and an eight-turn limit. Wehrmacht
 starts with three units; two more are scheduled to arrive on turn 3.
@@ -144,15 +147,16 @@ Only reachable destinations for deployed units with pending orders are enabled.
 Eliminated, awaiting, and already-ordered units have entirely false action blocks.
 The zero-movement Feldwache has a hold-only order.
 
-The planned turn driver will rebuild the mask after each order resolves,
+The delivered turn driver rebuilds the mask after each order resolves,
 including defensive fire and retreat, before choosing again. Each unit gets
 **one order per friendly movement phase**, starting with its full movement
 allowance. It can move less than its
 maximum, but cannot split its movement into multiple orders. Hold also spends
 the order.
 
-The delivered converter only validates and returns a core plan; it does not
-apply it or spend an order. Its caller keeps pending unit IDs separately from
+The converter only validates and returns a core plan; it does not apply it or
+spend an order. The environment applies the plan through the shared live-order
+workflow and keeps pending unit IDs separately from
 movement points. This matters for hold: a unit can still have all its movement
 points after using its one order. The mask excludes stale pending casualties.
 
@@ -287,17 +291,18 @@ The architecture is a modest CPU baseline, not a promise of playing strength.
 Training time also depends on how many simulated games are needed and how
 quickly core can run them.
 
-## Turns, rewards, and endings (planned environment)
+## Turns, rewards, and endings (implemented non-learning environment)
 
-The following describes the remaining turn-driver contract, not a delivered
-Crossroads environment. Tests currently advance real core state explicitly to
-audit the delivered encoder and masks; they do not complete increment 08.
+The following now runs through `ScenarioEnvironment.reset()` and `step()`.
+Random and hold controllers exercise it without a neural network; the Gym,
+trained-policy and actual human-command connections are not yet delivered.
 
 The non-learning environment resolves the opening Airborne turn before returning
 its first Wehrmacht decision. Each step applies one German order. After the
 last order, it closes Wehrmacht's turn and, unless ended/capped, resolves the
-next Airborne turn before the next learner decision. The human driver waits
-for actual human commands instead of acting automatically for Airborne.
+next Airborne turn before the next learner decision. Empty sides close through
+the same core phases without choosing an invented pass action. The planned human
+driver will wait for actual human commands instead of acting automatically.
 
 Reinforcements arrive **before Airborne moves on turn 3**, not immediately
 before PPO moves. They can be attacked before their first order and cannot
@@ -323,6 +328,12 @@ next Airborne action. Core may already have advanced to turn 3 and deployed
 arrivals; `remaining_cycles` is then `[6]`, not zero. A real core ending takes
 precedence over a cutoff. Ordinary turn-limit completion is at the end of
 Wehrmacht's turn 8.
+
+See [PPO.md's inspection commands](PPO.md#non-learning-inspection-08b) to print
+decisions, public inputs, legal choices, fire/combat/arrival events and final
+results. Repeating the same game seed, learner-policy seed, data and runtime
+repeats the trace. Invalid choices are rejected without changing the game,
+pending orders or either future game roll. No training occurs in this inspector.
 
 ## Keeping this reference accurate
 

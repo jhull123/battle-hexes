@@ -1,5 +1,9 @@
 # 08 partial delivery: data-driven state and action audit
 
+Historical **08a** audit. The subsequent non-learning turn driver and its
+AC-001–AC-004 validation are recorded in
+[08b execution evidence](08-executable-environment.md); 08c remains open.
+
 This is **not** increment-08 completion evidence. No environment rollout,
 initialized-policy acceptance, training campaign or Crossroads artifact is
 claimed. The [08 contract](../08-crossroads-environment-policy-contract.md)

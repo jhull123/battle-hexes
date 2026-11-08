@@ -19,13 +19,21 @@ Implement these chunks in order; each extends the same data-driven machinery.
 | Chunk | Status | Deliverable | Acceptance gate |
 | --- | --- | --- | --- |
 | **08a — State/action interface** | Merged in [#400](https://github.com/jhull123/battle-hexes/pull/400) | Scenario loading/binding, stable slots, derived bounds/spaces, observations, masks and action conversion. | [Partial audit](evidence/08-state-action-audit.md): unregistered-scenario lifecycle coverage and preserved Crossroads behavior. |
-| **08b — Executable environment** | **Next** | Reset/step, live orders, opponent/empty turns, core scoring/completion, rewards/cutoffs and non-learning inspection. | AC-001–AC-004 through production environment paths; repeatable random/hold rollouts demonstrate arrivals, objective completion and cutoff semantics. |
+| **08b — Executable environment** | **Implemented and verified** | Reset/step, live orders, opponent/empty turns, core scoring/completion, rewards/cutoffs and non-learning inspection. | [Execution evidence](evidence/08-executable-environment.md): AC-001–AC-004 through production environment paths, controlled edge cases and repeatable random/hold completion/cutoff traces. |
 | **08c — Policy integration** | Planned; after 08b | Thin Gym adapter, initialized masked-policy checks, trainer/artifact compatibility plumbing and scripted human driver. | AC-005–AC-006, bounded training/reload smoke and retained AC-001–AC-004 regressions. |
 
 08b enables complete non-learning games; 08c enables short PPO training smoke
 runs. Smoke checks prove plumbing, not strength; training/evaluation campaigns
 remain increment 09. Increment 08 completes only when all three chunks and
 AC-001–AC-006 pass; 06/07 contracts and artifacts remain unchanged.
+
+08b's production entry points are `scenario_environment.ScenarioEnvironment`
+and `python -m battle_agent_rl.ppo.scenario_inspection`. Both accept a
+scenario-derived task with explicit learner selection; no scenario registry or
+Crossroads engine facade was added. `live_turn` extracts the existing 07
+live-order/phase workflow, with ordinary core scoring enabled by the new
+environment. Gym/policy/trainer/artifact integration and the human driver remain
+08c; increment 08 is **not complete**.
 
 ## 2. Definitions
 
