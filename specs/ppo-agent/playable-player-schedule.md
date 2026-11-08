@@ -3,7 +3,7 @@
 This is the active schedule, beginning at 07. Increments 01–06 are completed
 foundation work; their specifications and evidence remain in the
 [foundation schedule](implementation-schedule.md). Increment 07 is complete;
-08 is partially delivered; 09–12 remain planned. Mark completion only after
+08 is complete; 09–12 remain planned. Mark completion only after
 delivery and verification of the evidence.
 
 The finish line is a trained, evaluated, frozen PPO player that a human can
@@ -84,7 +84,7 @@ or cutoff does not pass.
 
 **Specification:** [08-crossroads-environment-policy-contract.md](08-crossroads-environment-policy-contract.md).
 
-**Status: in progress; 08a merged, 08b implemented/verified, 08c planned.**
+**Status: complete (2026-11-08); 08a–08c implemented and verified.**
 Supported Crossroads seats: Human as Player 1 / Airborne;
 PPO as Player 2 / Wehrmacht. Core retains Airborne-first turn order and scoring.
 This does not change 07's first-seat experimental PPO contract or artifacts.
@@ -93,7 +93,7 @@ This does not change 07's first-seat experimental PPO contract or artifacts.
 and non-learning inspection → 08c Gym/policy/trainer/artifact integration and
 scripted human driver. See the spec's [delivery sequence](08-crossroads-environment-policy-contract.md#delivery-sequence)
 for each chunk's acceptance gate and the [08a audit](evidence/08-state-action-audit.md)
-for merged evidence. Full completion still requires AC-001–AC-006; training
+for merged evidence. AC-001–AC-006 and the bounded smoke now pass; training
 campaigns remain 09. Preserve the data-driven boundary and 06/07 artifacts.
 
 **08b delivered:** `ScenarioEnvironment` executes loaded tasks with explicit
@@ -104,8 +104,17 @@ inspector prints replayable decisions, inputs, events and authoritative results.
 [Execution evidence](evidence/08-executable-environment.md) covers AC-001–AC-004
 through production reset/step paths, controlled blocked/attacked arrivals,
 casualties/empty turns, post-combat scoring, completion precedence, seeded replay
-and Python 3.12 server checks. 08c's Gym/policy/trainer/artifact integration and
-human driver remain open; this does not complete increment 08.
+and Python 3.12 server checks.
+
+**08c delivered:** Thin native-mask Gym adapter, initialized-policy legality on
+three-/five-unit, one-unit and hold-only states, explicit task/seat selection in
+the existing trainer, exact interface/space/slot/artifact validation, and a local
+explicit-order Human-Airborne/PPO-Wehrmacht driver sharing environment execution.
+[Policy evidence](evidence/08-policy-integration.md) records AC-005–AC-006,
+retained AC-001–AC-004 regressions, 16 legal CPU learning steps with changed
+weights/20 optimizer updates, temporary save/reload and frozen legal replay through
+core completion. Python 3.12 full checks pass; 06/07 remain unchanged. No campaign,
+strength claim, production checkpoint replacement or API/UI delivery is included.
 
 **Objective:** Make actual Crossroads the training and inference task before
 the main training campaign, using 07's live-play path.

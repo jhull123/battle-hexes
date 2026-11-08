@@ -3,8 +3,8 @@
 For a plain-language walkthrough of the environment, model inputs, action space,
 and masks, see [PPO-EXPLAINER.md](PPO-EXPLAINER.md). Keep that explainer and its
 examples accurate in the same change when relevant game rules, PPO contracts,
-architecture, or implementation status change; distinguish planned Crossroads
-behavior from the existing playable 9×9 slice.
+architecture, or implementation status change; distinguish the delivered
+Crossroads contract from later campaign/playable work and the existing 9×9 slice.
 
 ## Status
 
@@ -19,9 +19,10 @@ continues toward a Crossroads opponent; these 9×9 weights do not transfer to it
 Core remains authoritative for rules and results. Training uses SB3-Contrib
 `MaskablePPO`; smoke training does not establish playing strength.
 
-## Data-driven environment (increment 08 partial)
+## Data-driven environment (increment 08 complete)
 
-**08 is incomplete.** Delivered under `battle_agent_rl.ppo`:
+**08 is complete.** AC-001–AC-006 and the bounded policy-integration smoke are
+verified; campaign training remains increment 09. Delivered under `battle_agent_rl.ppo`:
 
 - `scenario_task.ScenarioTask(scenario_data, learner_seat)`, or
   `ScenarioTask.load(scenario_id, learner_seat=..., scenario_dir=...)`: accepts
@@ -95,7 +96,7 @@ and 1,620 action indices. The interface label remains
 fixed to eight turns. Variations may change spaces and slot/action mappings;
 this does not authorize policy reuse. The old Crossroads forwarding modules and
 `scenario_binding` have been removed; callers use the cohesive task interface.
-No Crossroads weights exist; 06/07 are unchanged.
+No production Crossroads weights exist; 06/07 are unchanged.
 
 Supported decision inputs need two nonempty complete rosters, unique IDs,
 positive dimensions and a finite positive turn limit. Objective inputs require
@@ -126,11 +127,57 @@ The hold and seed-17 random examples both finish turn 8 with Wehrmacht winning
 3–0; the two-cycle example cuts off with arrivals already deployed on turn 3,
 core still active and `remaining_cycles=[6]`. These are plumbing, not skill results.
 
-**Still planned (08c):** human driver, Gym adapter, initialized-policy checks,
-trainer/artifact task selection and compatibility integration. Training campaigns
-remain increment 09. There is no Crossroads checkpoint or selectable playable
-player yet. See the [input/mask audit](../specs/ppo-agent/evidence/08-state-action-audit.md)
+See the [input/mask audit](../specs/ppo-agent/evidence/08-state-action-audit.md)
 and [08b execution evidence](../specs/ppo-agent/evidence/08-executable-environment.md).
+
+### Policy integration and local human orders (08c)
+
+`scenario_gym.MaskedScenarioEnv` exposes native `action_masks()` and Gym tuples
+over the same environment, without duplicating rules. Core completion terminates;
+an external cap truncates. A reset that ends before any learner decision fails
+explicitly because Gym reset cannot signal termination; it never sends an empty
+mask to a rollout collector. Structural inspection still supports such endings.
+
+The existing `multi_unit_train` trainer accepts an explicit `--scenario` plus
+`--learner-seat`; `--scenario-dir` loads editor JSON without registration. Without
+task selection its 9×9 defaults and `[32,32]` architecture remain unchanged.
+Scenario training uses `MultiInputPolicy`, separate `pi`/`vf` `[64,64]` networks,
+default Tanh and the standard flatten/concatenate extractor.
+
+The existing `playable_artifact` save/read/validate/load entry points accept
+`task=task`. Scenario manifests record the interface, scenario identity/version,
+complete configuration snapshot/digest, horizon, seat, core order, ordered slots,
+exact spaces/bounds, reward, training configuration/seeds, versions and checkpoint
+digest. `ScenarioPolicy(model, task)` checks the archive's own persisted interface
+and exact spaces before prediction, rejects empty masks and rejects illegal output
+rather than substituting hold. Scenario provenance is not an exact-gameplay gate;
+this does not establish suitability or compatibility across different tasks.
+Legacy 06/07 checks and artifacts are unchanged.
+
+From the repository root, with `.venv312` active and the `PYTHONPATH` above:
+
+```sh
+export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+# Choose a fresh temporary run directory; never replace a committed model.
+python -m battle_agent_rl.ppo.multi_unit_train --scenario d_day_crossroads --learner-seat 1 --seed 23 --total-timesteps 16 --n-steps 16 --batch-size 8 --cycle-limit 2 --opponent-policy hold --run-dir /tmp/opencode/08c-crossroads-smoke
+python -m battle_agent_rl.ppo.scenario_human --run-dir /tmp/opencode/08c-crossroads-smoke --scenario d_day_crossroads --learner-seat 1 --seed 1000
+# Optional explicit validation substitute, not interactive human play:
+python -m battle_agent_rl.ppo.scenario_human --run-dir /tmp/opencode/08c-crossroads-smoke --scenario d_day_crossroads --learner-seat 1 --seed 1000 --scripted-human hold
+```
+
+The local driver waits for each explicit first-seat human order, using human-local
+slot/destination indices shown in its prompt. EOF/interrupt aborts; there are no
+automatic human holds. PPO only predicts after the handoff to its movement phase.
+Both human and substitute orders use the environment's shared conversion and core
+execution, including scoring, reinforcements and empty turns.
+
+The verified smoke collected 16 legal steps, changed weights in 20 optimizer
+updates, and saved/reloaded only temporary artifacts. Seed-1000 scripted replay
+completed turn 8 in 36 legal learner orders with unchanged weights; repeat runs
+matched. This proves plumbing, **not strength**. Commands, configuration and
+gate coverage: [08c evidence](../specs/ppo-agent/evidence/08-policy-integration.md).
+There is no campaign-trained Crossroads serving checkpoint or selectable API/UI
+player yet; those remain later increments.
 
 ## Experimental trained 9×9 game (increment 07 complete)
 
