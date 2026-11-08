@@ -17,7 +17,7 @@ def _movement_active(binding, active):
 def pending_at_movement_start(binding):
     """Snapshot IDs at friendly movement start, including immobile units.
 
-    The future turn driver owns consumption; do not rebuild pending
+    The turn driver owns consumption; do not rebuild pending
     after an order (a hold can leave movement points unchanged).
     """
     if not _movement_active(binding, True):

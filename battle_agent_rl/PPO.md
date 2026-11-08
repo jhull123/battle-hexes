@@ -19,7 +19,7 @@ continues toward a Crossroads opponent; these 9×9 weights do not transfer to it
 Core remains authoritative for rules and results. Training uses SB3-Contrib
 `MaskablePPO`; smoke training does not establish playing strength.
 
-## Data-driven state/actions (increment 08 partial)
+## Data-driven environment (increment 08 partial)
 
 **08 is incomplete.** Delivered under `battle_agent_rl.ppo`:
 
@@ -43,10 +43,21 @@ Core remains authoritative for rules and results. Training uses SB3-Contrib
   conversion, still read-only. Core path validation remains shared with 06/07;
   their existing fixed contracts, behavior and committed artifacts are unchanged.
 
+08b adds `scenario_environment.ScenarioEnvironment(task, cycle_limit=None,
+opponent_policy="random")`, with structural `reset(seed)` / `step(action)`
+transitions and `action_masks()`. It initializes core scores, plays the opening
+opponent turn when the learner is second, resolves each order live, consumes its
+pending ID, and automatically closes empty turns. `live_turn` extracts 07's
+order/phase workflow; scenario execution opts into ordinary core scoring,
+including after combat and before final evaluation. Core owns arrival, fire,
+retreat, combat, scoring and completion. Rewards are learner-relative `+1/-1/0`
+only at core completion. External caps stop after the second core seat's turn,
+retain any normal wrap/arrivals and the true horizon, and are not core draws.
+
 The boundary is **scenario data plus runtime learner selection; shared decision
 machinery**. A scenario editor can add a differently named JSON file without
-changing Python, within the structural limits below. This is not an arbitrary
-scenario environment, policy generalization or multi-scenario training.
+changing Python, within the structural limits below. This is not a universal
+scenario interface, policy generalization or multi-scenario training.
 
 For an already core-advanced **Wehrmacht movement** decision:
 
@@ -92,12 +103,34 @@ core's unambiguous objective-control scoring role. Numeric fields must fit the
 existing `int8`/`int32`/`float32` contract; core validates scenario relationships.
 Slots/spaces stay fixed within a task/episode, not across different scenarios.
 
-**Still planned:** live order execution/turn orchestration (including opening
-Airborne, scoring, empty turns, rewards and cutoffs), non-learning inspection/
-human driver, Gym adapter, initialized-policy checks, trainer/artifact task
-selection and compatibility integration. Training campaigns remain increment 09.
-There is no Crossroads checkpoint or playable player yet. See the
-[partial input/mask audit](../specs/ppo-agent/evidence/08-state-action-audit.md).
+### Non-learning inspection (08b)
+
+From the repository root:
+
+```sh
+source .venv312/bin/activate
+export PYTHONPATH="$PWD/battle_agent_rl/src:$PWD/battle_hexes_core/src"
+python -m battle_agent_rl.ppo.scenario_inspection --scenario d_day_crossroads --learner-seat 1 --seed 0 --policy hold --opponent-policy hold --expect-ending completed
+python -m battle_agent_rl.ppo.scenario_inspection --scenario d_day_crossroads --learner-seat 1 --seed 17 --policy random --expect-ending completed
+python -m battle_agent_rl.ppo.scenario_inspection --scenario d_day_crossroads --learner-seat 1 --seed 0 --policy hold --opponent-policy hold --cycle-limit 2 --expect-ending cutoff
+```
+
+JSON-line traces show provenance/runtime versions, both RNG seeds, opening and
+subsequent opponent actions, learner decisions/legal indices, live public inputs,
+all intervening core events, scores and authoritative endings. Random learner
+inspection uses a separate RNG (`--policy-seed`, defaulting to `--seed`); core
+and opponent share the game RNG. Inspection audits each return without importing
+Gymnasium or trainer libraries. `--scenario-dir` loads editor JSON through core;
+the learner seat is always explicit. Matching seeds/data/runtime replay exactly.
+The hold and seed-17 random examples both finish turn 8 with Wehrmacht winning
+3–0; the two-cycle example cuts off with arrivals already deployed on turn 3,
+core still active and `remaining_cycles=[6]`. These are plumbing, not skill results.
+
+**Still planned (08c):** human driver, Gym adapter, initialized-policy checks,
+trainer/artifact task selection and compatibility integration. Training campaigns
+remain increment 09. There is no Crossroads checkpoint or selectable playable
+player yet. See the [input/mask audit](../specs/ppo-agent/evidence/08-state-action-audit.md)
+and [08b execution evidence](../specs/ppo-agent/evidence/08-executable-environment.md).
 
 ## Experimental trained 9×9 game (increment 07 complete)
 
