@@ -10,13 +10,22 @@ Make actual Crossroads the shared training/inference task, without transferring 
 
 ## 1. Purpose & Scope
 
-Implement [schedule 2, increment 08](playable-player-schedule.md#08--crossroads-environment-and-policy-contract) under `battle_agent_rl.ppo`. Support **PPO as Player 2 / Wehrmacht**, versus **Human as Player 1 / Airborne**. Preserve core player order: Airborne first, Wehrmacht second. Use seeded random/hold controllers as non-learning verification substitutes for the human. Deliver the environment, shared conversion and live-turn contract, thin Gymnasium adapter, inspection, and compatibility plumbing. Campaign training/evaluation (09), evaluated frozen-player parity (10), and API/UI promotion (12) remain out of scope; preserve 07's first-seat PPO behavior and artifacts. **08 remains planned.**
+Implement [schedule 2, increment 08](playable-player-schedule.md#08--crossroads-environment-and-policy-contract) under `battle_agent_rl.ppo`. Support **PPO as Player 2 / Wehrmacht**, versus **Human as Player 1 / Airborne**. Preserve core player order: Airborne first, Wehrmacht second. Use seeded random/hold controllers as non-learning verification substitutes for the human. Deliver the environment, shared conversion and live-turn contract, thin Gymnasium adapter, inspection, and compatibility plumbing. Campaign training/evaluation (09), evaluated frozen-player parity (10), and API/UI promotion (12) remain out of scope; preserve 07's first-seat PPO behavior and artifacts. **08 remains incomplete.**
 
-**Implementation note:** only scenario binding/compatibility, permanent slots,
-observation encoding, pending-unit masks and validated action-to-core-plan
-conversion are delivered. See the [partial audit](evidence/08-state-action-audit.md).
-Turn orchestration, Gym adaptation, inspection/human driver and trainer/artifact
-integration remain planned. This is not completion of increment 08.
+### Delivery sequence
+
+Implement these chunks in order; each extends the same data-driven machinery.
+
+| Chunk | Status | Deliverable | Acceptance gate |
+| --- | --- | --- | --- |
+| **08a — State/action interface** | Merged in [#400](https://github.com/jhull123/battle-hexes/pull/400) | Scenario loading/binding, stable slots, derived bounds/spaces, observations, masks and action conversion. | [Partial audit](evidence/08-state-action-audit.md): unregistered-scenario lifecycle coverage and preserved Crossroads behavior. |
+| **08b — Executable environment** | **Next** | Reset/step, live orders, opponent/empty turns, core scoring/completion, rewards/cutoffs and non-learning inspection. | AC-001–AC-004 through production environment paths; repeatable random/hold rollouts demonstrate arrivals, objective completion and cutoff semantics. |
+| **08c — Policy integration** | Planned; after 08b | Thin Gym adapter, initialized masked-policy checks, trainer/artifact compatibility plumbing and scripted human driver. | AC-005–AC-006, bounded training/reload smoke and retained AC-001–AC-004 regressions. |
+
+08b enables complete non-learning games; 08c enables short PPO training smoke
+runs. Smoke checks prove plumbing, not strength; training/evaluation campaigns
+remain increment 09. Increment 08 completes only when all three chunks and
+AC-001–AC-006 pass; 06/07 contracts and artifacts remain unchanged.
 
 ## 2. Definitions
 
@@ -34,7 +43,7 @@ integration remain planned. This is not completion of increment 08.
 - **REQ-004 — Rules and reward:** Initialize scores through core at reset; thereafter use core's objective scorer in the shared workflow at ordinary-game scoring points, including after combat, before final turn-limit evaluation. Encoding must not score or evaluate victory. Keep `scoring_side=Airborne`: Airborne scores occupied objectives; Wehrmacht scores every other objective, including empty ones. Scores are current control, not accumulated captures. Read winner/reason from core; Wehrmacht does not gain Airborne's early-elimination victory condition. Reward once at completion **relative to Wehrmacht**: Wehrmacht win `+1`, Airborne win `-1`, draw `0`; otherwise `0`, including cutoff and nonterminal elimination. No reward shaping.
 - **REQ-005 — Horizon:** `remaining_cycles = max(0, scenario.turn_limit + 1 - game.turn_number)` includes the current cycle and ignores external caps. The planned driver accepts an external cycle cap from 1 through the loaded horizon, defaulting to that horizon (currently 8). Check cutoff after Wehrmacht ends the capped cycle, **before Airborne acts next**; core completion takes precedence. A normal core end-turn may already have advanced the turn/deployed the next cycle's reinforcements; retain that state, without extra opponent movement. Core decides the final cycle at the end of Wehrmacht's turn. At completion/cutoff clear pending and masks, retain actual final state and true scenario horizon, and reject further steps until reset. The current scenario permits at most 36 learner orders: three per cycle in turns 1–2, at most five in turns 3–8; this is an example, not an implementation bound.
 - **CON-001:** Core remains the sole rules/scoring/completion authority and gains no PPO dependency. Preserve 5×5, 06 and 07 contracts; do not replace committed weights, change public player choices, add HTTP routes or migrate saved games in this increment.
-- **CON-002 — Reuse boundary:** Use **scenario data plus runtime learner selection; shared decision machinery**. Crossroads must not require a named Python definition or facade. Select the learner seat in runtime/training configuration; keep the interface version in shared implementation, independent of scenario identity. Read identity/version from the loaded definition; derive ordered rosters, bounds and decision configuration rather than duplicating gameplay data. Shared roster binding, spaces, observation encoding, pending masks and action conversion take explicit configuration: no scenario registry, name conditionals, named factions/units, fixed slot counts, board dimensions, single-group assumption or eight-turn horizon. Do not add environment orchestration, a parallel trainer, variable-roster neural architectures or automatic cross-scenario checkpoint compatibility in this state/action slice. Data-driven loading does not establish policy generalization or multi-scenario training; preserve 06/07 contracts and artifacts.
+- **CON-002 — Reuse boundary:** Use **scenario data plus runtime learner selection; shared decision machinery**. Crossroads must not require a named Python definition or facade. Select the learner seat in runtime/training configuration; keep the interface version in shared implementation, independent of scenario identity. Read identity/version from the loaded definition; derive ordered rosters, bounds and decision configuration rather than duplicating gameplay data. Shared roster binding, spaces, observation encoding, pending masks and action conversion take explicit configuration: no scenario registry, name conditionals, named factions/units, fixed slot counts, board dimensions, single-group assumption or eight-turn horizon. Do not add environment orchestration, a parallel trainer, variable-roster neural architectures or automatic cross-scenario checkpoint compatibility in 08a. Data-driven loading does not establish policy generalization or multi-scenario training; preserve 06/07 contracts and artifacts.
 
 ## 4. Interfaces & Data Contracts
 
@@ -56,7 +65,7 @@ indices below remain numerically unchanged. That regression is **not** a claim
 of model compatibility across scenario variations. Future model binding must
 check the concrete spaces, ordered IDs, learner seat and interface semantics;
 the version label alone cannot authorize reuse. No universal policy, environment,
-new orchestration or artifact integration is delivered by this slice.
+new orchestration or artifact integration is delivered by 08a.
 
 Supported inputs require two core players, a nonempty complete roster for each
 role, unique unit identities, positive board dimensions and a finite positive
@@ -165,7 +174,7 @@ Core scenario loader, movement, scoring, reinforcement and phase APIs; 07's live
 
 ## 10. Validation Criteria
 
-Deliver AC-001–AC-006, a repeatable bounded inspection command, a concise input/mask audit and seed/action traces covering arrival and objective completion. Only after implementation and verified evidence update the schedule and `PPO.md`; this specification alone leaves 08 planned.
+Deliver AC-001–AC-006, a repeatable bounded inspection command, a concise input/mask audit and seed/action traces covering arrival and objective completion. Only after implementation and verified evidence update the schedule and `PPO.md`; this specification alone does not complete 08.
 
 ## 11. Related Specifications / Further Reading
 
