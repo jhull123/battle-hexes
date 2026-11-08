@@ -88,6 +88,27 @@ or cutoff does not pass.
 PPO as Player 2 / Wehrmacht. Core retains Airborne-first turn order and scoring.
 This does not change 07's first-seat experimental PPO contract or artifacts.
 
+**Partial delivery (state/action only):** core scenario binding and interface
+compatibility, scenario-derived permanent slots including reserved arrivals,
+fresh observation arrays and exact space declarations, pending-ID legal masks,
+and validated action-to-core-plan conversion. The
+[partial audit](evidence/08-state-action-audit.md) records focused evidence.
+`ScenarioTask` accepts loaded core data or an ID/directory through core's loader,
+without scenario-specific Python modules, a registry or name conditionals.
+Runtime/training configuration selects the learner seat; shared code owns the
+scenario-independent interface version. An unregistered temporary JSON scenario
+exercises production loading/binding/encoding/masks/conversion for either seat.
+Loaded data supplies ownership, rosters, dimensions, objectives, groups, horizon
+and bounds without duplicated facts or an exact-gameplay lock. This proves the
+data-driven state/action boundary, not a playable arbitrary-scenario environment
+or policy generalization. Learner-first, per-side unit-ID sorting
+preserves current Crossroads slots/actions/spaces. The interface is explicitly
+versioned `battle-hexes-unit-destination-live-v2`; variations are not implicitly
+policy-compatible. 06/07 behavior, contracts and artifacts remain unchanged.
+Turn orchestration, non-learning inspection/human driver, Gym adapter and
+trainer/artifact integration remain planned; no Crossroads training campaign
+has run. This does **not** satisfy 08's full completion gate or AC-001–AC-006.
+
 **Objective:** Make actual Crossroads the training and inference task before
 the main training campaign, using 07's live-play path.
 

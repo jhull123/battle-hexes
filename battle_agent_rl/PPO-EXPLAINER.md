@@ -5,8 +5,12 @@ This is the plain-language companion to [PPO.md](PPO.md) and the
 Keep it in sync when the game or PPO contract changes; it explains the contract,
 not a separate set of rules.
 
-**Current status:** the Crossroads setup below is specified for increment 08,
-but not yet implemented or trained. The playable 9×9 demo from 07 is different:
+**Current status:** Data-driven scenario loading/binding, permanent slots,
+observations, legal-action masks and action-to-core-plan conversion are
+implemented, including Crossroads. Increment 08 is still incomplete:
+turn execution/orchestration, the Gym adapter, policy/
+artifact integration and inspection driver remain planned. No Crossroads model
+has been trained. The playable 9×9 demo from 07 is different:
 it uses two PPO units, 162 actions, and PPO in the first seat. Its existing
 trainer uses `[32, 32]` hidden layers. Do not confuse those artifacts with the
 planned Crossroads model.
@@ -29,11 +33,46 @@ Core game → observation + legal-action mask → PPO chooses one action
 Core still owns movement, defensive fire, combat, scoring, and completion.
 The neural network chooses orders; it does not replace the rules engine.
 
+## One set of machinery, scenario data and a runtime seat
+
+The design is **scenario data plus runtime learner selection; shared decision
+machinery**. A scenario editor can create a new JSON file without adding Python
+code or registering its name. `ScenarioTask` accepts already-loaded core scenario
+data, or loads an ID from the usual scenario directory or a supplied directory.
+The caller chooses the learner seat in runtime/training configuration; it is not
+hardcoded in a scenario module. The interface version belongs to shared code,
+not the scenario. Core supplies ownership and the complete roster, including
+reserves; shared code derives unit order, board size, objectives, reinforcement groups,
+horizon and input bounds. These facts are not copied into PPO constants, and
+valid scenario changes are not rejected for differing from today's Crossroads.
+The checks instead catch unsupported inputs, such as missing turn limits,
+unassigned units, unsupported objective rules or numbers too large for the
+observation's data types.
+
+Learner and opponent are roles, not faction names or fixed first/second seats.
+The side whose occupation earns objective points is a separate role read from
+core's scoring rule. For Crossroads, the learner is Wehrmacht and that scoring
+side is Airborne. Shared code does not assume the scoring side is the opponent.
+
+This supports the long-term goal of a generalized Battle Hexes PPO player, but
+data-driven loading is **not** a generalized trained policy. A differently named
+5×7 JSON file with four units and two reinforcement groups is tested through
+the production loading, binding, observation, mask and order-conversion path for
+either learner seat. That proves this decision boundary, not a new playable
+environment or checkpoint compatibility. There is no multi-scenario training;
+the fixed 06/07 demo contracts and weights remain unchanged. For today's
+Crossroads file, the inputs and action numbers below remain the same. The
+interface label remains
+`battle-hexes-unit-destination-live-v2`, reflecting scenario-derived configuration
+rather than a fixed eight-turn task. Matching that label alone does not make a
+model compatible with another roster, board or set of input bounds. There are
+no Crossroads weights to migrate.
+
 ## Who plays whom?
 
 For Crossroads, **PPO plays Player 2 / Wehrmacht**. The human plays
 **Player 1 / Airborne**, and Airborne still moves first. Seeded random or hold
-controllers stand in for the human during environment checks.
+controllers will stand in for the human during the planned environment checks.
 
 The board is 18×18, with three objectives and an eight-turn limit. Wehrmacht
 starts with three units; two more are scheduled to arrive on turn 3.
@@ -59,6 +98,12 @@ and illegal choices; the mask filters them.
 
 Slots never shift after an elimination. Reinforcement slots exist from the start but
 cannot act before deployment. Airborne units are not in PPO's action space.
+The order is derived by sorting the complete scenario roster by unit ID within
+each side, learner first—not by looking at who is on the board. Sorting is
+case-sensitive. This gives the table above for today's file, even if its unit
+entries or reinforcement list are rearranged. Adding or renaming a unit can
+change the next episode's slots and action numbers, so a policy must not silently
+reuse an old mapping. Within an episode, arrivals and casualties never change it.
 
 ### Encoding and decoding an order
 
@@ -99,11 +144,17 @@ Only reachable destinations for deployed units with pending orders are enabled.
 Eliminated, awaiting, and already-ordered units have entirely false action blocks.
 The zero-movement Feldwache has a hold-only order.
 
-After one order resolves, including defensive fire and retreat, we rebuild the
-mask before choosing again. Each unit gets **one order per friendly movement
-phase**, starting with its full movement allowance. It can move less than its
+The planned turn driver will rebuild the mask after each order resolves,
+including defensive fire and retreat, before choosing again. Each unit gets
+**one order per friendly movement phase**, starting with its full movement
+allowance. It can move less than its
 maximum, but cannot split its movement into multiple orders. Hold also spends
 the order.
+
+The delivered converter only validates and returns a core plan; it does not
+apply it or spend an order. Its caller keeps pending unit IDs separately from
+movement points. This matters for hold: a unit can still have all its movement
+points after using its one order. The mask excludes stale pending casualties.
 
 An all-false mask means there are no legal actions. The environment must advance
 automatically or finish the episode, not ask PPO to choose from an empty menu.
@@ -118,6 +169,13 @@ not secretly change the next valid fire or combat roll.
 The model receives a dictionary of NumPy arrays, not prose or a screenshot.
 The first five unit rows are Wehrmacht; the next six are Airborne A–F.
 Learner-first arrays do **not** change core's Airborne-first turn order.
+These shapes and bounds follow the loaded scenario: another valid definition
+can have different roster counts, board dimensions, objectives, groups and
+horizon. Unit limits include undeployed reserves; point limits include stacked
+objectives. Score limits follow core's objective count: its current control rule
+counts objectives, not their declared point values (including zero-point ones).
+Shared code uses core's resolved terrain
+and defaults, rather than a second set of scenario facts.
 
 | Field | Shape | What it tells PPO |
 | --- | --- | --- |
@@ -229,7 +287,11 @@ The architecture is a modest CPU baseline, not a promise of playing strength.
 Training time also depends on how many simulated games are needed and how
 quickly core can run them.
 
-## Turns, rewards, and endings
+## Turns, rewards, and endings (planned environment)
+
+The following describes the remaining turn-driver contract, not a delivered
+Crossroads environment. Tests currently advance real core state explicitly to
+audit the delivered encoder and masks; they do not complete increment 08.
 
 The non-learning environment resolves the opening Airborne turn before returning
 its first Wehrmacht decision. Each step applies one German order. After the
