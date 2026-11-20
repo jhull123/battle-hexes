@@ -100,7 +100,8 @@ The API will be available at <http://localhost:8000>.
 
 ## Setting up the Web UI
 
-Install Node dependencies and run the frontend tests inside `battle-hexes-web`:
+Use Node.js 26, then install dependencies and run the frontend tests inside
+`battle-hexes-web`:
 
 ```bash
 cd battle-hexes-web
