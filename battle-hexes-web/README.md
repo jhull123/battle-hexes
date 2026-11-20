@@ -2,6 +2,10 @@
 
 Web based UI for the Battle Hexes game.
 
+## Requirements
+
+Use Node.js 26 to install dependencies and run the commands below.
+
 ## Commands
 
 ### Linting
