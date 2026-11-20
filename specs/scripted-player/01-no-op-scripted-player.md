@@ -20,7 +20,7 @@ select or play against it.
   callbacks for movement and game completion. The policy does not mutate game
   state, consume randomness, or require objectives, a particular faction,
   board, or seat. Importing and running it requires only ordinary Python and
-  the core game interfaces, not PPO or ML libraries.
+  the core game interfaces, not ML libraries.
 - Reuse the existing CPU player factory and game-state hydration paths: the
   factory must reconstruct the scripted implementation from the saved type ID,
   not from the generic `Computer` category. Extend saved-player type validation;
@@ -29,17 +29,11 @@ select or play against it.
 
 ## Scenario availability
 
-- Offer **Scripted Player** for every scenario and every seat that accepts a
-  regular CPU player. On ordinary scenarios it can occupy either seat or both.
-  Keep existing menu defaults when the user has not selected it, and preserve
-  the selection when switching between scenarios where it remains valid.
-- On the experimental 9×9 scenario, keep **Trained 9×9 PPO** in the required
-  first seat and allow **Scripted Player** in the opponent seat. Extend the
-  live PPO opponent allowlists consistently for creation, saved-state
-  validation, and CPU movement authorization. Do not relax the PPO scenario
-  or learner-seat requirements, change model loading, or touch PPO training
-  or evaluation defaults. The scripted player does not need a checkpoint;
-  the PPO seat still does.
+- Offer **Scripted Player** on every scenario wherever a regular CPU player
+  is allowed, including the opponent seat in experimental 9×9. On ordinary
+  scenarios it can occupy either seat or both. Keep existing menu defaults
+  and preserve the selection when switching between scenarios where it
+  remains valid.
 - The web client uses the existing `CpuPlayer` for the scripted seat, including
   when reloading a game. Keep the mock player-type catalog aligned with the
   live catalog so the option is visible in mock mode as well.
@@ -70,16 +64,15 @@ select or play against it.
 - Verify the live player-type catalog and create/load round trip. Exercise
   the scripted type on both seats across at least two different scenarios,
   and verify a saved game restores the scripted behavior, not merely its
-  display label. Exercise the experimental PPO opponent seat separately;
-  preserve existing rejection of invalid PPO scenario and seat combinations.
+  display label. Include the experimental 9×9 opponent seat in coverage.
 - Through the normal CPU command path, verify an empty plan response leaves
   unit positions unchanged and that the ordinary phase commands advance to
   the next player. Cover both pending combat and no pending combat, and
   verify no command follows a completed-game response.
 - Verify the web picker submits `scripted`, a new or reloaded scripted seat is
   automatically played by the CPU flow, and scripted-versus-scripted hands off
-  without waiting for human input. Existing Human, Random, Q-Learning, and PPO
-  options remain available wherever they were previously supported.
+  without waiting for human input. Existing player options remain
+  available wherever they were previously supported.
 
 ## Out of scope
 
