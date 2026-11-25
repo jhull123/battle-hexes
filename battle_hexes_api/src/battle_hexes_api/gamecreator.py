@@ -139,7 +139,7 @@ class GameCreator:
                                          factions=factions)
 
         if type_id == "scripted":
-            return ScriptedPlayer(name=name, factions=factions)
+            return ScriptedPlayer(name=name, factions=factions, board=board)
 
         if type_id == "random":
             return RandomPlayer(
