@@ -8,8 +8,7 @@ from battle_hexes_api.application import create_app
 from battle_hexes_api.command_adapters import CreateGameResponseSerializer
 from battle_hexes_api.gamecreator import GameCreator
 from battle_hexes_api.persistence import (
-    CommandRequest, CreatedGame, GameCommandService, GameStateCodec,
-    SystemClock,
+    CommandRequest, CreatedGame, GameStateCodec,
 )
 from battle_hexes_core.combat.combatsolver import CombatSolver
 from battle_hexes_core.scenario.scenario_loader import load_scenario_data
@@ -49,6 +48,27 @@ def _assert_empty_movement(before, response):
     assert _positions(response["game"]) == _positions(before)
 
 
+def _create_scripted_match(client, scenario_id):
+    response = client.post(
+        "/games", headers=_headers("create-scripted"),
+        json={"scenarioId": scenario_id,
+              "playerTypes": ["scripted", "scripted"]},
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+@pytest.fixture
+def objective_free_app():
+    scenario = load_scenario_data("elim_1").model_copy(
+        update={"objectives": []},
+    )
+    codec = GameStateCodec(scenario_loader=lambda _scenario_id: scenario)
+    with patch("battle_hexes_api.gamecreator.load_scenario",
+               return_value=scenario.to_core()):
+        yield create_app(codec=codec)
+
+
 def test_player_type_catalog_exposes_scripted():
     with TestClient(create_app()) as client:
         response = client.get("/player-types")
@@ -56,26 +76,23 @@ def test_player_type_catalog_exposes_scripted():
     assert {"id": "scripted", "name": "Scripted Player"} in response.json()
 
 
-@pytest.mark.parametrize("scenario_id", ["elim_1", "d_day_crossroads"])
-def test_scripted_in_both_seats_survives_load_and_hands_off(scenario_id):
-    with TestClient(create_app()) as client:
-        created = client.post(
-            "/games", headers=_headers("create-scripted"),
-            json={"scenarioId": scenario_id,
-                  "playerTypes": ["scripted", "scripted"]},
-        )
-        assert created.status_code == 200, created.text
-        game_id = created.json()["id"]
+def test_objective_free_scripted_seats_survive_load_and_hand_off(
+    objective_free_app,
+):
+    with TestClient(objective_free_app) as client:
+        created = _create_scripted_match(client, "elim_1")
+        game_id = created["id"]
         loaded = client.get(f"/games/{game_id}")
         assert loaded.status_code == 200, loaded.text
         game = loaded.json()
-        for payload in [created.json(), game]:
+        for payload in [created, game]:
             assert payload["playerTypeIds"] == ["scripted", "scripted"]
             assert [p["type"] for p in payload["players"]] == [
                 "Computer", "Computer"]
         saved = client.app.state.game_repository.load_game(game_id)
-        restored = GameStateCodec().decode(saved)
+        restored = client.app.state.game_state_codec.decode(saved)
         assert all(isinstance(p, ScriptedPlayer) for p in restored.players)
+        assert restored.get_board().get_objectives() == []
 
         first = _command(client, game, "movement")
         _assert_empty_movement(game, first)
@@ -92,12 +109,40 @@ def test_scripted_in_both_seats_survives_load_and_hands_off(scenario_id):
         _assert_empty_movement(handoff, second)
 
 
+def test_scripted_moves_toward_objectives_on_new_and_reloaded_game():
+    scenario_id = "d_day_crossroads"
+    unit_id = "Airborne Inf. A"
+    destination = (8, 9)
+    new_game = GameCreator.create_sample_game(
+        scenario_id, ["scripted", "scripted"]
+    )
+    new_plan = next(
+        plan for plan in new_game.get_current_player().movement()
+        if plan.unit.get_id() == unit_id
+    )
+    assert (new_plan.path[-1].row, new_plan.path[-1].column) == destination
+
+    with TestClient(create_app()) as client:
+        created = _create_scripted_match(client, scenario_id)
+        loaded = client.get(f"/games/{created['id']}")
+        assert loaded.status_code == 200
+        game = loaded.json()
+        assert _positions(game)[unit_id] == (12, 11)
+
+        moved = _command(client, game, "movement")
+        plan = next(
+            plan for plan in moved["plans"] if plan["unitId"] == unit_id
+        )
+        assert plan["path"][0] == {"row": 12, "column": 11}
+        assert plan["path"][-1] == {"row": 8, "column": 9}
+        assert _positions(moved["game"])[unit_id] == destination
+
+
 def _seed_adjacent_units(client):
     game = GameCreator.create_sample_game("elim_1", ["scripted", "human"])
     game.board.units["red_unit_1"].set_coords(8, 8)
     scenario_version = load_scenario_data("elim_1").version
-    service = GameCommandService(client.app.state.game_repository,
-                                 GameStateCodec(), SystemClock())
+    service = client.app.state.game_command_service
     service.create(
         CommandRequest("seed-scripted", "POST", "/games", {}, None),
         lambda: CreatedGame(game, "elim_1", scenario_version),
@@ -109,8 +154,10 @@ def _seed_adjacent_units(client):
 
 
 @pytest.mark.parametrize("die_roll, completed", [(1, False), (6, True)])
-def test_no_orders_do_not_skip_pending_combat(die_roll, completed):
-    with TestClient(create_app()) as client:
+def test_no_orders_do_not_skip_pending_combat(
+    objective_free_app, die_roll, completed,
+):
+    with TestClient(objective_free_app) as client:
         start = _seed_adjacent_units(client)
         moved = _command(client, start, "movement")
         _assert_empty_movement(start, moved)
