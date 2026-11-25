@@ -12,6 +12,10 @@ Deliver one experimental, human-playable 9×9 PPO opponent using a **trained, sa
 
 For implementers and reviewers of [schedule 2, increment 07](playable-player-schedule.md), extend the [06 prototype](06-multi-unit-design.md) with bounded masked training, a validated frozen artifact, and a backend-connected human game. Support exactly the fixed two-versus-two setup, PPO as the **first** side (`Learner`), and Human, Random or Q-Learning as the second (`Opponent`). The human-versus-PPO durable-browser demonstration remains the acceptance gate. Keep existing 5×5 training/inference and ordinary batch-player games working. Crossroads, arbitrary rosters/boards, self-play, checkpoint selection campaigns, and a strength threshold are out of scope.
 
+The later [Scripted Player increment](../scripted-player/01-no-op-scripted-player.md)
+extends this second-seat list with `scripted`, using the ordinary CPU path.
+The scenario, trained policy and checkpoint contract are unchanged.
+
 ## 2. Definitions
 
 - **PPO:** Proximal Policy Optimization, implemented by SB3-Contrib `MaskablePPO` with `MultiInputPolicy`.

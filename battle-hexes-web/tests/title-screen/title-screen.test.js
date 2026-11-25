@@ -36,7 +36,9 @@ describe('title screen interactions', () => {
     mockService.listScenarios.mockResolvedValue([{ id: 'elim_1', name: 'Scenario 1' }]);
     mockService.listPlayerTypes.mockResolvedValue([
       { id: 'human', name: 'Human' },
-      { id: 'random', name: 'Random' },
+      { id: 'random', name: 'Random Player' },
+      { id: 'q-learning', name: 'Q-Learning Player' },
+      { id: 'scripted', name: 'Scripted Player' },
     ]);
   });
 
@@ -60,15 +62,18 @@ describe('title screen interactions', () => {
     await flushPromises();
 
     document.getElementById('scenario-select').value = 'elim_1';
-    document.getElementById('player1-type').value = 'human';
-    document.getElementById('player2-type').value = 'random';
+    const first = document.getElementById('player1-type');
+    const second = document.getElementById('player2-type');
+    expect([first.value, second.value]).toEqual(['human', 'q-learning']);
+    first.value = 'scripted';
+    second.value = 'scripted';
 
     document.getElementById('enter-battle-button').click();
     await flushPromises();
 
     expect(mockService.createGame).toHaveBeenCalledWith({
       scenarioId: 'elim_1',
-      playerTypes: ['human', 'random'],
+      playerTypes: ['scripted', 'scripted'],
     });
     expect(window.location.assign).toHaveBeenCalledWith('battle.html?gameId=game-123');
   });
@@ -99,27 +104,40 @@ describe('title screen interactions', () => {
       .toBe('Failed to start game. Please try again.');
   });
 
-  test('Elimination Demo 3 offers PPO first and any other player type second', async () => {
+  test('keeps the scripted opponent selected when switching scenarios', async () => {
     mockService.listScenarios.mockResolvedValue([
       { id: 'elim_1', name: 'Scenario 1' },
+      { id: 'elim_2', name: 'Scenario 2' },
       { id: 'ppo_9x9_experimental', name: 'Elimination Demo 3' },
     ]);
     mockService.listPlayerTypes.mockResolvedValue([
       { id: 'human', name: 'Human' },
-      { id: 'random', name: 'Random' },
+      { id: 'random', name: 'Random Player' },
+      { id: 'q-learning', name: 'Q-Learning Player' },
+      { id: 'scripted', name: 'Scripted Player' },
       { id: 'ppo-9x9-experimental', name: 'Trained 9×9 PPO' },
     ]);
     await import('../../src/title-screen.js');
     await flushPromises();
     const scenario = document.getElementById('scenario-select');
-    scenario.value = 'ppo_9x9_experimental';
-    scenario.dispatchEvent(new Event('change'));
     const first = document.getElementById('player1-type');
     const second = document.getElementById('player2-type');
+    const ordinaryTypes = ['human', 'random', 'q-learning', 'scripted'];
+    const selectScenario = (id) => {
+      scenario.value = id;
+      scenario.dispatchEvent(new Event('change'));
+    };
+
+    first.value = 'scripted';
+    second.value = 'scripted';
+    selectScenario('elim_2');
+    expect([first.value, second.value]).toEqual(['scripted', 'scripted']);
+    selectScenario('ppo_9x9_experimental');
     expect([...first.options].map((option) => option.value)).toEqual(['ppo-9x9-experimental']);
-    expect([...second.options].map((option) => option.value)).toEqual(['human', 'random']);
-    scenario.value = 'elim_1';
-    scenario.dispatchEvent(new Event('change'));
-    expect([...first.options].map((option) => option.value)).toEqual(['human', 'random']);
+    expect([...second.options].map((option) => option.value)).toEqual(ordinaryTypes);
+    expect([first.value, second.value]).toEqual(['ppo-9x9-experimental', 'scripted']);
+    selectScenario('elim_1');
+    expect([...first.options].map((option) => option.value)).toEqual(ordinaryTypes);
+    expect(second.value).toBe('scripted');
   });
 });

@@ -7,7 +7,11 @@ const MOCK_SCENARIOS = [{
   victory: { description: 'Hold objectives until turn limit.' },
 }];
 const MOCK_PLAYER_TYPES = [
-  { id: 'human', name: 'Human' }, { id: 'random', name: 'Random AI' },
+  { id: 'human', name: 'Human' },
+  { id: 'random', name: 'Random Player' },
+  { id: 'q-learning', name: 'Q-Learning Player' },
+  { id: 'scripted', name: 'Scripted Player' },
+  { id: 'ppo-9x9-experimental', name: 'Trained 9×9 PPO' },
 ];
 
 export class MockBattleHexesService extends BattleHexesService {

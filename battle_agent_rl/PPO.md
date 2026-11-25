@@ -199,7 +199,7 @@ serving library versions; a different Python patch version is allowed. The
 x86-to-ARM64 command uses the pinned training image. To play, run
 `npm run build && npm run serve` in `battle-hexes-web`, open
 `http://localhost:4173`, and select **Elimination Demo 3 → Trained 9×9 PPO**.
-PPO takes the first seat; Human, Random or Q-Learning takes the second.
+PPO takes the first seat; Human, Random, Q-Learning or Scripted takes the second.
 
 `dev.sh` selects by host architecture; `BATTLE_HEXES_PPO_RUN_DIR` can override
 it. The deployment image instead bundles the committed ARM64 model and **never

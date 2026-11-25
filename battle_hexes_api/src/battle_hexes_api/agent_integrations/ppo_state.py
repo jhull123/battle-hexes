@@ -15,6 +15,8 @@ from battle_hexes_api.ppo_artifact import (
 
 
 TYPE_ID = "ppo-9x9-experimental"
+CPU_OPPONENT_TYPE_IDS = ("random", "q-learning", "scripted")
+OPPONENT_TYPE_IDS = ("human", *CPU_OPPONENT_TYPE_IDS)
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +32,12 @@ class PpoState(BaseModel):
 
 def is_ppo_game(game):
     return isinstance(getattr(game, "ppo_state", None), dict)
+
+
+def supports_configuration(scenario_id, player_type_ids):
+    return (scenario_id == SCENARIO_ID and len(player_type_ids) == 2
+            and player_type_ids[0] == TYPE_ID
+            and player_type_ids[1] in OPPONENT_TYPE_IDS)
 
 
 def initial_state(game):
@@ -69,9 +77,7 @@ def validate_state(state, game_or_document):
     player_types = (getattr(game_or_document, "player_type_ids", None) or
                     [player.type_id for player in game_or_document.players])
     scenario_id = game_or_document.scenario_id
-    if (scenario_id != SCENARIO_ID or len(player_types) != 2
-            or player_types[0] != TYPE_ID or player_types[1] not in (
-                "human", "random", "q-learning")):
+    if not supports_configuration(scenario_id, player_types):
         if state is not None or TYPE_ID in player_types:
             raise SavedGameIncompatibleError("ppo_scenario_or_seat")
         return

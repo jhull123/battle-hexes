@@ -147,7 +147,7 @@ describe('CpuPlayer', () => {
 
 
 
-  test('does not wipe scores when end-turn request fails', async () => {
+  test('does not advance or retry automatically when end-turn fails', async () => {
     jest.useFakeTimers();
 
     const board = new Board(1, 1);
@@ -163,11 +163,15 @@ describe('CpuPlayer', () => {
     const playPromise = cpuPlayer.play(game);
     await jest.runOnlyPendingTimersAsync();
     await playPromise;
+    await jest.runOnlyPendingTimersAsync();
 
     expect(mockService.endTurn).toHaveBeenCalledWith(
       game.getId(),
       game.getBoard().sparseBoard()
     );
+    expect(mockService.endTurn).toHaveBeenCalledTimes(1);
+    expect(game.getCurrentPhase()).toBe('End Turn');
+    expect(game.getCurrentPlayer()).toBe(cpuPlayer);
     expect(updateScoresSpy).not.toHaveBeenCalled();
     expect(updateTurnStateSpy).not.toHaveBeenCalled();
   });

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Sequence
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer
+from battle_agent_rl.scripted import ScriptedPlayer
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
@@ -62,9 +63,7 @@ class GameCreator:
             Currently unused placeholder that allows callers to select between
             future sample scenarios.
         player_type_ids:
-            Sequence of player identifiers (``human``, ``random``,
-            ``q-learning``) used to configure the players participating in the
-            game.
+            Sequence of player type IDs as exposed by the player catalog.
         """
         from battle_hexes_api.agent_integrations import integrations
         from battle_hexes_api.persistence.errors import (
@@ -138,6 +137,9 @@ class GameCreator:
         if type_id == "ppo-9x9-experimental":
             return ExperimentalPpoPlayer(name=name, type=PlayerType.CPU,
                                          factions=factions)
+
+        if type_id == "scripted":
+            return ScriptedPlayer(name=name, factions=factions)
 
         if type_id == "random":
             return RandomPlayer(

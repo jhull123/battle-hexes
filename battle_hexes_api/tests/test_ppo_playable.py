@@ -369,7 +369,13 @@ def _run_cpu_turn(client, repo, game_id, opponent):
     moved = client.post(f"/games/{game_id}/movement", headers={
         "Idempotency-Key": "cpu-batch", "Expected-Game-Version": "3"})
     assert moved.status_code == 200, moved.text
-    assert moved.json()["plans"]
+    if opponent == "scripted":
+        assert moved.json()["plans"] == []
+        assert moved.json()["game"]["board"]["units"] == (
+            loaded.json()["board"]["units"]
+        )
+    else:
+        assert moved.json()["plans"]
     assert moved.json()["game"]["activePlayer"] == "Opponent"
     assert client.post(f"/games/{game_id}/movement", headers={
         "Idempotency-Key": "cpu-batch", "Expected-Game-Version": "3"
@@ -401,7 +407,7 @@ def _run_cpu_turn(client, repo, game_id, opponent):
     return game
 
 
-@pytest.mark.parametrize("opponent", ["random", "q-learning"])
+@pytest.mark.parametrize("opponent", ["random", "q-learning", "scripted"])
 def test_cpu_opponent_turn_survives_restart_and_returns_to_ppo(
         artifact, monkeypatch, opponent):
     monkeypatch.setenv("BATTLE_HEXES_PPO_RUN_DIR", str(artifact))

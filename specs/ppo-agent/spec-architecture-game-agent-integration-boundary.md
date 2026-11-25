@@ -85,6 +85,8 @@ remains outstanding and is not satisfied by this refactor.
   or rewrite a resolved phase. It must keep the existing allowed commands and
   409 error behavior. The no-op integration preserves normal batch-player and
   human behavior, including not passing an RNG argument to ordinary combat.
+  The later [Scripted Player increment](../scripted-player/01-no-op-scripted-player.md)
+  adds `scripted` to the second-seat CPU types under these same rules.
 - **REQ-006 — Core authority:** Adapters retain their existing sequence of
   applying plans/boards, invoking core, scoring, and notifying completion.
   The integration may request the existing generic
