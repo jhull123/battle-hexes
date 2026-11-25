@@ -98,12 +98,12 @@ export class CpuPlayer extends Player {
           console.error("Failed to update game state", err);
           return null;
         });
-      if (endTurnResponse) {
-        applyMovementResponse(game.getBoard(), endTurnResponse);
-        game.applyApiState(endTurnResponse);
-        if (game.getCurrentPhase() === "End Turn") game.endPhase();
-        this.service.acknowledgeResponseApplication?.(game.getId());
-      }
+      if (!endTurnResponse) return;
+
+      applyMovementResponse(game.getBoard(), endTurnResponse);
+      game.applyApiState(endTurnResponse);
+      if (game.getCurrentPhase() === "End Turn") game.endPhase();
+      this.service.acknowledgeResponseApplication?.(game.getId());
       eventBus.emit("redraw");
       eventBus.emit("menuUpdate");
       if (!game.isGameOver()) {

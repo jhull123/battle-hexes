@@ -2,7 +2,7 @@
 
 from battle_hexes_api.persistence.errors import SavedGameIncompatibleError
 
-from .ppo_state import TYPE_ID, SCENARIO_ID
+from .ppo_state import TYPE_ID, SCENARIO_ID, supports_configuration
 
 
 class NoAgentIntegration:
@@ -95,10 +95,7 @@ class AgentIntegrations:
     def select(self, scenario_id, player_type_ids, extension_present):
         if (scenario_id == SCENARIO_ID or TYPE_ID in player_type_ids
                 or extension_present):
-            if (scenario_id != SCENARIO_ID or len(player_type_ids) != 2
-                    or player_type_ids[0] != TYPE_ID
-                    or player_type_ids[1] not in
-                    ("human", "random", "q-learning")):
+            if not supports_configuration(scenario_id, player_type_ids):
                 raise SavedGameIncompatibleError("ppo_scenario_or_seat")
             return self._experimental
         return self._ordinary

@@ -1,6 +1,6 @@
 """Ownership and phase checks for the non-PPO side of a PPO game."""
 
-from .ppo_state import is_ppo_game
+from .ppo_state import CPU_OPPONENT_TYPE_IDS, is_ppo_game
 from battle_hexes_api.persistence.command_errors import CommandErrorTranslator
 
 
@@ -24,8 +24,8 @@ def require_human(game, phase):
 
 def require_cpu_opponent(game):
     require_opponent(game, "movement")
-    if is_ppo_game(game) and game.player_type_ids[1] not in (
-            "random", "q-learning"):
+    if (is_ppo_game(game)
+            and game.player_type_ids[1] not in CPU_OPPONENT_TYPE_IDS):
         reject_ppo_command()
 
 

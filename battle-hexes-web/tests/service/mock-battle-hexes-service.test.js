@@ -3,6 +3,13 @@ import path from 'node:path';
 import { MockBattleHexesService } from '../../src/service/mock-battle-hexes-service.js';
 
 describe('MockBattleHexesService', () => {
+  test('offers the scripted player in the mock catalog', async () => {
+    const service = new MockBattleHexesService();
+    expect(await service.listPlayerTypes()).toContainEqual({
+      id: 'scripted', name: 'Scripted Player',
+    });
+  });
+
   test('getGame returns the requested game ID in the mock response payload', async () => {
     const service = new MockBattleHexesService();
     const expectedPayload = JSON.parse(

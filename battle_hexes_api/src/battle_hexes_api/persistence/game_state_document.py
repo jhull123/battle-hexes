@@ -11,7 +11,9 @@ class Model(BaseModel):
 
 class Player(Model):
     name: str
-    type_id: Literal["human", "random", "q-learning", "ppo-9x9-experimental"]
+    type_id: Literal[
+        "human", "random", "q-learning", "scripted", "ppo-9x9-experimental"
+    ]
 
 
 class PendingCombat(Model):

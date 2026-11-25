@@ -28,8 +28,7 @@ export const initializeTitleScreen = ({
               ? id === 'ppo-9x9-experimental'
               : id !== 'ppo-9x9-experimental')
             : types.filter(({ id }) => id !== 'ppo-9x9-experimental');
-          populatePlayerTypeOptions(select, allowed,
-            experimental ? allowed[0]?.id : select.value);
+          populatePlayerTypeOptions(select, allowed, select.value);
         });
       };
       scenarioPicker.selectElement.addEventListener('change', selectForScenario);
