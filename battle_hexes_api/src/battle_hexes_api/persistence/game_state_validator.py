@@ -27,6 +27,7 @@ class GameStateValidator:
         self._validate_metadata(document, scenario)
         context = self._validate_structure(document, scenario)
         self._validate_units(document, scenario, context)
+        self._validate_scripted_assignments(document, scenario, context)
         self._validate_runtime(document, context)
         self._validate_pending_combats(document, context)
         try:
@@ -164,6 +165,25 @@ class GameStateValidator:
                 valid = False
         if not valid:
             self._incompatible("terminal_state")
+
+    def _validate_scripted_assignments(self, document, scenario, context):
+        if "scripted_objective_assignments" not in document.model_fields_set:
+            return  # legacy snapshot, or not a scripted game
+        players = {p.name for p in document.players if p.type_id == "scripted"}
+        assignments = document.scripted_objective_assignments
+        if not players or assignments is None:
+            self._incompatible("scripted_objective_assignments")
+
+        objectives = {obj.coords for obj in scenario.objectives or []}
+        expected_ids = {
+            unit_id for unit_id in context.active_unit_ids
+            if objectives and context.owner_by_unit[unit_id] in players
+        }
+        saved_ids = {assignment.unit_id for assignment in assignments}
+        if saved_ids != expected_ids or len(saved_ids) != len(assignments):
+            self._incompatible("scripted_objective_assignments")
+        if any((a.row, a.column) not in objectives for a in assignments):
+            self._incompatible("scripted_objective_assignments")
 
     def _validate_pending_combats(self, document, context):
         current_player = context.current_player_name

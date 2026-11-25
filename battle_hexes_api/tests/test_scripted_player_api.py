@@ -112,10 +112,11 @@ def test_objective_free_scripted_seats_survive_load_and_hand_off(
 def test_scripted_moves_toward_objectives_on_new_and_reloaded_game():
     scenario_id = "d_day_crossroads"
     unit_id = "Airborne Inf. A"
-    destination = (8, 9)
+    destination = (8, 10)
     new_game = GameCreator.create_sample_game(
         scenario_id, ["scripted", "scripted"]
     )
+    assert new_game.players[0].objective_assignments()[unit_id] == (3, 15)
     new_plan = next(
         plan for plan in new_game.get_current_player().movement()
         if plan.unit.get_id() == unit_id
@@ -134,7 +135,9 @@ def test_scripted_moves_toward_objectives_on_new_and_reloaded_game():
             plan for plan in moved["plans"] if plan["unitId"] == unit_id
         )
         assert plan["path"][0] == {"row": 12, "column": 11}
-        assert plan["path"][-1] == {"row": 8, "column": 9}
+        assert plan["path"][-1] == {
+            "row": destination[0], "column": destination[1],
+        }
         assert _positions(moved["game"])[unit_id] == destination
 
 

@@ -49,8 +49,9 @@ def _next_scripted_turn(game):
 
 
 def test_no_objectives_means_no_orders_even_if_a_unit_can_move():
-    board, player, _ = _setup(2, 2)
+    board, player, enemy = _setup(2, 2)
     unit = _add(board, player, "red", (0, 0), move=2)
+    Game([player, enemy], board)
     assert player.type is PlayerType.CPU
     assert board.get_hex(0, 1) in board.get_reachable_hexes(
         unit, board.get_hex(0, 0)
@@ -66,7 +67,7 @@ def test_no_objectives_means_no_orders_even_if_a_unit_can_move():
     assert unit.current_turn_movement_points_remaining == 2
 
 
-def test_units_choose_independent_targets_without_mutating_the_game():
+def test_units_plan_in_order_without_mutating_the_game_or_assignments():
     board, player, enemy = _setup(6, 3, [(0, 0), (5, 0)])
     a = _add(board, player, "a", (1, 0))
     b = _add(board, player, "b", (2, 0), move=2)
@@ -74,6 +75,9 @@ def test_units_choose_independent_targets_without_mutating_the_game():
     _add(board, enemy, "enemy", (0, 2), move=2)
     removed = _add(board, player, "removed", (3, 0))
     board.remove_units([removed])
+    Game([player, enemy], board)
+    assignments = {"a": (0, 0), "b": (0, 0), "c": (5, 0)}
+    assert player.objective_assignments() == assignments
     before = [
         (unit, unit.get_coords(), unit.current_turn_movement_points_remaining)
         for unit in board.get_units()
@@ -90,7 +94,66 @@ def test_units_choose_independent_targets_without_mutating_the_game():
         (unit, unit.get_coords(), unit.current_turn_movement_points_remaining)
         for unit in board.get_units()
     ] == before
+    assert player.objective_assignments() == assignments
     assert random.getstate() == rng_state
+
+
+@pytest.mark.parametrize(("starts", "expected_rows"), [
+    ([0, 5, 5, 10, 10], [0, 5, 5, 10, 10]),
+    ([8, 8], [5, 10]),
+])
+def test_initial_assignment_balances_individuals(starts, expected_rows):
+    board, player, enemy = _setup(11, 2, [(0, 0), (5, 0), (10, 0)])
+    duplicate = Objective((5, 0), 10, "occupy")
+    board.get_hex(5, 0).objectives.append(duplicate)
+    for index, row in enumerate(starts):
+        _add(board, player, str(index), (row, 0), move=0)
+    _add(board, enemy, "enemy", (5, 1))
+
+    Game([player, enemy], board)
+
+    assert player.objective_assignments() == {
+        str(index): (row, 0) for index, row in enumerate(expected_rows)
+    }
+    assert player.movement() == []
+
+
+@pytest.mark.parametrize("weighted_and_blocked", [False, True])
+def test_global_minimum_can_assign_a_unit_to_a_non_nearest_target(
+    weighted_and_blocked,
+):
+    board, player, enemy = _setup(11, 2, [(0, 0), (10, 0)], limit=1)
+    a = _add(board, player, "a", (4, 0))
+    _add(board, player, "b", (1, 0))
+    if weighted_and_blocked:
+        a.attack = 99
+        _add(board, enemy, "enemy", (10, 0))
+        board.get_hex(10, 0).set_terrain(Terrain("Rough", "#888", move_cost=9))
+        board.get_hex(0, 0).objectives.append(Objective((0, 0), 9, "occupy"))
+    else:
+        _add(board, enemy, "enemy", (10, 1))
+
+    Game([player, enemy], board)
+
+    assert player.objective_assignments() == {"a": (10, 0), "b": (0, 0)}
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_global_tie_uses_unit_order_and_does_not_hold_on_a_non_target(reverse):
+    board, player, enemy = _setup(7, 1, [(0, 0), (4, 0)])
+    starts = [("a", (4, 0)), ("b", (5, 0))]
+    for unit_id, start in reversed(starts) if reverse else starts:
+        _add(board, player, unit_id, start)
+    if reverse:
+        objectives = board.get_objectives()
+        board.get_objectives = lambda: objectives[::-1]
+
+    Game([player, enemy], board)
+
+    assert player.objective_assignments() == {"a": (0, 0), "b": (4, 0)}
+    assert _destinations(player.movement()) == [
+        ("a", (3, 0)), ("b", (4, 0)),
+    ]
 
 
 @pytest.mark.parametrize(("start", "first", "second"), [
@@ -100,14 +163,16 @@ def test_units_choose_independent_targets_without_mutating_the_game():
 def test_equal_distance_targets_use_coordinates_not_points(
     start, first, second, monkeypatch,
 ):
-    board, player, _ = _setup(4, 3)
+    board, player, enemy = _setup(4, 3)
     board.get_hex(*first).objectives.append(Objective(first, 1, "hold"))
     board.get_hex(*second).objectives.append(Objective(second, 5, "occupy"))
     _add(board, player, "a", start)
 
+    Game([player, enemy], board)
     assert _destinations(player.movement()) == [("a", first)]
     objectives = board.get_objectives()
     monkeypatch.setattr(board, "get_objectives", lambda: objectives[::-1])
+    Game([player, enemy], board)
     assert _destinations(player.movement()) == [("a", first)]
 
 
@@ -126,10 +191,11 @@ def test_unit_advances_over_multiple_turns_and_then_holds():
 
 
 def test_terrain_and_remaining_budget_limit_progress():
-    board, player, _ = _setup(5, 1, [(4, 0)])
+    board, player, enemy = _setup(5, 1, [(4, 0)])
     mover = _add(board, player, "a", (0, 0), move=4)
     mover.current_turn_movement_points_remaining = 2
     board.get_hex(1, 0).set_terrain(Terrain("Rough", "#888888", move_cost=2))
+    Game([player, enemy], board)
 
     assert _destinations(player.movement()) == [("a", (1, 0))]
 
@@ -149,7 +215,7 @@ def test_enemy_objective_is_approached_instead_of_switching_targets():
 
 def test_unit_waits_next_to_a_full_objective_then_enters_when_space_opens():
     target = (2, 2)
-    board, player, enemy = _setup(5, 5, [target, (4, 4)], limit=2)
+    board, player, enemy = _setup(5, 5, [target], limit=2)
     mover = _add(board, player, "a", (2, 0))
     occupant = _add(board, player, "occupant", target)
     _add(board, player, "other occupant", target)
@@ -168,24 +234,27 @@ def test_unit_waits_next_to_a_full_objective_then_enters_when_space_opens():
     game.apply_movement_plans(player.movement())
     assert mover.get_coords() == target
     assert len(board.get_units_at(*target)) == 2
+    assert player.movement() == []
 
 
 @pytest.mark.parametrize("ids", [("a", "b"), ("b", "a")])
 def test_units_contend_for_the_last_slot_next_to_a_full_objective(ids):
-    board, player, _ = _setup(5, 1, [(4, 0)], limit=2)
+    board, player, enemy = _setup(5, 1, [(4, 0)], limit=2)
     for unit_id in ids:
         _add(board, player, unit_id, (1, 0), move=2)
     _add(board, player, "c", (3, 0))
     _add(board, player, "d", (4, 0))
     _add(board, player, "e", (4, 0))
+    Game([player, enemy], board)
 
     assert _destinations(player.movement()) == [("a", (3, 0)), ("b", (2, 0))]
 
 
 def test_first_unit_claims_the_last_slot_on_the_objective():
-    board, player, _ = _setup(4, 1, [(1, 0)], limit=1)
+    board, player, enemy = _setup(4, 1, [(1, 0)], limit=1)
     _add(board, player, "b", (2, 0))
     _add(board, player, "a", (0, 0))
+    Game([player, enemy], board)
 
     assert _destinations(player.movement()) == [("a", (1, 0))]
 
@@ -204,22 +273,24 @@ def test_later_plan_uses_vacated_hex_but_cannot_pass_through_new_stack():
 
 
 def test_later_unit_can_take_an_alternate_route_around_reserved_hex():
-    board, player, _ = _setup(5, 3, [(4, 1)], limit=1)
+    board, player, enemy = _setup(5, 3, [(4, 1)], limit=1)
     _add(board, player, "a", (2, 1))
     _add(board, player, "b", (2, 0), move=3)
+    Game([player, enemy], board)
 
     plans = player.movement()
     assert _destinations(plans) == [("a", (3, 1)), ("b", (4, 1))]
     assert (3, 1) not in list(map(_coords, plans[1].path))
 
 
-def test_each_turn_selects_nearest_objective_from_actual_position():
-    board, player, _ = _setup(9, 1, [(0, 0), (8, 0)])
+def test_displaced_unit_uses_actual_position_but_keeps_its_target():
+    board, player, enemy = _setup(9, 1, [(0, 0), (8, 0)])
     mover = _add(board, player, "a", (3, 0))
+    Game([player, enemy], board)
     assert _destinations(player.movement()) == [("a", (2, 0))]
 
     mover.set_coords(5, 0)
-    assert _destinations(player.movement()) == [("a", (6, 0))]
+    assert _destinations(player.movement()) == [("a", (4, 0))]
 
 
 def test_defensive_fire_can_invalidate_a_later_planned_move():

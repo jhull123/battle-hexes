@@ -1,9 +1,13 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterable, List
+from typing import TYPE_CHECKING, Iterable, List
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
+
+if TYPE_CHECKING:
+    from battle_hexes_core.game.board import Board
+    from battle_hexes_core.unit.unit import Unit
 
 
 class PlayerType(Enum):
@@ -36,6 +40,16 @@ class Player:
     def movement(self) -> List[UnitMovementPlan]:
         """Return a list of movement plans for the player's units."""
         raise NotImplementedError("Subclasses must implement movement")
+
+    def game_started_cb(self, board: "Board") -> None:
+        """Initialize policy on the starting board, after turn-one arrivals."""
+
+    def reinforcements_arrived_cb(
+        self,
+        units: tuple["Unit", ...],
+        coords: tuple[int, int],
+    ) -> None:
+        """Notify the owner of a later group that successfully deployed."""
 
     def movement_cb(self) -> None:
         """

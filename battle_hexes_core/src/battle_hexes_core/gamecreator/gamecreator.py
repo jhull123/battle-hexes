@@ -50,8 +50,10 @@ class GameCreator:
         self,
         scenario: Scenario | str,
         players: Sequence[Player],
+        *,
+        initialize_players: bool = True,
     ) -> tuple[Scenario, list[Player], list[Unit], Game]:
-        """Return the scenario, players, units and a ready ``Game``."""
+        """Build a ready game; hydration skips starting policy callbacks."""
 
         if len(players) != 2:
             raise ValueError(
@@ -100,6 +102,7 @@ class GameCreator:
             board=board,
             turn_limit=scenario_obj.turn_limit,
             reinforcements=reinforcements,
+            initialize_players=initialize_players,
         )
         game.victory = scenario_obj.victory
         game.set_defensive_fire_settings(scenario_obj.defensive_fire)
