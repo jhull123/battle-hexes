@@ -1,6 +1,7 @@
 """Scripted CPU policy for ordinary core turns."""
 
 from collections import Counter
+from collections.abc import Callable
 
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
@@ -11,10 +12,14 @@ from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
 from battle_hexes_core.unit.unit import Unit
 
-from .balanced_assignment import balanced_target_indices
+from .balanced_assignment import balanced_target_indices, exact_target_indices
 from .movement_projection import MovementProjection
+from .opening import OpeningSampler
 
 Coords = tuple[int, int]
+ReinforcementAssignmentObserver = Callable[
+    [Coords, dict[str, Coords]], None
+]
 
 
 class ScriptedPlayer(Player):
@@ -25,17 +30,26 @@ class ScriptedPlayer(Player):
         name: str,
         factions: list[Faction] | None = None,
         board: Board | None = None,
+        *,
+        opening_sampler: OpeningSampler | None = None,
     ) -> None:
         super().__init__(name, PlayerType.CPU, factions or [])
         self._board = board
+        self._opening_sampler = opening_sampler
         self._assignments: dict[str, Coords] = {}
+        self.on_reinforcement_assignments: (
+            ReinforcementAssignmentObserver | None
+        ) = None
 
     def game_started_cb(self, board: Board) -> None:
         self._board = board
-        self.initialize_objective_assignments()
+        self._initialize_assignments(self._opening_sampler)
 
     def initialize_objective_assignments(self) -> None:
-        """Balance assignments from the starting or restored legacy board."""
+        """Balance assignments deterministically on a restored legacy board."""
+        self._initialize_assignments(None)
+
+    def _initialize_assignments(self, sample: OpeningSampler | None) -> None:
         objectives = self._objective_hexes()
         if not objectives:
             self._assignments = {}
@@ -47,11 +61,15 @@ class ScriptedPlayer(Player):
             [Board.hex_distance(start, hex_) for hex_ in objectives.values()]
             for _, start in units
         ]
+        if sample is None:
+            indices = balanced_target_indices(distances)
+        else:
+            indices = exact_target_indices(
+                distances, sample(len(units), len(objectives)),
+            )
         self._assignments = {
             _unit_id(unit): targets[index]
-            for (unit, _), index in zip(
-                units, balanced_target_indices(distances), strict=True,
-            )
+            for (unit, _), index in zip(units, indices, strict=True)
         }
 
     def objective_assignments(self) -> dict[str, Coords]:
@@ -61,6 +79,11 @@ class ScriptedPlayer(Player):
             for unit, _ in self._deployed_units()
             if (unit_id := _unit_id(unit)) in self._assignments
         }
+
+    def objective_assignment_counts(self) -> dict[Coords, int]:
+        """Count living assignments in objective order, including zeros."""
+        counts = Counter(self.objective_assignments().values())
+        return {target: counts[target] for target in self._objective_hexes()}
 
     def restore_objective_assignments(
         self, assignments: dict[str, Coords],
@@ -80,6 +103,7 @@ class ScriptedPlayer(Player):
             for target, hex_ in objectives.items()
         }
         counts = Counter(self.objective_assignments().values())
+        assigned = {}
         for unit in sorted(units, key=_unit_id):
             unit_id = _unit_id(unit)
             if unit_id not in self._assignments:
@@ -87,7 +111,11 @@ class ScriptedPlayer(Player):
                     objectives, key=lambda c: (counts[c], distances[c], c),
                 )
                 self._assignments[unit_id] = target
+                assigned[unit_id] = target
                 counts[target] += 1
+
+        if assigned and self.on_reinforcement_assignments is not None:
+            self.on_reinforcement_assignments(coords, assigned)
 
     def movement(self) -> list[UnitMovementPlan]:
         board = self._board

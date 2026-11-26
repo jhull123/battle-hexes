@@ -2,7 +2,12 @@ from pathlib import Path
 from typing import Sequence
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer
-from battle_agent_rl.scripted import ScriptedPlayer
+from battle_agent_rl.scripted import ScriptedOpening, ScriptedPlayer
+from battle_agent_rl.scripted.opening import OpeningSampler
+from battle_hexes_api.scripted_assignment_logging import (
+    attach_reinforcement_logging,
+    log_scripted_openings,
+)
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.game import Game
 from battle_hexes_core.game.player import Player, PlayerType
@@ -10,6 +15,7 @@ from battle_hexes_core.game.randomplayer import RandomPlayer
 from battle_hexes_core.gamecreator.gamecreator import (
     GameCreator as CoreGameCreator,
 )
+from battle_hexes_core.scenario.scenario import Scenario
 from battle_hexes_core.scenario.scenario_loader import load_scenario
 from battle_hexes_core.unit.faction import Faction
 from pydantic import PrivateAttr
@@ -53,18 +59,12 @@ class GameCreator:
 
     @staticmethod
     def create_sample_game(
-        scenario_id: str, player_type_ids: Sequence[str]
+        scenario_id: str,
+        player_type_ids: Sequence[str],
+        *,
+        scripted_opening: ScriptedOpening | None = None,
     ) -> Game:
-        """Create a simple two-player game with preset units.
-
-        Parameters
-        ----------
-        scenario_id:
-            Currently unused placeholder that allows callers to select between
-            future sample scenarios.
-        player_type_ids:
-            Sequence of player type IDs as exposed by the player catalog.
-        """
+        """Create a scenario game with Python-only scripted opening options."""
         from battle_hexes_api.agent_integrations import integrations
         from battle_hexes_api.persistence.errors import (
             SavedGameIncompatibleError,
@@ -79,7 +79,25 @@ class GameCreator:
                 "scenario and a supported opponent") from error
 
         scenario = load_scenario(scenario_id)
+        opening = scripted_opening or ScriptedOpening()
+        players = GameCreator._create_players(
+            scenario, player_type_ids, opening,
+        )
+        _, _, _, game = CoreGameCreator().build_game_components(
+            scenario, players,
+        )
+        game.scenario_id = scenario_id
+        game.player_type_ids = list(player_type_ids)
+        log_scripted_openings(game, opening.mode)
+        attach_reinforcement_logging(game)
+        integration.initial_state(game)
+        return game
 
+    @staticmethod
+    def _create_players(
+        scenario: Scenario, player_type_ids: Sequence[str],
+        opening: ScriptedOpening,
+    ) -> list[Player]:
         player_order: list[str] = []
         for faction in scenario.factions:
             if faction.player not in player_order:
@@ -90,40 +108,29 @@ class GameCreator:
                 "Number of player types does not match scenario configuration"
             )
 
-        players = []
-        for index, player_name in enumerate(player_order):
-            type_id = player_type_ids[index]
-            player = GameCreator._create_player(
+        game_opening = opening.for_game()
+        return [
+            GameCreator._create_player(
                 type_id,
                 name=player_name,
                 factions=[],
                 board=None,
+                opening_sampler=game_opening.for_seat(index)
+                if type_id == "scripted" else None,
             )
-            players.append(player)
-
-        creator = CoreGameCreator()
-        _, players, _, game = creator.build_game_components(
-            scenario,
-            players,
-        )
-
-        # Persist the original configuration on the ``Game`` instance so the
-        # API can expose it when clients fetch the game later.  This allows the
-        # frontend to recreate new matches using the same scenario and player
-        # types that were originally requested.
-        game.scenario_id = scenario_id
-        game.player_type_ids = list(player_type_ids)
-
-        integration.initial_state(game)
-
-        return game
+            for index, (player_name, type_id) in enumerate(
+                zip(player_order, player_type_ids, strict=True)
+            )
+        ]
 
     @staticmethod
     def _create_player(
         type_id: str,
         name: str,
         factions: list[Faction],
-        board: Board,
+        board: Board | None,
+        *,
+        opening_sampler: OpeningSampler | None = None,
     ) -> Player:
         """Instantiate a player for ``type_id``."""
 
@@ -139,7 +146,10 @@ class GameCreator:
                                          factions=factions)
 
         if type_id == "scripted":
-            return ScriptedPlayer(name=name, factions=factions, board=board)
+            return ScriptedPlayer(
+                name=name, factions=factions, board=board,
+                opening_sampler=opening_sampler,
+            )
 
         if type_id == "random":
             return RandomPlayer(

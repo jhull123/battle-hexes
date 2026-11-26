@@ -1,12 +1,15 @@
 """Scripted assignments through creation, hydration and command commits."""
 
 import json
+import logging
 from collections import defaultdict
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
+from battle_agent_rl.scripted import ScriptedOpening
 from battle_hexes_api.application import create_app
 from battle_hexes_api.gamecreator import GameCreator
 from battle_hexes_api.persistence import (
@@ -27,7 +30,7 @@ FIELD = "scripted_objective_assignments"
 def setup_game(monkeypatch):
     def setup(
         blue, groups=(), objectives=(0, 8), blocker=(11, 2),
-        types=("human", "scripted"),
+        types=("human", "scripted"), opening=None,
     ):
         hex_units = defaultdict(list)
         units = []
@@ -80,7 +83,9 @@ def setup_game(monkeypatch):
             "battle_hexes_api.command_adapters.serializers.load_scenario_data",
             lambda _: scenario,
         )
-        game = GameCreator.create_sample_game(scenario.id, types)
+        game = GameCreator.create_sample_game(
+            scenario.id, types, scripted_opening=opening,
+        )
         return game, GameStateCodec(scenario_loader=lambda _: scenario)
 
     return setup
@@ -309,10 +314,13 @@ def test_non_scripted_game_omits_and_rejects_assignment_field(setup_game):
 
 @pytest.mark.parametrize("objectives", [(), (0, 8)])
 def test_initially_empty_side_loads_and_handles_first_arrival(
-    setup_game, objectives,
+    setup_game, objectives, monkeypatch,
 ):
+    monkeypatch.setattr("battle_agent_rl.scripted.opening.randbits",
+                        lambda _: pytest.fail("requested entropy"))
     game, codec = setup_game(
         [], groups=[("first", 2, (4, 0), ["reserve"])], objectives=objectives,
+        opening=ScriptedOpening(mode="randomized"),
     )
     snapshot = _snapshot(game, codec)
     assert json.loads(snapshot.state)[FIELD] == []
@@ -327,3 +335,96 @@ def test_initially_empty_side_loads_and_handles_first_arrival(
     )
     if not objectives:
         assert scripted.movement() == []
+
+
+def test_randomized_start_uses_turn_one_arrivals_and_later_keeps_targets(
+    setup_game, monkeypatch, caplog,
+):
+    logger = "uvicorn.error.scripted_reinforcements"
+    caplog.set_level(logging.INFO, logger=logger)
+
+    def last_rank(stop):
+        assert stop == 9  # Three active units, three objectives.
+        return stop - 1
+
+    monkeypatch.setattr("battle_agent_rl.scripted.opening.Random",
+                        lambda _: SimpleNamespace(randrange=last_rank))
+    game, codec = setup_game(
+        [("a", (1, 0)), ("b", (3, 0))], objectives=(0, 4, 8),
+        blocker=(8, 0),
+        groups=[
+            ("immediate", 1, (7, 0), ["turn-one"]),
+            ("blocked", 1, (8, 0), ["delayed"]),
+            ("future", 4, (9, 0), ["pending"]),
+        ],
+        opening=ScriptedOpening(mode="randomized", balanced_probability=0),
+    )
+    assert game.players[1].objective_assignments() == dict.fromkeys(
+        ("a", "b", "turn-one"), (0, 0),
+    )
+    assert not any(record.name == logger for record in caplog.records)
+    monkeypatch.setattr(
+        "battle_agent_rl.scripted.opening.sample_objective_quotas",
+        lambda *args: pytest.fail("rerolled the starting quotas"),
+    )
+
+    game.board.remove_units(game.board.get_unit_by_id("b"))
+    game.board.get_unit_by_id("a").set_coords(10, 0)
+    game.board.get_unit_by_id("red").set_coords(0, 0)
+    game.next_player()
+    game.current_phase = "end_turn"
+    saved, restored = _end_turn_on_disk(game, codec)
+
+    expected = {"a": (0, 0), "turn-one": (0, 0), "delayed": (8, 0)}
+    assert restored.players[1].objective_assignments() == expected
+    assert [a["unit_id"] for a in json.loads(saved.state)[FIELD]] == [
+        "a", "delayed", "turn-one",
+    ]
+    logs = [record for record in caplog.records if record.name == logger]
+    assert len(logs) == 1
+    assert logs[0].levelno == logging.INFO
+    assert str(restored.id) in logs[0].getMessage()
+    assert logs[0].args[-1] == {"delayed": (8, 0)}
+
+
+def test_randomized_balanced_rank_differs_from_legacy_and_baseline(
+    setup_game, monkeypatch,
+):
+    monkeypatch.setattr(
+        "battle_agent_rl.scripted.opening.Random",
+        lambda _: SimpleNamespace(randrange=lambda stop: stop - 1),
+    )
+    units = [(str(i), (row, 0)) for i, row in enumerate((0, 5, 5, 10, 10))]
+    opening = ScriptedOpening(mode="randomized", balanced_probability=1)
+    game, codec = setup_game(units, objectives=(0, 5, 10), opening=opening)
+    assert tuple(game.players[1].objective_assignment_counts().values()) == (
+        2, 2, 1,
+    )
+    snapshot = _snapshot(game, codec)
+    document = json.loads(snapshot.state)
+    del document[FIELD]
+    legacy = replace(snapshot, state=json.dumps(document).encode())
+    monkeypatch.setattr(
+        "battle_agent_rl.scripted.opening.sample_objective_quotas",
+        lambda *args: pytest.fail("legacy or deterministic mode sampled"),
+    )
+    baseline, _ = setup_game(
+        units, objectives=(0, 5, 10), opening=ScriptedOpening(),
+    )
+    for restored in [baseline, codec.decode(legacy), codec.decode(legacy)]:
+        assert restored.players[1].objective_assignments() == dict(units)
+
+
+def test_randomized_deployed_side_with_no_objectives_skips_sampling(
+    setup_game, monkeypatch,
+):
+    monkeypatch.setattr(
+        "battle_agent_rl.scripted.opening.sample_objective_quotas",
+        lambda *args: pytest.fail("sampled an opening with no objectives"),
+    )
+    game, codec = setup_game(
+        [("a", (1, 0))], objectives=(),
+        opening=ScriptedOpening(mode="randomized"),
+    )
+    assert game.players[1].movement() == []
+    assert json.loads(_snapshot(game, codec).state)[FIELD] == []

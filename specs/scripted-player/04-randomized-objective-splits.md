@@ -12,7 +12,8 @@ Give Proximal Policy Optimization (PPO) a future opponent with varied but
 purposeful openings. Randomize **how many** units target each objective, then
 choose **which** units go there by minimizing total starting hex distance.
 Keep [spec 03's deterministic balanced policy](03-balanced-objective-assignment.md)
-as a selectable baseline and the default for callers that do not opt in.
+as a selectable baseline and the default for direct Python callers. New
+browser games use randomized openings for every scripted side.
 
 This increment changes only how initial scripted targets are selected.
 
@@ -91,10 +92,10 @@ This increment changes only how initial scripted targets are selected.
 
 ### Creation configuration and seed
 
-Expose a Python-only opening configuration for fresh scripted players and
-allow callers of the API's internal `GameCreator.create_sample_game` factory
-to pass it through to the scripted seats before core starts the game. The
-logical inputs are:
+Expose an internal Python opening configuration for fresh scripted players.
+The API's `GameCreator.create_sample_game` factory passes it through to the
+scripted seats before core starts the game. Direct calls without an explicit
+configuration use the deterministic baseline. The logical inputs are:
 
 | Input | Default | Contract |
 | --- | --- | --- |
@@ -102,6 +103,13 @@ logical inputs are:
 | `balanced_probability` | `0.5` | Finite Python `int` or `float` in `[0, 1]`, inclusive (not a boolean). Reject invalid values rather than clamping. Used only in randomized mode. |
 | `seed` | `None` | Optional integer (not a boolean); zero is an explicit seed. Used only in randomized mode. |
 
+- **REQ-012 — Randomize browser-created games.** For a fresh `POST /games`
+  request with at least one `scripted` seat, the server selects randomized
+  mode for every scripted seat, with `balanced_probability=0.5` and no
+  explicit seed. The browser continues to send the existing request, with
+  no new setting or request field. Games without scripted seats are
+  unaffected. This default applies only to new games, not to saved games or
+  creation receipt replays.
 - **REQ-008 — Use separate, reproducible opening randomness.** Use one root
   seed per fresh randomized game. When no seed is supplied and randomness is
   needed, obtain a root seed from system entropy, not the shared game random
@@ -183,7 +191,8 @@ One-column fixtures below use row numbers as shorthand for `(row, 0)`.
 | AC-007 — Seed and lifecycle | Create the same game twice with an explicit seed (including seed `0`), distinct game IDs, and different shared random states. Exercise two scripted seats, plus a turn-one deployment fixture with a successful arrival, a blocked group, and a future group. | Each corresponding seat has identical quotas and assignments across runs and uses a separate stream; changing the other seat's opening draws does not change its result. Quotas include the successful arrival but exclude both undeployed groups. Opening initialization leaves shared and combat/defensive-fire randomness untouched. |
 | AC-008 — Reload, replay, and loss | Save a forced all-in opening, then displace or eliminate units and block the target. Load saved snapshots with opening draws disabled, and replay a committed creation and a later successful command. | Restored targets match the saved records, with eliminated units omitted. Plans still use surviving targets, and replay returns the existing receipt without resampling, changing the snapshot, or applying arrivals twice. |
 | AC-009 — Reinforcement into a zero quota | Start with `3/0/0` for objectives at rows `0`, `4`, and `8`. A later group with one unit successfully enters at row `8`. | The arrival targets row `8` by the unchanged count/distance rule. The three starting targets stay at row `0`. If deployment was blocked first, the assignment is added only on success. |
-| AC-010 — Baseline and legacy | Five units start at rows `0`, `5`, `5`, `10`, `10` with objectives at `0`, `5`, `10`. Use default or explicit deterministic mode; separately force `2/2/1` in randomized mode at `p = 1`. Load a legacy save with those restored positions and no assignment field. | The deterministic runs and legacy load use `1/2/2`, cost zero, without drawing. The randomized run honors `2/2/1` despite its higher cost. A legacy read does not write; its next successful command persists the targets. |
+| AC-010 — Baseline and legacy | Five units start at rows `0`, `5`, `5`, `10`, `10` with objectives at `0`, `5`, `10`. Use the direct Python default or explicit deterministic mode; separately force `2/2/1` in randomized mode at `p = 1`. Load a legacy save with those restored positions and no assignment field. | The deterministic runs and legacy load use `1/2/2`, cost zero, without drawing. The randomized run honors `2/2/1` despite its higher cost. A legacy read does not write; its next successful command persists the targets. |
+| AC-011 — Browser creation default | Create Crossroads through `POST /games` with the ordinary browser payload and a scripted Airborne seat. Force the unbalanced family ticket and an all-in rank through the controlled draw source. | The server saves the forced all-in opening using the default randomized distribution without a client opt-in. Repeating the same idempotent request returns the committed opening without a second draw. |
 
 ## 6. Test automation strategy
 
@@ -203,10 +212,11 @@ One-column fixtures below use row numbers as shorthand for `(row, 0)`.
   exhaustive reference over maps that satisfy the given quotas. Compare the
   full target sequence as well as distance and exact target counts, and keep
   the existing deterministic balance tests.
-- **Verify the real lifecycle.** Exercise game creation, command commits and
-  receipt replay, and codec round trips. Use a sampler that fails if called
-  on restore or replay. Check the shared random state and use guarded combat
-  and defensive-fire sources to detect accidental draws during initialization.
+- **Verify the real lifecycle.** Exercise both direct Python and HTTP
+  creation, command commits and receipt replay, and codec round trips. Use
+  a sampler that fails if called on restore or replay. Check the shared random
+  state and use guarded combat and defensive-fire sources to detect accidental
+  draws during initialization.
   Retain existing invalid-save, reinforcement, movement legality, and CPU
   phase-flow regressions. Run `./server-side-checks.sh` when implementing; no
   browser or PPO training run is required.
@@ -237,7 +247,7 @@ service is required.
 
 ## 10. Validation criteria
 
-The increment is complete when AC-001 through AC-010 and the deterministic
+The increment is complete when AC-001 through AC-011 and the deterministic
 distribution tests pass, along with existing scripted movement, reinforcement,
 and persistence regressions, without changing public contracts.
 
