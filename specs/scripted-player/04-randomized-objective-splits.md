@@ -14,10 +14,7 @@ choose **which** units go there by minimizing total starting hex distance.
 Keep [spec 03's deterministic balanced policy](03-balanced-objective-assignment.md)
 as a selectable baseline and the default for callers that do not opt in.
 
-This increment changes only how initial scripted targets are selected. It
-does not add uncovered-objective reassignment, seek-and-destroy behavior,
-movement or combat rules, scenario fields, user interface changes, or PPO
-opponent wiring, training, or evaluation changes.
+This increment changes only how initial scripted targets are selected.
 
 ## 2. Definitions
 
