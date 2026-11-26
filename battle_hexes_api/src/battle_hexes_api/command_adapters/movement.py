@@ -16,10 +16,16 @@ class MovementCommandResult:
     movement_resolution: object
 
 
-def _apply_plans(game, plans) -> MovementCommandResult:
+def _apply_plans(
+    game, plans, integration, command_kind,
+) -> tuple[MovementCommandResult, bool]:
     plans = tuple(plans)
     resolution = game.apply_movement_plans(plans)
-    return MovementCommandResult(plans, resolution)
+    finalized = integration.finalize_movement_if_completed(game, command_kind)
+    if not finalized and game.finalize_completed_movement():
+        finalized = True
+        resolution.game_status = game.get_game_status()
+    return MovementCommandResult(plans, resolution), finalized
 
 
 class MovementAdapter:
@@ -32,8 +38,10 @@ class MovementAdapter:
         reject_completed_game(game)
         integration = self._integrations.for_game(game)
         integration.authorize(game, "movement")
-        result = _apply_plans(game, game.get_current_player().movement())
-        integration.finalize_movement_if_completed(game, "movement")
+        plans = game.get_current_player().movement()
+        result, _ = _apply_plans(
+            game, plans, integration, "movement",
+        )
         integration.capture_rng(game)
         notify_game_completion(game)
         return result
@@ -51,8 +59,7 @@ class HumanMoveAdapter:
         integration = self._integrations.for_game(game)
         integration.authorize(game, "move", self._sparse_board)
         plans = self._sparse_board.to_movement_plans(game.get_board())
-        result = _apply_plans(game, plans)
-        integration.finalize_movement_if_completed(game, "move")
+        result, _ = _apply_plans(game, plans, integration, "move")
         integration.capture_rng(game)
         notify_game_completion(game)
         return result
@@ -72,9 +79,10 @@ class EndMovementAdapter:
         integration = self._integrations.for_game(game)
         integration.authorize(game, "end-movement", self._sparse_board)
         plans = self._sparse_board.to_movement_plans(game.get_board())
-        result = _apply_plans(game, plans)
-        if not integration.finalize_movement_if_completed(game,
-                                                          "end-movement"):
+        result, finalized = _apply_plans(
+            game, plans, integration, "end-movement",
+        )
+        if not finalized:
             self._scorer_factory().award_hold_objectives(game)
             game.end_movement()
         integration.capture_rng(game)

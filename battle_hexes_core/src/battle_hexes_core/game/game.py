@@ -291,6 +291,16 @@ class Game:
             return self.update_game_status()
         return self.game_status
 
+    def finalize_completed_movement(self) -> bool:
+        """Score the final board and close the phase if movement ended play."""
+        if self.get_game_status().state != "completed":
+            return False
+
+        from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
+
+        ObjectiveScorer().recalculate_scenario_victory(self)
+        return self.finalize_completed_phase()
+
     def finalize_completed_phase(self) -> bool:
         """Close a live phase when core has completed during movement/combat.
 

@@ -130,11 +130,12 @@ creation path selects from the scenario and requested player types.
 | `capture_rng(game)` | Movement/combat adapters, after successful resolution | Snapshot PPO RNG continuation into the saved extension; no-op otherwise. |
 | `after_end_turn(game)` | End-turn adapter, after core transition | Refresh PPO pending IDs for the next eligible PPO movement turn (or empty on completion), then capture RNG; no-op otherwise. |
 
-`finalize_movement_if_completed` is called after `/movement` and `/move`
-regardless of whether its return value is used. For `/end-movement`, the
-adapter skips its existing hold-objective scoring and `end_movement()` only
-when the hook returns `True`; otherwise both run in their current order. All
-three paths capture RNG after their existing scoring/transition steps. Combat
+`finalize_movement_if_completed` is called after applying plans in all three
+movement commands. Ordinary games use core's completed-movement transition
+when the no-op hook returns `False`. For `/end-movement`, the adapter skips
+regular hold-objective scoring and `end_movement()` when either path
+finalizes the game; otherwise both run in their current order. All three paths
+capture RNG after scoring and phase transitions. Combat
 captures RNG after its existing scoring/completion steps. Authorization runs
 before converting or applying a submitted sparse board. The adapter calls
 `after_end_turn` only after core `end_turn()` succeeds.
