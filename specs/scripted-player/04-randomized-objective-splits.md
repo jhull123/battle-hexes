@@ -93,14 +93,18 @@ This increment changes only how initial scripted targets are selected.
 
 Expose a Python-only opening configuration for fresh scripted players and
 allow callers of the API's internal `GameCreator.create_sample_game` factory
-to pass it through to the scripted seats before core starts the game. The
-logical inputs are:
+to pass it through to the scripted seats before core starts the game. Each
+scripted seat has its own opening configuration:
 
 | Input | Default | Contract |
 | --- | --- | --- |
 | `mode` | `deterministic` | `deterministic` uses spec 03; `randomized` enables REQ-002. Reject unknown modes. |
 | `balanced_probability` | `0.5` | Finite Python `int` or `float` in `[0, 1]`, inclusive (not a boolean). Reject invalid values rather than clamping. Used only in randomized mode. |
-| `seed` | `None` | Optional integer (not a boolean); zero is an explicit seed. Used only in randomized mode. |
+
+The factory takes a separate game-level `seed` argument, not a field in
+each seat's configuration. It defaults to `None` and accepts an integer
+(excluding booleans); zero is an explicit seed. It is used only for randomized
+openings.
 
 - **REQ-008 — Use separate, reproducible opening randomness.** Use one root
   seed per fresh randomized game. When no seed is supplied and randomness is
