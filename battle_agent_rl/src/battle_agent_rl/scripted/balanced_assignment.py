@@ -1,4 +1,4 @@
-"""Exact balanced assignment for a distance matrix in stable unit/hex order."""
+"""Minimum-distance assignment for a matrix in stable unit/objective order."""
 
 import heapq
 from dataclasses import dataclass
@@ -78,6 +78,25 @@ class _AssignmentFlow:
 
 def balanced_target_indices(distances: list[list[int]]) -> list[int]:
     """Return the first minimum-distance balanced solution in lexical order."""
+    return _target_indices(distances, None)
+
+
+def exact_target_indices(
+    distances: list[list[int]], quotas: tuple[int, ...],
+) -> list[int]:
+    """Return the first minimum-distance solution that fills exact quotas."""
+    if (
+        any(type(quota) is not int or quota < 0 for quota in quotas)
+        or sum(quotas) != len(distances)
+        or (distances and len(quotas) != len(distances[0]))
+    ):
+        raise ValueError("Quotas must match the unit and objective counts")
+    return _target_indices(distances, quotas)
+
+
+def _target_indices(
+    distances: list[list[int]], quotas: tuple[int, ...] | None,
+) -> list[int]:
     unit_count = len(distances)
     if not unit_count:
         return []
@@ -92,13 +111,7 @@ def balanced_target_indices(distances: list[list[int]]) -> list[int]:
     extras = first_target + target_count
     sink = extras + 1
     flow = _AssignmentFlow(sink + 1)
-    quota, remainder = divmod(unit_count, target_count)
-
-    # Sending N units fills all base quotas and exactly r extra slots.
-    flow.connect(extras, sink, remainder)
-    for target in range(first_target, extras):
-        flow.connect(target, sink, quota)
-        flow.connect(target, extras, 1)
+    _connect_quotas(flow, range(first_target, extras), unit_count, quotas)
 
     # The target index sequence is a base-M number. It is strictly less than
     # the distance multiplier, so no tie-break can outweigh a distance step.
@@ -117,3 +130,22 @@ def balanced_target_indices(distances: list[list[int]]) -> list[int]:
     return [
         flow.target_used_by(unit, first_target) for unit in range(unit_count)
     ]
+
+
+def _connect_quotas(
+    flow: _AssignmentFlow, targets: range, unit_count: int,
+    quotas: tuple[int, ...] | None,
+) -> None:
+    extras = targets.stop
+    sink = extras + 1
+    if quotas is not None:
+        for target, quota in zip(targets, quotas, strict=True):
+            flow.connect(target, sink, quota)
+        return
+
+    # Sending N units fills all base quotas and exactly r extra slots.
+    quota, remainder = divmod(unit_count, len(targets))
+    flow.connect(extras, sink, remainder)
+    for target in targets:
+        flow.connect(target, sink, quota)
+        flow.connect(target, extras, 1)

@@ -3,6 +3,9 @@
 import uuid
 
 from battle_hexes_api.gamecreator import GameCreator
+from battle_hexes_api.scripted_assignment_logging import (
+    attach_reinforcement_logging,
+)
 from battle_hexes_core.gamecreator.gamecreator import (
     GameCreator as CoreCreator,
 )
@@ -27,6 +30,7 @@ class GameStateHydrator:
         self._restore_histories(game, document)
         self._reconnect_players(game, players)
         self._restore_scripted_assignments(game, document)
+        attach_reinforcement_logging(game)
         return game
 
     @staticmethod

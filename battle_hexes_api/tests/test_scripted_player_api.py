@@ -123,7 +123,12 @@ def test_scripted_moves_toward_objectives_on_new_and_reloaded_game():
     )
     assert (new_plan.path[-1].row, new_plan.path[-1].column) == destination
 
-    with TestClient(create_app()) as client:
+    with (
+        patch("battle_agent_rl.scripted.opening.Random") as opening_rng,
+        TestClient(create_app()) as client,
+    ):
+        # Exercise the balanced branch of the browser default on both seats.
+        opening_rng.return_value.randrange.return_value = 0
         created = _create_scripted_match(client, scenario_id)
         loaded = client.get(f"/games/{created['id']}")
         assert loaded.status_code == 200
