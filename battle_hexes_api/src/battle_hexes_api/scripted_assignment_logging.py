@@ -1,10 +1,11 @@
 """Report scripted objective assignments in the server log."""
 
 import logging
+from collections.abc import Mapping
 from functools import partial
 from uuid import UUID
 
-from battle_agent_rl.scripted import ScriptedPlayer
+from battle_agent_rl.scripted import ScriptedOpening, ScriptedPlayer
 from battle_hexes_core.game.game import Game
 
 
@@ -15,8 +16,10 @@ reinforcement_logger = logging.getLogger(
 )
 
 
-def log_scripted_openings(game: Game, mode: str) -> None:
-    for player in game.players:
+def log_scripted_openings(
+    game: Game, openings: Mapping[int, ScriptedOpening],
+) -> None:
+    for seat, player in enumerate(game.players):
         if not isinstance(player, ScriptedPlayer):
             continue
         counts = player.objective_assignment_counts()
@@ -25,7 +28,7 @@ def log_scripted_openings(game: Game, mode: str) -> None:
             opening_logger.info(
                 "Scripted opening split: game=%s player=%s mode=%s "
                 "split=%s assignments=%s",
-                game.id, player.name, mode, split, counts,
+                game.id, player.name, openings[seat].mode, split, counts,
             )
 
 

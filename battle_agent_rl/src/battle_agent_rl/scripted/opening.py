@@ -15,11 +15,10 @@ OpeningSampler = Callable[[int, int], QuotaVector]
 
 @dataclass(frozen=True)
 class ScriptedOpening:
-    """Fresh game options; use ``for_game`` to bind its scripted seats."""
+    """Opening options for one scripted seat in a fresh game."""
 
     mode: Literal["deterministic", "randomized"] = "deterministic"
     balanced_probability: int | float = 0.5
-    seed: int | None = None
 
     def __post_init__(self) -> None:
         if self.mode not in ("deterministic", "randomized"):
@@ -30,30 +29,28 @@ class ScriptedOpening:
             or not 0 <= p <= 1
         ):
             raise ValueError("Balanced probability must be between 0 and 1")
-        seed = self.seed
-        if seed is not None and (
-            isinstance(seed, bool) or not isinstance(seed, int)
-        ):
-            raise ValueError("Scripted opening seed must be an integer")
-
-    def for_game(self) -> "ScriptedGameOpening":
-        return ScriptedGameOpening(self)
 
 
 class ScriptedGameOpening:
     """Share a root seed across seats without sharing their draw sequences."""
 
-    def __init__(self, config: ScriptedOpening) -> None:
-        self._config = config
-        self._seed = config.seed
+    def __init__(self, seed: int | None = None) -> None:
+        if seed is not None and (
+            isinstance(seed, bool) or not isinstance(seed, int)
+        ):
+            raise ValueError("Scripted opening seed must be an integer")
+        self._seed = seed
 
-    def for_seat(self, seat: int) -> OpeningSampler | None:
-        if self._config.mode == "deterministic":
+    def for_seat(
+        self, seat: int, config: ScriptedOpening,
+    ) -> OpeningSampler | None:
+        if config.mode == "deterministic":
             return None
-        return partial(self._sample, seat)
+        return partial(self._sample, seat, config.balanced_probability)
 
     def _sample(
-        self, seat: int, unit_count: int, objective_count: int,
+        self, seat: int, probability: int | float, unit_count: int,
+        objective_count: int,
     ) -> QuotaVector:
         rng = None
 
@@ -64,8 +61,7 @@ class ScriptedGameOpening:
             return rng.randrange(stop)
 
         return sample_objective_quotas(
-            unit_count, objective_count, self._config.balanced_probability,
-            draw,
+            unit_count, objective_count, probability, draw,
         )
 
     def _seat_rng(self, seat: int) -> Random:

@@ -92,16 +92,23 @@ This increment changes only how initial scripted targets are selected.
 
 ### Creation configuration and seed
 
-Expose an internal Python opening configuration for fresh scripted players.
-The API's `GameCreator.create_sample_game` factory passes it through to the
-scripted seats before core starts the game. Direct calls without an explicit
-configuration use the deterministic baseline. The logical inputs are:
+The internal Python factory `GameCreator.create_sample_game` accepts
+`scripted_openings`, a mapping from zero-based seat index in core player
+order to that seat's `ScriptedOpening` configuration. The factory passes
+each configuration to its scripted seat before core starts the game. Direct
+Python calls use the deterministic baseline for any scripted seat not listed;
+entries for invalid or non-scripted seats are rejected.
 
 | Input | Default | Contract |
 | --- | --- | --- |
 | `mode` | `deterministic` | `deterministic` uses spec 03; `randomized` enables REQ-002. Reject unknown modes. |
 | `balanced_probability` | `0.5` | Finite Python `int` or `float` in `[0, 1]`, inclusive (not a boolean). Reject invalid values rather than clamping. Used only in randomized mode. |
-| `seed` | `None` | Optional integer (not a boolean); zero is an explicit seed. Used only in randomized mode. |
+
+The factory takes a separate game-level `seed` argument, not a field in
+each seat's configuration. It defaults to `None` and accepts an integer
+(excluding booleans); zero is an explicit seed. It is used only for randomized
+openings. A single game may mix deterministic and randomized seats or use
+different balanced probabilities for different randomized seats.
 
 - **REQ-012 — Randomize browser-created games.** For a fresh `POST /games`
   request with at least one `scripted` seat, the server selects randomized
@@ -193,6 +200,7 @@ One-column fixtures below use row numbers as shorthand for `(row, 0)`.
 | AC-009 — Reinforcement into a zero quota | Start with `3/0/0` for objectives at rows `0`, `4`, and `8`. A later group with one unit successfully enters at row `8`. | The arrival targets row `8` by the unchanged count/distance rule. The three starting targets stay at row `0`. If deployment was blocked first, the assignment is added only on success. |
 | AC-010 — Baseline and legacy | Five units start at rows `0`, `5`, `5`, `10`, `10` with objectives at `0`, `5`, `10`. Use the direct Python default or explicit deterministic mode; separately force `2/2/1` in randomized mode at `p = 1`. Load a legacy save with those restored positions and no assignment field. | The deterministic runs and legacy load use `1/2/2`, cost zero, without drawing. The randomized run honors `2/2/1` despite its higher cost. A legacy read does not write; its next successful command persists the targets. |
 | AC-011 — Browser creation default | Create Crossroads through `POST /games` with the ordinary browser payload and a scripted Airborne seat. Force the unbalanced family ticket and an all-in rank through the controlled draw source. | The server saves the forced all-in opening using the default randomized distribution without a client opt-in. Repeating the same idempotent request returns the committed opening without a second draw. |
+| AC-012 — Per-seat configuration and game-level seed | Create a game with two scripted seats and one explicit game seed. Try a randomized seat alongside one left at its deterministic default, and two randomized seats configured with different probabilities. | Each seat uses its own mode and probability. Repeat creation with the same seed and configuration to reproduce the targets; changing one seat's configuration does not change the other seat's opening. |
 
 ## 6. Test automation strategy
 
@@ -247,7 +255,7 @@ service is required.
 
 ## 10. Validation criteria
 
-The increment is complete when AC-001 through AC-011 and the deterministic
+The increment is complete when AC-001 through AC-012 and the deterministic
 distribution tests pass, along with existing scripted movement, reinforcement,
 and persistence regressions, without changing public contracts.
 

@@ -45,7 +45,7 @@ def test_crossroads_all_in_splits_keep_movement_legal(
     _force_crossroads_split(monkeypatch, quotas)
     game = GameCreator.create_sample_game(
         CROSSROADS, ["scripted", "human"],
-        scripted_opening=ScriptedOpening(mode="randomized", seed=0),
+        scripted_openings={0: ScriptedOpening(mode="randomized")}, seed=0,
     )
     player = game.players[0]
     units = sorted(game.board.get_units_for_player(player), key=lambda u: u.id)
@@ -83,20 +83,24 @@ def test_seeded_factory_reproduces_both_sides_without_using_game_rng(
         pytest.fail("opening used shared combat or defensive-fire randomness")
 
     monkeypatch.setattr(random, "random", unexpected_draw)
-    opening = ScriptedOpening(mode="randomized", seed=0)
+    opening = ScriptedOpening(mode="randomized")
     previous_state = random.getstate()
     snapshots = []
     game_ids = []
     try:
-        for seed, types in (
+        for shared_seed, types in (
             (17, ["scripted", "scripted"]),
             (91, ["scripted", "scripted"]),
             (52, ["human", "scripted"]),
         ):
-            state = random.Random(seed).getstate()
+            state = random.Random(shared_seed).getstate()
             random.setstate(state)
+            openings = {
+                seat: opening for seat, type_id in enumerate(types)
+                if type_id == "scripted"
+            }
             game = GameCreator.create_sample_game(
-                CROSSROADS, types, scripted_opening=opening,
+                CROSSROADS, types, scripted_openings=openings, seed=0,
             )
             assert random.getstate() == state
             game_ids.append(game.id)
@@ -109,6 +113,53 @@ def test_seeded_factory_reproduces_both_sides_without_using_game_rng(
     assert snapshots[0] == snapshots[1]
     assert list(map(len, snapshots[0])) == [6, 3]
     assert snapshots[2] == snapshots[0][1:]
+
+
+def test_factory_uses_each_seats_own_mode_and_probability(caplog):
+    types = ["scripted", "scripted"]
+    caplog.set_level(logging.INFO, logger=OPENING_LOGGER)
+    openings = {1: ScriptedOpening(mode="randomized", balanced_probability=0)}
+    mixed = GameCreator.create_sample_game(
+        CROSSROADS, types, scripted_openings=openings, seed=0,
+    )
+    assert tuple(mixed.players[0].objective_assignment_counts().values()) == (
+        2, 2, 2,
+    )
+    assert tuple(mixed.players[1].objective_assignment_counts().values()) != (
+        1, 1, 1,
+    )
+    mixed_modes = [
+        record.args[2] for record in caplog.records
+        if record.name == OPENING_LOGGER
+    ]
+    assert mixed_modes == ["deterministic", "randomized"]
+
+    openings[0] = ScriptedOpening(mode="randomized", balanced_probability=1)
+    randomized = GameCreator.create_sample_game(
+        CROSSROADS, types, scripted_openings=openings, seed=0,
+    )
+    assert randomized.players[0].objective_assignments() == (
+        mixed.players[0].objective_assignments()
+    )
+    assert randomized.players[1].objective_assignments() == (
+        mixed.players[1].objective_assignments()
+    )
+
+
+@pytest.mark.parametrize("seed", [True, False, 2.0, "0"])
+def test_factory_rejects_invalid_game_seed(seed):
+    with pytest.raises(ValueError, match="seed"):
+        GameCreator.create_sample_game(CROSSROADS, ["scripted", "human"],
+                                       seed=seed)
+
+
+@pytest.mark.parametrize("seat", [-1, True, 1, 2])
+def test_factory_rejects_options_for_invalid_or_non_scripted_seats(seat):
+    with pytest.raises(ValueError, match="scripted seat"):
+        GameCreator.create_sample_game(
+            CROSSROADS, ["scripted", "human"],
+            scripted_openings={seat: ScriptedOpening()},
+        )
 
 
 def test_browser_creation_randomizes_and_replay_reuses_the_committed_opening(

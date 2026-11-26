@@ -1,8 +1,12 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Sequence
 
 from battle_agent_rl.qlearningplayer import QLearningPlayer
-from battle_agent_rl.scripted import ScriptedOpening, ScriptedPlayer
+from battle_agent_rl.scripted import (
+    ScriptedGameOpening,
+    ScriptedOpening,
+    ScriptedPlayer,
+)
 from battle_agent_rl.scripted.opening import OpeningSampler
 from battle_hexes_api.scripted_assignment_logging import (
     attach_reinforcement_logging,
@@ -62,9 +66,10 @@ class GameCreator:
         scenario_id: str,
         player_type_ids: Sequence[str],
         *,
-        scripted_opening: ScriptedOpening | None = None,
+        scripted_openings: Mapping[int, ScriptedOpening] | None = None,
+        seed: int | None = None,
     ) -> Game:
-        """Create a scenario game with Python-only scripted opening options."""
+        """Create a game with per-seat options and one opening seed."""
         from battle_hexes_api.agent_integrations import integrations
         from battle_hexes_api.persistence.errors import (
             SavedGameIncompatibleError,
@@ -79,24 +84,44 @@ class GameCreator:
                 "scenario and a supported opponent") from error
 
         scenario = load_scenario(scenario_id)
-        opening = scripted_opening or ScriptedOpening()
+        openings = GameCreator._resolve_scripted_openings(
+            player_type_ids, scripted_openings,
+        )
+        game_opening = ScriptedGameOpening(seed)
         players = GameCreator._create_players(
-            scenario, player_type_ids, opening,
+            scenario, player_type_ids, openings, game_opening,
         )
         _, _, _, game = CoreGameCreator().build_game_components(
             scenario, players,
         )
         game.scenario_id = scenario_id
         game.player_type_ids = list(player_type_ids)
-        log_scripted_openings(game, opening.mode)
+        log_scripted_openings(game, openings)
         attach_reinforcement_logging(game)
         integration.initial_state(game)
         return game
 
     @staticmethod
+    def _resolve_scripted_openings(
+        player_type_ids: Sequence[str],
+        configured: Mapping[int, ScriptedOpening] | None,
+    ) -> dict[int, ScriptedOpening]:
+        default = ScriptedOpening()
+        openings = {
+            seat: default for seat, type_id in enumerate(player_type_ids)
+            if type_id == "scripted"
+        }
+        for seat, opening in (configured or {}).items():
+            if type(seat) is not int or seat not in openings:
+                raise ValueError("Opening options require a scripted seat")
+            openings[seat] = opening
+        return openings
+
+    @staticmethod
     def _create_players(
         scenario: Scenario, player_type_ids: Sequence[str],
-        opening: ScriptedOpening,
+        openings: Mapping[int, ScriptedOpening],
+        game_opening: ScriptedGameOpening,
     ) -> list[Player]:
         player_order: list[str] = []
         for faction in scenario.factions:
@@ -108,15 +133,14 @@ class GameCreator:
                 "Number of player types does not match scenario configuration"
             )
 
-        game_opening = opening.for_game()
         return [
             GameCreator._create_player(
                 type_id,
                 name=player_name,
                 factions=[],
                 board=None,
-                opening_sampler=game_opening.for_seat(index)
-                if type_id == "scripted" else None,
+                opening_sampler=game_opening.for_seat(index, openings[index])
+                if index in openings else None,
             )
             for index, (player_name, type_id) in enumerate(
                 zip(player_order, player_type_ids, strict=True)

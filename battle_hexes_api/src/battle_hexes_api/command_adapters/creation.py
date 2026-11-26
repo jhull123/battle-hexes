@@ -23,9 +23,14 @@ class CreateGameAdapter:
     def __call__(self):
         scenario = self._scenario_loader(self._request.scenario_id)
         player_types = self._request.player_types
+        randomized = ScriptedOpening(mode="randomized")
+        openings = {
+            seat: randomized for seat, type_id in enumerate(player_types)
+            if type_id == "scripted"
+        }
         options = {}
-        if "scripted" in player_types:
-            options["scripted_opening"] = ScriptedOpening(mode="randomized")
+        if openings:
+            options["scripted_openings"] = openings
         game = self._game_creator.create_sample_game(
             self._request.scenario_id,
             player_types,

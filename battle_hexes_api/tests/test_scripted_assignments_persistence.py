@@ -83,8 +83,12 @@ def setup_game(monkeypatch):
             "battle_hexes_api.command_adapters.serializers.load_scenario_data",
             lambda _: scenario,
         )
+        openings = {
+            seat: opening for seat, type_id in enumerate(types)
+            if type_id == "scripted" and opening is not None
+        }
         game = GameCreator.create_sample_game(
-            scenario.id, types, scripted_opening=opening,
+            scenario.id, types, scripted_openings=openings,
         )
         return game, GameStateCodec(scenario_loader=lambda _: scenario)
 

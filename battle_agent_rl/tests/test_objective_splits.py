@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from battle_agent_rl.scripted import ScriptedOpening
+from battle_agent_rl.scripted import ScriptedGameOpening, ScriptedOpening
 from battle_agent_rl.scripted.balanced_assignment import exact_target_indices
 from battle_agent_rl.scripted.objective_splits import sample_objective_quotas
 
@@ -102,7 +102,7 @@ def test_rank_enumeration_includes_unbalanced_prefixes_and_zero_quotas(
     {"mode": "other"}, {"balanced_probability": True},
     {"balanced_probability": "0.5"}, {"balanced_probability": -0.1},
     {"balanced_probability": 1.1}, {"balanced_probability": float("nan")},
-    {"balanced_probability": float("inf")}, {"seed": False}, {"seed": 2.0},
+    {"balanced_probability": float("inf")},
 ])
 def test_invalid_opening_options_are_rejected(options):
     with pytest.raises(ValueError):
@@ -114,29 +114,31 @@ def test_seedless_game_reads_system_entropy_only_when_needed(monkeypatch):
     monkeypatch.setattr("battle_agent_rl.scripted.opening.randbits",
                         entropy)
     config = ScriptedOpening(mode="randomized")
-    first = config.for_game()
-    assert first.for_seat(0)(0, 3) == (0, 0, 0)
-    assert first.for_seat(1)(6, 1) == (6,)
+    first = ScriptedGameOpening()
+    assert first.for_seat(0, config)(0, 3) == (0, 0, 0)
+    assert first.for_seat(1, config)(6, 1) == (6,)
     entropy.assert_not_called()
-    expected = [ScriptedOpening(mode="randomized", seed=0)
-                .for_game().for_seat(seat)(6, 3) for seat in range(2)]
-    assert [first.for_seat(seat)(6, 3) for seat in range(2)] == expected
+    seeded = ScriptedGameOpening(seed=0)
+    expected = [seeded.for_seat(seat, config)(6, 3) for seat in range(2)]
+    actual = [first.for_seat(seat, config)(6, 3) for seat in range(2)]
+    assert actual == expected
     assert entropy.call_count == 1
-    second = config.for_game()
-    seeded = ScriptedOpening(mode="randomized", seed=123).for_game()
-    assert second.for_seat(0)(6, 3) == seeded.for_seat(0)(6, 3)
+    second = ScriptedGameOpening()
+    seeded = ScriptedGameOpening(seed=123)
+    assert second.for_seat(0, config)(6, 3) == seeded.for_seat(0, config)(6, 3)
     assert entropy.call_count == 2
 
 
 def test_explicit_seed_uses_the_specified_seat_stream(monkeypatch):
     monkeypatch.setattr("battle_agent_rl.scripted.opening.randbits",
                         lambda _: pytest.fail("requested entropy"))
-    opening = ScriptedOpening(mode="randomized", seed=0).for_game()
+    config = ScriptedOpening(mode="randomized")
+    opening = ScriptedGameOpening(seed=0)
     for seat in range(2):
         digest = sha256(f"battle-hexes:scripted-opening:v1:0:{seat}".encode())
         rng = Random(int.from_bytes(digest.digest(), "big"))
         expected = sample_objective_quotas(6, 3, 0.5, rng.randrange)
-        assert opening.for_seat(seat)(6, 3) == expected
+        assert opening.for_seat(seat, config)(6, 3) == expected
 
 
 @pytest.mark.parametrize("distances", [
