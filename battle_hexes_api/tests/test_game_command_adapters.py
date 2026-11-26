@@ -27,6 +27,7 @@ def command_game(state="in_progress"):
     game.player_type_ids = ["random", "human"]
     game.ppo_state = None
     game.get_game_status.return_value = SimpleNamespace(state=state)
+    game.finalize_completed_movement.return_value = False
     game.is_game_over.return_value = False
     return game
 

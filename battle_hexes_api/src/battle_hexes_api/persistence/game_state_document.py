@@ -2,7 +2,7 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 
 
 class Model(BaseModel):
@@ -52,6 +52,12 @@ class Reinforcement(Model):
     entered: StrictBool
 
 
+class ScriptedObjectiveAssignment(Model):
+    unit_id: str
+    row: StrictInt
+    column: StrictInt
+
+
 class Document(Model):
     state_schema_version: StrictInt
     game_id: str
@@ -72,3 +78,6 @@ class Document(Model):
     combat_history: list[dict[str, Any]]
     defensive_fire_history: list[dict[str, Any]]
     ppo_state: Any = None
+    scripted_objective_assignments: list[
+        ScriptedObjectiveAssignment
+    ] | None = Field(default=None, exclude_if=lambda value: value is None)

@@ -21,8 +21,9 @@ class ReinforcementsDeployer:
         self.groups = list(groups or [])
         self.game_log: list[ReinforcementArrivalEvent] = []
 
-    def deploy_due(self, turn_number: int) -> None:
-        """Place due fixed groups in declaration order when entry is legal."""
+    def deploy_due(self, turn_number: int) -> list[ReinforcementGroup]:
+        """Place due groups and return arrivals in placement order."""
+        arrivals = []
         for group in self.groups:
             if group.entered or group.arrival_turn > turn_number:
                 continue
@@ -35,6 +36,8 @@ class ReinforcementsDeployer:
                 self.board.add_unit(unit, row, column)
             group.entered = True
             self._record_attempt(group, turn_number, "arrived")
+            arrivals.append(group)
+        return arrivals
 
     def _record_attempt(self, group, turn_number, outcome) -> None:
         self.game_log.append(ReinforcementArrivalEvent(

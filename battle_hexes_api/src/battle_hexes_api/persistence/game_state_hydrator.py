@@ -26,6 +26,7 @@ class GameStateHydrator:
         self._restore_runtime(game, document, players)
         self._restore_histories(game, document)
         self._reconnect_players(game, players)
+        self._restore_scripted_assignments(game, document)
         return game
 
     @staticmethod
@@ -35,7 +36,7 @@ class GameStateHydrator:
             for player in document.players
         ]
         _, players, _, game = CoreCreator().build_game_components(
-            scenario_data.to_core(), players
+            scenario_data.to_core(), players, initialize_players=False,
         )
         game.id = uuid.UUID(document.game_id)
         game.scenario_id = document.scenario_id
@@ -125,3 +126,19 @@ class GameStateHydrator:
         for player in players:
             if hasattr(player, "_board"):
                 player._board = game.board
+
+    @staticmethod
+    def _restore_scripted_assignments(game, document):
+        saved = document.scripted_objective_assignments
+        targets = {a.unit_id: (a.row, a.column) for a in saved or []}
+        for player, type_id in zip(game.players, game.player_type_ids):
+            if type_id != "scripted":
+                continue
+            if saved is None:
+                player.initialize_objective_assignments()
+            else:
+                player.restore_objective_assignments({
+                    unit_id: targets[unit_id]
+                    for unit in game.board.get_units_for_player(player)
+                    if (unit_id := str(unit.get_id())) in targets
+                })

@@ -47,7 +47,28 @@ class GameStateEncoder:
                 asdict(event) for event in game.defensive_fire_log
             ],
         }
+        scripted = [
+            player
+            for player, type_id in zip(game.players, game.player_type_ids)
+            if type_id == "scripted"
+        ]
+        if scripted:
+            raw_document["scripted_objective_assignments"] = (
+                self._scripted_assignments(scripted)
+            )
         return Document.model_validate(raw_document)
+
+    @staticmethod
+    def _scripted_assignments(players):
+        assignments = (
+            (unit_id, target)
+            for player in players
+            for unit_id, target in player.objective_assignments().items()
+        )
+        return [
+            {"unit_id": unit_id, "row": row, "column": column}
+            for unit_id, (row, column) in sorted(assignments)
+        ]
 
     @staticmethod
     def _players(game):

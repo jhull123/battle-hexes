@@ -42,6 +42,8 @@ class Game:
         turn_limit: int | None = None,
         reinforcements: list[ReinforcementGroup] | None = None,
         rng=None,
+        *,
+        initialize_players: bool = True,
     ):
         self.id = uuid.uuid4()
         self.players = players
@@ -74,6 +76,11 @@ class Game:
         self._terminal = False
         self.reinforcements_deployer.deploy_due(self.turn_number)
         self.update_game_status()
+        if initialize_players:
+            for player in players:
+                callback = getattr(player, "game_started_cb", None)
+                if callback is not None:
+                    callback(board)
 
     def get_id(self):
         return self.id
@@ -186,12 +193,19 @@ class Game:
             self.turn_number += 1
         self.current_player = self.players[next_idx]
         if next_idx == 0:
-            self.reinforcements_deployer.deploy_due(self.turn_number)
+            self._deploy_turn_reinforcements()
         self._reset_movement_for_new_turn(self.current_player)
         self._reset_defensive_fire_off_turn_usage(self.current_player)
         self._refresh_defensive_fire_availability()
         self.update_game_status(finalize=True)
         return self.current_player
+
+    def _deploy_turn_reinforcements(self) -> None:
+        """Notify policies here, in the same transition as core deployment."""
+        for group in self.reinforcements_deployer.deploy_due(self.turn_number):
+            callback = getattr(group.player, "reinforcements_arrived_cb", None)
+            if callback is not None:
+                callback(group.units, group.coords)
 
     def _reset_movement_for_new_turn(self, player: Player) -> None:
         for unit in self.get_board().get_units_for_player(player):
@@ -276,6 +290,16 @@ class Game:
         if self.game_status is None:
             return self.update_game_status()
         return self.game_status
+
+    def finalize_completed_movement(self) -> bool:
+        """Score the final board and close the phase if movement ended play."""
+        if self.get_game_status().state != "completed":
+            return False
+
+        from battle_hexes_core.scoring.objective_scorer import ObjectiveScorer
+
+        ObjectiveScorer().recalculate_scenario_victory(self)
+        return self.finalize_completed_phase()
 
     def finalize_completed_phase(self) -> bool:
         """Close a live phase when core has completed during movement/combat.
