@@ -151,6 +151,7 @@ outcomes or hunt for an opening seed.
 | AC-008 — Save/load before and after the pass | Save a pending phase with a qualifying source. Reload, submit movement, then reload the committed snapshot while still in movement. Also read a legacy snapshot without the marker. | Loading alone changes no targets or version. The first authoritative movement request evaluates a pending phase. After commit, the redirected targets and prepared marker restore together. Legacy reads are side-effect free. |
 | AC-009 — Same-phase retry and replay | Commit a movement command whose start-of-phase pass finds a slot open but whose moves fill it. Restart, replay with the same idempotency key and original expected version, then send a new movement command with a fresh key and current version while the phase is still open. | Replay returns the original receipt and does not change the version, board, or assignments. The new request cannot redirect the overflow in that same phase, even though the hex is now full. The next eligible phase can redirect it if it is still full. |
 | AC-010 — Seat handoff and conflicts | In a two-scripted-side game, prepare the first seat, then hand off to the second in the same round. Exercise matching concurrent commits and a stale command on the movement path. | Only the active seat is evaluated at each phase start. The second seat gets its own pass. Only the authoritative commit changes the board, targets, and marker; a matching duplicate replays, and a stale non-replay command cannot overwrite the snapshot. |
+| AC-011 — Close movement before generating any plans | Begin an unprepared scripted movement phase with a qualifying full objective and at least one unheld alternative. Submit `/end-movement` with an empty movement batch as the first command. Choose a fixture where the game remains in progress and no combat is pending. Reload, then replay with the original idempotency key and expected version. | The overflow pass runs and the redirects are saved even though no units move. The phase advances to end turn and the saved snapshot omits `scripted_overflow_evaluated`. Reload preserves the new targets. Replay returns the original response without running the pass again or changing the saved assignments or game version. |
 
 ## 6. Test automation strategy
 
@@ -186,7 +187,7 @@ external service, new dependency, or scenario data change is required.
 
 ## 10. Validation criteria
 
-Implementation is complete when AC-001 through AC-010 and
+Implementation is complete when AC-001 through AC-011 and
 `./server-side-checks.sh` pass, with no change to public commands or schemas.
 
 ## 11. Related specifications and code
