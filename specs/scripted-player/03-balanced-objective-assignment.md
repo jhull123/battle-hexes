@@ -13,10 +13,11 @@ objective assignment for each scripted unit. At creation, spread each scripted
 side's units evenly by count, then minimize their total starting hex distance.
 Assign later reinforcements without changing existing targets.
 
-This increment changes target selection and adds the policy state needed to
-retain it. Group tactics, dynamic rebalancing, new pathfinding or combat
-behavior, scenario format changes, user interface changes, and PPO integration
-are out of scope.
+This increment changes target selection, adds the policy state needed to
+retain it, and prefers cheaper moves when endpoints make equal progress.
+Group tactics, dynamic rebalancing, new pathfinding or combat behavior,
+scenario format changes, user interface changes, and PPO integration are out
+of scope.
 
 ## 2. Definitions
 
@@ -93,10 +94,12 @@ are out of scope.
    unit is adjacent, hold; if farther away, prefer a legal reachable adjacent
    hex. If none is reachable, or entry is blocked for another reason, choose
    a legal reachable endpoint strictly closer to the assigned hex, ranked by
-   `(remaining hex distance, row, column)`. Use the same tie-break for
-   adjacent destinations. Hold if no such move exists. On a later movement
-   turn, enter when space opens and the move is legal. Never pick another
-   target because it is nearer, free, or reachable.
+   `(remaining hex distance, minimum legal movement cost from the start, row,
+   column)`. Use the same ranking for adjacent destinations. This replaces
+   spec 02's coordinate-only tie-break for equally close endpoints. Hold if
+   no such move exists. On a later movement turn, enter when space opens and
+   the move is legal. Never pick another target because it is nearer, free,
+   or reachable.
 7. **CON-001 — Preserve movement and combat rules.** Retain [spec 02's](02-nearest-objective.md)
    unit order, private sequential occupancy projection, legal path construction,
    and core resolution of movement, defensive fire, and combat. Earlier plans
@@ -183,10 +186,11 @@ stacking unless otherwise specified.
 | AC-006 — Losses do not redistribute | Two objectives have two assigned units each. Core eliminates both assigned to the first objective; a survivor stands closer to the first than to its assigned second objective. | The living counts become `0/2`. Both survivors keep the second objective, including across a save/load round trip. |
 | AC-007 — Multiple arrivals and all tie-breaks | Objectives `A/B/C` at rows `0/4/8` have living counts `2/1/0`. In the same deployment pass, the first group arrives at row `2` listing `r3, r2, r1`; the second arrives at row `6` with `r0`. | In order, `r1 → C` (fewest), `r2 → B` (nearer of `B/C`), `r3 → C` (fewest after `r2`), `r0 → B` (same distance to `B/C`, earlier coordinate). Counts end at `2/3/2`. The new targets are already saved when the transition commits, even if the arriving side is not active. |
 | AC-008 — Turn-one arrivals and blocked retry | One group enters during construction, a second due group is blocked, and a third is not yet due. On a later turn, core can deploy the blocked group. | The initial optimum includes the first group at its entry hex and excludes both undeployed groups. The blocked group receives assignments only when its retry succeeds, using the living counts at that time. Replaying the successful command does not count the arrivals again. |
-| AC-009 — Full objective | With stacking limit two, two friendly units fill the sole objective at `(2, 2)`. A third assigned unit starts at `(2, 0)` with one point per turn and can reach both `(1, 1)` and `(2, 1)`. | It advances to `(1, 1)` by coordinate tie-break, holds beside the full target, and enters on a later turn once a slot opens and entry is legal. On arrival it holds; no assignment changes. If no adjacent hex is legally reachable, it makes only legal strict progress or holds. |
+| AC-009 — Full objective | With stacking limit two, two friendly units fill the sole objective at `(2, 2)`. A third assigned unit starts at `(2, 0)` with one point per turn and can reach both `(1, 1)` and `(2, 1)` at equal cost. | It advances to `(1, 1)` by coordinate tie-break, holds beside the full target, and enters on a later turn once a slot opens and entry is legal. On arrival it holds; no assignment changes. If no adjacent hex is legally reachable, it makes only legal strict progress or holds. |
 | AC-010 — Non-target objective and enemy blocker | Two units on the same objective get different assignments. The unit assigned elsewhere can legally advance; later an enemy occupies that unit's target. | The unit leaves the non-target objective when able. It cannot enter the enemy-held hex and never switches targets, even if the other objective is reachable. |
 | AC-011 — No objectives | A scripted side has legal moves and may receive reinforcements on a board with no objectives. | Save `[]` for assignments and return `plans: []` even after arrivals and reload. Normal phase commands resolve any pending combat and hand off unless the game ends. |
 | AC-012 — Legacy upgrade and invalid state | Remove the field from a version-1 save with displaced units, previously arrived reinforcements, and pending groups. Separately test a present field with a duplicate ID, missing active unit, pending or non-scripted unit, non-objective coordinate, or `null`. | The absent field seeds a deterministic balanced assignment from the saved active units and positions. Reads do not write; the next successful command saves it. Invalid present data is rejected as incompatible and never triggers the fallback. |
+| AC-013 — Cheapest adjacent stop | With stacking limit one, a friendly unit fills the objective at `(1, 1)`. A mover at `(3, 3)` has four points. Adjacent `(0, 1)` costs four points to reach; `(2, 1)` and `(2, 2)` cost two each. | The mover stops at `(2, 1)` with two points left. If rough terrain makes `(2, 1)` cost more than `(2, 2)`, it stops at `(2, 2)` instead. |
 
 ## 6. Test automation strategy
 
@@ -232,7 +236,7 @@ machine-learning dependency is required.
 
 ## 10. Validation criteria
 
-The increment is complete when AC-001 through AC-012 pass, surviving targets
+The increment is complete when AC-001 through AC-013 pass, surviving targets
 are stable across save/load and turn transitions, and existing movement,
 combat, and CPU command regressions pass without public contract changes.
 

@@ -5,6 +5,7 @@ from collections import Counter
 from battle_hexes_core.combat.combatresults import CombatResults
 from battle_hexes_core.game.board import Board
 from battle_hexes_core.game.hex import Hex
+from battle_hexes_core.game.movement import MovementCalculator
 from battle_hexes_core.game.player import Player, PlayerType
 from battle_hexes_core.game.unitmovementplan import UnitMovementPlan
 from battle_hexes_core.unit.faction import Faction
@@ -139,22 +140,19 @@ def _unit_id(unit: Unit) -> str:
     return str(unit.get_id())
 
 
-def _distance_key(origin: Hex, candidate: Hex) -> tuple[int, int, int]:
-    return (
-        Board.hex_distance(origin, candidate), candidate.row, candidate.column
-    )
-
-
 def _path_toward_objective(
     board: Board, unit: Unit, start: Hex, target: Hex,
 ) -> list[Hex]:
     if start == target:
         return []
 
-    reachable = board.get_reachable_hexes(
+    movement = MovementCalculator(board)
+    costs = movement.get_reachable_hex_costs(
         unit, start, unit.current_turn_movement_points_remaining,
     )
-    destination = min(reachable, key=lambda hex_: _distance_key(target, hex_))
+    destination = min(costs, key=lambda hex_: (
+        Board.hex_distance(target, hex_), costs[hex_], hex_.row, hex_.column,
+    ))
     # A reachable target wins at distance zero. When it is blocked, distance
     # one prefers a neighbor; strict progress prevents shuffling among them.
     if (
@@ -165,4 +163,4 @@ def _path_toward_objective(
 
     # This is a least-cost path on the same occupancy. Reachability above
     # already proves its cost fits the remaining (at most full) allowance.
-    return board.shortest_path(unit, start, destination)
+    return movement.shortest_path(unit, start, destination)

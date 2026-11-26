@@ -237,6 +237,32 @@ def test_unit_waits_next_to_a_full_objective_then_enters_when_space_opens():
     assert player.movement() == []
 
 
+@pytest.mark.parametrize(("terrain_cost", "destination"), [
+    (1, (2, 1)),
+    (3, (2, 2)),
+])
+def test_waiting_hex_tie_prefers_least_total_movement_cost(
+    terrain_cost, destination,
+):
+    target = (1, 1)
+    board, player, enemy = _setup(6, 6, [target], limit=1)
+    mover = _add(board, player, "a", (3, 3), move=4)
+    _add(board, player, "occupant", target, move=0)
+    _add(board, enemy, "enemy", (5, 5))
+    board.get_hex(2, 1).set_terrain(
+        Terrain("Approach", "#888888", move_cost=terrain_cost),
+    )
+    game = Game([player, enemy], board)
+
+    plans = player.movement()
+
+    # (0, 1) also borders the objective but costs four points to reach.
+    assert _destinations(plans) == [("a", destination)]
+    game.apply_movement_plans(plans)
+    assert mover.get_coords() == destination
+    assert mover.current_turn_movement_points_remaining == 2
+
+
 @pytest.mark.parametrize("ids", [("a", "b"), ("b", "a")])
 def test_units_contend_for_the_last_slot_next_to_a_full_objective(ids):
     board, player, enemy = _setup(5, 1, [(4, 0)], limit=2)

@@ -24,20 +24,24 @@ class MovementCalculator:
             self, unit: Unit, start: Hex, move_points: int = None
     ) -> Set[Hex]:
         """Get all hexes reachable by the unit from the start hex."""
+        costs = self.get_reachable_hex_costs(unit, start, move_points)
+        # Insert in discovery order as before; some callers sample the set.
+        return set(costs.keys())
+
+    def get_reachable_hex_costs(
+            self, unit: Unit, start: Hex, move_points: int | None = None
+    ) -> dict[Hex, int]:
+        """Get the minimum legal movement cost to each reachable hex."""
         if move_points is None:
             move_points = unit.get_move()
 
-        min_cost_by_coord: dict[tuple[int, int], float] = {
-            (start.row, start.column): 0,
-        }
-        reachable_hexes = {start}
+        min_cost = {start: 0}
         queue_counter = count()
-        queue: list[tuple[float, int, Hex]] = [(0, next(queue_counter), start)]
+        queue = [(0, next(queue_counter), start)]
 
         while queue:
             current_cost, _, current_hex = heapq.heappop(queue)
-            current_coord = (current_hex.row, current_hex.column)
-            if current_cost > min_cost_by_coord[current_coord]:
+            if current_cost > min_cost[current_hex]:
                 continue
 
             if current_cost >= move_points:
@@ -61,17 +65,15 @@ class MovementCalculator:
                 if new_cost > move_points:
                     continue
 
-                coord = (neighbor.row, neighbor.column)
-                prior_cost = min_cost_by_coord.get(coord, float("inf"))
-                if new_cost < prior_cost:
-                    min_cost_by_coord[coord] = new_cost
-                    reachable_hexes.add(neighbor)
+                prior_cost = min_cost.get(neighbor)
+                if prior_cost is None or new_cost < prior_cost:
+                    min_cost[neighbor] = new_cost
                     heapq.heappush(
                         queue,
                         (new_cost, next(queue_counter), neighbor),
                     )
 
-        return reachable_hexes
+        return min_cost
 
     def shortest_path(
             self, unit: Unit, start: Hex, end: Hex
